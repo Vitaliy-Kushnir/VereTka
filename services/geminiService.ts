@@ -2,13 +2,14 @@ import { GoogleGenAI } from "@google/genai";
 import { type Shape, EllipseShape, LineShape, BezierCurveShape, JoinStyle, RectangleShape, PolylineShape, PolygonShape, ArcShape, ImageShape, TextShape, BitmapShape, PathShape } from '../types';
 import { getFinalPoints, getShapeCenter, rotatePoint, isPolylineAxisAlignedRectangle, getTextBoundingBox } from '../lib/geometry';
 
+// Do not throw an error on module load.
+// Initialize lazily to prevent app crash when API_KEY is not present.
 const API_KEY = process.env.API_KEY;
+let ai: GoogleGenAI | null = null;
 
-if (!API_KEY) {
-  throw new Error("API_KEY environment variable not set.");
+if (API_KEY) {
+  ai = new GoogleGenAI({ apiKey: API_KEY });
 }
-
-const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 /**
  * Rounds a number to a maximum of two decimal places.
@@ -312,6 +313,11 @@ Generate the complete, runnable Python Tkinter script based on the template and 
 
 
 export async function generateTkinterCode(shapes: Shape[], canvasWidth: number, canvasHeight: number, backgroundColor: string, projectName: string, canvasVarName: string, autoGenerateComments: boolean): Promise<string> {
+  // Throw an error here, when the function is actually called, not on app startup.
+  if (!ai) {
+    throw new Error("Ключ Gemini API не налаштовано. Будь ласка, використовуйте локальний генератор.");
+  }
+
   const finalCanvasVarName = canvasVarName.trim() || 'c';
   const imageShapes = shapes.filter(s => s.type === 'image') as ImageShape[];
   const imagePlaceholders = new Map<string, string>();
