@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vector to Tkinter Code</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        overscroll-behavior: none;
+        user-select: none; /* Standard syntax */
+        -webkit-user-select: none; /* Safari */
+        -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* IE 10+ */
+      }
+      
+      /* Allow selection on specific elements */
+      input,
+      textarea,
+      [contenteditable="true"],
+      .allow-selection {
+        user-select: text; /* Standard syntax */
+        -webkit-user-select: text; /* Safari */
+        -moz-user-select: text; /* Firefox */
+        -ms-user-select: text; /* IE 10+ */
+      }
+
+      /* Original Dark Theme */
+      .dark-theme {
+        --bg-app: #111827;
+        --bg-primary: #1f2937;
+        --bg-secondary: #374151;
+        --bg-tertiary: #4b5563;
+        --bg-hover: #4b5563;
+        --bg-disabled: #4b5563;
+
+        --text-primary: #f9fafb;
+        --text-secondary: #e5e7eb;
+        --text-tertiary: #9ca3af;
+        --text-disabled: #6b7280;
+        
+        --border-primary: #374151;
+        --border-secondary: #4b5563;
+        
+        --accent-primary: #4f46e5;
+        --accent-primary-hover: #6366f1;
+        --accent-text: #ffffff;
+        
+        --destructive-bg: #b91c1c; /* red-700 */
+        --destructive-bg-hover: #dc2626; /* red-600 */
+        --destructive-text: #f87171; /* red-400 */
+
+        --selection-stroke: #3b82f6;
+        --selection-fill: rgba(59, 130, 246, 0.2);
+        --selection-highlight-bg: rgba(59, 130, 246, 0.5);
+        --selection-highlight-text: #ffffff;
+        --special-handle-fill: #facc15;
+        --special-handle-stroke: #f97316;
+
+        --ruler-bg: #1f2937;
+        --ruler-text: #9ca3af;
+        --ruler-tick: #4b5563;
+        
+        --cursor-bg: var(--text-primary);
+        --cursor-text: var(--bg-primary);
+      }
+
+      /* Light Theme */
+      .light-theme {
+        --bg-app: #f3f4f6;
+        --bg-primary: #ffffff;
+        --bg-secondary: #e5e7eb;
+        --bg-tertiary: #d1d5db;
+        --bg-hover: #f0f0f0;
+        --bg-disabled: #e5e7eb;
+        
+        --text-primary: #111827;
+        --text-secondary: #374151;
+        --text-tertiary: #6b7280;
+        --text-disabled: #9ca3af;
+
+        --border-primary: #e5e7eb;
+        --border-secondary: #d1d5db;
+        
+        --accent-primary: #4f46e5;
+        --accent-primary-hover: #6366f1;
+        --accent-text: #ffffff;
+        
+        --destructive-bg: #dc2626; /* red-600 */
+        --destructive-bg-hover: #ef4444; /* red-500 */
+        --destructive-text: #dc2626; /* red-600 */
+        
+        --selection-stroke: #2563eb;
+        --selection-fill: rgba(37, 99, 235, 0.2);
+        --selection-highlight-bg: rgba(37, 99, 235, 0.4);
+        --selection-highlight-text: #ffffff;
+        --special-handle-fill: #f59e0b;
+        --special-handle-stroke: #ea580c;
+
+        --ruler-bg: #ffffff;
+        --ruler-text: #4b5563;
+        --ruler-tick: #d1d5db;
+        
+        --cursor-bg: var(--text-primary);
+        --cursor-text: var(--bg-app);
+      }
+
+      .code-line {
+        padding-left: 2px;
+        border-left: 4px solid transparent;
+        transition: background-color 0.1s ease-in-out;
+      }
+      .code-line-highlighted {
+        background-color: var(--selection-highlight-bg);
+        color: var(--selection-highlight-text);
+        font-weight: 600;
+        border-left-color: var(--selection-stroke);
+      }
+      .line-number-highlighted {
+        color: var(--selection-highlight-text);
+        font-weight: 600;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.1.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "react/": "https://esm.sh/react@^19.1.0/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.9.0"
+  }
+}
+</script>
+</head>
+  <body class="dark-theme bg-[var(--bg-app)] text-[var(--text-primary)] font-sans">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

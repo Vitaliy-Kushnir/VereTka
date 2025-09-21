@@ -1,0 +1,6 @@
+{
+  "name": "ВереTkа - Векторний редактор для Tkinter",
+  "description": "Простий векторний редактор, який використовує Gemini API для генерації Python Tkinter коду, що відтворює малюнок.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
