@@ -28,42 +28,8 @@ const formatOptions = (options: Record<string, any>): string => {
 };
 
 const generateLocalComment = (shape: Shape): string => {
-    const typeName = getDefaultNameForShape(shape);
-    let description = typeName;
-
-    const details: string[] = [];
-    const hasFill = 'fill' in shape && shape.fill !== 'none';
-    const hasStroke = shape.stroke !== 'none' && shape.strokeWidth > 0;
-
-    if (hasFill) {
-        details.push(`заливка: ${shape.fill}`);
-    }
-    if (hasStroke) {
-        details.push(`контур: ${shape.stroke}`);
-    }
-
-    switch (shape.type) {
-        case 'polygon':
-        case 'star':
-            details.push(`${shape.sides} сторін`);
-            break;
-        case 'text':
-            const textPreview = shape.text.substring(0, 20);
-            const ellipsis = shape.text.length > 20 ? '...' : '';
-            return `Текстовий об'єкт з текстом: "${textPreview}${ellipsis}"`;
-        case 'line':
-            if (shape.arrow && shape.arrow !== 'none') {
-                const arrowMap = { 'first': 'на початку', 'last': 'в кінці', 'both': 'на обох кінцях' };
-                details.push(`стрілка ${arrowMap[shape.arrow]}`);
-            }
-            break;
-    }
-
-    if (details.length > 0) {
-        description += ` (${details.join(', ')})`;
-    }
-
-    return `${description}.`;
+    const commentText = shape.name || getDefaultNameForShape(shape);
+    return commentText;
 };
 
 

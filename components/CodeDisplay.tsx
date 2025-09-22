@@ -25,6 +25,7 @@ interface CodeDisplayProps {
   showComments: boolean;
   setShowComments: (show: boolean) => void;
   generatorType: 'local' | 'gemini';
+  onSwitchToLocalGenerator: () => void;
 }
 
 // Custom hook to handle clicks outside a component
@@ -43,7 +44,7 @@ const useClickOutside = (ref: React.RefObject<HTMLElement>, handler: (event: Mou
   }, [ref, handler]);
 };
 
-const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, onUpdate, onPreview, onSaveCode, onOpenOrRunCodeOnline, hasUnsyncedChanges, selectedShapeId, highlightCodeOnSelection, setHighlightCodeOnSelection, showLineNumbers, setShowLineNumbers, showComments, setShowComments, generatorType }) => {
+const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, onUpdate, onPreview, onSaveCode, onOpenOrRunCodeOnline, hasUnsyncedChanges, selectedShapeId, highlightCodeOnSelection, setHighlightCodeOnSelection, showLineNumbers, setShowLineNumbers, showComments, setShowComments, generatorType, onSwitchToLocalGenerator }) => {
   const [isCopied, setIsCopied] = useState(false);
   const [isWordWrapEnabled, setIsWordWrapEnabled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -95,9 +96,17 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, 
     }
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center h-full text-red-400 p-4">
+            <div className="flex flex-col items-center justify-center h-full text-red-400 p-4 text-center">
                 <h3 className="font-bold text-lg mb-2">Помилка генерації</h3>
-                <p className="text-sm text-center">{error}</p>
+                <p className="text-sm">{error}</p>
+                {generatorType === 'gemini' && (
+                    <button
+                        onClick={onSwitchToLocalGenerator}
+                        className="mt-4 px-4 py-2 rounded-md font-semibold bg-[var(--accent-primary)] text-[var(--accent-text)] hover:bg-[var(--accent-primary-hover)] transition-colors"
+                    >
+                        Перемкнутись на локальний генератор
+                    </button>
+                )}
             </div>
         );
     }

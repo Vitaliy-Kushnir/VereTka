@@ -728,6 +728,19 @@ export default function App(): React.ReactNode {
     setHasUnsavedChanges(currentSignature !== lastSavedSignatureRef.current);
   }, [projectName, shapes, getProjectSignature, isProjectActive]);
 
+    useEffect(() => {
+        const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+            if (hasUnsavedChanges) {
+                event.preventDefault();
+                event.returnValue = ''; // Required for Chrome
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [hasUnsavedChanges]);
+
 
   const displayedShapes = useMemo(() => {
     if (Object.keys(previewOverrides).length === 0) {
@@ -1673,6 +1686,12 @@ export default function App(): React.ReactNode {
     const handleOpenMobileRight = useCallback(() => {
         setIsRightPanelVisible(p => !p);
     }, []);
+    
+    const handleSwitchToLocalFromError = useCallback(() => {
+        setGeneratorType('local');
+        setError(null); // Clear the Gemini error
+        showNotification('Перемкнено на локальний генератор. Код буде оновлено автоматично.', 'info');
+    }, []);
 
   return (
     <div className="h-screen bg-[var(--bg-app)] text-[var(--text-primary)] font-sans flex flex-col selection:bg-[var(--accent-primary)] selection:text-[var(--accent-text)] overflow-hidden">
@@ -1790,6 +1809,7 @@ export default function App(): React.ReactNode {
                     showComments={showComments}
                     setShowComments={setShowComments}
                     generatorType={generatorType}
+                    onSwitchToLocalGenerator={handleSwitchToLocalFromError}
                     onSaveCode={() => setIsSaveCodeModalOpen(true)}
                     onOpenOrRunCodeOnline={handleOpenOrRunCodeOnline}
                 />
