@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { CopyIcon, CheckIcon, RefreshIcon, PreviewIcon, WordWrapIcon, EllipsisIcon, SaveIcon, PlayIcon, CodeIcon } from './icons';
+import { CopyIcon, CheckIcon, RefreshIcon, PreviewIcon, WordWrapIcon, EllipsisIcon, SaveIcon, PlayIcon, CodeIcon, SettingsIcon } from './icons';
 
 export interface CodeLine {
   content: string;
@@ -26,6 +26,7 @@ interface CodeDisplayProps {
   setShowComments: (show: boolean) => void;
   generatorType: 'local' | 'gemini';
   onSwitchToLocalGenerator: () => void;
+  onOpenSettingsToGenerator: () => void;
 }
 
 // Custom hook to handle clicks outside a component
@@ -44,7 +45,7 @@ const useClickOutside = (ref: React.RefObject<HTMLElement>, handler: (event: Mou
   }, [ref, handler]);
 };
 
-const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, onUpdate, onPreview, onSaveCode, onOpenOrRunCodeOnline, hasUnsyncedChanges, selectedShapeId, highlightCodeOnSelection, setHighlightCodeOnSelection, showLineNumbers, setShowLineNumbers, showComments, setShowComments, generatorType, onSwitchToLocalGenerator }) => {
+const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, onUpdate, onPreview, onSaveCode, onOpenOrRunCodeOnline, hasUnsyncedChanges, selectedShapeId, highlightCodeOnSelection, setHighlightCodeOnSelection, showLineNumbers, setShowLineNumbers, showComments, setShowComments, generatorType, onSwitchToLocalGenerator, onOpenSettingsToGenerator }) => {
   const [isCopied, setIsCopied] = useState(false);
   const [isWordWrapEnabled, setIsWordWrapEnabled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -99,14 +100,23 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, 
             <div className="flex flex-col items-center justify-center h-full text-red-400 p-4 text-center">
                 <h3 className="font-bold text-lg mb-2">Помилка генерації</h3>
                 <p className="text-sm">{error}</p>
-                {generatorType === 'gemini' && (
+                 <div className="mt-4 flex flex-col sm:flex-row items-center gap-3">
                     <button
-                        onClick={onSwitchToLocalGenerator}
-                        className="mt-4 px-4 py-2 rounded-md font-semibold bg-[var(--accent-primary)] text-[var(--accent-text)] hover:bg-[var(--accent-primary-hover)] transition-colors"
+                        onClick={onOpenSettingsToGenerator}
+                        className="flex items-center gap-2 px-4 py-2 rounded-md font-semibold bg-[var(--bg-tertiary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
                     >
-                        Перемкнутись на локальний генератор
+                        <SettingsIcon size={16}/>
+                        <span>Перейти в налаштування</span>
                     </button>
-                )}
+                    {generatorType === 'gemini' && (
+                        <button
+                            onClick={onSwitchToLocalGenerator}
+                            className="px-4 py-2 rounded-md font-semibold bg-[var(--accent-primary)] text-[var(--accent-text)] hover:bg-[var(--accent-primary-hover)] transition-colors"
+                        >
+                            Перемкнутись на локальний генератор
+                        </button>
+                    )}
+                 </div>
             </div>
         );
     }
@@ -128,6 +138,10 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, 
             }
 
             const isHighlighted = highlightCodeOnSelection && selectedShapeId !== null && line.shapeId === selectedShapeId;
+            const highlightClass = isHighlighted
+                ? (isComment ? 'code-line-comment-highlighted' : 'code-line-highlighted')
+                : '';
+
             return (
                 <div
                 key={index}
@@ -136,14 +150,14 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, 
                 >
                 {showLineNumbers && (
                     <span
-                    className={`text-right text-[var(--text-tertiary)] select-none pr-4 w-12 flex-shrink-0 ${isHighlighted ? 'line-number-highlighted' : ''}`}
+                    className={`text-right text-[var(--text-tertiary)] select-none pr-4 w-12 flex-shrink-0 ${(isHighlighted && !isComment) ? 'line-number-highlighted' : ''}`}
                     aria-hidden="true"
                     >
                     {index + 1}
                     </span>
                 )}
                 <span
-                    className={`code-line flex-grow ${isWordWrapEnabled ? 'whitespace-pre-wrap break-words' : 'whitespace-pre'} ${isHighlighted ? 'code-line-highlighted rounded' : ''}`}
+                    className={`code-line flex-grow ${isWordWrapEnabled ? 'whitespace-pre-wrap break-words' : 'whitespace-pre'} ${highlightClass ? `${highlightClass} rounded` : ''}`}
                 >
                     {line.content || ' '}
                 </span>

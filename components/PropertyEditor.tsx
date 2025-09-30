@@ -957,13 +957,48 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
         }
         case 'trapezoid': {
              const trapezoid = selectedShape as TrapezoidShape;
+             const handleOffsetChange = (side: 'left' | 'right', v_percent: number) => {
+                let newRatio = Math.max(0, v_percent / 100);
+                const updates: Partial<TrapezoidShape> = {};
+
+                if (trapezoid.isSymmetrical) {
+                    if (newRatio > 0.5) newRatio = 0.5;
+                    updates.topLeftOffsetRatio = newRatio;
+                    updates.topRightOffsetRatio = newRatio;
+                } else {
+                    if (side === 'left') {
+                        if (newRatio > 1 - trapezoid.topRightOffsetRatio) {
+                            newRatio = 1 - trapezoid.topRightOffsetRatio;
+                        }
+                        updates.topLeftOffsetRatio = newRatio;
+                    } else { // 'right'
+                        if (newRatio > 1 - trapezoid.topLeftOffsetRatio) {
+                            newRatio = 1 - trapezoid.topLeftOffsetRatio;
+                        }
+                        updates.topRightOffsetRatio = newRatio;
+                    }
+                }
+                updateShape({ ...trapezoid, ...updates });
+            };
+            const handleSymmetricalChange = (checked: boolean) => {
+                const newShape = { ...trapezoid, isSymmetrical: checked };
+                if (checked) {
+                    let avgRatio = (newShape.topLeftOffsetRatio + newShape.topRightOffsetRatio) / 2;
+                    if (avgRatio > 0.5) {
+                        avgRatio = 0.5;
+                    }
+                    newShape.topLeftOffsetRatio = avgRatio;
+                    newShape.topRightOffsetRatio = avgRatio;
+                }
+                updateShape(newShape);
+            };
             return <>
                 {commonProperties}
                  <InputWrapper>
-                    <Checkbox id={`${trapezoid.id}-symm`} checked={!!trapezoid.isSymmetrical} onChange={c => updateShape({ ...trapezoid, isSymmetrical: c })} label="Симетрична:" title="Зробити зміщення верхніх кутів однаковим."/>
+                    <Checkbox id={`${trapezoid.id}-symm`} checked={!!trapezoid.isSymmetrical} onChange={handleSymmetricalChange} label="Симетрична:" title="Зробити зміщення верхніх кутів однаковим."/>
                 </InputWrapper>
-                <InputWrapper><Label htmlFor={`${trapezoid.id}-topleft`} title="Зміщення верхнього лівого кута всередину у відсотках від ширини.">Зсув зліва (%):</Label><NumberInput id={`${trapezoid.id}-topleft`} value={roundToHundredths(trapezoid.topLeftOffsetRatio * 100)} onChange={v => updateShape({ ...trapezoid, topLeftOffsetRatio: v / 100 })} /></InputWrapper>
-                <InputWrapper><Label htmlFor={`${trapezoid.id}-topright`} title="Зміщення верхнього правого кута всередину у відсотках від ширини.">Зсув справа (%):</Label><NumberInput id={`${trapezoid.id}-topright`} value={roundToHundredths(trapezoid.topRightOffsetRatio * 100)} onChange={v => updateShape({ ...trapezoid, topRightOffsetRatio: v / 100 })} /></InputWrapper>
+                <InputWrapper><Label htmlFor={`${trapezoid.id}-topleft`} title="Зміщення верхнього лівого кута всередину у відсотках від ширини.">Зсув зліва (%):</Label><NumberInput id={`${trapezoid.id}-topleft`} value={roundToHundredths(trapezoid.topLeftOffsetRatio * 100)} onChange={v => handleOffsetChange('left', v)} /></InputWrapper>
+                <InputWrapper><Label htmlFor={`${trapezoid.id}-topright`} title="Зміщення верхнього правого кута всередину у відсотках від ширини.">Зсув справа (%):</Label><NumberInput id={`${trapezoid.id}-topright`} value={roundToHundredths(trapezoid.topRightOffsetRatio * 100)} onChange={v => handleOffsetChange('right', v)} disabled={!!trapezoid.isSymmetrical} /></InputWrapper>
                 <hr className="border-[var(--border-secondary)] my-2" />
                 <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">Заливка</h3>
                 <FillControls shape={trapezoid} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} />
@@ -1101,7 +1136,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
                     <NumberInput id={`${arc.id}-extent`} value={roundToHundredths(arc.extent)} onChange={v => updateShape({ ...arc, extent: v })} disabled={arc.isExtentLocked} />
                 </InputWrapper>
                  <InputWrapper>
-                    {/* FIX: The Label component requires a 'children' prop. Adding an empty string to satisfy the requirement, as this label is used for layout alignment. */}
+                    {/* FIX: Provide an empty child to the Label component to satisfy its required 'children' prop. This Label acts as a spacer. */}
                     <Label htmlFor={`${arc.id}-extent-lock`}>{''}</Label>
                     <Checkbox id={`${arc.id}-extent-lock`} checked={!!arc.isExtentLocked} onChange={c => updateShape({ ...arc, isExtentLocked: c })} label="Блокувати довжину" title="Зберігати довжину дуги при зміні її кінців."/>
                 </InputWrapper>
@@ -1165,8 +1200,8 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
 
                 <InputWrapper>
                     <Label htmlFor={`${text.id}-style`} title="Стилі тексту.">Стиль:</Label>
-                    <div className="flex-1 grid grid-cols-2 gap-2">
-                        <Checkbox id={`${text.id}-bold`} checked={text.weight === 'bold'} onChange={c => updateShape({ ...text, weight: c ? 'bold' : 'normal' })} label="Жирний" />
+                    <div className="flex-1 flex flex-col gap-2">
+                        <Checkbox id={`${text.id}-bold`} checked={text.weight === 'bold'} onChange={c => updateShape({ ...text, weight: c ? 'bold' : 'normal' })} label="Виразний" />
                         <Checkbox id={`${text.id}-italic`} checked={text.slant === 'italic'} onChange={c => updateShape({ ...text, slant: c ? 'italic' : 'roman' })} label="Курсив" />
                         <Checkbox id={`${text.id}-underline`} checked={text.underline} onChange={c => updateShape({ ...text, underline: c })} label="Підкреслений" />
                         <Checkbox id={`${text.id}-overstrike`} checked={text.overstrike} onChange={c => updateShape({ ...text, overstrike: c })} label="Закреслений" />

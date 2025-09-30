@@ -187,7 +187,7 @@ function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, ca
     if (shape.type === 'arc' && shape.rotation !== 0) {
         const a = shape as ArcShape;
         if (a.width === a.height) { // It's a circular arc
-            options.start = round(a.start + a.rotation); // Bake rotation here
+            options.start = round(a.start - a.rotation); // Bake rotation here
             options.extent = round(a.extent);
             if (a.style !== 'pieslice') {
                 options.style = a.style;

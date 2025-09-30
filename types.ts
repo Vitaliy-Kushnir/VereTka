@@ -269,3 +269,18 @@ export type CanvasAction =
     | { type: 'trapezoid-offset-editing', handle: 'left' | 'right', initialShape: TrapezoidShape }
     | { type: 'parallelogram-angle-editing', initialShape: ParallelogramShape }
     | null;
+
+export interface NewProjectSettings {
+  projectName: string;
+  width: number;
+  height: number;
+  bgColor: string;
+  canvasVarName: string;
+}
+
+export interface ProjectTemplate {
+  id: string;
+  name: string;
+  settings: NewProjectSettings;
+  shapes: Shape[];
+}

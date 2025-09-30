@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { type Shape, type Tool, type DrawMode, PolylineShape, BezierCurveShape, ViewTransform, RectangleShape, ImageShape, IsoscelesTriangleShape, TrapezoidShape, ParallelogramShape, PathShape, CanvasAction, LineShape, PolygonShape, ArcShape, RightTriangleShape, TextShape, BitmapShape, RotatableShape, EllipseShape } from './types';
+import { type Shape, type Tool, type DrawMode, PolylineShape, BezierCurveShape, ViewTransform, RectangleShape, ImageShape, IsoscelesTriangleShape, TrapezoidShape, ParallelogramShape, PathShape, CanvasAction, LineShape, PolygonShape, ArcShape, RightTriangleShape, TextShape, BitmapShape, RotatableShape, EllipseShape, type ProjectTemplate, type NewProjectSettings } from './types';
 import Canvas from './components/Canvas';
 import CodeDisplay, { type CodeLine } from './components/CodeDisplay';
 import PropertyEditor from './components/PropertyEditor';
@@ -10,13 +10,15 @@ import { generateTkinterCodeLocally } from './services/localGeneratorService';
 import SettingsModal from './components/SettingsModal';
 import PreviewModal from './components/PreviewModal';
 import ExportModal, { type ExportSettings } from './components/ExportModal';
-import NewProjectModal, { type NewProjectSettings } from './components/NewProjectModal';
+import NewProjectModal from './components/NewProjectModal';
 import ConfirmationModal from './components/ConfirmationModal';
 import SaveAsModal from './components/SaveAsModal';
 import AboutModal from './components/AboutModal';
 import HelpModal from './components/HelpModal';
+import ApiKeyModal from './components/ApiKeyModal';
+import FeedbackModal from './components/FeedbackModal';
 import { saveFile, generateSvg, exportToRaster, openProjectFile, saveToHandle } from './lib/exportUtils';
-import { SquareIcon, CodeIcon, XIcon, AxesIcon, FitToScreenIcon, SelectIcon, EditPointsIcon, RectangleIcon, EllipseIcon, CircleIcon, LineIcon, PolylineIcon, BezierIcon, PolygonIcon, PencilIcon, TriangleIcon, RightTriangleIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, PiesliceIcon, ChordIcon, ArcIcon, StarIcon, TextIcon, ImageIcon, BitmapIcon, UndoIcon, RedoIcon, DuplicateIcon, TrashIcon, GridIcon, SettingsIcon, DrawFromCornerIcon, DrawFromCenterIcon, CheckIcon, MenuIcon, SunIcon, MoonIcon, HomeIcon, BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from './components/icons';
+import { SquareIcon, CodeIcon, XIcon, AxesIcon, FitToScreenIcon, SelectIcon, EditPointsIcon, RectangleIcon, EllipseIcon, CircleIcon, LineIcon, PolylineIcon, BezierIcon, PolygonIcon, PencilIcon, TriangleIcon, RightTriangleIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, PiesliceIcon, ChordIcon, ArcIcon, StarIcon, TextIcon, ImageIcon, BitmapIcon, UndoIcon, RedoIcon, DuplicateIcon, TrashIcon, GridIcon, SettingsIcon, DrawFromCornerIcon, DrawFromCenterIcon, CheckIcon, MenuIcon, SunIcon, MoonIcon, HomeIcon, BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, SadMonitorIcon, FullscreenIcon, ExitFullscreenIcon } from './components/icons';
 import { getFinalPoints, getVisualBoundingBox, getBoundingBox, getEditablePoints, getShapeCenter } from './lib/geometry';
 import { getDefaultNameForShape, isDefaultName } from './lib/constants';
 import Ruler from './components/Ruler';
@@ -25,12 +27,17 @@ import StatusBar from './components/StatusBar';
 import WelcomeScreen from './components/WelcomeScreen';
 import { useRecentProjects, type RecentProject } from './hooks/useRecentProjects';
 import SaveCodeModal from './components/SaveCodeModal';
+import InlineTextEditor from './components/InlineTextEditor';
+import SaveTemplateModal from './components/SaveTemplateModal';
 
 type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
+type SettingsTab = 'canvas' | 'grid' | 'appearance' | 'generator' | 'templates';
 
+const APP_VERSION = '1.1.0';
 const RULER_THICKNESS = 24;
 const MAX_SCALE = 30;
+const MIN_SCREEN_WIDTH = 1024; // Minimum width in pixels for the app to be usable
 
 // Custom hook to handle clicks outside a component
 const useClickOutside = (ref: React.RefObject<HTMLElement>, handler: (event: MouseEvent) => void) => {
@@ -72,6 +79,7 @@ const MenuBar: React.FC<{
     onSaveProject: () => void;
     canSave: boolean;
     onSaveProjectAs: () => void;
+    onSaveAsTemplate: () => void;
     onLoadProject: () => void;
     onExport: () => void;
     onUndo: () => void;
@@ -84,6 +92,8 @@ const MenuBar: React.FC<{
     onConvertToPath: () => void;
     canConvertToPath: boolean;
     onFitCanvasToView: () => void;
+    onToggleFullscreen: () => void;
+    isFullscreen: boolean;
     showGrid: boolean;
     setShowGrid: (show: boolean) => void;
     snapToGrid: boolean;
@@ -98,6 +108,7 @@ const MenuBar: React.FC<{
     onGoHome: () => void;
     onOpenAbout: () => void;
     onOpenHelp: () => void;
+    onOpenFeedback: () => void;
 }> = React.memo((props) => {
     const { isOpen: isFileOpen, toggle: toggleFile, close: closeFile, wrapperProps: fileProps } = useDropdown();
     const { isOpen: isEditOpen, toggle: toggleEdit, close: closeEdit, wrapperProps: editProps } = useDropdown();
@@ -152,6 +163,7 @@ const MenuBar: React.FC<{
                             <hr className="border-[var(--border-secondary)] my-1"/>
                             <MenuItem onClick={() => handleMenuClick(props.onSaveProject, closeFile)} disabled={!props.canSave} shortcut="Ctrl+S">Зберегти</MenuItem>
                             <MenuItem onClick={() => handleMenuClick(props.onSaveProjectAs, closeFile)} disabled={!props.isProjectActive}>Зберегти як...</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onSaveAsTemplate, closeFile)} disabled={!props.isProjectActive}>Зберегти як шаблон...</MenuItem>
                             <MenuItem onClick={() => handleMenuClick(props.onLoadProject, closeFile)}>Завантажити проєкт...</MenuItem>
                             <hr className="border-[var(--border-secondary)] my-1"/>
                             <MenuItem onClick={() => handleMenuClick(props.onExport, closeFile)} disabled={!props.isProjectActive}>Експортувати як...</MenuItem>
@@ -188,6 +200,9 @@ const MenuBar: React.FC<{
                     {isViewOpen && (
                         <div className="absolute top-full left-0 mt-0 w-56 bg-[var(--bg-secondary)] rounded-md shadow-lg py-1 z-50 border border-[var(--border-secondary)]">
                             <MenuItem onClick={() => handleMenuClick(props.onFitCanvasToView, closeView)} disabled={!props.isProjectActive}>Показати все полотно</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onToggleFullscreen, closeView)} shortcut="F11">
+                                {props.isFullscreen ? 'Вийти з повноекранного режиму' : 'Повноекранний режим'}
+                            </MenuItem>
                             <hr className="border-[var(--border-secondary)] my-1"/>
                             <MenuCheckbox checked={props.showGrid} onChange={props.setShowGrid}>Сітка</MenuCheckbox>
                             <MenuCheckbox checked={props.snapToGrid} onChange={props.setSnapToGrid}>Прив'язка до сітки</MenuCheckbox>
@@ -207,9 +222,7 @@ const MenuBar: React.FC<{
                             <MenuItem onClick={() => handleMenuClick(props.onOpenAbout, closeHelp)}>Про редактор</MenuItem>
                             <hr className="border-[var(--border-secondary)] my-1"/>
                             <MenuItem onClick={() => handleMenuClick(props.onOpenHelp, closeHelp)}>Довідка</MenuItem>
-                            <MenuItem onClick={() => { window.open('https://github.com/v-d-b/veretka/issues/new', '_blank'); closeHelp(); }}>Залишити відгук</MenuItem>
-                            <hr className="border-[var(--border-secondary)] my-1"/>
-                            <MenuItem onClick={() => { window.open('https://github.com/v-d-b/veretka', '_blank'); closeHelp(); }}>Вихідний код на GitHub</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onOpenFeedback, closeHelp)}>Залишити відгук</MenuItem>
                         </div>
                     )}
                 </div>
@@ -275,7 +288,7 @@ const LeftToolbar: React.FC<{
                                 aria-label={tool.label}
                                 title={tool.label}
                                 disabled={tool.disabled}
-                                className={`p-1 rounded-md transition-colors duration-200 aspect-square flex items-center justify-center ${activeTool === tool.name ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] shadow-md' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--accent-text)]'} disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent`}
+                                className={`p-1 rounded-md transition-colors duration-200 aspect-square flex items-center justify-center ${activeTool === tool.name ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] shadow-md' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--icon-hover-text)]'} disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent`}
                             >
                                 {tool.icon}
                             </button>
@@ -321,6 +334,8 @@ const TopToolbar: React.FC<{
     onOpenMobileRight: () => void;
     theme: Theme;
     setTheme: (theme: Theme) => void;
+    onToggleFullscreen: () => void;
+    isFullscreen: boolean;
     selectedShape: Shape | null;
     updateShape: (s: Shape) => void;
     setShapePreview: (shapeId: string, overrides: Partial<Shape>) => void;
@@ -335,7 +350,7 @@ const TopToolbar: React.FC<{
 }> = React.memo((props) => {
     const { 
         isGenerating, hasShapes, onUndo, onRedo, canUndo, canRedo, onDuplicate, isShapeSelected, onOpenMobileLeft, onOpenMobileRight,
-        theme, setTheme, selectedShape, updateShape, setShapePreview, cancelShapePreview, activeTool, setActiveTool, onGenerate, showGenerateButton, onClear
+        theme, setTheme, onToggleFullscreen, isFullscreen, selectedShape, updateShape, setShapePreview, cancelShapePreview, activeTool, setActiveTool, onGenerate, showGenerateButton, onClear
       } = props;
     
       const standardWebFonts = {
@@ -554,7 +569,7 @@ const TopToolbar: React.FC<{
                              <input id={`${shape.id}-ctx-fontSize`} type="number" min="1" value={round(shape.fontSize)} onChange={e => handleUpdate({ fontSize: Number(e.target.value) })} className="w-16 bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2 py-0.5 border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none" />
                         </PropertyControl>
                         <div className="flex items-center gap-0.5 bg-[var(--bg-app)] p-0.5 rounded-md">
-                            <button title="Жирний" onClick={() => handleUpdate({ weight: shape.weight === 'bold' ? 'normal' : 'bold' })} className={`p-1.5 rounded ${shape.weight === 'bold' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><BoldIcon size={16}/></button>
+                            <button title="Виразний" onClick={() => handleUpdate({ weight: shape.weight === 'bold' ? 'normal' : 'bold' })} className={`p-1.5 rounded ${shape.weight === 'bold' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><BoldIcon size={16}/></button>
                             <button title="Курсив" onClick={() => handleUpdate({ slant: shape.slant === 'italic' ? 'roman' : 'italic' })} className={`p-1.5 rounded ${shape.slant === 'italic' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><ItalicIcon size={16}/></button>
                             <button title="Підкреслений" onClick={() => handleUpdate({ underline: !shape.underline })} className={`p-1.5 rounded ${shape.underline ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><UnderlineIcon size={16}/></button>
                             <button title="Закреслений" onClick={() => handleUpdate({ overstrike: !shape.overstrike })} className={`p-1.5 rounded ${shape.overstrike ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><StrikethroughIcon size={16}/></button>
@@ -597,6 +612,9 @@ const TopToolbar: React.FC<{
                  <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Змінити тему" className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]">
                     {theme === 'dark' ? <SunIcon/> : <MoonIcon/>}
                 </button>
+                 <button onClick={onToggleFullscreen} title={isFullscreen ? 'Вийти з повноекранного режиму (F11)' : 'Повноекранний режим (F11)'} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]">
+                    {isFullscreen ? <ExitFullscreenIcon/> : <FullscreenIcon/>}
+                </button>
                  {/* Mobile Toggles */}
                  <div className="md:hidden flex items-center gap-2">
                     <button onClick={onOpenMobileRight} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"><CodeIcon/></button>
@@ -620,6 +638,7 @@ export default function App(): React.ReactNode {
   const [projectName, setProjectName] = useState<string>('Новий малюнок. ВереTkа');
   const [activeTool, setActiveTool] = useState<Tool>('select');
   const [selectedShapeId, setSelectedShapeId] = useState<string | null>(null);
+  const [inlineEditingShapeId, setInlineEditingShapeId] = useState<string | null>(null);
 
   const [isDrawingPolyline, setIsDrawingPolyline] = useState<boolean>(false);
   const [polylinePoints, setPolylinePoints] = useState<{ x: number, y: number }[]>([]);
@@ -647,12 +666,18 @@ export default function App(): React.ReactNode {
   const [isPreviewOpen, setIsPreviewOpen] = useState<boolean>(false);
 
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [settingsInitialTab, setSettingsInitialTab] = useState<SettingsTab>('canvas');
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState<boolean>(false);
   const [isSaveAsModalOpen, setIsSaveAsModalOpen] = useState<boolean>(false);
   const [isSaveCodeModalOpen, setIsSaveCodeModalOpen] = useState(false);
+  const [isSaveTemplateModalOpen, setIsSaveTemplateModalOpen] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  
   const [canvasWidth, setCanvasWidth] = useState<number>(800);
   const [canvasHeight, setCanvasHeight] = useState<number>(600);
   const [canvasBgColor, setCanvasBgColor] = useState<string>('#ffffff');
@@ -670,6 +695,7 @@ export default function App(): React.ReactNode {
   const [generatorType, setGeneratorType] = useState<GeneratorType>('local');
   const [highlightCodeOnSelection, setHighlightCodeOnSelection] = useState<boolean>(true);
   const [autoGenerateComments, setAutoGenerateComments] = useState<boolean>(true);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(!!document.fullscreenElement);
 
   // State for temporary visual overrides (e.g., color picking preview)
   const [previewOverrides, setPreviewOverrides] = useState<Record<string, Partial<Shape>>>({});
@@ -694,7 +720,39 @@ export default function App(): React.ReactNode {
 
   const [confirmationAction, setConfirmationAction] = useState<{ title: string; message: string; onConfirm: () => void; } | null>(null);
   const [isProjectActive, setIsProjectActive] = useState(false);
-  const { projects: recentProjects, addRecentProject, openRecentProject } = useRecentProjects();
+  const { projects: recentProjects, addRecentProject, openRecentProject, removeRecentProject, clearAllProjects } = useRecentProjects();
+  
+  const [isScreenTooSmall, setIsScreenTooSmall] = useState(false);
+  const [projectTemplates, setProjectTemplates] = useState<ProjectTemplate[]>([]);
+  const escapeHoldTimer = useRef<number | null>(null);
+  const ESCAPE_HOLD_DURATION = 2000; // 2 seconds
+
+  useEffect(() => {
+    try {
+        const savedTemplatesJSON = localStorage.getItem('veretka-project-templates');
+        if (savedTemplatesJSON) {
+            const savedTemplates = JSON.parse(savedTemplatesJSON);
+            if (Array.isArray(savedTemplates)) {
+                setProjectTemplates(savedTemplates);
+            }
+        }
+    } catch (e) {
+        console.error("Failed to load project templates from localStorage", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsScreenTooSmall(window.innerWidth < MIN_SCREEN_WIDTH);
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+
+    return () => {
+      window.removeEventListener('resize', checkScreenSize);
+    };
+  }, []);
 
   useEffect(() => {
     document.body.className = `${theme}-theme bg-[var(--bg-app)] text-[var(--text-primary)] font-sans`;
@@ -707,6 +765,11 @@ export default function App(): React.ReactNode {
         }
     }, [generatorType]);
 
+    const generateProjectThumbnail = useCallback((shapesToRender: Shape[], width: number, height: number, bgColor: string): string => {
+        const svgString = generateSvg(shapesToRender, width, height, bgColor);
+        return `data:image/svg+xml;base64,${btoa(svgString)}`;
+    }, []);
+    
   const getProjectSignature = useCallback((pName: string, s: Shape[]) => {
     return JSON.stringify({
         projectName: pName,
@@ -848,14 +911,11 @@ export default function App(): React.ReactNode {
           if (shape.id === shapeId && ('points' in shape) && shape.points.length > 2) {
               const newPoints = [...shape.points];
               newPoints.splice(pointIndex, 1);
-              // FIX: Spreading a union 'shape' can lead to an invalid discriminated union.
-              // We must narrow the type before spreading to ensure type safety.
               switch (shape.type) {
                   case 'pencil':
                   case 'polyline':
                   case 'bezier':
                       return { ...shape, points: newPoints };
-                  // LineShape is implicitly handled because its points.length is always 2, so it fails `> 2`.
                   default:
                       return shape;
               }
@@ -905,8 +965,6 @@ export default function App(): React.ReactNode {
   const duplicateShape = useCallback((id: string) => {
     const shapeToDuplicate = shapes.find(s => s.id === id);
     if (!shapeToDuplicate) return;
-    // FIX: Use a type-safe approach for duplication instead of JSON.parse, which can corrupt types like tuples.
-    // By spreading inside a switch, we ensure the new object has a concrete, correct type.
     let newShape: Shape;
     switch (shapeToDuplicate.type) {
         case 'line':
@@ -918,19 +976,16 @@ export default function App(): React.ReactNode {
             newShape = {...shapeToDuplicate, points: shapeToDuplicate.points.map(p => ({...p}))};
             break;
         default:
-             // For shapes without nested objects that need copying, a shallow copy is sufficient.
             newShape = {...shapeToDuplicate};
     }
 
     newShape.id = new Date().toISOString();
     const offset = 10;
     
-    // Now mutate the newly created, correctly typed newShape
     switch (newShape.type) {
         case 'rectangle': case 'triangle': case 'right-triangle': case 'rhombus': case 'trapezoid': case 'parallelogram': case 'arc': case 'text': case 'image': case 'bitmap': newShape.x += offset; newShape.y += offset; break;
         case 'ellipse': case 'polygon': case 'star': newShape.cx += offset; newShape.cy += offset; break;
         case 'line':
-            // newShape is already narrowed to LineShape here.
             newShape.points[0].x += offset; newShape.points[0].y += offset;
             newShape.points[1].x += offset; newShape.points[1].y += offset;
             break;
@@ -968,11 +1023,8 @@ export default function App(): React.ReactNode {
         const newShapes = [...prevShapes];
         const [draggedItem] = newShapes.splice(draggedIndex, 1);
         
-        // After removing, the target's index might have shifted.
         const newTargetIndex = newShapes.findIndex(s => s.id === targetId);
 
-        // 'top' in the UI means a higher index in the array (drawn later/on top).
-        // 'bottom' in the UI means a lower index in the array (drawn earlier/below).
         const insertionIndex = position === 'top' ? newTargetIndex + 1 : newTargetIndex;
         
         newShapes.splice(insertionIndex, 0, draggedItem);
@@ -1053,7 +1105,7 @@ export default function App(): React.ReactNode {
     }, []);
 
     const handleCompleteBezier = useCallback((isClosed: boolean) => {
-        const cleanPoints = bezierPoints.filter(p => p);
+        const cleanPoints = bezierPoints.filter(Boolean);
         if (cleanPoints.length < 2) { setIsDrawingBezier(false); setBezierPoints([]); return; }
         let finalPoints = [...cleanPoints];
         if (finalPoints.length > 1) {
@@ -1108,9 +1160,21 @@ export default function App(): React.ReactNode {
     const foundShape = shapes.find((s) => s?.id === selectedShapeId) ?? null;
     return foundShape ? { ...foundShape } as Shape : null;
   }, [shapes, selectedShapeId]);
+  
+  const inlineEditingShape = useMemo(() => {
+    if (!inlineEditingShapeId) return null;
+    return shapes.find(s => s.id === inlineEditingShapeId) as TextShape || null;
+  }, [shapes, inlineEditingShapeId]);
 
   const handleGenerateCode = useCallback(async () => {
     if (shapes.length === 0) { showNotification('Спочатку намалюйте щось на полотні!', 'info'); return; }
+    
+    if (generatorType === 'gemini' && !apiKey) {
+        showNotification('Будь ласка, введіть ваш ключ Gemini API у налаштуваннях.', 'info');
+        setIsApiKeyModalOpen(true);
+        return;
+    }
+    
     setIsLoading(true);
     setError(null);
     setGeneratedCodeLines([]);
@@ -1119,7 +1183,7 @@ export default function App(): React.ReactNode {
         const { codeLines } = await generateTkinterCodeLocally(shapes, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments);
         setGeneratedCodeLines(codeLines);
       } else {
-        const code = await generateTkinterCode(shapes, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments);
+        const code = await generateTkinterCode(apiKey!, shapes, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments);
         const lines = code.split('\n');
         const codeLines = lines.map(line => {
             const match = line.match(/(.*?) # ID:([a-zA-Z0-9.-]+)/);
@@ -1140,7 +1204,7 @@ export default function App(): React.ReactNode {
     } finally {
       setIsLoading(false);
     }
-  }, [shapes, canvasWidth, canvasHeight, canvasBgColor, projectName, generatorType, canvasVarName, autoGenerateComments]);
+  }, [shapes, canvasWidth, canvasHeight, canvasBgColor, projectName, generatorType, canvasVarName, autoGenerateComments, apiKey]);
 
   useEffect(() => {
     if (generatorType === 'local' && isProjectActive) {
@@ -1198,20 +1262,33 @@ export default function App(): React.ReactNode {
     );
   }, [confirmAction]);
 
-  const handleNewProject = useCallback((settings: NewProjectSettings) => {
+  const handleNewProject = useCallback((settings: NewProjectSettings, templateId: string | null) => {
     performClear();
     setProjectName(settings.projectName);
     setCanvasWidth(settings.width);
     setCanvasHeight(settings.height);
     setCanvasBgColor(settings.bgColor);
     setCanvasVarName(settings.canvasVarName);
+
+    if (templateId) {
+        const template = projectTemplates.find(t => t.id === templateId);
+        if (template) {
+            const templateShapes = JSON.parse(JSON.stringify(template.shapes)); // deep copy
+            resetHistory(templateShapes);
+            lastSavedSignatureRef.current = getProjectSignature(settings.projectName, templateShapes);
+        } else {
+            resetHistory([]);
+            lastSavedSignatureRef.current = getProjectSignature(settings.projectName, []);
+        }
+    } else {
+        resetHistory([]);
+        lastSavedSignatureRef.current = getProjectSignature(settings.projectName, []);
+    }
+
     setIsNewProjectModalOpen(false);
-    
-    lastSavedSignatureRef.current = getProjectSignature(settings.projectName, []);
     setIsProjectActive(true);
-    
     setTimeout(fitCanvasToView, 0);
-  }, [getProjectSignature, fitCanvasToView]);
+  }, [getProjectSignature, fitCanvasToView, projectTemplates, resetHistory]);
   
   const handleOpenNewProjectModal = useCallback(() => {
     confirmAction(
@@ -1232,10 +1309,11 @@ export default function App(): React.ReactNode {
   const getSaveData = useCallback((pName: string) => ({
     projectName: pName,
     shapes,
+    thumbnail: generateProjectThumbnail(shapes, canvasWidth, canvasHeight, canvasBgColor),
     canvasSettings: { width: canvasWidth, height: canvasHeight, bgColor: canvasBgColor, varName: canvasVarName },
     viewTransform,
     uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments }
-  }), [shapes, canvasWidth, canvasHeight, canvasBgColor, canvasVarName, viewTransform, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments]);
+  }), [shapes, canvasWidth, canvasHeight, canvasBgColor, canvasVarName, viewTransform, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, generateProjectThumbnail]);
 
     const handleSaveProject = useCallback(async () => {
         if (!hasUnsavedChanges && fileHandle) {
@@ -1249,7 +1327,7 @@ export default function App(): React.ReactNode {
             try {
                 await saveToHandle(fileHandle, JSON.stringify(saveData, null, 2));
                 lastSavedSignatureRef.current = getProjectSignature(projectName, shapes);
-                addRecentProject(fileHandle);
+                addRecentProject(fileHandle, saveData.thumbnail);
                 showNotification('Проєкт збережено.', 'info');
             } catch (error) {
                 console.error("Не вдалося зберегти у файл", error);
@@ -1275,7 +1353,7 @@ export default function App(): React.ReactNode {
                     setFileHandle(newHandle);
                     setProjectName(finalProjectName);
                     lastSavedSignatureRef.current = getProjectSignature(finalProjectName, shapes);
-                    addRecentProject(newHandle);
+                    addRecentProject(newHandle, saveData.thumbnail);
                     showNotification('Проєкт збережено.', 'info');
                 }
             } catch (error) {
@@ -1306,7 +1384,7 @@ export default function App(): React.ReactNode {
                 setFileHandle(newHandle);
                 setProjectName(finalProjectName);
                 lastSavedSignatureRef.current = getProjectSignature(finalProjectName, shapes);
-                addRecentProject(newHandle);
+                addRecentProject(newHandle, saveData.thumbnail);
                 showNotification('Проєкт збережено.', 'info');
             }
         } catch (error) {
@@ -1314,6 +1392,69 @@ export default function App(): React.ReactNode {
             showNotification('Не вдалося зберегти проєкт.', 'error');
         }
     }, [getSaveData, shapes, addRecentProject, getProjectSignature]);
+
+    const handleSaveTemplate = useCallback((name: string) => {
+        const newTemplate: ProjectTemplate = {
+            id: Date.now().toString(),
+            name,
+            settings: {
+                projectName: `Проєкт (з шаблону "${name}")`,
+                width: canvasWidth,
+                height: canvasHeight,
+                bgColor: canvasBgColor,
+                canvasVarName: canvasVarName,
+            },
+            shapes: JSON.parse(JSON.stringify(shapes)), // Deep copy
+        };
+    
+        setProjectTemplates(prev => {
+            const updatedTemplates = [...prev, newTemplate];
+            try {
+                localStorage.setItem('veretka-project-templates', JSON.stringify(updatedTemplates));
+                showNotification(`Шаблон "${name}" збережено.`, 'info');
+            } catch (e) {
+                console.error("Failed to save project templates to localStorage", e);
+                showNotification('Не вдалося зберегти шаблон.', 'error');
+            }
+            return updatedTemplates;
+        });
+        setIsSaveTemplateModalOpen(false);
+    }, [shapes, canvasWidth, canvasHeight, canvasBgColor, canvasVarName]);
+
+    const handleDeleteTemplate = useCallback((templateId: string) => {
+        setConfirmationAction({
+            title: "Видалити шаблон?",
+            message: "Ця дія назавжди видалить цей шаблон. Ви впевнені?",
+            onConfirm: () => {
+                setProjectTemplates(prev => {
+                    const updatedTemplates = prev.filter(t => t.id !== templateId);
+                    try {
+                        localStorage.setItem('veretka-project-templates', JSON.stringify(updatedTemplates));
+                        showNotification('Шаблон видалено.', 'info');
+                    } catch (e) {
+                        console.error("Failed to delete project template from localStorage", e);
+                        showNotification('Не вдалося видалити шаблон.', 'error');
+                    }
+                    return updatedTemplates;
+                });
+                setConfirmationAction(null);
+            }
+        });
+    }, []);
+
+    const handleRenameTemplate = useCallback((templateId: string, newName: string) => {
+        setProjectTemplates(prev => {
+            const updatedTemplates = prev.map(t => t.id === templateId ? { ...t, name: newName } : t);
+            try {
+                localStorage.setItem('veretka-project-templates', JSON.stringify(updatedTemplates));
+                showNotification('Шаблон перейменовано.', 'info');
+            } catch (e) {
+                console.error("Failed to rename project template in localStorage", e);
+                showNotification('Не вдалося перейменувати шаблон.', 'error');
+            }
+            return updatedTemplates;
+        });
+    }, []);
 
   const processLoadedData = useCallback((fileContent: string, fileName?: string, handle?: FileSystemFileHandle | null) => {
     try {
@@ -1353,7 +1494,7 @@ export default function App(): React.ReactNode {
             }
             setIsProjectActive(true);
             if (handle) {
-                addRecentProject(handle);
+                addRecentProject(handle, savedData.thumbnail);
             }
             showNotification('Проєкт успішно завантажено.', 'info');
             setTimeout(fitCanvasToView, 0);
@@ -1475,6 +1616,32 @@ export default function App(): React.ReactNode {
         showNotification(`Не вдалося відкрити проєкт: ${err instanceof Error ? err.message : 'Невідома помилка'}.`, 'error', 5000);
     }
   }, [openRecentProject, processLoadedData]);
+  
+  const handleRemoveRecentProject = useCallback((project: RecentProject) => {
+    setConfirmationAction({
+        title: `Видалити "${project.name.replace(/\.vec\.json$/, '')}"?`,
+        message: 'Ця дія видалить проєкт лише зі списку останніх, а не сам файл. Ви впевнені?',
+        onConfirm: () => {
+            removeRecentProject(project.name);
+            showNotification('Проєкт видалено зі списку.');
+            setConfirmationAction(null);
+        }
+    });
+  }, [removeRecentProject]);
+
+  const handleClearAllRecentProjects = useCallback(() => {
+    if (recentProjects.length === 0) return;
+    setConfirmationAction({
+        title: 'Очистити список останніх проєктів?',
+        message: 'Ця дія видалить усі проєкти зі списку, але не самі файли. Ви впевнені?',
+        onConfirm: () => {
+            clearAllProjects();
+            showNotification('Список останніх проєктів очищено.');
+            setConfirmationAction(null);
+        }
+    });
+  }, [clearAllProjects, recentProjects.length]);
+
 
     const handleSaveCode = useCallback(async (fileName: string) => {
         setIsSaveCodeModalOpen(false);
@@ -1532,10 +1699,50 @@ export default function App(): React.ReactNode {
     return ['rectangle', 'ellipse', 'triangle', 'right-triangle', 'rhombus', 'trapezoid', 'parallelogram', 'polygon', 'star', 'arc'].includes(selectedShape.type);
   }, [selectedShape]);
 
+  const handleToggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+            showNotification(`Не вдалося увійти в повноекранний режим: ${err.message}`, 'error');
+        });
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+        setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+        document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'F11') {
+            e.preventDefault();
+            handleToggleFullscreen();
+            return;
+        }
+
+        if (e.key === 'Escape' && isFullscreen) {
+            e.preventDefault(); // Запобігти стандартній дії браузера (миттєвий вихід)
+            if (escapeHoldTimer.current === null) { // Почати таймер, лише якщо він ще не запущений
+                escapeHoldTimer.current = window.setTimeout(() => {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    }
+                    escapeHoldTimer.current = null; // Скинути таймер
+                }, ESCAPE_HOLD_DURATION);
+            }
+        }
+
         const isEditingText = (e.target as HTMLElement).matches('input, textarea, [contenteditable="true"]');
-        if (isEditingText) return;
+        if (isEditingText || inlineEditingShapeId) return;
 
         // Modifier shortcuts
         if (e.ctrlKey || e.metaKey) {
@@ -1584,7 +1791,6 @@ export default function App(): React.ReactNode {
 
             if (dx === 0 && dy === 0) return;
 
-            // Use a type-safe deep copy to prevent accidental mutation of nested objects like `points`.
             let newShape: Shape;
             switch (shapeToMove.type) {
                 case 'line':
@@ -1643,9 +1849,27 @@ export default function App(): React.ReactNode {
                 return;
         }
     };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+            // Якщо користувач відпускає Esc, скасувати таймер
+            if (escapeHoldTimer.current !== null) {
+                clearTimeout(escapeHoldTimer.current);
+                escapeHoldTimer.current = null;
+            }
+        }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedShapeId, activeTool, activePointIndex, deletePoint, deleteShape, duplicateShape, undo, redo, canUndo, canRedo, handleSaveProject, handleSetActiveTool, shapes, updateShape]);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('keyup', handleKeyUp);
+        if (escapeHoldTimer.current) {
+            clearTimeout(escapeHoldTimer.current);
+        }
+    };
+  }, [selectedShapeId, activeTool, activePointIndex, deletePoint, deleteShape, duplicateShape, undo, redo, canUndo, canRedo, handleSaveProject, handleSetActiveTool, shapes, updateShape, inlineEditingShapeId, handleToggleFullscreen, isFullscreen]);
 
     const handleZoomChange = useCallback((newScale: number) => {
         if (!viewportRef.current) return;
@@ -1676,6 +1900,7 @@ export default function App(): React.ReactNode {
     }, [selectedShapeId, convertToPath]);
 
     const handleOpenSettings = useCallback(() => {
+        setSettingsInitialTab('canvas');
         setIsSettingsOpen(true);
     }, []);
 
@@ -1692,288 +1917,415 @@ export default function App(): React.ReactNode {
         setError(null); // Clear the Gemini error
         showNotification('Перемкнено на локальний генератор. Код буде оновлено автоматично.', 'info');
     }, []);
+    
+    const handleOpenSettingsToGenerator = useCallback(() => {
+        setSettingsInitialTab('generator');
+        setIsSettingsOpen(true);
+    }, []);
+    
+    const handleStartInlineEdit = useCallback((shapeId: string) => {
+        setInlineEditingShapeId(shapeId);
+        setSelectedShapeId(shapeId);
+    }, []);
+
+    const handleStopInlineEdit = useCallback(() => {
+        // When editing stops, create a new history state with the final text.
+        // This prevents creating a history entry for every single keystroke.
+        const shapeToUpdate = shapes.find(s => s.id === inlineEditingShapeId);
+        if (shapeToUpdate) {
+            // By calling setShapes (from useHistoryState), we create a new history entry.
+            setShapes(shapes);
+        }
+        setInlineEditingShapeId(null);
+    }, [inlineEditingShapeId, shapes, setShapes]);
+
+    const handleUpdateInlineText = useCallback((newText: string) => {
+        if (!inlineEditingShapeId) return;
+        // This is a "preview" update, it doesn't create a history state yet.
+        const currentShapes = shapes.map(s => {
+            if (s.id === inlineEditingShapeId && s.type === 'text') {
+                return { ...s, text: newText };
+            }
+            return s;
+        });
+        // We use the internal setter of useHistoryState to update without creating a history entry.
+        // This is a bit of a hack, but it's the simplest way to get the desired behavior.
+        // The proper way would be to expose an `updateCurrentState` from the hook.
+        const historySetter = (setShapes as any)._internal_setHistory;
+        if(historySetter) {
+            historySetter((prev: any) => {
+                const newHistory = [...prev];
+                newHistory[newHistory.length - 1] = currentShapes;
+                return newHistory;
+            });
+        } else {
+             // Fallback for safety, though it will create history entries
+            setShapes(currentShapes);
+        }
+
+    }, [inlineEditingShapeId, shapes, setShapes]);
+    
+    const handleSaveApiKey = useCallback((key: string | null) => {
+        setApiKey(key);
+        setIsApiKeyModalOpen(false);
+        if (key) {
+            showNotification('Ключ API збережено для поточної сесії.', 'info');
+        } else {
+            showNotification('Ключ API видалено.', 'info');
+        }
+    }, []);
+
 
   return (
     <div className="h-screen bg-[var(--bg-app)] text-[var(--text-primary)] font-sans flex flex-col selection:bg-[var(--accent-primary)] selection:text-[var(--accent-text)] overflow-hidden">
-      <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept="image/png, image/jpeg, image/gif, image/webp" onChange={handleFileSelect} />
-      <input type="file" ref={projectLoadInputRef} style={{ display: 'none' }} accept=".json,.vec.json" onChange={handleProjectFileSelected} />
-      {notification && (
-        <div className={`fixed top-5 left-1/2 -translate-x-1/2 ${notification.type === 'error' ? 'bg-[var(--destructive-bg)]' : 'bg-[var(--accent-primary)]'} text-[var(--accent-text)] py-2 px-4 rounded-lg shadow-lg z-50 animate-fade-in-down`}>
-          {notification.message}
+      {isScreenTooSmall && (
+        <div className="fixed inset-0 bg-[var(--bg-app)] flex items-center justify-center z-[100] text-center p-8">
+          <div className="flex flex-col items-center gap-6">
+            <SadMonitorIcon size={96} className="text-[var(--text-tertiary)]" />
+            <div>
+              <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-4">Розмір екрана замалий</h1>
+              <p className="text-[var(--text-secondary)]">
+                На жаль, для коректної роботи редактора "ВереTkа" потрібен більший екран.
+                <br />
+                Будь ласка, відкрийте цей застосунок на комп'ютері або планшеті.
+              </p>
+            </div>
+          </div>
         </div>
       )}
       
-      <MenuBar
-        onGenerate={handleGenerateCode}
-        showGenerateButton={generatorType === 'gemini'}
-        onNewProject={handleOpenNewProjectModal}
-        onSaveProject={handleSaveProject}
-        canSave={isProjectActive && (hasUnsavedChanges || !fileHandle)}
-        onSaveProjectAs={() => setIsSaveAsModalOpen(true)}
-        onLoadProject={handleLoadProject}
-        onExport={() => setIsExportModalOpen(true)}
-        onUndo={undo}
-        onRedo={redo}
-        canUndo={canUndo}
-        canRedo={canRedo}
-        onDuplicate={handleDuplicate}
-        isShapeSelected={!!selectedShapeId}
-        onDelete={handleDelete}
-        onConvertToPath={handleConvertToPath}
-        canConvertToPath={canConvertToPath}
-        onFitCanvasToView={fitCanvasToView}
-        showGrid={showGrid}
-        setShowGrid={setShowGrid}
-        snapToGrid={snapToGrid}
-        setSnapToGrid={setSnapToGrid}
-        showAxes={showAxes}
-        setShowAxes={setShowAxes}
-        onOpenSettings={handleOpenSettings}
-        theme={theme}
-        setTheme={setTheme}
-        projectName={projectName}
-        isProjectActive={isProjectActive}
-        onGoHome={handleGoHome}
-        onOpenAbout={() => setIsAboutModalOpen(true)}
-        onOpenHelp={() => setIsHelpModalOpen(true)}
-      />
-
-      {isProjectActive && <TopToolbar
-          activeTool={activeTool}
-          setActiveTool={handleSetActiveTool}
-          drawMode={drawMode}
-          setDrawMode={setDrawMode}
-          isFillEnabled={isFillEnabled}
-          setIsFillEnabled={setIsFillEnabled}
-          isStrokeEnabled={isStrokeEnabled}
-          setIsStrokeEnabled={setIsStrokeEnabled}
-          fillColor={fillColor}
-          setFillColor={setFillColor}
-          setPreviewFillColor={setPreviewFillColor}
-          strokeColor={strokeColor}
-          setStrokeColor={setStrokeColor}
-          setPreviewStrokeColor={setPreviewStrokeColor}
-          strokeWidth={strokeWidth}
-          setStrokeWidth={setStrokeWidth}
-          numberOfSides={numberOfSides}
-          setNumberOfSides={setNumberOfSides}
-          onGenerate={handleGenerateCode}
-          showGenerateButton={generatorType === 'gemini'}
-          onClear={handleClearCanvas}
-          isGenerating={isLoading}
-          hasShapes={shapes.length > 0}
-          onUndo={undo}
-          onRedo={redo}
-          canUndo={canUndo}
-          canRedo={canRedo}
-          onDuplicate={handleDuplicate}
-          isShapeSelected={!!selectedShapeId}
-          onOpenMobileLeft={handleOpenMobileLeft}
-          onOpenMobileRight={handleOpenMobileRight}
-          theme={theme}
-          setTheme={setTheme}
-          selectedShape={selectedShape}
-          updateShape={updateShape}
-          setShapePreview={setShapePreview}
-          cancelShapePreview={cancelShapePreview}
-          textColor={textColor}
-          setTextColor={setTextColor}
-          setPreviewTextColor={setPreviewTextColor}
-          textFont={textFont}
-          setTextFont={setTextFont}
-          textFontSize={textFontSize}
-          setTextFontSize={setTextFontSize}
-      />}
-
-       <main className="flex-grow grid grid-cols-1 md:grid-cols-[380px_1fr] lg:grid-cols-[380px_1fr_260px] min-h-0">
-         
-        {/* Left Column */}
-        {isProjectActive && <aside className={`${isLeftPanelVisible ? 'fixed inset-0 bg-[var(--bg-app)]/95 backdrop-blur-sm z-40 p-4 flex flex-col' : 'hidden'} md:static md:bg-transparent md:z-auto md:p-0 md:flex flex-col gap-4 min-h-0 bg-[var(--bg-primary)]/50 md:p-2`}>
-            <div className="md:hidden flex justify-end mb-4">
-                <button onClick={() => setIsLeftPanelVisible(false)} className="p-2 rounded-lg text-[var(--accent-text)]"><XIcon/></button>
+      <div className={isScreenTooSmall ? 'hidden' : 'h-full flex flex-col'}>
+          <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept="image/png, image/jpeg, image/gif, image/webp" onChange={handleFileSelect} />
+          <input type="file" ref={projectLoadInputRef} style={{ display: 'none' }} accept=".json,.vec.json" onChange={handleProjectFileSelected} />
+          {notification && (
+            <div className={`fixed top-5 left-1/2 -translate-x-1/2 ${notification.type === 'error' ? 'bg-[var(--destructive-bg)]' : 'bg-[var(--accent-primary)]'} text-[var(--accent-text)] py-2 px-4 rounded-lg shadow-lg z-50 animate-fade-in-down`}>
+              {notification.message}
             </div>
-            <LeftToolbar
-                activeTool={activeTool}
-                setActiveTool={handleSetActiveTool}
-            />
-            <div className="flex-1 min-h-0 mt-2">
-                <CodeDisplay 
-                    codeLines={generatedCodeLines} isLoading={isLoading} error={error} onUpdate={handleGenerateCode}
-                    onPreview={() => setIsPreviewOpen(true)} hasUnsyncedChanges={hasUnsyncedChangesWithCode}
-                    opacity={1} setOpacity={() => {}}
-                    selectedShapeId={selectedShapeId}
-                    highlightCodeOnSelection={highlightCodeOnSelection}
-                    setHighlightCodeOnSelection={setHighlightCodeOnSelection}
-                    showLineNumbers={showLineNumbers}
-                    setShowLineNumbers={setShowLineNumbers}
-                    showComments={showComments}
-                    setShowComments={setShowComments}
-                    generatorType={generatorType}
-                    onSwitchToLocalGenerator={handleSwitchToLocalFromError}
-                    onSaveCode={() => setIsSaveCodeModalOpen(true)}
-                    onOpenOrRunCodeOnline={handleOpenOrRunCodeOnline}
-                />
-            </div>
-        </aside>}
-
-         {/* Center Content */}
-        <div className={`flex flex-col min-w-0 min-h-0 p-2 md:p-4 ${!isProjectActive && "md:col-start-1 lg:col-start-1 md:col-span-3 lg:col-span-3"}`}>
-            {isProjectActive ? (
-                <>
-                    <div ref={viewportRef} className="bg-[var(--bg-secondary)] rounded-lg shadow-inner flex-grow overflow-hidden relative grid" style={{
-                        gridTemplateRows: showAxes ? `${RULER_THICKNESS}px 1fr` : '1fr',
-                        gridTemplateColumns: showAxes ? `${RULER_THICKNESS}px 1fr` : '1fr',
-                    }}>
-                        {showAxes && <div className="bg-[var(--ruler-bg)] z-10 flex items-center justify-center p-1"><AxesIcon size={16}/></div>}
-                        {showAxes && <Ruler orientation="horizontal" transform={viewTransform} length={viewportSize.width - RULER_THICKNESS} canvasSize={{ width: canvasWidth, height: canvasHeight }} />}
-                        {showAxes && <Ruler orientation="vertical" transform={viewTransform} length={viewportSize.height - RULER_THICKNESS} canvasSize={{ width: canvasWidth, height: canvasHeight }} />}
-                        <div className="relative overflow-hidden" style={{ gridRow: showAxes ? 2 : '1 / -1', gridColumn: showAxes ? 2 : '1 / -1' }}>
-                            <Canvas
-                                width={canvasWidth} height={canvasHeight} backgroundColor={previewCanvasBgColor ?? canvasBgColor} shapes={displayedShapes} addShape={addShape} updateShape={updateShape} activeTool={activeTool} drawMode={drawMode}
-                                fillColor={isFillEnabled ? (previewFillColor ?? fillColor) : 'none'} strokeColor={isStrokeEnabled ? (previewStrokeColor ?? strokeColor) : 'none'} strokeWidth={isStrokeEnabled ? strokeWidth : 0}
-                                textColor={previewTextColor ?? textColor}
-                                textFont={textFont}
-                                textFontSize={textFontSize}
-                                numberOfSides={numberOfSides} selectedShapeId={selectedShapeId} onSelectShape={handleSelectShape} isDrawingPolyline={isDrawingPolyline} polylinePoints={polylinePoints} setPolylinePoints={setPolylinePoints}
-                                onCompletePolyline={handleCompletePolyline} onCancelPolyline={handleCancelPolyline} isDrawingBezier={isDrawingBezier} bezierPoints={bezierPoints} setBezierPoints={setBezierPoints}
-                                onCompleteBezier={handleCompleteBezier} onCancelBezier={handleCancelBezier} showGrid={showGrid} gridSize={gridSize} snapStep={snapToGrid ? gridSnapStep : 1} viewTransform={viewTransform}
-                                setViewTransform={setViewTransform} activePointIndex={activePointIndex} setActivePointIndex={setActivePointIndex} showCursorCoords={showCursorCoords} showRotationAngle={showRotationAngle}
-                                pendingImage={pendingImage} setPendingImage={setPendingImage} setCursorPos={setCursorPos}
-                            />
-                        </div>
-                        <button onClick={fitCanvasToView} title="Показати все полотно" className="absolute bottom-4 right-4 z-10 p-2 bg-[var(--bg-primary)] text-[var(--text-secondary)] rounded-full shadow-lg hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
-                            <FitToScreenIcon />
-                        </button>
-                    </div>
-                    <StatusBar 
-                        zoomLevel={viewTransform.scale} 
-                        cursorPos={cursorPos}
-                        onZoomChange={handleZoomChange}
-                        onResetZoom={handleResetZoom}
-                    />
-                </>
-            ) : (
-                <WelcomeScreen 
-                    onCreateNew={handleOpenNewProjectModal}
-                    onLoadProject={handleLoadProject}
-                    recentProjects={recentProjects}
-                    onOpenRecent={handleOpenRecent}
-                />
-            )}
-        </div>
-        
-         {/* Right Column */}
-        {isProjectActive && <aside className={`${isRightPanelVisible ? 'fixed inset-0 bg-[var(--bg-app)]/95 backdrop-blur-sm z-40 p-4 flex flex-col' : 'hidden'} lg:static lg:bg-transparent lg:z-auto lg:p-0 lg:flex flex-col gap-4 overflow-y-auto md:p-2`}>
-             <div className="lg:hidden flex justify-end mb-4">
-                <button onClick={() => setIsRightPanelVisible(false)} className="p-2 rounded-lg text-[var(--accent-text)]"><XIcon /></button>
-            </div>
-             <div className="flex-1 min-h-0">
-                <ShapeList
-                    shapes={shapes}
-                    selectedShapeId={selectedShapeId}
-                    onSelectShape={handleSelectShape}
-                    onDeleteShape={deleteShape}
-                    onMoveShape={moveShape}
-                    onUpdateShape={updateShape}
-                    onReorderShape={reorderShape}
-                    showTkinterNames={showTkinterNames}
-                />
-            </div>
-            <div className="flex-[2_2_0%] min-h-0">
-                <PropertyEditor 
-                    selectedShape={selectedShape} updateShape={updateShape} deleteShape={deleteShape} duplicateShape={duplicateShape}
-                    activeTool={activeTool} activePointIndex={activePointIndex} setActivePointIndex={setActivePointIndex}
-                    deletePoint={deletePoint} addPoint={addPoint} convertToPath={convertToPath} showNotification={showNotification}
-                    setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview}
-                />
-            </div>
-        </aside>}
-      </main>
-
-       {isSettingsOpen && (
-        <SettingsModal
-          onClose={() => setIsSettingsOpen(false)}
-          canvasWidth={canvasWidth} setCanvasWidth={setCanvasWidth} canvasHeight={canvasHeight} setCanvasHeight={setCanvasHeight} 
-          canvasBgColor={canvasBgColor} 
-          setCanvasBgColor={(color) => { setCanvasBgColor(color); setPreviewCanvasBgColor(null); }}
-          setPreviewCanvasBgColor={setPreviewCanvasBgColor}
-          canvasVarName={canvasVarName}
-          setCanvasVarName={setCanvasVarName}
-          gridSize={gridSize} setGridSize={setGridSize} gridSnapStep={gridSnapStep} setGridSnapStep={setGridSnapStep} showTkinterNames={showTkinterNames} setShowTkinterNames={setShowTkinterNames}
-          showAxes={showAxes} setShowAxes={setShowAxes} showCursorCoords={showCursorCoords} setShowCursorCoords={setShowCursorCoords}
-          showRotationAngle={showRotationAngle} setShowRotationAngle={setShowRotationAngle}
-          showLineNumbers={showLineNumbers} setShowLineNumbers={setShowLineNumbers}
-          generatorType={generatorType} setGeneratorType={setGeneratorType}
-          highlightCodeOnSelection={highlightCodeOnSelection} setHighlightCodeOnSelection={setHighlightCodeOnSelection}
-          autoGenerateComments={autoGenerateComments} setAutoGenerateComments={setAutoGenerateComments}
-        />
-      )}
-      {isPreviewOpen && shapesAtGenerationTime && (
-        <PreviewModal 
+          )}
+          
+          <MenuBar
+            onGenerate={handleGenerateCode}
+            showGenerateButton={generatorType === 'gemini'}
+            onNewProject={handleOpenNewProjectModal}
+            onSaveProject={handleSaveProject}
+            canSave={isProjectActive && (hasUnsavedChanges || !fileHandle)}
+            onSaveProjectAs={() => setIsSaveAsModalOpen(true)}
+            onSaveAsTemplate={() => setIsSaveTemplateModalOpen(true)}
+            onLoadProject={handleLoadProject}
+            onExport={() => setIsExportModalOpen(true)}
+            onUndo={undo}
+            onRedo={redo}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            onDuplicate={handleDuplicate}
+            isShapeSelected={!!selectedShapeId}
+            onDelete={handleDelete}
+            onConvertToPath={handleConvertToPath}
+            canConvertToPath={canConvertToPath}
+            onFitCanvasToView={fitCanvasToView}
+            onToggleFullscreen={handleToggleFullscreen}
+            isFullscreen={isFullscreen}
+            showGrid={showGrid}
+            setShowGrid={setShowGrid}
+            snapToGrid={snapToGrid}
+            setSnapToGrid={setSnapToGrid}
+            showAxes={showAxes}
+            setShowAxes={setShowAxes}
+            onOpenSettings={handleOpenSettings}
+            theme={theme}
+            setTheme={setTheme}
             projectName={projectName}
-            shapes={shapesAtGenerationTime} 
-            width={canvasWidth} 
-            height={canvasHeight} 
-            backgroundColor={canvasBgColor} 
-            onClose={() => setIsPreviewOpen(false)} 
-        />
-      )}
-       {isExportModalOpen && (
-        <ExportModal
-            onClose={() => setIsExportModalOpen(false)}
-            onExport={handleExport}
-        />
-      )}
-       {isNewProjectModalOpen && (
-        <NewProjectModal
-            onClose={() => setIsNewProjectModalOpen(false)}
-            onCreate={handleNewProject}
-            initialSettings={{
-                projectName: 'Новий малюнок. ВереTkа',
-                width: canvasWidth,
-                height: canvasHeight,
-                bgColor: '#ffffff',
-                canvasVarName: 'c',
-            }}
-        />
-      )}
-      {confirmationAction && (
-          <ConfirmationModal
-            isOpen={true}
-            title={confirmationAction.title}
-            message={confirmationAction.message}
-            onConfirm={confirmationAction.onConfirm}
-            onClose={() => setConfirmationAction(null)}
+            isProjectActive={isProjectActive}
+            onGoHome={handleGoHome}
+            onOpenAbout={() => setIsAboutModalOpen(true)}
+            onOpenHelp={() => setIsHelpModalOpen(true)}
+            onOpenFeedback={() => setIsFeedbackModalOpen(true)}
           />
-      )}
-      {isSaveAsModalOpen && (
-        <SaveAsModal
-            isOpen={true}
-            onClose={() => setIsSaveAsModalOpen(false)}
-            onSave={handleSaveProjectAs}
-            currentProjectName={projectName}
-        />
-      )}
-      {isSaveCodeModalOpen && (
-        <SaveCodeModal
-            isOpen={true}
-            onClose={() => setIsSaveCodeModalOpen(false)}
-            onSave={handleSaveCode}
-            currentProjectName={projectName.replace(/\. ВереTkа$/, '')}
-        />
-      )}
-      {isAboutModalOpen && (
-        <AboutModal
-            isOpen={isAboutModalOpen}
-            onClose={() => setIsAboutModalOpen(false)}
-        />
-      )}
-       {isHelpModalOpen && (
-        <HelpModal
-            isOpen={isHelpModalOpen}
-            onClose={() => setIsHelpModalOpen(false)}
-        />
-      )}
+
+          {isProjectActive && <TopToolbar
+              activeTool={activeTool}
+              setActiveTool={handleSetActiveTool}
+              drawMode={drawMode}
+              setDrawMode={setDrawMode}
+              isFillEnabled={isFillEnabled}
+              setIsFillEnabled={setIsFillEnabled}
+              isStrokeEnabled={isStrokeEnabled}
+              setIsStrokeEnabled={setIsStrokeEnabled}
+              fillColor={fillColor}
+              setFillColor={setFillColor}
+              setPreviewFillColor={setPreviewFillColor}
+              strokeColor={strokeColor}
+              setStrokeColor={setStrokeColor}
+              setPreviewStrokeColor={setPreviewStrokeColor}
+              strokeWidth={strokeWidth}
+              setStrokeWidth={setStrokeWidth}
+              numberOfSides={numberOfSides}
+              setNumberOfSides={setNumberOfSides}
+              onGenerate={handleGenerateCode}
+              showGenerateButton={generatorType === 'gemini'}
+              onClear={handleClearCanvas}
+              isGenerating={isLoading}
+              hasShapes={shapes.length > 0}
+              onUndo={undo}
+              onRedo={redo}
+              canUndo={canUndo}
+              canRedo={canRedo}
+              onDuplicate={handleDuplicate}
+              isShapeSelected={!!selectedShapeId}
+              onOpenMobileLeft={handleOpenMobileLeft}
+              onOpenMobileRight={handleOpenMobileRight}
+              theme={theme}
+              setTheme={setTheme}
+              onToggleFullscreen={handleToggleFullscreen}
+              isFullscreen={isFullscreen}
+              selectedShape={selectedShape}
+              updateShape={updateShape}
+              setShapePreview={setShapePreview}
+              cancelShapePreview={cancelShapePreview}
+              textColor={textColor}
+              setTextColor={setTextColor}
+              setPreviewTextColor={setPreviewTextColor}
+              textFont={textFont}
+              setTextFont={setTextFont}
+              textFontSize={textFontSize}
+              setTextFontSize={setTextFontSize}
+          />}
+
+           <main className="flex-grow grid grid-cols-1 md:grid-cols-[380px_1fr] lg:grid-cols-[380px_1fr_260px] min-h-0">
+             
+            {/* Left Column */}
+            {isProjectActive && <aside className={`${isLeftPanelVisible ? 'fixed inset-0 bg-[var(--bg-app)]/95 backdrop-blur-sm z-40 p-4 flex flex-col' : 'hidden'} md:static md:bg-transparent md:z-auto md:p-0 md:flex flex-col gap-4 min-h-0 bg-[var(--bg-primary)]/50 md:p-2`}>
+                <div className="md:hidden flex justify-end mb-4">
+                    <button onClick={() => setIsLeftPanelVisible(false)} className="p-2 rounded-lg text-[var(--accent-text)]"><XIcon/></button>
+                </div>
+                <LeftToolbar
+                    activeTool={activeTool}
+                    setActiveTool={handleSetActiveTool}
+                />
+                <div className="flex-1 min-h-0 mt-2">
+                    <CodeDisplay 
+                        codeLines={generatedCodeLines} isLoading={isLoading} error={error} onUpdate={handleGenerateCode}
+                        onPreview={() => setIsPreviewOpen(true)} hasUnsyncedChanges={hasUnsyncedChangesWithCode}
+                        opacity={1} setOpacity={() => {}}
+                        selectedShapeId={selectedShapeId}
+                        highlightCodeOnSelection={highlightCodeOnSelection}
+                        setHighlightCodeOnSelection={setHighlightCodeOnSelection}
+                        showLineNumbers={showLineNumbers}
+                        setShowLineNumbers={setShowLineNumbers}
+                        showComments={showComments}
+                        setShowComments={setShowComments}
+                        generatorType={generatorType}
+                        onSwitchToLocalGenerator={handleSwitchToLocalFromError}
+                        onOpenSettingsToGenerator={handleOpenSettingsToGenerator}
+                        onSaveCode={() => setIsSaveCodeModalOpen(true)}
+                        onOpenOrRunCodeOnline={handleOpenOrRunCodeOnline}
+                    />
+                </div>
+            </aside>}
+
+             {/* Center Content */}
+            <div className={`flex flex-col min-w-0 min-h-0 p-2 md:p-4 ${!isProjectActive && "md:col-start-1 lg:col-start-1 md:col-span-3 lg:col-span-3"}`}>
+                {isProjectActive ? (
+                    <>
+                        <div ref={viewportRef} className="bg-[var(--bg-secondary)] rounded-lg shadow-inner flex-grow overflow-hidden relative grid" style={{
+                            gridTemplateRows: showAxes ? `${RULER_THICKNESS}px 1fr` : '1fr',
+                            gridTemplateColumns: showAxes ? `${RULER_THICKNESS}px 1fr` : '1fr',
+                        }}>
+                            {showAxes && <div className="bg-[var(--ruler-bg)] z-10 flex items-center justify-center p-1"><AxesIcon size={16}/></div>}
+                            {showAxes && <Ruler orientation="horizontal" transform={viewTransform} length={viewportSize.width - RULER_THICKNESS} canvasSize={{ width: canvasWidth, height: canvasHeight }} />}
+                            {showAxes && <Ruler orientation="vertical" transform={viewTransform} length={viewportSize.height - RULER_THICKNESS} canvasSize={{ width: canvasWidth, height: canvasHeight }} />}
+                            <div className="relative overflow-hidden" style={{ gridRow: showAxes ? 2 : '1 / -1', gridColumn: showAxes ? 2 : '1 / -1' }}>
+                                 {inlineEditingShape && (
+                                    <InlineTextEditor
+                                        shape={inlineEditingShape}
+                                        viewTransform={viewTransform}
+                                        onUpdateText={handleUpdateInlineText}
+                                        onStopEditing={handleStopInlineEdit}
+                                        canvasOffset={{ 
+                                            left: showAxes ? RULER_THICKNESS : 0, 
+                                            top: showAxes ? RULER_THICKNESS : 0 
+                                        }}
+                                    />
+                                )}
+                                <Canvas
+                                    width={canvasWidth} height={canvasHeight} backgroundColor={previewCanvasBgColor ?? canvasBgColor} shapes={displayedShapes} addShape={addShape} updateShape={updateShape} activeTool={activeTool} drawMode={drawMode}
+                                    fillColor={isFillEnabled ? (previewFillColor ?? fillColor) : 'none'} strokeColor={isStrokeEnabled ? (previewStrokeColor ?? strokeColor) : 'none'} strokeWidth={isStrokeEnabled ? strokeWidth : 0}
+                                    textColor={previewTextColor ?? textColor}
+                                    textFont={textFont}
+                                    textFontSize={textFontSize}
+                                    numberOfSides={numberOfSides} selectedShapeId={selectedShapeId} onSelectShape={handleSelectShape} isDrawingPolyline={isDrawingPolyline} polylinePoints={polylinePoints} setPolylinePoints={setPolylinePoints}
+                                    onCompletePolyline={handleCompletePolyline} onCancelPolyline={handleCancelPolyline} isDrawingBezier={isDrawingBezier} bezierPoints={bezierPoints} setBezierPoints={setBezierPoints}
+                                    onCompleteBezier={handleCompleteBezier} onCancelBezier={handleCancelBezier} showGrid={showGrid} gridSize={gridSize} snapStep={snapToGrid ? gridSnapStep : 1} viewTransform={viewTransform}
+                                    setViewTransform={setViewTransform} activePointIndex={activePointIndex} setActivePointIndex={setActivePointIndex} showCursorCoords={showCursorCoords} showRotationAngle={showRotationAngle}
+                                    pendingImage={pendingImage} setPendingImage={setPendingImage} setCursorPos={setCursorPos}
+                                    showNotification={showNotification}
+                                    onStartInlineEdit={handleStartInlineEdit}
+                                    inlineEditingShapeId={inlineEditingShapeId}
+                                />
+                            </div>
+                            <button onClick={fitCanvasToView} title="Показати все полотно" className="absolute bottom-4 right-4 z-10 p-2 bg-[var(--bg-primary)] text-[var(--text-secondary)] rounded-full shadow-lg hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
+                                <FitToScreenIcon />
+                            </button>
+                        </div>
+                        <StatusBar 
+                            zoomLevel={viewTransform.scale} 
+                            cursorPos={cursorPos}
+                            onZoomChange={handleZoomChange}
+                            onResetZoom={handleResetZoom}
+                        />
+                    </>
+                ) : (
+                    <WelcomeScreen 
+                        onCreateNew={handleOpenNewProjectModal}
+                        onLoadProject={handleLoadProject}
+                        recentProjects={recentProjects}
+                        onOpenRecent={handleOpenRecent}
+                        onRemoveProject={handleRemoveRecentProject}
+                        onClearAllProjects={handleClearAllRecentProjects}
+                    />
+                )}
+            </div>
+            
+             {/* Right Column */}
+            {isProjectActive && <aside className={`${isRightPanelVisible ? 'fixed inset-0 bg-[var(--bg-app)]/95 backdrop-blur-sm z-40 p-4 flex flex-col' : 'hidden'} lg:static lg:bg-transparent lg:z-auto lg:p-0 lg:flex flex-col gap-4 overflow-y-auto md:p-2`}>
+                 <div className="lg:hidden flex justify-end mb-4">
+                    <button onClick={() => setIsRightPanelVisible(false)} className="p-2 rounded-lg text-[var(--accent-text)]"><XIcon /></button>
+                </div>
+                 <div className="flex-1 min-h-0">
+                    <ShapeList
+                        shapes={shapes}
+                        selectedShapeId={selectedShapeId}
+                        onSelectShape={handleSelectShape}
+                        onDeleteShape={deleteShape}
+                        onMoveShape={moveShape}
+                        onUpdateShape={updateShape}
+                        onReorderShape={reorderShape}
+                        showTkinterNames={showTkinterNames}
+                    />
+                </div>
+                <div className="flex-[2_2_0%] min-h-0">
+                    <PropertyEditor 
+                        selectedShape={selectedShape} updateShape={updateShape} deleteShape={deleteShape} duplicateShape={duplicateShape}
+                        activeTool={activeTool} activePointIndex={activePointIndex} setActivePointIndex={setActivePointIndex}
+                        deletePoint={deletePoint} addPoint={addPoint} convertToPath={convertToPath} showNotification={showNotification}
+                        setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview}
+                    />
+                </div>
+            </aside>}
+          </main>
+
+           {isSettingsOpen && (
+            <SettingsModal
+              initialTab={settingsInitialTab}
+              onClose={() => setIsSettingsOpen(false)}
+              onOpenApiKeyModal={() => setIsApiKeyModalOpen(true)}
+              onDeleteTemplate={handleDeleteTemplate}
+              onRenameTemplate={handleRenameTemplate}
+              templates={projectTemplates}
+              canvasWidth={canvasWidth} setCanvasWidth={setCanvasWidth} canvasHeight={canvasHeight} setCanvasHeight={setCanvasHeight} 
+              canvasBgColor={canvasBgColor} 
+              setCanvasBgColor={(color) => { setCanvasBgColor(color); setPreviewCanvasBgColor(null); }}
+              setPreviewCanvasBgColor={setPreviewCanvasBgColor}
+              canvasVarName={canvasVarName}
+              setCanvasVarName={setCanvasVarName}
+              gridSize={gridSize} setGridSize={setGridSize} gridSnapStep={gridSnapStep} setGridSnapStep={setGridSnapStep} showTkinterNames={showTkinterNames} setShowTkinterNames={setShowTkinterNames}
+              showAxes={showAxes} setShowAxes={setShowAxes} showCursorCoords={showCursorCoords} setShowCursorCoords={setShowCursorCoords}
+              showRotationAngle={showRotationAngle} setShowRotationAngle={setShowRotationAngle}
+              showLineNumbers={showLineNumbers} setShowLineNumbers={setShowLineNumbers}
+              generatorType={generatorType} setGeneratorType={setGeneratorType}
+              highlightCodeOnSelection={highlightCodeOnSelection} setHighlightCodeOnSelection={setHighlightCodeOnSelection}
+              autoGenerateComments={autoGenerateComments} setAutoGenerateComments={setAutoGenerateComments}
+            />
+          )}
+          {isApiKeyModalOpen && (
+            <ApiKeyModal
+                isOpen={isApiKeyModalOpen}
+                onClose={() => setIsApiKeyModalOpen(false)}
+                onSave={handleSaveApiKey}
+                currentApiKey={apiKey}
+            />
+          )}
+          {isPreviewOpen && shapesAtGenerationTime && (
+            <PreviewModal 
+                projectName={projectName}
+                shapes={shapesAtGenerationTime} 
+                width={canvasWidth} 
+                height={canvasHeight} 
+                backgroundColor={canvasBgColor} 
+                onClose={() => setIsPreviewOpen(false)} 
+            />
+          )}
+           {isExportModalOpen && (
+            <ExportModal
+                onClose={() => setIsExportModalOpen(false)}
+                onExport={handleExport}
+            />
+          )}
+           {isNewProjectModalOpen && (
+            <NewProjectModal
+                onClose={() => setIsNewProjectModalOpen(false)}
+                onCreate={handleNewProject}
+                initialSettings={{
+                    projectName: 'Новий малюнок. ВереTkа',
+                    width: canvasWidth,
+                    height: canvasHeight,
+                    bgColor: '#ffffff',
+                    canvasVarName: 'c',
+                }}
+                templates={projectTemplates}
+            />
+          )}
+          {confirmationAction && (
+              <ConfirmationModal
+                isOpen={true}
+                title={confirmationAction.title}
+                message={confirmationAction.message}
+                onConfirm={confirmationAction.onConfirm}
+                onClose={() => setConfirmationAction(null)}
+              />
+          )}
+          {isSaveAsModalOpen && (
+            <SaveAsModal
+                isOpen={true}
+                onClose={() => setIsSaveAsModalOpen(false)}
+                onSave={handleSaveProjectAs}
+                currentProjectName={projectName}
+            />
+          )}
+          {isSaveCodeModalOpen && (
+            <SaveCodeModal
+                isOpen={true}
+                onClose={() => setIsSaveCodeModalOpen(false)}
+                onSave={handleSaveCode}
+                currentProjectName={projectName.replace(/\. ВереTkа$/, '')}
+            />
+          )}
+          {isSaveTemplateModalOpen && (
+            <SaveTemplateModal
+                onClose={() => setIsSaveTemplateModalOpen(false)}
+                onSave={handleSaveTemplate}
+            />
+          )}
+          {isAboutModalOpen && (
+            <AboutModal
+                isOpen={isAboutModalOpen}
+                onClose={() => setIsAboutModalOpen(false)}
+                version={APP_VERSION}
+            />
+          )}
+           {isHelpModalOpen && (
+            <HelpModal
+                isOpen={isHelpModalOpen}
+                onClose={() => setIsHelpModalOpen(false)}
+            />
+          )}
+          {isFeedbackModalOpen && (
+            <FeedbackModal
+                onClose={() => setIsFeedbackModalOpen(false)}
+                appVersion={APP_VERSION}
+            />
+          )}
+      </div>
     </div>
   );
 }

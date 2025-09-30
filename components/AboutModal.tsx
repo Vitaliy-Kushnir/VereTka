@@ -4,9 +4,10 @@ import { XIcon } from './icons';
 interface AboutModalProps {
   isOpen: boolean;
   onClose: () => void;
+  version: string;
 }
 
-const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
+const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, version }) => {
     if (!isOpen) return null;
 
     return (
@@ -50,7 +51,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
                     </div>
 
                      <p className="text-xs text-center text-[var(--text-tertiary)] pt-4">
-                        Версія 1.0.3
+                        Версія {version}
                     </p>
                 </div>
 

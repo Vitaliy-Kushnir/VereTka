@@ -1,36 +1,56 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { XIcon } from './icons';
-import { InputWrapper, Label, NumberInput, ColorInput } from './FormControls';
-
-export interface NewProjectSettings {
-  projectName: string;
-  width: number;
-  height: number;
-  bgColor: string;
-  canvasVarName: string;
-}
+import { InputWrapper, Label, NumberInput, ColorInput, Select } from './FormControls';
+import { type ProjectTemplate, type NewProjectSettings } from '../types';
 
 interface NewProjectModalProps {
   onClose: () => void;
-  onCreate: (settings: NewProjectSettings) => void;
+  onCreate: (settings: NewProjectSettings, templateId: string | null) => void;
   initialSettings: NewProjectSettings;
+  templates: ProjectTemplate[];
 }
 
-const NewProjectModal: React.FC<NewProjectModalProps> = ({ onClose, onCreate, initialSettings }) => {
-    const [projectName, setProjectName] = useState(initialSettings.projectName);
+const NewProjectModal: React.FC<NewProjectModalProps> = ({ onClose, onCreate, initialSettings, templates }) => {
+    const [selectedTemplateId, setSelectedTemplateId] = useState<string | 'blank'>(templates.length > 0 ? 'blank' : 'blank');
+    
+    const [projectName, setProjectName] = useState('');
     const [width, setWidth] = useState(initialSettings.width);
     const [height, setHeight] = useState(initialSettings.height);
     const [bgColor, setBgColor] = useState(initialSettings.bgColor);
     const [canvasVarName, setCanvasVarName] = useState(initialSettings.canvasVarName);
 
+    useEffect(() => {
+        if (selectedTemplateId === 'blank') {
+            setProjectName(initialSettings.projectName);
+            setWidth(initialSettings.width);
+            setHeight(initialSettings.height);
+            setBgColor(initialSettings.bgColor);
+            setCanvasVarName(initialSettings.canvasVarName);
+        } else {
+            const selectedTemplate = templates.find(t => t.id === selectedTemplateId);
+            if (selectedTemplate) {
+                const { settings } = selectedTemplate;
+                setProjectName(settings.projectName);
+                setWidth(settings.width);
+                setHeight(settings.height);
+                setBgColor(settings.bgColor);
+                setCanvasVarName(settings.canvasVarName);
+            }
+        }
+    }, [selectedTemplateId, templates, initialSettings]);
+
+
     const handleCreate = () => {
-        onCreate({ 
-            projectName, 
-            width, 
-            height, 
-            bgColor, 
-            canvasVarName: canvasVarName.trim() || 'c' 
-        });
+        onCreate(
+            { 
+                projectName, 
+                width, 
+                height, 
+                bgColor, 
+                canvasVarName: canvasVarName.trim() || 'c' 
+            },
+            selectedTemplateId === 'blank' ? null : selectedTemplateId
+        );
     };
     
     const handleCanvasNameChange = (value: string) => {
@@ -60,6 +80,28 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ onClose, onCreate, in
                 </header>
 
                 <div className="p-6 space-y-4">
+                    {templates.length > 0 && (
+                        <>
+                             <InputWrapper>
+                                <Label htmlFor="template-selection">Створити з:</Label>
+                                <Select
+                                    id="template-selection"
+                                    value={selectedTemplateId}
+                                    onChange={setSelectedTemplateId}
+                                >
+                                    <option value="blank">Чисте полотно</option>
+                                    <optgroup label="Ваші шаблони">
+                                        {templates.map(template => (
+                                            <option key={template.id} value={template.id}>
+                                                {template.name} ({template.settings.width}x{template.settings.height}, {template.shapes.length} об.)
+                                            </option>
+                                        ))}
+                                    </optgroup>
+                                </Select>
+                            </InputWrapper>
+                            <hr className="border-[var(--border-secondary)] my-2" />
+                        </>
+                    )}
                     <InputWrapper>
                         <Label htmlFor="projectName">Назва проєкту:</Label>
                         <input 
@@ -68,10 +110,10 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ onClose, onCreate, in
                             value={projectName} 
                             onChange={e => setProjectName(e.target.value)}
                             className="bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2 py-1 w-full border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none"
+                            autoFocus
                         />
                     </InputWrapper>
-                    <hr className="border-[var(--border-secondary)] my-2" />
-                    <h3 className="text-lg font-semibold text-[var(--text-secondary)] pt-2">Налаштування полотна</h3>
+                    <h3 className="text-lg font-semibold text-[var(--text-tertiary)] pt-2">Налаштування полотна</h3>
                     <InputWrapper>
                         <Label htmlFor="canvasWidth">Ширина:</Label>
                         <NumberInput id="canvasWidth" value={width} onChange={setWidth} min={100} step={10} />

@@ -4,6 +4,7 @@ export interface RecentProject {
     name: string;
     handle: FileSystemFileHandle;
     lastOpened: Date;
+    thumbnail?: string;
 }
 
 const DB_NAME = 'VeretkaDB';
@@ -41,7 +42,7 @@ export const useRecentProjects = () => {
             const request = store.getAll();
             request.onsuccess = () => {
                 const recent = request.result as RecentProject[];
-                recent.sort((a, b) => b.lastOpened.getTime() - a.lastOpened.getTime());
+                recent.sort((a, b) => new Date(b.lastOpened).getTime() - new Date(a.lastOpened).getTime());
                 setProjects(recent);
             };
             request.onerror = () => {
@@ -58,7 +59,7 @@ export const useRecentProjects = () => {
         }
     }, [loadProjects]);
 
-    const addRecentProject = useCallback(async (handle: FileSystemFileHandle) => {
+    const addRecentProject = useCallback(async (handle: FileSystemFileHandle, thumbnail?: string) => {
         if (!handle || typeof indexedDB === 'undefined') return;
         try {
             const db = await getDb();
@@ -69,6 +70,7 @@ export const useRecentProjects = () => {
                 name: handle.name,
                 handle,
                 lastOpened: new Date(),
+                thumbnail,
             };
             store.put(newProject);
             
@@ -76,7 +78,7 @@ export const useRecentProjects = () => {
             allItemsReq.onsuccess = () => {
                 if (allItemsReq.result.length > MAX_RECENT_PROJECTS) {
                     const allItems = allItemsReq.result as RecentProject[];
-                    allItems.sort((a, b) => a.lastOpened.getTime() - b.lastOpened.getTime());
+                    allItems.sort((a, b) => new Date(a.lastOpened).getTime() - new Date(b.lastOpened).getTime());
                     const keyToDelete = allItems[0].name;
                     store.delete(keyToDelete);
                 }
@@ -87,6 +89,36 @@ export const useRecentProjects = () => {
             };
         } catch (error) {
             console.error("Failed to add recent project:", error);
+        }
+    }, [loadProjects]);
+
+    const removeRecentProject = useCallback(async (projectName: string) => {
+        if (typeof indexedDB === 'undefined') return;
+        try {
+            const db = await getDb();
+            const transaction = db.transaction(STORE_NAME, 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            store.delete(projectName);
+            transaction.oncomplete = () => {
+                loadProjects();
+            };
+        } catch (error) {
+            console.error("Failed to remove recent project:", error);
+        }
+    }, [loadProjects]);
+
+    const clearAllProjects = useCallback(async () => {
+        if (typeof indexedDB === 'undefined') return;
+        try {
+            const db = await getDb();
+            const transaction = db.transaction(STORE_NAME, 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            store.clear();
+            transaction.oncomplete = () => {
+                loadProjects();
+            };
+        } catch (error) {
+            console.error("Failed to clear recent projects:", error);
         }
     }, [loadProjects]);
     
@@ -100,14 +132,17 @@ export const useRecentProjects = () => {
             const file = await project.handle.getFile();
             const content = await file.text();
             
-            await addRecentProject(project.handle);
+            // Update lastOpened timestamp by re-adding it
+            await addRecentProject(project.handle, project.thumbnail);
             
             return content;
         } catch (error) {
             console.error(`Failed to open recent project ${project.name}:`, error);
-            throw error;
+            // Attempt to remove the broken project from the list
+            await removeRecentProject(project.name);
+            throw error; // Re-throw so the UI can catch it
         }
-    }, [addRecentProject]);
+    }, [addRecentProject, removeRecentProject]);
 
-    return { projects, addRecentProject, openRecentProject };
+    return { projects, addRecentProject, openRecentProject, removeRecentProject, clearAllProjects };
 };

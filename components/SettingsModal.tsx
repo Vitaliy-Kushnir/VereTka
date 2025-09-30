@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { XIcon } from './icons';
 import { InputWrapper, Label, NumberInput, ColorInput } from './FormControls';
+import { type ProjectTemplate } from '../types';
 
 interface SettingsModalProps {
   onClose: () => void;
+  onOpenApiKeyModal: () => void;
+  onDeleteTemplate: (templateId: string) => void;
+  onRenameTemplate: (templateId: string, newName: string) => void;
+  templates: ProjectTemplate[];
   canvasWidth: number;
   setCanvasWidth: (w: number) => void;
   canvasHeight: number;
@@ -33,12 +38,48 @@ interface SettingsModalProps {
   setHighlightCodeOnSelection: (show: boolean) => void;
   autoGenerateComments: boolean;
   setAutoGenerateComments: (show: boolean) => void;
+  initialTab?: 'canvas' | 'grid' | 'appearance' | 'generator' | 'templates';
 }
 
-type Tab = 'canvas' | 'grid' | 'appearance' | 'generator';
+type Tab = 'canvas' | 'grid' | 'appearance' | 'generator' | 'templates';
 
 const SettingsModal: React.FC<SettingsModalProps> = (props) => {
-    const [activeTab, setActiveTab] = useState<Tab>('canvas');
+    const [activeTab, setActiveTab] = useState<Tab>(props.initialTab || 'canvas');
+    const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
+    const [editingTemplateName, setEditingTemplateName] = useState('');
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (editingTemplateId && inputRef.current) {
+            inputRef.current.focus();
+            inputRef.current.select();
+        }
+    }, [editingTemplateId]);
+
+    const handleStartEditing = (template: ProjectTemplate) => {
+        setEditingTemplateId(template.id);
+        setEditingTemplateName(template.name);
+    };
+
+    const handleCancelEditing = () => {
+        setEditingTemplateId(null);
+        setEditingTemplateName('');
+    };
+
+    const handleConfirmEditing = () => {
+        if (editingTemplateId && editingTemplateName.trim() !== '') {
+            props.onRenameTemplate(editingTemplateId, editingTemplateName.trim());
+        }
+        handleCancelEditing();
+    };
+    
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            handleConfirmEditing();
+        } else if (e.key === 'Escape') {
+            handleCancelEditing();
+        }
+    };
 
     const handleCanvasNameChange = (value: string) => {
         // Remove invalid characters (allow only Latin letters, numbers, and underscore)
@@ -48,6 +89,10 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
             cleanedValue = '_' + cleanedValue;
         }
         props.setCanvasVarName(cleanedValue);
+    };
+
+    const handleGeneratorChange = (type: 'local' | 'gemini') => {
+        props.setGeneratorType(type);
     };
 
     return (
@@ -67,7 +112,7 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                 </header>
                 
                 <div className="p-4 border-b border-[var(--border-primary)]">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                         <button 
                             onClick={() => setActiveTab('canvas')}
                             className={`px-4 py-2 rounded-md font-semibold transition ${activeTab === 'canvas' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
@@ -91,6 +136,12 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                              className={`px-4 py-2 rounded-md font-semibold transition ${activeTab === 'generator' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
                         >
                             Генератор
+                        </button>
+                         <button
+                             onClick={() => setActiveTab('templates')}
+                             className={`px-4 py-2 rounded-md font-semibold transition ${activeTab === 'templates' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
+                        >
+                            Шаблони
                         </button>
                     </div>
                 </div>
@@ -245,7 +296,7 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                         name="generatorType"
                                         value="local"
                                         checked={props.generatorType === 'local'}
-                                        onChange={() => props.setGeneratorType('local')}
+                                        onChange={() => handleGeneratorChange('local')}
                                         className="w-4 h-4 mt-1 text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]"
                                     />
                                     <div className="ml-3">
@@ -264,7 +315,7 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                         name="generatorType"
                                         value="gemini"
                                         checked={props.generatorType === 'gemini'}
-                                        onChange={() => props.setGeneratorType('gemini')}
+                                        onChange={() => handleGeneratorChange('gemini')}
                                         className="w-4 h-4 mt-1 text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]"
                                     />
                                     <div className="ml-3">
@@ -279,6 +330,25 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                     </div>
                                 </label>
                             </div>
+
+                            {props.generatorType === 'gemini' && (
+                                <div className="pt-4">
+                                    <h4 className="font-semibold text-sm text-[var(--text-primary)]">Ключ Gemini API</h4>
+                                    <p className="text-xs text-[var(--text-tertiary)] mt-1 mb-2">
+                                        Для використання генератора Gemini потрібен ваш особистий ключ API.
+                                    </p>
+                                    <button
+                                        onClick={() => {
+                                            props.onOpenApiKeyModal();
+                                            props.onClose();
+                                        }}
+                                        className="w-full text-center px-4 py-2 rounded-md font-semibold bg-[var(--bg-tertiary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+                                    >
+                                        Керувати ключем API
+                                    </button>
+                                </div>
+                            )}
+
                             <hr className="border-[var(--border-secondary)] my-2" />
                              <label htmlFor="autoGenerateComments" className="flex items-start pt-2">
                                 <input
@@ -293,6 +363,50 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                     <p className="text-xs text-[var(--text-tertiary)] mt-1">Генерує описовий коментар для кожної фігури, якщо ви не додали власний.</p>
                                 </div>
                             </label>
+                        </div>
+                    )}
+                    {activeTab === 'templates' && (
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-semibold text-[var(--text-secondary)]">Шаблони проєктів</h3>
+                            {props.templates.length > 0 ? (
+                                <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                                    {props.templates.map(template => (
+                                        <div key={template.id} className="flex items-center justify-between p-2 bg-[var(--bg-secondary)] rounded-md">
+                                            {editingTemplateId === template.id ? (
+                                                <input
+                                                    ref={inputRef}
+                                                    type="text"
+                                                    value={editingTemplateName}
+                                                    onChange={e => setEditingTemplateName(e.target.value)}
+                                                    onBlur={handleConfirmEditing}
+                                                    onKeyDown={handleKeyDown}
+                                                    className="bg-[var(--bg-app)] text-sm text-[var(--text-primary)] p-0.5 -m-0.5 rounded outline-none ring-2 ring-[var(--accent-primary)] w-full"
+                                                />
+                                            ) : (
+                                                <span className="text-sm text-[var(--text-primary)] truncate" title={template.name}>{template.name}</span>
+                                            )}
+                                            <div className="flex items-center gap-2 flex-shrink-0">
+                                                <button
+                                                    onClick={() => handleStartEditing(template)}
+                                                    disabled={!!editingTemplateId}
+                                                    className="text-xs px-2 py-1 rounded-md bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    Перейменувати
+                                                </button>
+                                                <button
+                                                    onClick={() => props.onDeleteTemplate(template.id)}
+                                                    disabled={!!editingTemplateId}
+                                                    className="text-xs px-2 py-1 rounded-md bg-[var(--destructive-bg)] text-[var(--accent-text)] hover:bg-[var(--destructive-bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    Видалити
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-[var(--text-tertiary)]">Шаблони не збережено. Ви можете зберегти поточне полотно як шаблон через меню "Файл".</p>
+                            )}
                         </div>
                     )}
                 </div>

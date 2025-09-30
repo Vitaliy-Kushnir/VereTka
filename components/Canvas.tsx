@@ -3,7 +3,7 @@ import { type Shape, type Tool, type CanvasAction, type RotatableShape, type Rec
 import { SelectionControls } from './SelectionControls';
 import { getShapeCenter, rotatePoint, getBoundingBox, getIsoscelesTrianglePoints, getPolylinePointsAsPath, getPolygonPointsAsArray, getRhombusPoints, getTrapezoidPoints, getParallelogramPoints, getSmoothedPathData, getFinalPoints, getArcPathData, getRightTrianglePoints, getTextBoundingBox, processTextLines } from '../lib/geometry';
 import { CheckSquareIcon, ClosePathIcon, XSquareIcon } from './icons';
-import { TOOL_TYPE_TO_NAME, ROTATE_CURSOR_STYLE, ADJUST_CURSOR_STYLE, getDefaultNameForShape, getVisualFontFamily, isDefaultName } from '../lib/constants';
+import { TOOL_TYPE_TO_NAME, ROTATE_CURSOR_STYLE, ADJUST_CURSOR_STYLE, getDefaultNameForShape, getVisualFontFamily, isDefaultName, DUPLICATE_CURSOR_STYLE } from '../lib/constants';
 
 interface CanvasProps {
   width: number;
@@ -45,6 +45,9 @@ interface CanvasProps {
   pendingImage: string | null;
   setPendingImage: (src: string | null) => void;
   setCursorPos: (pos: {x:number, y:number} | null) => void;
+  showNotification: (message: string, type?: 'info' | 'error') => void;
+  onStartInlineEdit: (shapeId: string) => void;
+  inlineEditingShapeId: string | null;
 }
 
 const DRAG_THRESHOLD = 3;
@@ -98,6 +101,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         showCursorCoords, showRotationAngle,
         pendingImage, setPendingImage,
         setCursorPos,
+        showNotification,
+        onStartInlineEdit,
+        inlineEditingShapeId,
     } = props;
     
   const [action, setAction] = useState<CanvasAction>(null);
@@ -144,25 +150,28 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
     if (e.button === 2) { // Right mouse button for duplicating
         const clickedShapeId = (e.target as SVGElement).dataset.id;
-        if (selectedShapeId && clickedShapeId === selectedShapeId) {
-            const shapeToDuplicate = shapes.find(s => s.id === selectedShapeId);
-            if (shapeToDuplicate) {
-                // Use a type-safe deep copy to prevent mutation issues
-                let deepCopiedShape: Shape;
-                switch (shapeToDuplicate.type) {
-                    case 'line':
-                        deepCopiedShape = {...shapeToDuplicate, points: [{...shapeToDuplicate.points[0]}, {...shapeToDuplicate.points[1]}]};
-                        break;
-                    case 'pencil':
-                    case 'polyline':
-                    case 'bezier':
-                        deepCopiedShape = {...shapeToDuplicate, points: shapeToDuplicate.points.map(p => ({...p}))};
-                        break;
-                    default:
-                        deepCopiedShape = {...shapeToDuplicate};
-                }
-                setAction({ type: 'duplicating', initialShape: deepCopiedShape, startPos: pos });
+        const shapeToDuplicate = clickedShapeId ? shapes.find(s => s.id === clickedShapeId) : null;
+
+        if (shapeToDuplicate) {
+             // If the right-clicked shape isn't the currently selected one, select it first.
+            if (selectedShapeId !== clickedShapeId) {
+                onSelectShape(clickedShapeId);
             }
+            // Use a type-safe deep copy to prevent mutation issues
+            let deepCopiedShape: Shape;
+            switch (shapeToDuplicate.type) {
+                case 'line':
+                    deepCopiedShape = {...shapeToDuplicate, points: [{...shapeToDuplicate.points[0]}, {...shapeToDuplicate.points[1]}]};
+                    break;
+                case 'pencil':
+                case 'polyline':
+                case 'bezier':
+                    deepCopiedShape = {...shapeToDuplicate, points: shapeToDuplicate.points.map(p => ({...p}))};
+                    break;
+                default:
+                    deepCopiedShape = {...shapeToDuplicate};
+            }
+            setAction({ type: 'duplicating', initialShape: deepCopiedShape, startPos: pos });
         }
         return;
     }
@@ -892,11 +901,15 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         }
     } else if (action?.type === 'duplicating' && activeTransformShape) {
         if (hasDraggedRef.current) {
-            const newShape = { ...activeTransformShape, id: new Date().toISOString() };
-            const oldName = action.initialShape.name;
-            const isOldNameDefault = !oldName || isDefaultName(oldName);
-            newShape.name = isOldNameDefault ? getDefaultNameForShape(newShape) : oldName;
+            // activeTransformShape contains the final geometry after dragging.
+            // It was created from a deep copy of the original shape, so it has all the original properties (name, color, etc.).
+            // We just need to assign a new unique ID before adding it to the canvas.
+            const newShape = { 
+                ...activeTransformShape, 
+                id: new Date().toISOString() 
+            };
             addShape(newShape);
+            showNotification('Фігуру дубльовано.');
         }
     } else if (action?.type === 'point-editing' && activeTransformShape) {
         const { initialShape, center } = action;
@@ -953,14 +966,22 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     setActiveTransformShape(null);
     hasDraggedRef.current = false;
     mouseDownPosRef.current = null;
-  }, [action, addShape, updateShape, onSelectShape, activeTransformShape]);
+  }, [action, addShape, updateShape, onSelectShape, activeTransformShape, showNotification]);
   
   const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isDrawingPolyline) {
         onCompletePolyline(false);
+        return;
     }
     if (isDrawingBezier) {
         onCompleteBezier(false);
+        return;
+    }
+    
+    const clickedShapeId = (e.target as SVGElement).dataset.id;
+    const shape = shapes.find(s => s.id === clickedShapeId);
+    if (shape && shape.type === 'text') {
+        onStartInlineEdit(shape.id);
     }
   };
 
@@ -1172,7 +1193,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             case 'point-editing':
                 return 'grabbing';
             case 'duplicating':
-                return 'copy';
+                return DUPLICATE_CURSOR_STYLE;
             case 'arc-angle-editing':
                 return ADJUST_CURSOR_STYLE;
             case 'rotating':
@@ -1300,6 +1321,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   const formatNumber = (num: number) => Math.round(num * 100) / 100;
   
   const isEngagedInRotation = action?.type === 'rotating';
+  const isDuplicating = action?.type === 'duplicating';
 
   const rotationInfo = useMemo(() => {
     if (isEngagedInRotation && action.initialShape && 'rotation' in action.initialShape) {
@@ -1325,6 +1347,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     }
     return null;
   }, [action, activeTransformShape, isEngagedInRotation]);
+  
+  const showInfoBox = (showCursorCoords || (showRotationAngle && isEngagedInRotation) || isDuplicating) && rawMousePos && previewMousePos;
+
 
   return (
       <div
@@ -1344,7 +1369,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         onContextMenu={(e) => e.preventDefault()}
       >
         {drawingControls}
-        {(showCursorCoords || (showRotationAngle && isEngagedInRotation)) && rawMousePos && previewMousePos && (
+        {showInfoBox && (
           <div
             className="absolute p-1 px-2 text-xs rounded-md shadow-lg pointer-events-none z-20 bg-[var(--cursor-bg)] text-[var(--cursor-text)] font-mono"
             style={{
@@ -1353,6 +1378,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
               transform: 'translateY(-100%)',
             }}
           >
+            {isDuplicating && <div className="font-sans font-semibold">Дублювання</div>}
             {showRotationAngle && rotationInfo && (
                 <div>{`Кут: ${rotationInfo.absolute.toFixed(0)}° (Δ: ${rotationInfo.delta.toFixed(0)}°)`}</div>
             )}
@@ -1754,12 +1780,13 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                             }
                         }
 
-                        const textStyles = {
+                        const textStyles: React.CSSProperties = {
                             fontFamily: getVisualFontFamily(font),
                             fontSize: fontSize,
                             fontWeight: weight,
                             fontStyle: slant === 'italic' ? 'italic' : 'normal',
                             textDecoration: `${underline ? 'underline' : ''} ${overstrike ? 'line-through' : ''}`,
+                            visibility: shape.id === inlineEditingShapeId ? 'hidden' : 'visible',
                         };
 
                         return (

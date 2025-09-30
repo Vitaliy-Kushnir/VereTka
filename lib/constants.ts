@@ -130,6 +130,8 @@ export const ROTATE_CURSOR_STYLE = `url("data:image/svg+xml,%3Csvg xmlns='http:/
 
 export const ADJUST_CURSOR_STYLE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='filter: drop-shadow(0px 1px 1px rgba(0,0,0,0.9))'%3E%3Cpath d='M3 9 L21 9 L17 5'/%3E%3Cpath d='M21 15 L3 15 L7 19'/%3E%3C/svg%3E") 10 10, auto`;
 
+export const DUPLICATE_CURSOR_STYLE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' style='filter: drop-shadow(0px 1px 1px rgba(0,0,0,0.9))'%3E%3Cpath d='M4.2 3.2l14 8-6 2-2 6-6-14z' fill='white' stroke-width='0'/%3E%3Cpath d='M14 18h6m-3-3v6' stroke='white' stroke-width='2.5' stroke-linecap='round' fill='none'/%3E%3C/svg%3E") 4 3, auto`;
+
 export const getVisualFontFamily = (font: string): string => {
     // This is a visual approximation for the canvas. The real Tkinter font name is used in the generated code.
     if (font.startsWith('Tk')) {

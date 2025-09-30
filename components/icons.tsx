@@ -570,3 +570,59 @@ export const AlignRightIcon: React.FC<IconProps> = ({ size = 20 }) => (
         <line x1="21" y1="18" x2="7" y2="18"/>
     </svg>
 );
+
+export const SadMonitorIcon: React.FC<IconProps> = ({ size = 96, className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+        <line x1="8" y1="21" x2="16" y2="21"/>
+        <line x1="12" y1="17" x2="12" y2="21"/>
+        <path d="M9 8h.01"/>
+        <path d="M15 8h.01"/>
+        <path d="M9.5 13a4.6 4.6 0 0 0 5 0"/>
+    </svg>
+);
+
+export const FullscreenIcon: React.FC<IconProps> = ({ size = 20 }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+    </svg>
+);
+
+export const ExitFullscreenIcon: React.FC<IconProps> = ({ size = 20 }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
+    </svg>
+);
+
+export const BugIcon: React.FC<IconProps> = ({ size = 20, className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M20 9V7a2 2 0 00-2-2h-3.93a2 2 0 00-1.66.9l-.82 1.2a2 2 0 01-3.18 0l-.82-1.2A2 2 0 007.93 5H4a2 2 0 00-2 2v2"/>
+        <path d="M12 10a4 4 0 00-4 4v4a4 4 0 004 4h0a4 4 0 004-4v-4a4 4 0 00-4-4z"/>
+        <path d="M8 14h8"/>
+        <path d="M8 18h8"/>
+        <path d="M15 5l-1-2"/>
+        <path d="M9 5l1-2"/>
+    </svg>
+);
+
+export const LightbulbIcon: React.FC<IconProps> = ({ size = 20, className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M15.09 16.05A6.49 6.49 0 0012 21.5a6.49 6.49 0 00-3.09-5.45"/>
+        <path d="M9 16.05V13h6v3.05"/>
+        <path d="M12 13a3.5 3.5 0 003.5-3.5C15.5 5.36 12 2.5 12 2.5S8.5 5.36 8.5 9.5A3.5 3.5 0 0012 13z"/>
+    </svg>
+);
+
+export const MessageSquareIcon: React.FC<IconProps> = ({ size = 20, className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+    </svg>
+);
+
+export const ExternalLinkIcon: React.FC<IconProps> = ({ size = 18, className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+        <polyline points="15 3 21 3 21 9"/>
+        <line x1="10" y1="14" x2="21" y2="3"/>
+    </svg>
+);

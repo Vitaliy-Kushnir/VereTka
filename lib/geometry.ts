@@ -1,3 +1,4 @@
+import type React from 'react';
 import { Shape, RectangleShape, EllipseShape, PathShape, PolygonShape, LineShape, IsoscelesTriangleShape, PolylineShape, RhombusShape, ParallelogramShape, TrapezoidShape, BezierCurveShape, ArcShape, RightTriangleShape, JoinStyle, TextShape, ImageShape, BitmapShape } from '../types';
 
 export const getMousePosition = (svg: SVGSVGElement, event: MouseEvent | React.MouseEvent): { x: number; y: number } => {

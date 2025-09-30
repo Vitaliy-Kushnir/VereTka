@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ВереTkа - Векторний редактор для Tkinter</title>
+    <title>Veretka - Vector Editor for Tkinter</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       body {
@@ -46,6 +46,7 @@
         --accent-primary: #4f46e5;
         --accent-primary-hover: #6366f1;
         --accent-text: #ffffff;
+        --icon-hover-text: #ffffff;
         
         --destructive-bg: #b91c1c; /* red-700 */
         --destructive-bg-hover: #dc2626; /* red-600 */
@@ -55,6 +56,8 @@
         --selection-fill: rgba(59, 130, 246, 0.2);
         --selection-highlight-bg: rgba(59, 130, 246, 0.5);
         --selection-highlight-text: #ffffff;
+        --selection-highlight-comment-bg: rgba(59, 130, 246, 0.3);
+        --selection-highlight-comment-text: #d1d5db;
         --special-handle-fill: #facc15;
         --special-handle-stroke: #f97316;
 
@@ -86,6 +89,7 @@
         --accent-primary: #4f46e5;
         --accent-primary-hover: #6366f1;
         --accent-text: #ffffff;
+        --icon-hover-text: var(--text-primary);
         
         --destructive-bg: #dc2626; /* red-600 */
         --destructive-bg-hover: #ef4444; /* red-500 */
@@ -94,7 +98,9 @@
         --selection-stroke: #2563eb;
         --selection-fill: rgba(37, 99, 235, 0.2);
         --selection-highlight-bg: rgba(37, 99, 235, 0.4);
-        --selection-highlight-text: #ffffff;
+        --selection-highlight-text: var(--text-primary);
+        --selection-highlight-comment-bg: rgba(37, 99, 235, 0.2);
+        --selection-highlight-comment-text: #374151;
         --special-handle-fill: #f59e0b;
         --special-handle-stroke: #ea580c;
 
@@ -117,11 +123,29 @@
         font-weight: 600;
         border-left-color: var(--selection-stroke);
       }
+      .code-line-comment-highlighted {
+        background-color: var(--selection-highlight-comment-bg);
+        color: var(--selection-highlight-comment-text);
+        border-left-color: var(--selection-stroke);
+        font-style: italic;
+      }
       .line-number-highlighted {
         color: var(--selection-highlight-text);
         font-weight: 600;
       }
-    </style>  
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0",
+    "vite": "https://aistudiocdn.com/vite@^7.1.6",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.3"
+  }
+}
+</script>
 </head>
   <body class="dark-theme bg-[var(--bg-app)] text-[var(--text-primary)] font-sans">
     <div id="root"></div>
