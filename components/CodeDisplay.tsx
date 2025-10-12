@@ -27,6 +27,7 @@ interface CodeDisplayProps {
   generatorType: 'local' | 'gemini';
   onSwitchToLocalGenerator: () => void;
   onOpenSettingsToGenerator: () => void;
+  codeStringForExport: string;
 }
 
 // Custom hook to handle clicks outside a component
@@ -45,7 +46,7 @@ const useClickOutside = (ref: React.RefObject<HTMLElement>, handler: (event: Mou
   }, [ref, handler]);
 };
 
-const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, onUpdate, onPreview, onSaveCode, onOpenOrRunCodeOnline, hasUnsyncedChanges, selectedShapeId, highlightCodeOnSelection, setHighlightCodeOnSelection, showLineNumbers, setShowLineNumbers, showComments, setShowComments, generatorType, onSwitchToLocalGenerator, onOpenSettingsToGenerator }) => {
+const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, onUpdate, onPreview, onSaveCode, onOpenOrRunCodeOnline, hasUnsyncedChanges, selectedShapeId, highlightCodeOnSelection, setHighlightCodeOnSelection, showLineNumbers, setShowLineNumbers, showComments, setShowComments, generatorType, onSwitchToLocalGenerator, onOpenSettingsToGenerator, codeStringForExport }) => {
   const [isCopied, setIsCopied] = useState(false);
   const [isWordWrapEnabled, setIsWordWrapEnabled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -54,8 +55,6 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, 
   
   useClickOutside(menuRef, () => setIsMenuOpen(false));
 
-  const codeAsString = useMemo(() => codeLines.map(line => line.content).join('\n'), [codeLines]);
-  
   const hasVisibleLines = useMemo(() => {
     if (showComments) {
         return codeLines.length > 0;
@@ -79,8 +78,8 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, 
   }, [selectedShapeId, codeLines, highlightCodeOnSelection]);
 
   const handleCopy = () => {
-    if (codeAsString) {
-      navigator.clipboard.writeText(codeAsString);
+    if (codeStringForExport) {
+      navigator.clipboard.writeText(codeStringForExport);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     }

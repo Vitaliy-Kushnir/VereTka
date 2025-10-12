@@ -1,20 +1,22 @@
 import React, { useState } from 'react';
 import { XIcon } from './icons';
-import { InputWrapper, Label } from './FormControls';
+import { InputWrapper, Label, Checkbox } from './FormControls';
 
 interface SaveCodeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (newName: string) => void;
+  onSave: (newName: string, extension: '.py' | '.txt', includeLineNumbers: boolean) => void;
   currentProjectName: string;
 }
 
 const SaveCodeModal: React.FC<SaveCodeModalProps> = ({ isOpen, onClose, onSave, currentProjectName }) => {
     const [name, setName] = useState(currentProjectName);
+    const [extension, setExtension] = useState<'.py' | '.txt'>('.py');
+    const [includeLineNumbers, setIncludeLineNumbers] = useState(false);
 
     const handleSave = () => {
         if (name.trim()) {
-            onSave(name.trim());
+            onSave(name.trim(), extension, extension === '.txt' ? includeLineNumbers : false);
         }
     };
 
@@ -40,7 +42,7 @@ const SaveCodeModal: React.FC<SaveCodeModalProps> = ({ isOpen, onClose, onSave, 
 
                 <div className="p-6 space-y-4">
                     <InputWrapper>
-                        <Label htmlFor="codeFileName">Назва файлу:</Label>
+                        <Label htmlFor="codeFileName" title="Введіть назву для вашого файлу.">Назва файлу:</Label>
                         <div className="flex items-center w-full">
                             <input 
                                 id="codeFileName"
@@ -48,12 +50,31 @@ const SaveCodeModal: React.FC<SaveCodeModalProps> = ({ isOpen, onClose, onSave, 
                                 value={name} 
                                 onChange={e => setName(e.target.value)}
                                 onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); }}
-                                className="bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded-l px-2 py-1 w-full border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none"
+                                className="bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded-l px-2 py-1 h-[38px] w-full border border-r-0 border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none"
                                 autoFocus
                             />
-                            <span className="bg-[var(--bg-tertiary)] text-[var(--text-secondary)] px-3 py-1 rounded-r border border-l-0 border-[var(--border-secondary)]">.py</span>
+                            <select
+                                value={extension}
+                                onChange={e => setExtension(e.target.value as '.py' | '.txt')}
+                                className="bg-[var(--bg-tertiary)] text-[var(--text-secondary)] h-[38px] px-3 py-1 rounded-r border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none appearance-none cursor-pointer"
+                                title="Вибрати розширення файлу"
+                            >
+                                <option value=".py">.py</option>
+                                <option value=".txt">.txt</option>
+                            </select>
                         </div>
                     </InputWrapper>
+                    {extension === '.txt' && (
+                        <div className="pl-[104px]"> {/* Align with input fields (w-24 label + 0.5rem gap) */}
+                            <Checkbox
+                                id="includeLineNumbers"
+                                checked={includeLineNumbers}
+                                onChange={setIncludeLineNumbers}
+                                label="Зберігати із номерами рядків"
+                                title="Додати номери рядків на початок кожного рядка у текстовому файлі"
+                            />
+                        </div>
+                    )}
                 </div>
 
                 <footer className="p-4 bg-[var(--bg-app)]/50 rounded-b-lg flex justify-end gap-3">

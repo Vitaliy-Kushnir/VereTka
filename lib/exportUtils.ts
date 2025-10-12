@@ -147,9 +147,6 @@ function shapeToSvgString(shape: Shape): string {
         return props;
     };
 
-    const finalPoints = getFinalPoints(shape);
-    if (!finalPoints) return '';
-
     switch (shape.type) {
         case 'rectangle':
             return `<rect x="${shape.x}" y="${shape.y}" width="${shape.width}" height="${shape.height}" ${commonProps(shape)} ${fillProps(shape)} ${joinStyleProps(shape)} />`;
@@ -188,7 +185,11 @@ function shapeToSvgString(shape: Shape): string {
              return `<path d="${getArcPathData(shape)}" ${commonProps(shape)} fill="${fill}" ${lineLikeProps(shape)} />`;
         }
         default: { // All other shapes become paths
-            const d = finalPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+            const unrotatedShape = { ...shape, rotation: 0 };
+            const unrotatedPoints = getFinalPoints(unrotatedShape);
+            if (!unrotatedPoints) return '';
+
+            const d = unrotatedPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
             const isClosed = shape.type !== 'line' && shape.type !== 'pencil' && !(shape.type === 'polyline' && !shape.isClosed) && !(shape.type === 'bezier' && !shape.isClosed);
             const path = `${d} ${isClosed ? 'Z' : ''}`;
             const fill = isClosed && 'fill' in shape ? fillProps(shape as any) : 'fill="none"';

@@ -55,7 +55,7 @@ function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, ca
         }
     }
     
-    if ('joinstyle' in shape && shape.joinstyle) {
+    if (shape.type !== 'rectangle' && 'joinstyle' in shape && shape.joinstyle) {
         options.joinstyle = shape.joinstyle;
     }
     if ('stipple' in shape && shape.stipple && 'fill' in shape && shape.fill !== 'none') {

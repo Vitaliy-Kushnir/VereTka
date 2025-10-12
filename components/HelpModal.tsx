@@ -30,6 +30,13 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
     const [matchCount, setMatchCount] = useState(0);
     const [currentMatchIndex, setCurrentMatchIndex] = useState(-1);
 
+    const BASE_FONT_SIZE = 0.875; // 14px
+    const MIN_FONT_SIZE = BASE_FONT_SIZE * 0.75;
+    const MAX_FONT_SIZE = BASE_FONT_SIZE * 2.0;
+    const FONT_STEP = BASE_FONT_SIZE * 0.05;
+
+    const [fontSize, setFontSize] = useState(BASE_FONT_SIZE);
+
     const sections = [
         { id: 'intro', title: '1. Вступ' },
         { id: 'interface', title: '2. Огляд інтерфейсу' },
@@ -62,7 +69,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             return;
         }
 
-        const allMarks = contentRef.current.querySelectorAll('mark');
+        const allMarks = contentRef.current.querySelectorAll<HTMLElement>('mark');
         setMatchCount(allMarks.length);
         setCurrentMatchIndex(allMarks.length > 0 ? 0 : -1);
 
@@ -79,7 +86,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
 
         if (allMarks.length === 0) return;
 
-        allMarks.forEach((match, index) => {
+        allMarks.forEach((match: HTMLElement, index) => {
             if (index === currentMatchIndex) {
                 match.classList.add('bg-orange-500', 'text-white');
                 match.classList.remove('bg-yellow-400/80', 'text-black');
@@ -152,7 +159,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
     );
 
     const Key: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-        <code className="bg-[var(--bg-tertiary)] text-sm text-[var(--text-primary)] px-1.5 py-0.5 rounded-md font-mono">{children}</code>
+        <code className="bg-[var(--bg-tertiary)] text-[var(--text-primary)] px-1.5 py-0.5 rounded-md font-mono" style={{ fontSize: '0.9em' }}>{children}</code>
     );
 
     const ListItem: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -170,9 +177,9 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                 className="bg-[var(--bg-primary)] rounded-lg shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col"
                 onClick={e => e.stopPropagation()}
             >
-                <header className="flex justify-between items-center p-4 border-b border-[var(--border-primary)] flex-shrink-0">
-                    <h2 className="text-xl font-bold text-[var(--text-primary)]">Довідка та інструкції</h2>
-                     <div className="flex-grow mx-4 max-w-sm relative">
+                <header className="flex justify-between items-center p-4 border-b border-[var(--border-primary)] flex-shrink-0 gap-4">
+                    <h2 className="text-xl font-bold text-[var(--text-primary)] whitespace-nowrap">Довідка та інструкції</h2>
+                     <div className="flex-grow max-w-sm relative">
                         <input
                           type="text"
                           placeholder="Пошук у довідці..."
@@ -209,6 +216,36 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                             )}
                         </div>
                     </div>
+                    <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]" title="Масштаб тексту довідки">
+                        <span 
+                            className="text-xs cursor-pointer hover:text-[var(--text-primary)]" 
+                            title="Зменшити шрифт на 5%"
+                            onClick={() => setFontSize(prev => Math.max(MIN_FONT_SIZE, prev - FONT_STEP))}
+                        >А</span>
+                        <input
+                            id="zoom-slider"
+                            type="range"
+                            min={MIN_FONT_SIZE}
+                            max={MAX_FONT_SIZE}
+                            step="0.01"
+                            value={fontSize}
+                            onChange={e => setFontSize(parseFloat(e.target.value))}
+                            className="w-20 h-1 bg-[var(--bg-secondary)] rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--accent-primary)]"
+                            title="Змінити розмір шрифту довідки"
+                        />
+                        <span 
+                            className="text-lg cursor-pointer hover:text-[var(--text-primary)]" 
+                            title="Збільшити шрифт на 5%"
+                            onClick={() => setFontSize(prev => Math.min(MAX_FONT_SIZE, prev + FONT_STEP))}
+                        >А</span>
+                        <button 
+                            onClick={() => setFontSize(BASE_FONT_SIZE)}
+                            className="w-12 text-center text-xs font-mono hover:text-[var(--text-primary)] transition-colors"
+                            title="Скинути масштаб до 100%"
+                        >
+                            {Math.round((fontSize / BASE_FONT_SIZE) * 100)}%
+                        </button>
+                    </div>
                     <button onClick={onClose} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full" aria-label="Закрити">
                         <XIcon />
                     </button>
@@ -223,7 +260,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                                     <a 
                                         href={`#${section.id}`} 
                                         onClick={(e) => handleNavClick(e, section.id)}
-                                        className="block text-sm p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
+                                        className="block p-2 rounded-md text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
                                     >
                                         {section.title}
                                     </a>
@@ -233,11 +270,15 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                     </nav>
 
                     {/* Content */}
-                    <div ref={contentRef} className="flex-grow p-6 text-sm text-[var(--text-secondary)] overflow-y-auto scroll-smooth">
+                    <div 
+                        ref={contentRef} 
+                        className="flex-grow p-6 text-[var(--text-secondary)] overflow-y-auto scroll-smooth allow-selection"
+                        style={{ fontSize: `${fontSize}rem` }}
+                    >
                         <section>
                             <SectionTitle id="intro">1. Вступ</SectionTitle>
                             <Para>
-                                <strong className="text-[var(--text-primary)]">ВереTkа</strong> — це професійний веб-інструмент, розроблений для візуального створення графічних елементів та автоматичної генерації коду для бібліотеки Tkinter у Python. Редактор слугує мостом між дизайном та розробкою, дозволяючи швидко прототипувати, створювати складні сцени та отримувати чистий, готовий до використання код.
+                                <strong className="text-[var(--text-primary)]">ВереTkа</strong> — це простий веб-інструмент, розроблений для візуального створення графічних елементів та автоматичної генерації коду для бібліотеки Tkinter у Python. Редактор слугує мостом між дизайном та розробкою, дозволяючи швидко прототипувати, створювати складні сцени та отримувати чистий, готовий до використання код.
                             </Para>
                             <Para>
                                 Ця інструкція допоможе вам освоїти всі можливості редактора, від базових операцій до просунутих технік.
@@ -273,6 +314,9 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                                 </ListItem>
                                 <ListItem>
                                     <strong className="text-[var(--text-primary)]">Рядок стану:</strong> Нижня панель, що відображає поточний рівень масштабування та координати курсора на полотні.
+                                </ListItem>
+                                <ListItem>
+                                    <strong className="text-[var(--text-primary)]">Вікно довідки:</strong> Має власні елементи керування у заголовку: поле для пошуку по тексту та повзунок для масштабування розміру шрифту (від 75% до 200%). Для зручності, зліва від повзунка є маленька літера 'А', а справа — велика, натискання на які змінює масштаб на 5%. Клацання на відсотковому значенні миттєво повертає масштаб до стандартних 100%.
                                 </ListItem>
                             </ul>
                              <SubTitle>Повноекранний режим</SubTitle>
@@ -350,13 +394,16 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                             <Para>
                                 Виберіть інструмент на лівій панелі та клацніть на полотні, щоб почати малювати. Для більшості фігур потрібно затиснути ліву кнопку миші та потягнути, щоб визначити розмір. Інструменти, як-от <Key>Ламана</Key> та <Key>Крива Без'є</Key>, вимагають послідовних клацань для додавання вузлів.
                             </Para>
+                            <Para>
+                                <strong className="text-[var(--text-primary)]">Порада:</strong> Утримуйте клавішу <Key>Shift</Key> під час малювання, щоб отримати фігури з однаковими візуальними шириною та висотою (наприклад при малюванні прямокутника або еліпса, щоб створити ідеальний квадрат або коло відповідно).
+                            </Para>
                             <SubTitle>Виділення та трансформація</SubTitle>
                              <Para>
                                 Використовуйте інструмент <Key>Вибрати</Key> (гаряча клавіша <Key>V</Key>), щоб виділяти об'єкти. Навколо виділеного об'єкта з'явиться рамка з маніпуляторами:
                             </Para>
                              <ul className="list-disc list-inside space-y-2 pl-2">
                                 <ListItem>
-                                    <strong className="text-[var(--text-primary)]">Переміщення:</strong> Затисніть ліву кнопку миші на самому об'єкті та перетягуйте.
+                                    <strong className="text-[var(--text-primary)]">Переміщення:</strong> Затисніть ліву кнопку миші на самому об'єкті та перетягуйте. Утримуйте <Key>Shift</Key> під час переміщення, щоб заблокувати рух по горизонтальній або вертикальній осі. Це також працює при дублюванні об'єкта правою кнопкою миші.
                                 </ListItem>
                                 <ListItem>
                                     <strong className="text-[var(--text-primary)]">Масштабування:</strong> Потягніть за квадратні маніпулятори на кутах або сторонах рамки. Утримуйте <Key>Shift</Key> для збереження пропорцій.
@@ -368,6 +415,59 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                             <SubTitle>Редагування вузлів</SubTitle>
                             <Para>
                                 Для контурних об'єктів (лінії, полігони, криві) доступний режим редагування вузлів (гаряча клавіша <Key>A</Key>). У цьому режимі ви можете переміщувати окремі вузлові точки, додавати нові (клацаючи на сегменті між точками) або видаляти існуючі (<Key>Delete</Key> або <Key>Backspace</Key> на виділеному вузлі).
+                            </Para>
+                            <SubTitle>Вибір кольору</SubTitle>
+                            <Para>
+                                Редактор "ВереTkа" надає потужний та гнучкий інструмент для роботи з кольорами, який поєднує зручність та відповідність стандартам Tkinter. Елемент вибору кольору складається з кількох частин:
+                            </Para>
+                            <ul className="list-disc list-inside space-y-2 pl-2">
+                                <ListItem>
+                                    <strong className="text-[var(--text-primary)]">Зразок кольору:</strong> Квадратик, що відображає поточний колір. Клацання по ньому відкриває стандартну системну палітру кольорів.
+                                </ListItem>
+                                <ListItem>
+                                    <strong className="text-[var(--text-primary)]">Поле вводу:</strong> Дозволяє вводити назву кольору (напр., <Key>Red</Key>) або його HEX-код (напр., <Key>#ff0000</Key>). Поле має валідацію, що запобігає вводу некоректних символів.
+                                </ListItem>
+                                <ListItem>
+                                    <strong className="text-[var(--text-primary)]">Кнопки Підтвердити (✓) та Скасувати (X):</strong> Будь-яка зміна кольору є попереднім переглядом. Щоб застосувати зміну, натисніть галочку або клавішу <Key>Enter</Key>. Щоб скасувати, натисніть хрестик або <Key>Escape</Key>.
+                                </ListItem>
+                            </ul>
+
+                            <SubTitle>Списки кольорів</SubTitle>
+                            <Para>
+                                При фокусуванні на полі вводу з'являється випадаючий список з двома рівнями доступу до кольорів:
+                            </Para>
+                            <ul className="list-disc list-inside space-y-2 pl-2">
+                                <ListItem>
+                                    <strong className="text-[var(--text-primary)]">Основний список:</strong> Містить набір найпоширеніших веб-кольорів, які гарантовано коректно відображаються у браузері. Поруч з назвою для зручності вказано HEX-код, вирівняний по правому краю.
+                                </ListItem>
+                                <ListItem>
+                                    <strong className="text-[var(--text-primary)]">Усі кольори Tkinter:</strong> Натиснувши на посилання <Key>Усі кольори Tk...</Key> внизу списку, ви відкриєте модальне вікно з повною палітрою з понад 700 кольорів, які підтримує Tkinter. У цьому вікні ви можете:
+                                    <ul className="list-circle list-inside space-y-1 pl-6 mt-1">
+                                        <ListItem>Шукати колір за назвою або HEX-кодом.</ListItem>
+                                        <ListItem>Сортувати список за групами (стандартний вигляд), за алфавітом або за HEX-кодом.</ListItem>
+                                        <ListItem>Очищувати поле пошуку за допомогою іконки "х".</ListItem>
+                                    </ul>
+                                </ListItem>
+                            </ul>
+
+                            <SubTitle>Сумісність кольорів</SubTitle>
+                            <Para>
+                                Бібліотека Tkinter та веб-браузери підтримують різні набори іменованих кольорів. Редактор обробляє цю різницю наступним чином:
+                            </Para>
+                            <ul className="list-disc list-inside space-y-2 pl-2">
+                                <ListItem>
+                                    <strong className="text-[var(--text-primary)]">Веб-сумісні кольори:</strong> Якщо ви обираєте колір, назва якого підтримується браузерами (наприклад, <Key>SteelBlue</Key>), редактор збереже саме назву. Вона буде відображатися в полі та використовуватиметься у згенерованому коді.
+                                </ListItem>
+                                <ListItem>
+                                    <strong className="text-[var(--text-primary)]">Специфічні кольори Tkinter:</strong> Якщо ви обираєте колір, який є лише в Tkinter (напр., <Key>IndianRed4</Key>), з'явиться діалогове вікно. Воно пояснить, що цей колір може некоректно відображатися в редакторі (чорним кольором), і запропонує вибір:
+                                    <ul className="list-circle list-inside space-y-1 pl-6 mt-1">
+                                        <ListItem><Key>Зберегти назву</Key>: у коді Tkinter буде використано назву, але в редакторі вигляд може бути неправильним.</ListItem>
+                                        <ListItem><Key>Перетворити на HEX</Key>: колір буде збережено як HEX-код, що гарантує однакове відображення всюди.</ListItem>
+                                    </ul>
+                                </ListItem>
+                            </ul>
+                            <Para>
+                                Також важливо знати, що деякі базові назви (напр., <Key>Maroon</Key>, <Key>Green</Key>) мають різні HEX-коди у веб-стандарті та у Tkinter. Редактор використовує офіційні значення Tkinter для генерації коду, щоб гарантувати повну відповідність результату.
                             </Para>
                             <SubTitle>Порядок (Шари)</SubTitle>
                             <Para>
@@ -382,8 +482,24 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                                 Панель "Код Tkinter" автоматично оновлює код при будь-яких змінах на полотні (якщо ввімкнено локальний генератор). Якщо ви використовуєте Gemini API, натисніть кнопку "Згенерувати код", щоб надіслати запит.
                             </Para>
                             <Para>
-                                Згенерований код є повністю самодостатнім Python-скриптом. Ви можете скопіювати його, зберегти у файл <Key>.py</Key> або одразу відкрити та запустити в онлайн-середовищі ЄPython.
+                                Згенерований код є повністю самодостатнім Python-скриптом. Ви можете скопіювати його, зберегти у файл або одразу відкрити та запустити в онлайн-середовищі ЄPython.
                             </Para>
+                            <SubTitle>Збереження коду у файл</SubTitle>
+                            <Para>
+                                Щоб зберегти згенерований код, скористайтеся опцією <Key>Зберегти у файл...</Key> у випадаючому меню (<Key>...</Key>) на панелі "Код Tkinter". Відкриється модальне вікно, де ви можете налаштувати збереження.
+                            </Para>
+                            <ul className="list-disc list-inside space-y-2 pl-2">
+                                <ListItem>
+                                    <strong className="text-[var(--text-primary)]">Назва файлу та розширення:</strong> Введіть бажану назву для файлу. Праворуч від поля вводу ви можете вибрати розширення:
+                                    <ul className="list-circle list-inside space-y-1 pl-6 mt-1">
+                                        <ListItem><Key>.py</Key> — стандартний формат для Python-скриптів. Файл можна буде виконати. Це опція за замовчуванням.</ListItem>
+                                        <ListItem><Key>.txt</Key> — звичайний текстовий файл. Корисний для перегляду коду, документування або коли виконання не потрібне.</ListItem>
+                                    </ul>
+                                </ListItem>
+                                <ListItem>
+                                    <strong className="text-[var(--text-primary)]">Зберігати із номерами рядків:</strong> Ця опція з'являється лише при виборі розширення <Key>.txt</Key>. Якщо її увімкнути, кожний рядок у збереженому текстовому файлі буде починатися з номера рядка та розділювача (<Key>|</Key>), що може бути зручно для аналізу або обговорення коду.
+                                </ListItem>
+                            </ul>
                             <SubTitle>Експорт зображень</SubTitle>
                             <Para>
                                 Ви можете експортувати ваш малюнок у растрових (<Key>PNG</Key>, <Key>JPEG</Key>) або векторному (<Key>SVG</Key>) форматах. Для цього перейдіть до меню <Key>Файл</Key> → <Key>Експортувати як...</Key>. У вікні експорту можна налаштувати формат, масштаб та якість (для JPEG).

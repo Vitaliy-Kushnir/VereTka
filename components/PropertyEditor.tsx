@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Shape, LineShape, BezierCurveShape, PathShape, JoinStyle, PolygonShape, IsoscelesTriangleShape, RhombusShape, ParallelogramShape, TrapezoidShape, PolylineShape, RectangleShape, EllipseShape, Tool, ArcShape, RightTriangleShape, TextShape, ImageShape, BitmapShape, BuiltInBitmap } from '../types';
 import { getVisualBoundingBox, getFinalPoints, getPolygonSideLength, getBoundingBox, getPolygonRadiusFromSideLength, getEditablePoints, getShapeCenter, getTextBoundingBox, rotatePoint } from '../lib/geometry';
@@ -19,6 +20,8 @@ interface PropertyEditorProps {
   showNotification: (message: string, type?: 'info' | 'error', duration?: number) => void;
   setShapePreview: (shapeId: string, overrides: Partial<Shape>) => void;
   cancelShapePreview: () => void;
+  fillColor: string;
+  strokeColor: string;
 }
 
 // Type declaration for the experimental Local Font Access API
@@ -44,8 +47,7 @@ type JoinableShape =
     | TrapezoidShape 
     | PolylineShape
     | BezierCurveShape
-    | PathShape
-    | RectangleShape;
+    | PathShape;
 type StippleableShape = 
     | RectangleShape 
     | EllipseShape 
@@ -182,44 +184,55 @@ const FillControls: React.FC<{
     updateShape: (shape: Shape) => void;
     setShapePreview: (shapeId: string, overrides: Partial<Shape>) => void;
     cancelShapePreview: () => void;
-}> = ({ shape, updateShape, setShapePreview, cancelShapePreview }) => {
+    fillColor: string;
+    showNotification: PropertyEditorProps['showNotification'];
+}> = ({ shape, updateShape, setShapePreview, cancelShapePreview, fillColor, showNotification }) => {
     const isFillNone = shape.fill === 'none';
     const isFillDisabled = 
         (shape.type === 'arc' && shape.style === 'arc') ||
         ((shape.type === 'polyline' || shape.type === 'bezier') && !shape.isClosed);
 
     return (
-        <>
-            <InputWrapper>
-                <Checkbox 
-                    id={`${shape.id}-fill-toggle`} 
-                    checked={!isFillNone} 
-                    onChange={c => updateShape({ ...shape, fill: c ? '#4f46e5' : 'none' })} 
-                    label="Заливка:"
-                    disabled={isFillDisabled} 
-                    title="Увімкнути або вимкнути заливку фігури."
-                />
-                <ColorInput 
-                    id={`${shape.id}-fill`} 
-                    value={isFillNone ? '#000000' : shape.fill} 
-                    onChange={v => updateShape({ ...shape, fill: v })} 
-                    onPreview={v => setShapePreview(shape.id, { fill: v })}
-                    onCancel={cancelShapePreview}
-                    disabled={isFillNone || isFillDisabled} 
-                    title="Колір заливки фігури."
-                />
-            </InputWrapper>
-        </>
+        <div className="flex items-center gap-2">
+            <input
+                id={`${shape.id}-fill-toggle`}
+                type="checkbox"
+                checked={!isFillNone}
+                onChange={e => {
+                    if (e.target.checked) {
+                        const colorToRestore = shape._previousFill || fillColor;
+                        updateShape({ ...shape, fill: colorToRestore });
+                    } else {
+                        updateShape({ ...shape, fill: 'none', _previousFill: shape.fill });
+                    }
+                }}
+                disabled={isFillDisabled}
+                title="Увімкнути або вимкнути заливку фігури."
+                className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+            <ColorInput 
+                id={`${shape.id}-fill`} 
+                value={isFillNone ? '#000000' : shape.fill} 
+                onChange={v => updateShape({ ...shape, fill: v })} 
+                onPreview={v => setShapePreview(shape.id, { fill: v })}
+                onCancel={cancelShapePreview}
+                disabled={isFillNone || isFillDisabled} 
+                title="Колір заливки фігури."
+                showNotification={showNotification}
+            />
+        </div>
     );
 };
 
 const StrokeControls: React.FC<{
-    shape: FillableShape; // Re-using FillableShape as it covers most strokable shapes
+    shape: Shape;
     updateShape: (shape: Shape) => void;
     setShapePreview: (shapeId: string, overrides: Partial<Shape>) => void;
     cancelShapePreview: () => void;
     roundFn: (num: number) => number;
-}> = ({ shape, updateShape, setShapePreview, cancelShapePreview, roundFn }) => {
+    strokeColor: string;
+    showNotification: PropertyEditorProps['showNotification'];
+}> = ({ shape, updateShape, setShapePreview, cancelShapePreview, roundFn, strokeColor, showNotification }) => {
     const isStrokeNone = shape.stroke === 'none';
     const showDashControls = shape.type !== 'text';
 
@@ -227,13 +240,21 @@ const StrokeControls: React.FC<{
         <>
             <hr className="border-[var(--border-secondary)] my-2" />
             <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">Контур</h3>
-            <InputWrapper>
-                <Checkbox 
+            <div className="flex items-center gap-2">
+                <input 
                     id={`${shape.id}-stroke-toggle`} 
+                    type="checkbox"
                     checked={!isStrokeNone} 
-                    onChange={c => updateShape({ ...shape, stroke: c ? '#000000' : 'none' })} 
-                    label="Контур:" 
+                    onChange={e => {
+                        if (e.target.checked) {
+                            const colorToRestore = shape._previousStroke || strokeColor;
+                            updateShape({ ...shape, stroke: colorToRestore });
+                        } else {
+                            updateShape({ ...shape, stroke: 'none', _previousStroke: shape.stroke });
+                        }
+                    }} 
                     title="Увімкнути або вимкнути контур фігури."
+                    className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <ColorInput 
                     id={`${shape.id}-stroke`} 
@@ -243,8 +264,9 @@ const StrokeControls: React.FC<{
                     onCancel={cancelShapePreview}
                     disabled={isStrokeNone} 
                     title="Колір контуру фігури."
+                    showNotification={showNotification}
                 />
-            </InputWrapper>
+            </div>
             <InputWrapper>
                 <Label htmlFor={`${shape.id}-stroke-width`} title="Товщина лінії контуру в пікселях.">Товщина:</Label>
                 <NumberInput 
@@ -254,6 +276,7 @@ const StrokeControls: React.FC<{
                     min={0} 
                     disabled={isStrokeNone} 
                     title="Товщина лінії контуру в пікселях."
+                    smartRound={false}
                 />
             </InputWrapper>
             {showDashControls && <DashControls shape={shape as DashableShape} updateShape={updateShape} roundFn={roundFn} />}
@@ -347,6 +370,7 @@ const PointsEditor: React.FC<{
                                     onFocus={() => setActivePointIndex(i)}
                                     title={`X-координата вузла ${i}`}
                                     className={activePointIndex === i ? 'bg-[#4f46e5]/30' : ''}
+                                    smartRound={false}
                                 />
                                 <NumberInput 
                                     id={`${shapeId}-point-${i}-y`} 
@@ -356,6 +380,7 @@ const PointsEditor: React.FC<{
                                     onFocus={() => setActivePointIndex(i)}
                                     title={`Y-координата вузла ${i}`}
                                     className={activePointIndex === i ? 'bg-[#4f46e5]/30' : ''}
+                                    smartRound={false}
                                 />
                                 <button
                                     onClick={() => deletePoint(i)}
@@ -461,19 +486,19 @@ const TkinterBboxEditor: React.FC<{
         <div className="space-y-2">
              <InputWrapper>
                 <Label htmlFor={`${shape.id}-tk-x1`} title="X-координата верхнього лівого кута рамки Tkinter.">x1:</Label>
-                <NumberInput id={`${shape.id}-tk-x1`} value={roundFn(x1)} onChange={v => handleTkinterCoordChange('x1', v)} />
+                <NumberInput id={`${shape.id}-tk-x1`} value={roundFn(x1)} onChange={v => handleTkinterCoordChange('x1', v)} smartRound={false} />
             </InputWrapper>
              <InputWrapper>
                 <Label htmlFor={`${shape.id}-tk-y1`} title="Y-координата верхнього лівого кута рамки Tkinter.">y1:</Label>
-                <NumberInput id={`${shape.id}-tk-y1`} value={roundFn(y1)} onChange={v => handleTkinterCoordChange('y1', v)} />
+                <NumberInput id={`${shape.id}-tk-y1`} value={roundFn(y1)} onChange={v => handleTkinterCoordChange('y1', v)} smartRound={false} />
             </InputWrapper>
              <InputWrapper>
                 <Label htmlFor={`${shape.id}-tk-x2`} title="X-координата нижнього правого кута рамки Tkinter.">x2:</Label>
-                <NumberInput id={`${shape.id}-tk-x2`} value={roundFn(x2)} onChange={v => handleTkinterCoordChange('x2', v)} />
+                <NumberInput id={`${shape.id}-tk-x2`} value={roundFn(x2)} onChange={v => handleTkinterCoordChange('x2', v)} smartRound={false} />
             </InputWrapper>
              <InputWrapper>
                 <Label htmlFor={`${shape.id}-tk-y2`} title="Y-координата нижнього правого кута рамки Tkinter.">y2:</Label>
-                <NumberInput id={`${shape.id}-tk-y2`} value={roundFn(y2)} onChange={v => handleTkinterCoordChange('y2', v)} />
+                <NumberInput id={`${shape.id}-tk-y2`} value={roundFn(y2)} onChange={v => handleTkinterCoordChange('y2', v)} smartRound={false} />
             </InputWrapper>
         </div>
     );
@@ -484,13 +509,11 @@ const isCollapsible = (shape: Shape | null): boolean => {
     return ['line', 'pencil', 'polyline', 'bezier'].includes(shape.type);
 };
 
-const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateShape, deleteShape, duplicateShape, activeTool, activePointIndex, setActivePointIndex, deletePoint, addPoint, convertToPath, showNotification, setShapePreview, cancelShapePreview }) => {
+const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateShape, deleteShape, duplicateShape, activeTool, activePointIndex, setActivePointIndex, deletePoint, addPoint, convertToPath, showNotification, setShapePreview, cancelShapePreview, fillColor, strokeColor }) => {
   const [systemFonts, setSystemFonts] = useState<string[] | null>(null);
   const [isLoadingFonts, setIsLoadingFonts] = useState(false);
   const [editingName, setEditingName] = useState<string | null>(null);
-  const [editingWidth, setEditingWidth] = useState<string>('');
-  const [editingHeight, setEditingHeight] = useState<string>('');
-
+  
   const tkFonts = ["TkDefaultFont", "TkTextFont", "TkFixedFont", "TkMenuFont", "TkHeadingFont", "TkCaptionFont", "TkSmallCaptionFont", "TkIconFont", "TkTooltipFont"];
   const standardWebFonts = {
     "Популярні Sans-Serif": ["Arial", "Calibri", "Helvetica", "Segoe UI", "Tahoma", "Trebuchet MS", "Verdana"],
@@ -511,14 +534,6 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
     if (!selectedShape) return null;
     return getBoundingBox({ ...selectedShape, rotation: 0 });
   }, [selectedShape]);
-
-
-  useEffect(() => {
-    if (geometricBounds) {
-      setEditingWidth(roundToHundredths(geometricBounds.width).toString());
-      setEditingHeight(roundToHundredths(geometricBounds.height).toString());
-    }
-  }, [geometricBounds]);
   
     const handleVisualPosChange = (axis: 'x' | 'y', value: number) => {
         if (!selectedShape || !visualBounds) return;
@@ -646,50 +661,6 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
             }
         }
         updateShape(newShape as Shape);
-    };
-
-    const handleSizeInputChange = (axis: 'width' | 'height', valueStr: string) => {
-        if (!selectedShape) return;
-        if (axis === 'width') setEditingWidth(valueStr);
-        else setEditingHeight(valueStr);
-
-        if (valueStr === '') return; // Allow user to clear the field
-
-        const value = parseFloat(valueStr);
-        if (isNaN(value) || value < 0) return;
-
-        if (isCollapsible(selectedShape) && value < 1) {
-             // Defer update until blur to allow typing values like "0.5" before correction
-            return;
-        }
-        
-        updateGeometricSize(axis, value);
-    };
-
-    const handleSizeInputBlur = (axis: 'width' | 'height') => {
-        if (!selectedShape || !geometricBounds) return;
-        const editingValue = axis === 'width' ? editingWidth : editingHeight;
-        const value = parseFloat(editingValue);
-
-        let resetValue: number | null = null;
-        
-        if (isNaN(value) || value < 0 || editingValue === '') {
-            resetValue = axis === 'width' ? geometricBounds.width : geometricBounds.height;
-        } else if (isCollapsible(selectedShape) && value < 1) {
-            showNotification('Розмір контурів не може бути менше 1, щоб уникнути втрати форми.', 'info');
-            resetValue = Math.max(1, axis === 'width' ? geometricBounds.width : geometricBounds.height);
-        }
-        
-        if (resetValue !== null) {
-            const finalValue = roundToHundredths(resetValue);
-            if (axis === 'width') setEditingWidth(finalValue.toString());
-            else setEditingHeight(finalValue.toString());
-            
-            const currentValue = axis === 'width' ? geometricBounds.width : geometricBounds.height;
-            if (Math.abs(currentValue - finalValue) > 0.001) {
-                updateGeometricSize(axis, finalValue);
-            }
-        }
     };
 
   const handlePointsChange = (newPoints: {x:number, y:number}[]) => {
@@ -866,9 +837,9 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
                         </InputWrapper>
                         {shape.arrow && shape.arrow !== 'none' && (
                             <div className="space-y-2 pl-4 border-l-2 border-[var(--border-secondary)] ml-2 mt-2 pt-2">
-                                <InputWrapper><Label htmlFor={`${shape.id}-arrow-d1`} title="Абсолютна довжина стрілки в пікселях.">Довжина:</Label><NumberInput id={`${shape.id}-arrow-d1`} value={roundToHundredths(d1m * strokeWidth)} onChange={v => handleArrowChange(0, v)} min={0} title="Абсолютна довжина стрілки в пікселях" /></InputWrapper>
-                                <InputWrapper><Label htmlFor={`${shape.id}-arrow-d2`} title="Абсолютна ширина стрілки в пікселях.">Ширина:</Label><NumberInput id={`${shape.id}-arrow-d2`} value={roundToHundredths(d2m * strokeWidth)} onChange={v => handleArrowChange(1, v)} min={0} title="Абсолютна ширина стрілки в пікселях" /></InputWrapper>
-                                <InputWrapper><Label htmlFor={`${shape.id}-arrow-d3`} title="Абсолютна ширина основи стрілки в пікселях.">Ширина основи:</Label><NumberInput id={`${shape.id}-arrow-d3`} value={roundToHundredths(d3m * strokeWidth)} onChange={v => handleArrowChange(2, v)} min={0} title="Абсолютна ширина основи стрілки в пікселях" /></InputWrapper>
+                                <InputWrapper><Label htmlFor={`${shape.id}-arrow-d1`} title="Абсолютна довжина стрілки в пікселях.">Довжина:</Label><NumberInput id={`${shape.id}-arrow-d1`} value={roundToHundredths(d1m * strokeWidth)} onChange={v => handleArrowChange(0, v)} min={0} title="Абсолютна довжина стрілки в пікселях" smartRound={false} /></InputWrapper>
+                                <InputWrapper><Label htmlFor={`${shape.id}-arrow-d2`} title="Абсолютна ширина стрілки в пікселях.">Ширина:</Label><NumberInput id={`${shape.id}-arrow-d2`} value={roundToHundredths(d2m * strokeWidth)} onChange={v => handleArrowChange(1, v)} min={0} title="Абсолютна ширина стрілки в пікселях" smartRound={false} /></InputWrapper>
+                                <InputWrapper><Label htmlFor={`${shape.id}-arrow-d3`} title="Абсолютна ширина основи стрілки в пікселях.">Ширина основи:</Label><NumberInput id={`${shape.id}-arrow-d3`} value={roundToHundredths(d3m * strokeWidth)} onChange={v => handleArrowChange(2, v)} min={0} title="Абсолютна ширина основи стрілки в пікселях" smartRound={false} /></InputWrapper>
                             </div>
                         )}
                     </>
@@ -884,10 +855,9 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
                 {commonProperties}
                 <hr className="border-[var(--border-secondary)] my-2" />
                 <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">Заливка</h3>
-                <FillControls shape={rect} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} />
+                <FillControls shape={rect} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} fillColor={fillColor} showNotification={showNotification} />
                 <StippleControls shape={rect} updateShape={updateShape} />
-                <StrokeControls shape={rect} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} />
-                {joinStyleControls(rect)}
+                <StrokeControls shape={rect} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} strokeColor={strokeColor} showNotification={showNotification} />
             </>;
         }
         case 'ellipse': {
@@ -896,9 +866,9 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
                 {commonProperties}
                 <hr className="border-[var(--border-secondary)] my-2" />
                 <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">Заливка</h3>
-                <FillControls shape={ellipse} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} />
+                <FillControls shape={ellipse} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} fillColor={fillColor} showNotification={showNotification} />
                 <StippleControls shape={ellipse} updateShape={updateShape} />
-                <StrokeControls shape={ellipse} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} />
+                <StrokeControls shape={ellipse} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} strokeColor={strokeColor} showNotification={showNotification} />
             </>;
         }
         case 'polygon':
@@ -908,13 +878,13 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
             return <>
                 {commonProperties}
                 <InputWrapper><Label htmlFor={`${poly.id}-sides`} title="Кількість сторін або променів у фігури.">Сторони:</Label><NumberInput id={`${poly.id}-sides`} value={poly.sides} onChange={v => updateShape({ ...poly, sides: v })} min={3} /></InputWrapper>
-                {poly.type === 'star' && <InputWrapper><Label htmlFor={`${poly.id}-inner-radius`} title="Радіус внутрішніх вершин зірки.">Внутр. радіус:</Label><NumberInput id={`${poly.id}-inner-radius`} value={roundToHundredths(poly.innerRadius ?? 0)} onChange={v => updateShape({ ...poly, innerRadius: v })} min={0} /></InputWrapper>}
-                <InputWrapper><Label htmlFor={`${poly.id}-side-length`} title="Довжина однієї сторони багатокутника.">Довжина сторони:</Label><NumberInput id={`${poly.id}-side-length`} value={roundToHundredths(sideLength)} onChange={v => updateShape({ ...poly, radius: getPolygonRadiusFromSideLength({ sideLength: v, sides: poly.sides }) })} /></InputWrapper>
+                {poly.type === 'star' && <InputWrapper><Label htmlFor={`${poly.id}-inner-radius`} title="Радіус внутрішніх вершин зірки.">Внутр. радіус:</Label><NumberInput id={`${poly.id}-inner-radius`} value={roundToHundredths(poly.innerRadius ?? 0)} onChange={v => updateShape({ ...poly, innerRadius: v })} min={0} smartRound={false} /></InputWrapper>}
+                <InputWrapper><Label htmlFor={`${poly.id}-side-length`} title="Довжина однієї сторони багатокутника.">Довжина сторони:</Label><NumberInput id={`${poly.id}-side-length`} value={roundToHundredths(sideLength)} onChange={v => updateShape({ ...poly, radius: getPolygonRadiusFromSideLength({ sideLength: v, sides: poly.sides }) })} smartRound={false} /></InputWrapper>
                 <hr className="border-[var(--border-secondary)] my-2" />
                 <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">Заливка</h3>
-                <FillControls shape={poly} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} />
+                <FillControls shape={poly} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} fillColor={fillColor} showNotification={showNotification} />
                 <StippleControls shape={poly} updateShape={updateShape} />
-                <StrokeControls shape={poly} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} />
+                <StrokeControls shape={poly} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} strokeColor={strokeColor} showNotification={showNotification} />
                 {joinStyleControls(poly)}
             </>;
         }
@@ -922,12 +892,12 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
             const triangle = selectedShape as IsoscelesTriangleShape;
             return <>
                 {commonProperties}
-                <InputWrapper><Label htmlFor={`${triangle.id}-top-offset`} title="Горизонтальне зміщення верхньої вершини відносно центру основи.">Зсув вершини:</Label><NumberInput id={`${triangle.id}-top-offset`} value={roundToHundredths(triangle.topVertexOffset ?? 0)} onChange={v => updateShape({ ...triangle, topVertexOffset: v })} step={0.01} /></InputWrapper>
+                <InputWrapper><Label htmlFor={`${triangle.id}-top-offset`} title="Горизонтальне зміщення верхньої вершини відносно центру основи.">Зсув вершини:</Label><NumberInput id={`${triangle.id}-top-offset`} value={roundToHundredths(triangle.topVertexOffset ?? 0)} onChange={v => updateShape({ ...triangle, topVertexOffset: v })} step={0.01} smartRound={false} /></InputWrapper>
                 <hr className="border-[var(--border-secondary)] my-2" />
                 <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">Заливка</h3>
-                <FillControls shape={triangle} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} />
+                <FillControls shape={triangle} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} fillColor={fillColor} showNotification={showNotification} />
                 <StippleControls shape={triangle} updateShape={updateShape} />
-                <StrokeControls shape={triangle} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} />
+                <StrokeControls shape={triangle} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} strokeColor={strokeColor} showNotification={showNotification} />
                 {joinStyleControls(triangle)}
             </>;
         }
@@ -937,9 +907,9 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
                 {commonProperties}
                 <hr className="border-[var(--border-secondary)] my-2" />
                 <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">Заливка</h3>
-                <FillControls shape={triangle} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} />
+                <FillControls shape={triangle} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} fillColor={fillColor} showNotification={showNotification} />
                 <StippleControls shape={triangle} updateShape={updateShape} />
-                <StrokeControls shape={triangle} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} />
+                <StrokeControls shape={triangle} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} strokeColor={strokeColor} showNotification={showNotification} />
                 {joinStyleControls(triangle)}
             </>;
         }
@@ -949,9 +919,9 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
                 {commonProperties}
                 <hr className="border-[var(--border-secondary)] my-2" />
                 <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">Заливка</h3>
-                <FillControls shape={rhombus} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} />
+                <FillControls shape={rhombus} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} fillColor={fillColor} showNotification={showNotification} />
                 <StippleControls shape={rhombus} updateShape={updateShape} />
-                <StrokeControls shape={rhombus} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} />
+                <StrokeControls shape={rhombus} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} strokeColor={strokeColor} showNotification={showNotification} />
                 {joinStyleControls(rhombus)}
             </>;
         }
@@ -997,13 +967,13 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
                  <InputWrapper>
                     <Checkbox id={`${trapezoid.id}-symm`} checked={!!trapezoid.isSymmetrical} onChange={handleSymmetricalChange} label="Симетрична:" title="Зробити зміщення верхніх кутів однаковим."/>
                 </InputWrapper>
-                <InputWrapper><Label htmlFor={`${trapezoid.id}-topleft`} title="Зміщення верхнього лівого кута всередину у відсотках від ширини.">Зсув зліва (%):</Label><NumberInput id={`${trapezoid.id}-topleft`} value={roundToHundredths(trapezoid.topLeftOffsetRatio * 100)} onChange={v => handleOffsetChange('left', v)} /></InputWrapper>
-                <InputWrapper><Label htmlFor={`${trapezoid.id}-topright`} title="Зміщення верхнього правого кута всередину у відсотках від ширини.">Зсув справа (%):</Label><NumberInput id={`${trapezoid.id}-topright`} value={roundToHundredths(trapezoid.topRightOffsetRatio * 100)} onChange={v => handleOffsetChange('right', v)} disabled={!!trapezoid.isSymmetrical} /></InputWrapper>
+                <InputWrapper><Label htmlFor={`${trapezoid.id}-topleft`} title="Зміщення верхнього лівого кута всередину у відсотках від ширини.">Зсув зліва (%):</Label><NumberInput id={`${trapezoid.id}-topleft`} value={roundToHundredths(trapezoid.topLeftOffsetRatio * 100)} onChange={v => handleOffsetChange('left', v)} smartRound={false} /></InputWrapper>
+                <InputWrapper><Label htmlFor={`${trapezoid.id}-topright`} title="Зміщення верхнього правого кута всередину у відсотках від ширини.">Зсув справа (%):</Label><NumberInput id={`${trapezoid.id}-topright`} value={roundToHundredths(trapezoid.topRightOffsetRatio * 100)} onChange={v => handleOffsetChange('right', v)} disabled={!!trapezoid.isSymmetrical} smartRound={false} /></InputWrapper>
                 <hr className="border-[var(--border-secondary)] my-2" />
                 <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">Заливка</h3>
-                <FillControls shape={trapezoid} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} />
+                <FillControls shape={trapezoid} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} fillColor={fillColor} showNotification={showNotification} />
                 <StippleControls shape={trapezoid} updateShape={updateShape} />
-                <StrokeControls shape={trapezoid} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} />
+                <StrokeControls shape={trapezoid} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} strokeColor={strokeColor} showNotification={showNotification} />
                 {joinStyleControls(trapezoid)}
             </>;
         }
@@ -1011,12 +981,12 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
              const parallelogram = selectedShape as ParallelogramShape;
             return <>
                 {commonProperties}
-                <InputWrapper><Label htmlFor={`${parallelogram.id}-angle`} title="Кут нахилу бічних сторін (90 градусів = прямокутник).">Кут (º):</Label><NumberInput id={`${parallelogram.id}-angle`} value={roundToHundredths(parallelogram.angle)} onChange={v => updateShape({ ...parallelogram, angle: v })} min={1} max={179} /></InputWrapper>
+                <InputWrapper><Label htmlFor={`${parallelogram.id}-angle`} title="Кут нахилу бічних сторін (90 градусів = прямокутник).">Кут (º):</Label><NumberInput id={`${parallelogram.id}-angle`} value={roundToHundredths(parallelogram.angle)} onChange={v => updateShape({ ...parallelogram, angle: v })} min={1} max={179} smartRound={false} /></InputWrapper>
                 <hr className="border-[var(--border-secondary)] my-2" />
                 <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">Заливка</h3>
-                <FillControls shape={parallelogram} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} />
+                <FillControls shape={parallelogram} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} fillColor={fillColor} showNotification={showNotification} />
                 <StippleControls shape={parallelogram} updateShape={updateShape} />
-                <StrokeControls shape={parallelogram} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} />
+                <StrokeControls shape={parallelogram} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} strokeColor={strokeColor} showNotification={showNotification} />
                 {joinStyleControls(parallelogram)}
             </>;
         }
@@ -1024,8 +994,20 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
             const line = selectedShape as LineShape;
             return <>
                 {commonProperties}
-                <InputWrapper><Label htmlFor={`${line.id}-stroke`} title="Колір лінії.">Колір:</Label><ColorInput id={`${line.id}-stroke`} value={line.stroke} onChange={v => updateShape({ ...line, stroke: v })} onPreview={v => setShapePreview(line.id, { stroke: v })} onCancel={cancelShapePreview} /></InputWrapper>
-                <InputWrapper><Label htmlFor={`${line.id}-stroke-width`} title="Товщина лінії в пікселях.">Товщина:</Label><NumberInput id={`${line.id}-stroke-width`} value={roundToHundredths(line.strokeWidth)} onChange={v => updateShape({ ...line, strokeWidth: v })} min={0} /></InputWrapper>
+                <div>
+                    <Label htmlFor={`${line.id}-stroke`} title="Колір лінії.">Колір:</Label>
+                    <div className="mt-1">
+                        <ColorInput 
+                            id={`${line.id}-stroke`} 
+                            value={line.stroke} 
+                            onChange={v => updateShape({ ...line, stroke: v })} 
+                            onPreview={v => setShapePreview(line.id, { stroke: v })} 
+                            onCancel={cancelShapePreview} 
+                            showNotification={showNotification}
+                        />
+                    </div>
+                </div>
+                <InputWrapper><Label htmlFor={`${line.id}-stroke-width`} title="Товщина лінії в пікселях.">Товщина:</Label><NumberInput id={`${line.id}-stroke-width`} value={roundToHundredths(line.strokeWidth)} onChange={v => updateShape({ ...line, strokeWidth: v })} min={0} smartRound={false} /></InputWrapper>
                 <DashControls shape={line} updateShape={updateShape} roundFn={roundToHundredths} />
                 {lineLikeControls(line)}
             </>;
@@ -1034,8 +1016,20 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
             const path = selectedShape as PathShape;
             return <>
                 {commonProperties}
-                <InputWrapper><Label htmlFor={`${path.id}-stroke`} title="Колір лінії.">Колір:</Label><ColorInput id={`${path.id}-stroke`} value={path.stroke} onChange={v => updateShape({ ...path, stroke: v })} onPreview={v => setShapePreview(path.id, { stroke: v })} onCancel={cancelShapePreview} /></InputWrapper>
-                <InputWrapper><Label htmlFor={`${path.id}-stroke-width`} title="Товщина лінії в пікселях.">Товщина:</Label><NumberInput id={`${path.id}-stroke-width`} value={roundToHundredths(path.strokeWidth)} onChange={v => updateShape({ ...path, strokeWidth: v })} min={0} /></InputWrapper>
+                <div>
+                    <Label htmlFor={`${path.id}-stroke`} title="Колір лінії.">Колір:</Label>
+                    <div className="mt-1">
+                        <ColorInput 
+                            id={`${path.id}-stroke`} 
+                            value={path.stroke} 
+                            onChange={v => updateShape({ ...path, stroke: v })} 
+                            onPreview={v => setShapePreview(path.id, { stroke: v })} 
+                            onCancel={cancelShapePreview} 
+                            showNotification={showNotification}
+                        />
+                    </div>
+                </div>
+                <InputWrapper><Label htmlFor={`${path.id}-stroke-width`} title="Товщина лінії в пікселях.">Товщина:</Label><NumberInput id={`${path.id}-stroke-width`} value={roundToHundredths(path.strokeWidth)} onChange={v => updateShape({ ...path, strokeWidth: v })} min={0} smartRound={false} /></InputWrapper>
                 <DashControls shape={path} updateShape={updateShape} roundFn={roundToHundredths} />
                 {joinStyleControls(path)}
                 {lineLikeControls(path)}
@@ -1064,9 +1058,9 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
                 </InputWrapper>
                 <hr className="border-[var(--border-secondary)] my-2" />
                 <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">Заливка</h3>
-                <FillControls shape={polyline} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} />
+                <FillControls shape={polyline} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} fillColor={fillColor} showNotification={showNotification} />
                 <StippleControls shape={polyline} updateShape={updateShape} />
-                <StrokeControls shape={polyline} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} />
+                <StrokeControls shape={polyline} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} strokeColor={strokeColor} showNotification={showNotification} />
                 {joinStyleControls(polyline)}
                 {lineLikeControls(polyline)}
             </>;
@@ -1087,9 +1081,9 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
                 </InputWrapper>
                 <hr className="border-[var(--border-secondary)] my-2" />
                 <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">Заливка</h3>
-                <FillControls shape={bezier} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} />
+                <FillControls shape={bezier} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} fillColor={fillColor} showNotification={showNotification} />
                 <StippleControls shape={bezier} updateShape={updateShape} />
-                <StrokeControls shape={bezier} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} />
+                <StrokeControls shape={bezier} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} strokeColor={strokeColor} showNotification={showNotification} />
                 {joinStyleControls(bezier)}
                 {lineLikeControls(bezier)}
             </>;
@@ -1129,22 +1123,21 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
                         <option value="arc">Дуга</option>
                     </Select>
                 </InputWrapper>
-                <InputWrapper><Label htmlFor={`${arc.id}-start`} title="Початковий кут дуги в градусах (0 - на 3 години).">Початок (º):</Label><NumberInput id={`${arc.id}-start`} value={roundToHundredths(arc.start)} onChange={handleStartChange} /></InputWrapper>
-                <InputWrapper><Label htmlFor={`${arc.id}-end`} title="Кінцевий кут дуги в градусах.">Кінець (º):</Label><NumberInput id={`${arc.id}-end`} value={roundToHundredths(endAngle)} onChange={handleEndChange} /></InputWrapper>
+                <InputWrapper><Label htmlFor={`${arc.id}-start`} title="Початковий кут дуги в градусах (0 - на 3 години).">Початок (º):</Label><NumberInput id={`${arc.id}-start`} value={roundToHundredths(arc.start)} onChange={handleStartChange} smartRound={false} /></InputWrapper>
+                <InputWrapper><Label htmlFor={`${arc.id}-end`} title="Кінцевий кут дуги в градусах.">Кінець (º):</Label><NumberInput id={`${arc.id}-end`} value={roundToHundredths(endAngle)} onChange={handleEndChange} smartRound={false} /></InputWrapper>
                 <InputWrapper>
                     <Label htmlFor={`${arc.id}-extent`} title="Довжина дуги в градусах.">Довжина (º):</Label>
-                    <NumberInput id={`${arc.id}-extent`} value={roundToHundredths(arc.extent)} onChange={v => updateShape({ ...arc, extent: v })} disabled={arc.isExtentLocked} />
+                    <NumberInput id={`${arc.id}-extent`} value={roundToHundredths(arc.extent)} onChange={v => updateShape({ ...arc, extent: v })} disabled={arc.isExtentLocked} smartRound={false} />
                 </InputWrapper>
                  <InputWrapper>
-                    {/* FIX: Provide an empty child to the Label component to satisfy its required 'children' prop. This Label acts as a spacer. */}
-                    <Label htmlFor={`${arc.id}-extent-lock`}>{''}</Label>
+                    <Label htmlFor={`${arc.id}-extent-lock`} />
                     <Checkbox id={`${arc.id}-extent-lock`} checked={!!arc.isExtentLocked} onChange={c => updateShape({ ...arc, isExtentLocked: c })} label="Блокувати довжину" title="Зберігати довжину дуги при зміні її кінців."/>
                 </InputWrapper>
                 <hr className="border-[var(--border-secondary)] my-2" />
                 <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">Заливка</h3>
-                <FillControls shape={arc} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} />
+                <FillControls shape={arc} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} fillColor={fillColor} showNotification={showNotification} />
                 <StippleControls shape={arc} updateShape={updateShape} />
-                <StrokeControls shape={arc} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} />
+                <StrokeControls shape={arc} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} strokeColor={strokeColor} showNotification={showNotification} />
                 {arc.style === 'arc' && lineLikeControls(arc)}
             </>;
         }
@@ -1182,20 +1175,23 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
                         </optgroup>
                     </Select>
                 </InputWrapper>
-                <InputWrapper><Label htmlFor={`${text.id}-fontSize`} title="Розмір шрифту.">Розмір:</Label><NumberInput id={`${text.id}-fontSize`} value={roundToHundredths(text.fontSize)} onChange={v => updateShape({ ...text, fontSize: v })} min={1} /></InputWrapper>
+                <InputWrapper><Label htmlFor={`${text.id}-fontSize`} title="Розмір шрифту.">Розмір:</Label><NumberInput id={`${text.id}-fontSize`} value={roundToHundredths(text.fontSize)} onChange={v => updateShape({ ...text, fontSize: v })} min={1} smartRound={false} /></InputWrapper>
                 
                 <hr className="border-[var(--border-secondary)] my-2" />
                 <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">Заливка</h3>
-                <InputWrapper>
+                <div>
                     <Label htmlFor={`${text.id}-fill`} title="Колір тексту.">Колір:</Label>
-                    <ColorInput 
-                        id={`${text.id}-fill`} 
-                        value={text.fill} 
-                        onChange={v => updateShape({ ...text, fill: v })} 
-                        onPreview={v => setShapePreview(text.id, { fill: v })}
-                        onCancel={cancelShapePreview}
-                    />
-                </InputWrapper>
+                    <div className="mt-1">
+                        <ColorInput 
+                            id={`${text.id}-fill`} 
+                            value={text.fill} 
+                            onChange={v => updateShape({ ...text, fill: v })} 
+                            onPreview={v => setShapePreview(text.id, { fill: v })}
+                            onCancel={cancelShapePreview}
+                            showNotification={showNotification}
+                        />
+                    </div>
+                </div>
                 <StippleControls shape={text} updateShape={updateShape} />
 
                 <InputWrapper>
@@ -1223,11 +1219,11 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
                 </InputWrapper>
                 <InputWrapper>
                     <Label htmlFor={`${text.id}-anchor-x`} title="X-координата точки прив'язки.">X прив'язки:</Label>
-                    <NumberInput id={`${text.id}-anchor-x`} value={roundToHundredths(text.x)} onChange={v => updateShape({ ...text, x: v })} />
+                    <NumberInput id={`${text.id}-anchor-x`} value={roundToHundredths(text.x)} onChange={v => updateShape({ ...text, x: v })} smartRound={false} />
                 </InputWrapper>
                 <InputWrapper>
                     <Label htmlFor={`${text.id}-anchor-y`} title="Y-координата точки прив'язки.">Y прив'язки:</Label>
-                    <NumberInput id={`${text.id}-anchor-y`} value={roundToHundredths(text.y)} onChange={v => updateShape({ ...text, y: v })} />
+                    <NumberInput id={`${text.id}-anchor-y`} value={roundToHundredths(text.y)} onChange={v => updateShape({ ...text, y: v })} smartRound={false} />
                 </InputWrapper>
                 <InputWrapper><Label htmlFor={`${text.id}-justify`} title="Вирівнювання тексту всередині його рамки.">Вирівнювання:</Label>
                     <Select id={`${text.id}-justify`} value={text.justify} onChange={v => updateShape({ ...text, justify: v as any })}>
@@ -1251,24 +1247,32 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
                         {bitmapTypes.map(type => <option key={type} value={type}>{type}</option>)}
                     </Select>
                 </InputWrapper>
-                <InputWrapper><Label htmlFor={`${bitmap.id}-fg`} title="Колір переднього плану бітової карти.">Основний колір:</Label>
-                    <ColorInput 
-                        id={`${bitmap.id}-fg`} 
-                        value={bitmap.foreground} 
-                        onChange={v => updateShape({ ...bitmap, foreground: v })} 
-                        onPreview={v => setShapePreview(bitmap.id, { foreground: v })}
-                        onCancel={cancelShapePreview}
-                    />
-                </InputWrapper>
-                <InputWrapper><Label htmlFor={`${bitmap.id}-bg`} title="Колір фону бітової карти.">Тловий колір:</Label>
-                    <ColorInput 
-                        id={`${bitmap.id}-bg`} 
-                        value={bitmap.background} 
-                        onChange={v => updateShape({ ...bitmap, background: v })}
-                        onPreview={v => setShapePreview(bitmap.id, { background: v })}
-                        onCancel={cancelShapePreview}
-                    />
-                </InputWrapper>
+                <div>
+                    <Label htmlFor={`${bitmap.id}-fg`} title="Колір переднього плану бітової карти.">Основний колір:</Label>
+                    <div className="mt-1">
+                        <ColorInput 
+                            id={`${bitmap.id}-fg`} 
+                            value={bitmap.foreground} 
+                            onChange={v => updateShape({ ...bitmap, foreground: v })} 
+                            onPreview={v => setShapePreview(bitmap.id, { foreground: v })}
+                            onCancel={cancelShapePreview}
+                            showNotification={showNotification}
+                        />
+                    </div>
+                </div>
+                <div>
+                    <Label htmlFor={`${bitmap.id}-bg`} title="Колір фону бітової карти.">Тловий колір:</Label>
+                    <div className="mt-1">
+                        <ColorInput 
+                            id={`${bitmap.id}-bg`} 
+                            value={bitmap.background} 
+                            onChange={v => updateShape({ ...bitmap, background: v })}
+                            onPreview={v => setShapePreview(bitmap.id, { background: v })}
+                            onCancel={cancelShapePreview}
+                            showNotification={showNotification}
+                        />
+                    </div>
+                </div>
             </>;
         }
         default:
@@ -1359,86 +1363,73 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
                     <>
                         <InputWrapper>
                             <Label htmlFor={`${selectedShape.id}-pos-x`} title="X-координата верхнього лівого кута рамки виділення.">X:</Label>
-                            <NumberInput id={`${selectedShape.id}-pos-x`} value={roundToHundredths(visualBounds.x)} onChange={v => handleVisualPosChange('x', v)} />
+                            <NumberInput id={`${selectedShape.id}-pos-x`} value={roundToHundredths(visualBounds.x)} onChange={v => handleVisualPosChange('x', v)} smartRound={false} />
                         </InputWrapper>
                         <InputWrapper>
                             <Label htmlFor={`${selectedShape.id}-pos-y`} title="Y-координата верхнього лівого кута рамки виділення.">Y:</Label>
-                            <NumberInput id={`${selectedShape.id}-pos-y`} value={roundToHundredths(visualBounds.y)} onChange={v => handleVisualPosChange('y', v)} />
+                            <NumberInput id={`${selectedShape.id}-pos-y`} value={roundToHundredths(visualBounds.y)} onChange={v => handleVisualPosChange('y', v)} smartRound={false} />
                         </InputWrapper>
                         <InputWrapper>
                             <Label htmlFor={`${selectedShape.id}-width`} title="Геометрична ширина об'єкта (без обертання).">Ширина:</Label>
-                            <input
-                                id={`${selectedShape.id}-width`}
-                                type="number"
-                                step="1"
-                                value={editingWidth}
-                                onChange={e => handleSizeInputChange('width', e.target.value)}
-                                onBlur={() => handleSizeInputBlur('width')}
-                                className="bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2 py-1 w-full border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none"
+                            <NumberInput 
+                                id={`${selectedShape.id}-width`} 
+                                value={roundToHundredths(geometricBounds.width)} 
+                                onChange={v => updateGeometricSize('width', v)}
+                                min={isCollapsible(selectedShape) ? 1 : 0} 
+                                smartRound={false}
                             />
                         </InputWrapper>
                         <InputWrapper>
                             <Label htmlFor={`${selectedShape.id}-height`} title="Геометрична висота об'єкта (без обертання).">Висота:</Label>
-                             <input
-                                id={`${selectedShape.id}-height`}
-                                type="number"
-                                step="1"
-                                value={editingHeight}
-                                onChange={e => handleSizeInputChange('height', e.target.value)}
-                                onBlur={() => handleSizeInputBlur('height')}
-                                className="bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2 py-1 w-full border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none"
+                            <NumberInput 
+                                id={`${selectedShape.id}-height`} 
+                                value={roundToHundredths(geometricBounds.height)} 
+                                onChange={v => updateGeometricSize('height', v)}
+                                min={isCollapsible(selectedShape) ? 1 : 0} 
+                                smartRound={false}
                             />
                         </InputWrapper>
-
-                        <InputWrapper>
-                            <Label htmlFor={`${selectedShape.id}-visual-width`} title="Візуальна ширина об'єкта з урахуванням обертання.">Ширина (віз.):</Label>
-                            <NumberInput id={`${selectedShape.id}-visual-width`} value={roundToHundredths(visualBounds.width)} onChange={() => {}} disabled />
-                        </InputWrapper>
-                        <InputWrapper>
-                            <Label htmlFor={`${selectedShape.id}-visual-height`} title="Візуальна висота об'єкта з урахуванням обертання.">Висота (віз.):</Label>
-                            <NumberInput id={`${selectedShape.id}-visual-height`} value={roundToHundredths(visualBounds.height)} onChange={() => {}} disabled />
-                        </InputWrapper>
+                        {canLockAspectRatio && (
+                            <InputWrapper>
+                                <Label htmlFor="lock-aspect-ratio-toggle" />
+                                <button onClick={() => updateShape({ ...selectedShape, isAspectRatioLocked: !selectedShape.isAspectRatioLocked })} className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]" title="Зберегти співвідношення сторін при масштабуванні.">
+                                    {selectedShape.isAspectRatioLocked ? <LockIcon size={16}/> : <UnlockIcon size={16}/>}
+                                    <span className="text-sm">{selectedShape.isAspectRatioLocked ? 'Пропорції заблоковано' : 'Зберегти пропорції'}</span>
+                                </button>
+                            </InputWrapper>
+                        )}
+                        {'rotation' in selectedShape && (
+                             <InputWrapper>
+                                <Label htmlFor={`${selectedShape.id}-rotation`} title="Кут обертання об'єкта в градусах.">Обертання:</Label>
+                                <NumberInput id={`${selectedShape.id}-rotation`} value={roundToHundredths(selectedShape.rotation)} onChange={v => updateShape({ ...selectedShape, rotation: v })} smartRound={false} />
+                            </InputWrapper>
+                        )}
                     </>
-                )}
-                {'rotation' in selectedShape && (
-                     <InputWrapper><Label htmlFor={`${selectedShape.id}-rotation`} title="Кут обертання об'єкта в градусах.">Обертання:</Label><NumberInput id={`${selectedShape.id}-rotation`} value={roundToHundredths(selectedShape.rotation)} onChange={v => updateShape({ ...selectedShape, rotation: v })} /></InputWrapper>
-                )}
-                 {canLockAspectRatio && (
-                    <InputWrapper>
-                        <Label htmlFor={`${selectedShape.id}-aspect-lock`}>Пропорції:</Label>
-                        <button
-                            id={`${selectedShape.id}-aspect-lock`}
-                            onClick={() => updateShape({ ...selectedShape, isAspectRatioLocked: !selectedShape.isAspectRatioLocked })}
-                            className={`p-1.5 rounded-md ${selectedShape.isAspectRatioLocked ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
-                            title={selectedShape.isAspectRatioLocked ? 'Розблокувати пропорції' : 'Заблокувати пропорції'}
-                        >
-                            {selectedShape.isAspectRatioLocked ? <LockIcon size={16}/> : <UnlockIcon size={16} />}
-                        </button>
-                    </InputWrapper>
                 )}
             </div>
 
-             {isTkinterBboxEditable && (
-                 <>
+            {isTkinterBboxEditable && (
+                <>
                     <hr className="border-[var(--border-secondary)] my-2" />
-                    <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">Рамка Tkinter (Bbox)</h3>
+                    <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">Координати Tkinter</h3>
                     <TkinterBboxEditor shape={selectedShape as RectangleShape | EllipseShape | ArcShape} updateShape={updateShape} roundFn={roundToHundredths} />
-                 </>
-             )}
-            
+                </>
+            )}
+
             {renderShapeProperties()}
 
             {showPointsEditor && (
                 <PointsEditor
-                    points={editablePoints}
+                    points={editablePoints!}
                     onPointsChange={handlePointsChange}
                     shapeId={selectedShape.id}
                     selectedShape={selectedShape}
                     isEditing={isEditing}
                     activePointIndex={activePointIndex}
                     setActivePointIndex={setActivePointIndex}
-                    deletePoint={(i) => deletePoint(selectedShape.id, i)}
-                    addPoint={(i) => addPoint(selectedShape.id, i)}
+                    deletePoint={(index) => deletePoint(selectedShape.id, index)}
+                    addPoint={(index) => addPoint(selectedShape.id, index)}
+                    // FIX: Changed prop assignment from `isShapeClosed={isShapeClosed as any}` to `isShapeClosed={isShapeClosed}` for type safety.
                     isShapeClosed={isShapeClosed}
                     roundFn={roundToHundredths}
                 />
@@ -1446,6 +1437,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
         </div>
     </div>
   );
-};
+}
 
+// FIX: Added default export to the `PropertyEditor` component to resolve the module resolution error.
 export default PropertyEditor;

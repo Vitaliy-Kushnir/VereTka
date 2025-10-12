@@ -1,3 +1,4 @@
+
 export type Tool = 
     | 'select' 
     | 'edit-points' 
@@ -44,6 +45,8 @@ interface BaseShape {
     strokeWidth: number;
     isAspectRatioLocked?: boolean;
     comment?: string;
+    // Fix: Add _previousStroke to store stroke color when stroke is toggled off.
+    _previousStroke?: string;
 }
 
 export interface RotatableShape {
@@ -54,6 +57,8 @@ export interface RotatableShape {
 export interface FillableShape {
     fill: string;
     stipple?: 'gray12' | 'gray25' | 'gray50' | 'gray75';
+    // Fix: Add _previousFill to store fill color when fill is toggled off.
+    _previousFill?: string;
 }
 
 export interface DashableShape {
@@ -65,6 +70,7 @@ export interface JoinableShape {
     joinstyle?: JoinStyle;
 }
 
+// FIX: Added JoinableShape to allow rectangles to have a joinstyle property. This resolves type errors in Canvas.tsx, PreviewModal.tsx, and exportUtils.ts.
 export interface RectangleShape extends BaseShape, RotatableShape, FillableShape, DashableShape, JoinableShape {
     type: 'rectangle';
     x: number;

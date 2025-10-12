@@ -1,16 +1,19 @@
 import React from 'react';
+import { LocateIcon } from './icons';
 
 interface StatusBarProps {
   zoomLevel: number;
   cursorPos: { x: number; y: number } | null;
   onZoomChange: (newScale: number) => void;
   onResetZoom: () => void;
+  onLocateSelectedShape: () => void;
+  selectedShapeId: string | null;
 }
 
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 30;
 
-const StatusBar: React.FC<StatusBarProps> = ({ zoomLevel, cursorPos, onZoomChange, onResetZoom }) => {
+const StatusBar: React.FC<StatusBarProps> = ({ zoomLevel, cursorPos, onZoomChange, onResetZoom, onLocateSelectedShape, selectedShapeId }) => {
   const formatNumber = (num: number) => Math.round(num * 100) / 100;
   const formattedZoom = `${Math.round(zoomLevel * 100)}%`;
 
@@ -56,6 +59,14 @@ const StatusBar: React.FC<StatusBarProps> = ({ zoomLevel, cursorPos, onZoomChang
           title="Скинути масштаб до 100%"
         >
           {formattedZoom}
+        </button>
+        <button
+            onClick={onLocateSelectedShape}
+            disabled={!selectedShapeId}
+            className="p-1 rounded-md text-[var(--text-tertiary)] hover:text-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-[var(--text-tertiary)]"
+            title="Показати виділений об'єкт"
+        >
+            <LocateIcon size={14} />
         </button>
       </div>
     </div>

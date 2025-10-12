@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { type Shape } from '../types';
 
@@ -45,10 +46,17 @@ export async function generateTkinterCode(
     
     const ai = new GoogleGenAI({ apiKey });
     
-    // Sanitize all user-provided strings that might contain non-ISO-8859-1 characters.
+    // FIX: Sanitize projectName before using it in the prompt.
     const sanitizedProjectName = transliterate(projectName);
+    
+    // Sanitize all user-provided strings that might contain non-ISO-8859-1 characters.
     const sanitizedShapes = shapes.map(shape => {
-        const newShape = { ...shape };
+        const newShape: any = { ...shape };
+
+        if (newShape.type === 'rectangle') {
+            delete newShape.joinstyle;
+        }
+
         if (newShape.name) {
             newShape.name = transliterate(newShape.name);
         }

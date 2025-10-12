@@ -1,5 +1,6 @@
+
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { type Shape, type Tool, type DrawMode, PolylineShape, BezierCurveShape, ViewTransform, RectangleShape, ImageShape, IsoscelesTriangleShape, TrapezoidShape, ParallelogramShape, PathShape, CanvasAction, LineShape, PolygonShape, ArcShape, RightTriangleShape, TextShape, BitmapShape, RotatableShape, EllipseShape, type ProjectTemplate, type NewProjectSettings } from './types';
+import { type Shape, type Tool, type DrawMode, PolylineShape, BezierCurveShape, ViewTransform, RectangleShape, ImageShape, IsoscelesTriangleShape, TrapezoidShape, ParallelogramShape, PathShape, CanvasAction, LineShape, PolygonShape, ArcShape, RightTriangleShape, TextShape, BitmapShape, RotatableShape, EllipseShape, type ProjectTemplate, type NewProjectSettings, FillableShape } from './types';
 import Canvas from './components/Canvas';
 import CodeDisplay, { type CodeLine } from './components/CodeDisplay';
 import PropertyEditor from './components/PropertyEditor';
@@ -22,7 +23,7 @@ import { SquareIcon, CodeIcon, XIcon, AxesIcon, FitToScreenIcon, SelectIcon, Edi
 import { getFinalPoints, getVisualBoundingBox, getBoundingBox, getEditablePoints, getShapeCenter } from './lib/geometry';
 import { getDefaultNameForShape, isDefaultName } from './lib/constants';
 import Ruler from './components/Ruler';
-import { ColorInput, Select } from './components/FormControls';
+import { ColorInput, Select, NumberInput } from './components/FormControls';
 import StatusBar from './components/StatusBar';
 import WelcomeScreen from './components/WelcomeScreen';
 import { useRecentProjects, type RecentProject } from './hooks/useRecentProjects';
@@ -34,8 +35,9 @@ type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
 type SettingsTab = 'canvas' | 'grid' | 'appearance' | 'generator' | 'templates';
 
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.2.5';
 const RULER_THICKNESS = 24;
+const MIN_SCALE = 0.05;
 const MAX_SCALE = 30;
 const MIN_SCREEN_WIDTH = 1024; // Minimum width in pixels for the app to be usable
 
@@ -300,336 +302,293 @@ const LeftToolbar: React.FC<{
     );
 });
 
+// --- Toolbar Controls ---
+// Extracted to be stable components, preventing re-mounts and state loss.
+
+const PropertyControl: React.FC<{label: string, htmlFor: string, children: React.ReactNode}> = ({label, htmlFor, children}) => (
+    <div className="flex items-center gap-1">
+        <label htmlFor={htmlFor} className="text-sm font-medium text-[var(--text-secondary)] whitespace-nowrap">{label}:</label>
+        {children}
+    </div>
+);
+
+type ToolControlsProps = {
+  drawMode: DrawMode; setDrawMode: (m: DrawMode) => void;
+  isFillEnabled: boolean; setIsFillEnabled: (e: boolean) => void;
+  fillColor: string; setFillColor: (c: string) => void;
+  setPreviewFillColor: (c: string | null) => void;
+  isStrokeEnabled: boolean; setIsStrokeEnabled: (e: boolean) => void;
+  strokeColor: string; setStrokeColor: (c: string) => void;
+  setPreviewStrokeColor: (c: string | null) => void;
+  strokeWidth: number; setStrokeWidth: (w: number) => void;
+  numberOfSides: number; setNumberOfSides: (s: number) => void;
+  activeTool: Tool;
+  textColor: string; setTextColor: (c: string) => void;
+  setPreviewTextColor: (c: string | null) => void;
+  textFont: string; setTextFont: (f: string) => void;
+  textFontSize: number; setTextFontSize: (s: number) => void;
+};
+
+const ToolControls: React.FC<ToolControlsProps> = ({
+  drawMode, setDrawMode, isFillEnabled, setIsFillEnabled, fillColor, setFillColor, setPreviewFillColor, 
+  isStrokeEnabled, setIsStrokeEnabled, strokeColor, setStrokeColor, setPreviewStrokeColor, 
+  strokeWidth, setStrokeWidth, numberOfSides, setNumberOfSides, activeTool, 
+  textColor, setTextColor, setPreviewTextColor, textFont, setTextFont, textFontSize, setTextFontSize
+}) => {
+  const handleCancelFillPreview = useCallback(() => setPreviewFillColor(null), [setPreviewFillColor]);
+  const handleCancelStrokePreview = useCallback(() => setPreviewStrokeColor(null), [setPreviewStrokeColor]);
+  const handleCancelTextPreview = useCallback(() => setPreviewTextColor(null), [setPreviewTextColor]);
+
+  const showDrawMode = useMemo(() => ['rectangle', 'square', 'circle', 'ellipse', 'triangle', 'right-triangle', 'polygon', 'star', 'rhombus', 'trapezoid', 'parallelogram', 'arc', 'pieslice', 'chord'].includes(activeTool), [activeTool]);
+  const showFill = useMemo(() => !['select', 'edit-points', 'line', 'pencil', 'polyline', 'bezier', 'image', 'bitmap', 'text'].includes(activeTool), [activeTool]);
+  const showStroke = useMemo(() => !['select', 'edit-points', 'image', 'bitmap', 'text'].includes(activeTool), [activeTool]);
+  const showSides = useMemo(() => ['polygon', 'star'].includes(activeTool), [activeTool]);
+  const showTextControls = useMemo(() => activeTool === 'text', [activeTool]);
+
+  const standardWebFonts = { "Sans-Serif": ["Arial", "Calibri", "Helvetica", "Segoe UI", "Tahoma", "Trebuchet MS", "Verdana"], "Serif": ["Times New Roman", "Georgia", "Garamond"], "Monospace": ["Courier New", "Consolas", "Lucida Console", "Monaco"], };
+  const tkFonts = ["TkDefaultFont", "TkTextFont", "TkFixedFont", "TkMenuFont", "TkHeadingFont", "TkCaptionFont", "TkSmallCaptionFont", "TkIconFont", "TkTooltipFont"];
+
+  return (
+    <>
+      {showDrawMode && (
+        <div className="flex items-center gap-1 bg-[var(--bg-app)] p-1 rounded-lg">
+          <button title="Малювати від кута" onClick={() => setDrawMode('corner')} className={`p-1.5 rounded ${drawMode === 'corner' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><DrawFromCornerIcon/></button>
+          <button title="Малювати від центру" onClick={() => setDrawMode('center')} className={`p-1.5 rounded ${drawMode === 'center' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><DrawFromCenterIcon/></button>
+        </div>
+      )}
+      {showFill && (
+        <PropertyControl label="Заливка" htmlFor="fillColor">
+          <input id="fillEnable" type="checkbox" checked={isFillEnabled} onChange={e => setIsFillEnabled(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" />
+          <ColorInput id="fillColor" value={fillColor} onChange={setFillColor} onPreview={setPreviewFillColor} onCancel={handleCancelFillPreview} disabled={!isFillEnabled} />
+        </PropertyControl>
+      )}
+      {showStroke && (
+        <>
+          <PropertyControl label="Контур" htmlFor="strokeColor">
+            <input id="strokeEnable" type="checkbox" checked={isStrokeEnabled} onChange={e => setIsStrokeEnabled(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" />
+            <ColorInput id="strokeColor" value={strokeColor} onChange={setStrokeColor} onPreview={setPreviewStrokeColor} onCancel={handleCancelStrokePreview} disabled={!isStrokeEnabled} />
+          </PropertyControl>
+          <PropertyControl label="Товщина" htmlFor="strokeWidth">
+            <div className="w-20">
+                <NumberInput id="strokeWidth" min={1} max={100} value={strokeWidth} onChange={setStrokeWidth} disabled={!isStrokeEnabled} />
+            </div>
+          </PropertyControl>
+        </>
+      )}
+      {showSides && (
+        <PropertyControl label="Сторони" htmlFor="sides">
+          <div className="w-20">
+            <NumberInput id="sides" min={3} max={50} value={numberOfSides} onChange={setNumberOfSides} />
+          </div>
+        </PropertyControl>
+      )}
+      {showTextControls && (
+        <>
+          <PropertyControl label="Колір" htmlFor="textColor">
+            <ColorInput id="textColor" value={textColor} onChange={setTextColor} onPreview={setPreviewTextColor} onCancel={handleCancelTextPreview} />
+          </PropertyControl>
+          <PropertyControl label="Шрифт" htmlFor="textFont">
+            <Select id="textFont" value={textFont} onChange={setTextFont} className="w-32 py-0.5">
+              {Object.entries(standardWebFonts).map(([group, fonts]) => (
+                <optgroup label={group} key={group}>{fonts.map(f => <option key={f} value={f}>{f}</option>)}</optgroup>
+              ))}
+              <optgroup label="Шрифти Tkinter">{tkFonts.map(f => <option key={f} value={f}>{f}</option>)}</optgroup>
+            </Select>
+          </PropertyControl>
+          <PropertyControl label="Розмір" htmlFor="textFontSize">
+            <div className="w-20">
+                <NumberInput id="textFontSize" min={1} value={textFontSize} onChange={setTextFontSize} />
+            </div>
+          </PropertyControl>
+        </>
+      )}
+    </>
+  );
+};
+
+type ContextualControlsProps = {
+  selectedShape: Shape;
+  updateShape: (s: Shape) => void;
+  setShapePreview: (shapeId: string, overrides: Partial<Shape>) => void;
+  cancelShapePreview: () => void;
+  fillColor: string;
+  strokeColor: string;
+};
+
+const ContextualControls: React.FC<ContextualControlsProps> = ({ selectedShape, updateShape, setShapePreview, cancelShapePreview, fillColor, strokeColor }) => {
+  const standardWebFonts = { "Sans-Serif": ["Arial", "Calibri", "Helvetica", "Segoe UI", "Tahoma", "Trebuchet MS", "Verdana"], "Serif": ["Times New Roman", "Georgia", "Garamond"], "Monospace": ["Courier New", "Consolas", "Lucida Console", "Monaco"], };
+  const tkFonts = ["TkDefaultFont", "TkTextFont", "TkFixedFont", "TkMenuFont", "TkHeadingFont", "TkCaptionFont", "TkSmallCaptionFont", "TkIconFont", "TkTooltipFont"];
+
+  const shape = selectedShape as TextShape;
+
+  const handleUpdate = (propsToUpdate: Partial<Shape>) => {
+      updateShape({ ...selectedShape, ...propsToUpdate } as Shape);
+  }
+  const handleFillToggle = (checked: boolean) => {
+    // Fix: Add type guard to ensure selectedShape has fill properties before using them
+    if ('fill' in selectedShape) {
+      if (checked) {
+        const colorToRestore = selectedShape._previousFill || fillColor;
+        handleUpdate({ fill: colorToRestore });
+    } else {
+        handleUpdate({ fill: 'none', _previousFill: selectedShape.fill });
+    }
+    }
+  };
+  const handleStrokeToggle = (checked: boolean) => {
+      if (checked) {
+        const colorToRestore = selectedShape._previousStroke || strokeColor;
+        handleUpdate({ stroke: colorToRestore });
+    } else {
+        handleUpdate({ stroke: 'none', _previousStroke: selectedShape.stroke });
+    }
+  };
+
+  const hasFill = 'fill' in selectedShape && selectedShape.type !== 'text';
+  const hasStroke = 'stroke' in selectedShape && 'strokeWidth' in selectedShape && !['image', 'bitmap', 'text'].includes(selectedShape.type);
+  const hasSides = selectedShape.type === 'polygon' || selectedShape.type === 'star';
+  const isText = selectedShape.type === 'text';
+
+  const round = (num: number) => Math.round(num * 100) / 100;
+
+  return (
+      <>
+          {hasFill && (
+              <PropertyControl label="Заливка" htmlFor={`${selectedShape.id}-ctx-fill`}>
+                   <input type="checkbox" checked={selectedShape.fill !== 'none'} onChange={e => handleFillToggle(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" />
+                  <ColorInput id={`${selectedShape.id}-ctx-fill`} value={selectedShape.fill === 'none' ? '#000000' : selectedShape.fill} onChange={v => handleUpdate({ fill: v })} onPreview={v => setShapePreview(selectedShape.id, { fill: v })} onCancel={cancelShapePreview} disabled={selectedShape.fill === 'none'} />
+              </PropertyControl>
+          )}
+          {hasStroke && (
+              <>
+                  <PropertyControl label="Контур" htmlFor={`${selectedShape.id}-ctx-stroke`}>
+                       <input type="checkbox" checked={selectedShape.stroke !== 'none'} onChange={e => handleStrokeToggle(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" />
+                      <ColorInput id={`${selectedShape.id}-ctx-stroke`} value={selectedShape.stroke === 'none' ? '#ffffff' : selectedShape.stroke} onChange={v => handleUpdate({ stroke: v })} onPreview={v => setShapePreview(selectedShape.id, { stroke: v })} onCancel={cancelShapePreview} disabled={selectedShape.stroke === 'none'} />
+                  </PropertyControl>
+                  <PropertyControl label="Товщина" htmlFor={`${selectedShape.id}-ctx-strokeWidth`}>
+                    <div className="w-20">
+                      <NumberInput id={`${selectedShape.id}-ctx-strokeWidth`} min={0} value={selectedShape.strokeWidth} onChange={v => handleUpdate({ strokeWidth: v })} disabled={selectedShape.stroke === 'none'} />
+                    </div>
+                  </PropertyControl>
+              </>
+          )}
+          {hasSides && (
+               <PropertyControl label="Сторони" htmlFor={`${selectedShape.id}-ctx-sides`}>
+                    <div className="w-20">
+                        <NumberInput id={`${selectedShape.id}-ctx-sides`} min={3} max={50} value={(selectedShape as PolygonShape).sides} onChange={v => handleUpdate({ sides: v })} />
+                    </div>
+              </PropertyControl>
+          )}
+          {isText && (
+              <>
+                  <PropertyControl label="Колір" htmlFor={`${shape.id}-ctx-fill`}>
+                      <ColorInput id={`${shape.id}-ctx-fill`} value={shape.fill} onChange={v => handleUpdate({ fill: v })} onPreview={v => setShapePreview(shape.id, { fill: v })} onCancel={cancelShapePreview} />
+                  </PropertyControl>
+                  <PropertyControl label="Шрифт" htmlFor={`${shape.id}-ctx-font`}>
+                     <Select id={`${shape.id}-ctx-font`} value={shape.font} onChange={v => handleUpdate({ font: v })} className="w-32 py-0.5">
+                          {Object.entries(standardWebFonts).map(([group, fonts]) => (<optgroup label={group} key={group}>{fonts.map(f => <option key={f} value={f}>{f}</option>)}</optgroup>))}
+                          <optgroup label="Шрифти Tkinter">{tkFonts.map(f => <option key={f} value={f}>{f}</option>)}</optgroup>
+                      </Select>
+                  </PropertyControl>
+                  <PropertyControl label="Розмір" htmlFor={`${shape.id}-ctx-fontSize`}>
+                        <div className="w-20">
+                            <NumberInput id={`${shape.id}-ctx-fontSize`} min={1} value={round(shape.fontSize)} onChange={v => handleUpdate({ fontSize: v })} />
+                        </div>
+                  </PropertyControl>
+                  <div className="flex items-center gap-0.5 bg-[var(--bg-app)] p-0.5 rounded-md">
+                      <button title="Виразний" onClick={() => handleUpdate({ weight: shape.weight === 'bold' ? 'normal' : 'bold' })} className={`p-1.5 rounded ${shape.weight === 'bold' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><BoldIcon size={16}/></button>
+                      <button title="Курсив" onClick={() => handleUpdate({ slant: shape.slant === 'italic' ? 'roman' : 'italic' })} className={`p-1.5 rounded ${shape.slant === 'italic' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><ItalicIcon size={16}/></button>
+                      <button title="Підкреслений" onClick={() => handleUpdate({ underline: !shape.underline })} className={`p-1.5 rounded ${shape.underline ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><UnderlineIcon size={16}/></button>
+                      <button title="Закреслений" onClick={() => handleUpdate({ overstrike: !shape.overstrike })} className={`p-1.5 rounded ${shape.overstrike ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><StrikethroughIcon size={16}/></button>
+                  </div>
+                   <div className="flex items-center gap-0.5 bg-[var(--bg-app)] p-0.5 rounded-md">
+                      <button title="Ліворуч" onClick={() => handleUpdate({ justify: 'left' })} className={`p-1.5 rounded ${shape.justify === 'left' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><AlignLeftIcon size={16}/></button>
+                      <button title="Центр" onClick={() => handleUpdate({ justify: 'center' })} className={`p-1.5 rounded ${shape.justify === 'center' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><AlignCenterIcon size={16}/></button>
+                      <button title="Праворуч" onClick={() => handleUpdate({ justify: 'right' })} className={`p-1.5 rounded ${shape.justify === 'right' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><AlignRightIcon size={16}/></button>
+                  </div>
+              </>
+          )}
+      </>
+  );
+}
+
 const TopToolbar: React.FC<{
-    drawMode: DrawMode;
-    setDrawMode: (m: DrawMode) => void;
-    isFillEnabled: boolean;
-    setIsFillEnabled: (e: boolean) => void;
-    fillColor: string;
-    setFillColor: (c: string) => void;
+    drawMode: DrawMode; setDrawMode: (m: DrawMode) => void;
+    isFillEnabled: boolean; setIsFillEnabled: (e: boolean) => void;
+    fillColor: string; setFillColor: (c: string) => void;
     setPreviewFillColor: (c: string | null) => void;
-    isStrokeEnabled: boolean;
-    setIsStrokeEnabled: (e: boolean) => void;
-    strokeColor: string;
-    setStrokeColor: (c: string) => void;
+    isStrokeEnabled: boolean; setIsStrokeEnabled: (e: boolean) => void;
+    strokeColor: string; setStrokeColor: (c: string) => void;
     setPreviewStrokeColor: (c: string | null) => void;
-    strokeWidth: number;
-    setStrokeWidth: (w: number) => void;
-    numberOfSides: number;
-    setNumberOfSides: (s: number) => void;
-    onGenerate: () => void;
-    showGenerateButton: boolean;
-    onClear: () => void;
-    isGenerating: boolean;
-    hasShapes: boolean;
-    onUndo: () => void;
-    onRedo: () => void;
-    canUndo: boolean;
-    canRedo: boolean;
-    onDuplicate: () => void;
-    isShapeSelected: boolean;
-    activeTool: Tool;
-    setActiveTool: (tool: Tool) => void;
-    onOpenMobileLeft: () => void;
-    onOpenMobileRight: () => void;
-    theme: Theme;
-    setTheme: (theme: Theme) => void;
-    onToggleFullscreen: () => void;
-    isFullscreen: boolean;
+    strokeWidth: number; setStrokeWidth: (w: number) => void;
+    numberOfSides: number; setNumberOfSides: (s: number) => void;
+    onGenerate: () => void; showGenerateButton: boolean;
+    onClear: () => void; isGenerating: boolean; hasShapes: boolean;
+    onUndo: () => void; onRedo: () => void; canUndo: boolean; canRedo: boolean;
+    onDuplicate: () => void; isShapeSelected: boolean;
+    activeTool: Tool; setActiveTool: (tool: Tool) => void;
+    onOpenMobileLeft: () => void; onOpenMobileRight: () => void;
+    theme: Theme; setTheme: (theme: Theme) => void;
+    onToggleFullscreen: () => void; isFullscreen: boolean;
     selectedShape: Shape | null;
     updateShape: (s: Shape) => void;
     setShapePreview: (shapeId: string, overrides: Partial<Shape>) => void;
     cancelShapePreview: () => void;
-    textColor: string;
-    setTextColor: (c: string) => void;
+    textColor: string; setTextColor: (c: string) => void;
     setPreviewTextColor: (c: string | null) => void;
-    textFont: string;
-    setTextFont: (f: string) => void;
-    textFontSize: number;
-    setTextFontSize: (s: number) => void;
+    textFont: string; setTextFont: (f: string) => void;
+    textFontSize: number; setTextFontSize: (s: number) => void;
 }> = React.memo((props) => {
     const { 
         isGenerating, hasShapes, onUndo, onRedo, canUndo, canRedo, onDuplicate, isShapeSelected, onOpenMobileLeft, onOpenMobileRight,
-        theme, setTheme, onToggleFullscreen, isFullscreen, selectedShape, updateShape, setShapePreview, cancelShapePreview, activeTool, setActiveTool, onGenerate, showGenerateButton, onClear
-      } = props;
+        theme, setTheme, onToggleFullscreen, isFullscreen, selectedShape, activeTool, setActiveTool, onGenerate, showGenerateButton, onClear
+    } = props;
     
-      const standardWebFonts = {
-        "Sans-Serif": ["Arial", "Calibri", "Helvetica", "Segoe UI", "Tahoma", "Trebuchet MS", "Verdana"],
-        "Serif": ["Times New Roman", "Georgia", "Garamond"],
-        "Monospace": ["Courier New", "Consolas", "Lucida Console", "Monaco"],
-      };
-      const tkFonts = ["TkDefaultFont", "TkTextFont", "TkFixedFont", "TkMenuFont", "TkHeadingFont", "TkCaptionFont", "TkSmallCaptionFont", "TkIconFont", "TkTooltipFont"];
-
-
-      const PropertyControl: React.FC<{label: string, htmlFor: string, children: React.ReactNode}> = ({label, htmlFor, children}) => (
+    return (
+    <div className="bg-[var(--bg-primary)] p-2 flex-shrink-0 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 select-none">
+        {/* Left side actions */}
         <div className="flex items-center gap-1">
-            <label htmlFor={htmlFor} className="text-sm font-medium text-[var(--text-secondary)] whitespace-nowrap">{label}:</label>
-            {children}
-        </div>
-      );
-
-      const ToolControls = () => {
-        const { drawMode, setDrawMode, isFillEnabled, setIsFillEnabled, fillColor, setFillColor, setPreviewFillColor, isStrokeEnabled, setIsStrokeEnabled, strokeColor, setStrokeColor, setPreviewStrokeColor, strokeWidth, setStrokeWidth, numberOfSides, setNumberOfSides, textColor, setTextColor, setPreviewTextColor, textFont, setTextFont, textFontSize, setTextFontSize } = props;
-        const showDrawMode = ['rectangle', 'square', 'circle', 'ellipse', 'triangle', 'right-triangle', 'polygon', 'star', 'rhombus', 'trapezoid', 'parallelogram', 'arc', 'pieslice', 'chord'].includes(activeTool);
-        const showFill = !['select', 'edit-points', 'line', 'pencil', 'polyline', 'bezier', 'image', 'bitmap', 'text'].includes(activeTool);
-        const showStroke = !['select', 'edit-points', 'image', 'bitmap', 'text'].includes(activeTool);
-        const showSides = ['polygon', 'star'].includes(activeTool);
-        const showTextControls = activeTool === 'text';
-          
-        return (
-            <>
-                {showDrawMode && (
-                    <div className="flex items-center gap-1 bg-[var(--bg-app)] p-1 rounded-lg">
-                        <button title="Малювати від кута" onClick={() => setDrawMode('corner')} className={`p-1.5 rounded ${drawMode === 'corner' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><DrawFromCornerIcon/></button>
-                        <button title="Малювати від центру" onClick={() => setDrawMode('center')} className={`p-1.5 rounded ${drawMode === 'center' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><DrawFromCenterIcon/></button>
-                    </div>
-                )}
-                 {showFill && (
-                    <PropertyControl label="Заливка" htmlFor="fillColor">
-                        <input id="fillEnable" type="checkbox" checked={isFillEnabled} onChange={e => setIsFillEnabled(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" />
-                        <ColorInput 
-                            id="fillColor" 
-                            value={fillColor} 
-                            onChange={(color) => { setFillColor(color); setPreviewFillColor(null); }}
-                            onPreview={setPreviewFillColor}
-                            onCancel={() => setPreviewFillColor(null)}
-                            disabled={!isFillEnabled} 
-                        />
-                    </PropertyControl>
-                )}
-                 {showStroke && (
-                    <>
-                        <PropertyControl label="Контур" htmlFor="strokeColor">
-                            <input id="strokeEnable" type="checkbox" checked={isStrokeEnabled} onChange={e => setIsStrokeEnabled(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" />
-                            <ColorInput 
-                                id="strokeColor" 
-                                value={strokeColor} 
-                                onChange={(color) => { setStrokeColor(color); setPreviewStrokeColor(null); }}
-                                onPreview={setPreviewStrokeColor}
-                                onCancel={() => setPreviewStrokeColor(null)}
-                                disabled={!isStrokeEnabled} 
-                            />
-                        </PropertyControl>
-                        <PropertyControl label="Товщина" htmlFor="strokeWidth">
-                            <input id="strokeWidth" type="number" min="1" max="100" value={strokeWidth} onChange={e => setStrokeWidth(Number(e.target.value))} disabled={!isStrokeEnabled} className="w-16 bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2 py-0.5 border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none" />
-                        </PropertyControl>
-                    </>
-                 )}
-                 {showSides && (
-                    <PropertyControl label="Сторони" htmlFor="sides">
-                        <input id="sides" type="number" min="3" max="50" value={numberOfSides} onChange={e => setNumberOfSides(Number(e.target.value))} className="w-16 bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2 py-0.5 border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none" />
-                    </PropertyControl>
-                 )}
-                 {showTextControls && (
-                    <>
-                        <PropertyControl label="Колір" htmlFor="textColor">
-                            <ColorInput 
-                                id="textColor" 
-                                value={textColor} 
-                                onChange={(color) => { setTextColor(color); setPreviewTextColor(null); }}
-                                onPreview={setPreviewTextColor}
-                                onCancel={() => setPreviewTextColor(null)}
-                            />
-                        </PropertyControl>
-                         <PropertyControl label="Шрифт" htmlFor="textFont">
-                           <Select
-                                id="textFont"
-                                value={textFont}
-                                onChange={setTextFont}
-                                className="w-32 py-0.5"
-                            >
-                                {Object.entries(standardWebFonts).map(([group, fonts]) => (
-                                    <optgroup label={group} key={group}>
-                                        {fonts.map(f => <option key={f} value={f}>{f}</option>)}
-                                    </optgroup>
-                                ))}
-                                <optgroup label="Шрифти Tkinter">
-                                    {tkFonts.map(f => <option key={f} value={f}>{f}</option>)}
-                                </optgroup>
-                            </Select>
-                        </PropertyControl>
-                        <PropertyControl label="Розмір" htmlFor="textFontSize">
-                             <input id="textFontSize" type="number" min="1" value={textFontSize} onChange={e => setTextFontSize(Number(e.target.value))} className="w-16 bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2 py-0.5 border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none" />
-                        </PropertyControl>
-                    </>
-                 )}
-            </>
-        )
-      }
-
-      const ContextualControls = () => {
-        if (!selectedShape) return null;
-        
-        const shape = selectedShape as TextShape; // Cast for easier access
-
-        const handleUpdate = (propsToUpdate: Partial<Shape>) => {
-            updateShape({ ...selectedShape, ...propsToUpdate } as Shape);
-        }
-
-        const handleFillToggle = (checked: boolean) => {
-            if (checked) {
-                handleUpdate({ fill: props.fillColor });
-            } else {
-                handleUpdate({ fill: 'none' });
-            }
-        };
-
-        const handleStrokeToggle = (checked: boolean) => {
-            if (checked) {
-                handleUpdate({ stroke: props.strokeColor });
-            } else {
-                handleUpdate({ stroke: 'none' });
-            }
-        };
-
-        const hasFill = 'fill' in selectedShape && selectedShape.type !== 'text';
-        const hasStroke = 'stroke' in selectedShape && 'strokeWidth' in selectedShape && !['image', 'bitmap', 'text'].includes(selectedShape.type);
-        const hasSides = selectedShape.type === 'polygon' || selectedShape.type === 'star';
-        const isText = selectedShape.type === 'text';
-
-        const round = (num: number) => Math.round(num * 100) / 100;
-
-        return (
-            <>
-                {hasFill && (
-                    <PropertyControl label="Заливка" htmlFor={`${selectedShape.id}-ctx-fill`}>
-                         <input
-                            type="checkbox"
-                            checked={(selectedShape as any).fill !== 'none'}
-                            onChange={e => handleFillToggle(e.target.checked)}
-                            className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]"
-                        />
-                        <ColorInput 
-                            id={`${selectedShape.id}-ctx-fill`} 
-                            value={(selectedShape as any).fill === 'none' ? '#000000' : (selectedShape as any).fill} 
-                            onChange={v => handleUpdate({ fill: v })}
-                            onPreview={v => setShapePreview(selectedShape.id, { fill: v })}
-                            onCancel={cancelShapePreview}
-                            disabled={(selectedShape as any).fill === 'none'}
-                        />
-                    </PropertyControl>
-                )}
-                {hasStroke && (
-                    <>
-                        <PropertyControl label="Контур" htmlFor={`${selectedShape.id}-ctx-stroke`}>
-                             <input
-                                type="checkbox"
-                                checked={selectedShape.stroke !== 'none'}
-                                onChange={e => handleStrokeToggle(e.target.checked)}
-                                className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]"
-                            />
-                            <ColorInput 
-                                id={`${selectedShape.id}-ctx-stroke`} 
-                                value={selectedShape.stroke === 'none' ? '#ffffff' : selectedShape.stroke} 
-                                onChange={v => handleUpdate({ stroke: v })}
-                                onPreview={v => setShapePreview(selectedShape.id, { stroke: v })}
-                                onCancel={cancelShapePreview}
-                                disabled={selectedShape.stroke === 'none'} 
-                            />
-                        </PropertyControl>
-                        <PropertyControl label="Товщина" htmlFor={`${selectedShape.id}-ctx-strokeWidth`}>
-                            <input id={`${selectedShape.id}-ctx-strokeWidth`} type="number" min="0" value={selectedShape.strokeWidth} onChange={e => handleUpdate({ strokeWidth: Number(e.target.value) })} disabled={selectedShape.stroke === 'none'} className="w-16 bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2 py-0.5 border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none" />
-                        </PropertyControl>
-                    </>
-                )}
-                {hasSides && (
-                     <PropertyControl label="Сторони" htmlFor={`${selectedShape.id}-ctx-sides`}>
-                        <input id={`${selectedShape.id}-ctx-sides`} type="number" min="3" max="50" value={(selectedShape as PolygonShape).sides} onChange={e => handleUpdate({ sides: Number(e.target.value) })} className="w-16 bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2 py-0.5 border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none" />
-                    </PropertyControl>
-                )}
-                {isText && (
-                    <>
-                        <PropertyControl label="Колір" htmlFor={`${shape.id}-ctx-fill`}>
-                            <ColorInput 
-                                id={`${shape.id}-ctx-fill`} 
-                                value={shape.fill} 
-                                onChange={v => handleUpdate({ fill: v })}
-                                onPreview={v => setShapePreview(shape.id, { fill: v })}
-                                onCancel={cancelShapePreview}
-                            />
-                        </PropertyControl>
-                        <PropertyControl label="Шрифт" htmlFor={`${shape.id}-ctx-font`}>
-                           <Select
-                                id={`${shape.id}-ctx-font`}
-                                value={shape.font}
-                                onChange={v => handleUpdate({ font: v })}
-                                className="w-32 py-0.5"
-                            >
-                                {Object.entries(standardWebFonts).map(([group, fonts]) => (
-                                    <optgroup label={group} key={group}>
-                                        {fonts.map(f => <option key={f} value={f}>{f}</option>)}
-                                    </optgroup>
-                                ))}
-                                <optgroup label="Шрифти Tkinter">
-                                    {tkFonts.map(f => <option key={f} value={f}>{f}</option>)}
-                                </optgroup>
-                            </Select>
-                        </PropertyControl>
-                        <PropertyControl label="Розмір" htmlFor={`${shape.id}-ctx-fontSize`}>
-                             <input id={`${shape.id}-ctx-fontSize`} type="number" min="1" value={round(shape.fontSize)} onChange={e => handleUpdate({ fontSize: Number(e.target.value) })} className="w-16 bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2 py-0.5 border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none" />
-                        </PropertyControl>
-                        <div className="flex items-center gap-0.5 bg-[var(--bg-app)] p-0.5 rounded-md">
-                            <button title="Виразний" onClick={() => handleUpdate({ weight: shape.weight === 'bold' ? 'normal' : 'bold' })} className={`p-1.5 rounded ${shape.weight === 'bold' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><BoldIcon size={16}/></button>
-                            <button title="Курсив" onClick={() => handleUpdate({ slant: shape.slant === 'italic' ? 'roman' : 'italic' })} className={`p-1.5 rounded ${shape.slant === 'italic' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><ItalicIcon size={16}/></button>
-                            <button title="Підкреслений" onClick={() => handleUpdate({ underline: !shape.underline })} className={`p-1.5 rounded ${shape.underline ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><UnderlineIcon size={16}/></button>
-                            <button title="Закреслений" onClick={() => handleUpdate({ overstrike: !shape.overstrike })} className={`p-1.5 rounded ${shape.overstrike ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><StrikethroughIcon size={16}/></button>
-                        </div>
-                         <div className="flex items-center gap-0.5 bg-[var(--bg-app)] p-0.5 rounded-md">
-                            <button title="Ліворуч" onClick={() => handleUpdate({ justify: 'left' })} className={`p-1.5 rounded ${shape.justify === 'left' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><AlignLeftIcon size={16}/></button>
-                            <button title="Центр" onClick={() => handleUpdate({ justify: 'center' })} className={`p-1.5 rounded ${shape.justify === 'center' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><AlignCenterIcon size={16}/></button>
-                            <button title="Праворуч" onClick={() => handleUpdate({ justify: 'right' })} className={`p-1.5 rounded ${shape.justify === 'right' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><AlignRightIcon size={16}/></button>
-                        </div>
-                    </>
-                )}
-            </>
-        );
-      }
-
-      return (
-        <div className="bg-[var(--bg-primary)] p-2 flex-shrink-0 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 select-none">
-            {/* Left side actions */}
-            <div className="flex items-center gap-1">
-                <button title="Скасувати (Ctrl+Z)" onClick={onUndo} disabled={!canUndo} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent"><UndoIcon/></button>
-                <button title="Повернути (Ctrl+Y)" onClick={onRedo} disabled={!canRedo} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent"><RedoIcon/></button>
-                <div className="w-px h-6 bg-[var(--border-secondary)] mx-1"></div>
-                <button title="Вибрати (V)" onClick={() => setActiveTool('select')} className={`p-2 rounded-md ${activeTool === 'select' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}><SelectIcon /></button>
-                <button title="Редагувати вузли (A)" onClick={() => setActiveTool('edit-points')} className={`p-2 rounded-md ${activeTool === 'edit-points' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}><EditPointsIcon /></button>
-                <button title="Дублювати (Ctrl+D)" onClick={onDuplicate} disabled={!isShapeSelected} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent"><DuplicateIcon /></button>
-                <div className="w-px h-6 bg-[var(--border-secondary)] mx-1"></div>
-                {/* Mobile Toggles */}
-                <div className="md:hidden flex items-center gap-2">
-                    <button onClick={onOpenMobileLeft} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"><MenuIcon/></button>
-                </div>
-            </div>
-
-            {/* Center properties */}
-            <div className="flex items-center gap-x-2 gap-y-2 flex-wrap">
-                {selectedShape ? <ContextualControls /> : <ToolControls />}
-            </div>
-
-            {/* Right side actions */}
-            <div className="flex items-center gap-2">
-                 <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Змінити тему" className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]">
-                    {theme === 'dark' ? <SunIcon/> : <MoonIcon/>}
-                </button>
-                 <button onClick={onToggleFullscreen} title={isFullscreen ? 'Вийти з повноекранного режиму (F11)' : 'Повноекранний режим (F11)'} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]">
-                    {isFullscreen ? <ExitFullscreenIcon/> : <FullscreenIcon/>}
-                </button>
-                 {/* Mobile Toggles */}
-                 <div className="md:hidden flex items-center gap-2">
-                    <button onClick={onOpenMobileRight} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"><CodeIcon/></button>
-                </div>
-                <div className="w-px h-6 bg-[var(--border-secondary)] mx-1 md:hidden"></div>
-                <button onClick={onClear} disabled={!hasShapes} className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md font-semibold transition-colors duration-200 bg-[var(--destructive-bg)] text-[var(--accent-text)] hover:bg-[var(--destructive-bg-hover)] disabled:bg-[var(--bg-disabled)] disabled:text-[var(--text-disabled)] disabled:cursor-not-allowed"><TrashIcon size={16}/><span>Очистити</span></button>
-                {showGenerateButton && (
-                    <button onClick={onGenerate} disabled={isGenerating || !hasShapes} className="flex items-center gap-2 px-4 py-1.5 text-sm rounded-md font-semibold transition-colors duration-200 bg-[var(--accent-primary)] text-[var(--accent-text)] hover:bg-[var(--accent-primary-hover)] disabled:bg-[var(--bg-disabled)] disabled:text-[var(--text-disabled)] disabled:cursor-not-allowed">
-                        <CodeIcon/>
-                        <span>{isGenerating ? 'Генерація...' : 'Згенерувати код'}</span>
-                    </button>
-                )}
+            <button title="Скасувати (Ctrl+Z)" onClick={onUndo} disabled={!canUndo} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent"><UndoIcon/></button>
+            <button title="Повернути (Ctrl+Y)" onClick={onRedo} disabled={!canRedo} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent"><RedoIcon/></button>
+            <div className="w-px h-6 bg-[var(--border-secondary)] mx-1"></div>
+            <button title="Вибрати (V)" onClick={() => setActiveTool('select')} className={`p-2 rounded-md ${activeTool === 'select' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}><SelectIcon /></button>
+            <button title="Редагувати вузли (A)" onClick={() => setActiveTool('edit-points')} className={`p-2 rounded-md ${activeTool === 'edit-points' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}><EditPointsIcon /></button>
+            <button title="Дублювати (Ctrl+D)" onClick={onDuplicate} disabled={!isShapeSelected} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent"><DuplicateIcon /></button>
+            <div className="w-px h-6 bg-[var(--border-secondary)] mx-1"></div>
+            {/* Mobile Toggles */}
+            <div className="md:hidden flex items-center gap-2">
+                <button onClick={onOpenMobileLeft} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"><MenuIcon/></button>
             </div>
         </div>
-      );
+
+        {/* Center properties */}
+        <div className="flex items-center gap-x-2 gap-y-2 flex-wrap">
+            {selectedShape ? <ContextualControls {...props} /> : <ToolControls {...props} />}
+        </div>
+
+        {/* Right side actions */}
+        <div className="flex items-center gap-2">
+             <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Змінити тему" className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]">
+                {theme === 'dark' ? <SunIcon/> : <MoonIcon/>}
+            </button>
+             <button onClick={onToggleFullscreen} title={isFullscreen ? 'Вийти з повноекранного режиму (F11)' : 'Повноекранний режим (F11)'} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]">
+                {isFullscreen ? <ExitFullscreenIcon/> : <FullscreenIcon/>}
+            </button>
+             {/* Mobile Toggles */}
+             <div className="md:hidden flex items-center gap-2">
+                <button onClick={onOpenMobileRight} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"><CodeIcon/></button>
+            </div>
+            <div className="w-px h-6 bg-[var(--border-secondary)] mx-1 md:hidden"></div>
+            <button onClick={onClear} disabled={!hasShapes} className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md font-semibold transition-colors duration-200 bg-[var(--destructive-bg)] text-[var(--accent-text)] hover:bg-[var(--destructive-bg-hover)] disabled:bg-[var(--bg-disabled)] disabled:text-[var(--text-disabled)] disabled:cursor-not-allowed"><TrashIcon size={16}/><span>Очистити</span></button>
+            {showGenerateButton && (
+                <button onClick={onGenerate} disabled={isGenerating || !hasShapes} className="flex items-center gap-2 px-4 py-1.5 text-sm rounded-md font-semibold transition-colors duration-200 bg-[var(--accent-primary)] text-[var(--accent-text)] hover:bg-[var(--accent-primary-hover)] disabled:bg-[var(--bg-disabled)] disabled:text-[var(--text-disabled)] disabled:cursor-not-allowed">
+                    <CodeIcon/>
+                    <span>{isGenerating ? 'Генерація...' : 'Згенерувати код'}</span>
+                </button>
+            )}
+        </div>
+    </div>
+    );
 });
 
 export default function App(): React.ReactNode {
@@ -726,6 +685,16 @@ export default function App(): React.ReactNode {
   const [projectTemplates, setProjectTemplates] = useState<ProjectTemplate[]>([]);
   const escapeHoldTimer = useRef<number | null>(null);
   const ESCAPE_HOLD_DURATION = 2000; // 2 seconds
+  const [projectWasEverActive, setProjectWasEverActive] = useState(false);
+
+  const codeStringForExport = useMemo(() => {
+    const lines = showComments 
+      ? generatedCodeLines 
+      : generatedCodeLines.filter(line => !line.content.trim().startsWith('#'));
+    
+    return lines.map(line => line.content).join('\n');
+  }, [generatedCodeLines, showComments]);
+
 
   useEffect(() => {
     try {
@@ -1285,6 +1254,7 @@ export default function App(): React.ReactNode {
         lastSavedSignatureRef.current = getProjectSignature(settings.projectName, []);
     }
 
+    setProjectWasEverActive(true);
     setIsNewProjectModalOpen(false);
     setIsProjectActive(true);
     setTimeout(fitCanvasToView, 0);
@@ -1492,6 +1462,7 @@ export default function App(): React.ReactNode {
             if (activeTool === 'polyline' || activeTool === 'bezier') {
                 setActiveTool('select');
             }
+            setProjectWasEverActive(true);
             setIsProjectActive(true);
             if (handle) {
                 addRecentProject(handle, savedData.thumbnail);
@@ -1643,32 +1614,57 @@ export default function App(): React.ReactNode {
   }, [clearAllProjects, recentProjects.length]);
 
 
-    const handleSaveCode = useCallback(async (fileName: string) => {
+    const handleSaveCode = useCallback(async (fileName: string, extension: '.py' | '.txt', includeLineNumbers: boolean) => {
         setIsSaveCodeModalOpen(false);
-        const codeAsString = generatedCodeLines.map(line => line.content).join('\n');
-        if (!codeAsString) {
+        
+        let contentToSave: string;
+        let fileDescription: string;
+        let mimeType: string;
+        let accept: Record<string, string[]>;
+
+        if (extension === '.txt' && includeLineNumbers) {
+            contentToSave = generatedCodeLines
+                .filter(line => showComments || !line.content.trim().startsWith('#'))
+                .map((line, index) => `${String(index + 1).padStart(4, ' ')} | ${line.content}`)
+                .join('\n');
+        } else {
+            contentToSave = codeStringForExport;
+        }
+
+        if (!contentToSave) {
           showNotification('Немає коду для збереження.', 'error');
           return;
         }
+        
+        if (extension === '.py') {
+            fileDescription = 'Python файл';
+            mimeType = 'text/python';
+            accept = { [mimeType]: ['.py'] };
+        } else { // .txt
+            fileDescription = 'Текстовий файл';
+            mimeType = 'text/plain';
+            accept = { [mimeType]: ['.txt'] };
+        }
+
         try {
           await saveFile(
-            codeAsString,
-            `${fileName}.py`,
+            contentToSave,
+            `${fileName}${extension}`,
             [{
-              description: 'Python файл',
-              accept: { 'text/python': ['.py'] },
+              description: fileDescription,
+              accept: accept,
             }],
-            'text/python'
+            mimeType
           );
-          showNotification('Код успішно збережено.', 'info');
+          showNotification('Файл успішно збережено.', 'info');
         } catch (err) {
-          console.error('Не вдалося зберегти код:', err);
-          showNotification('Не вдалося зберегти код.', 'error');
+          console.error('Не вдалося зберегти файл:', err);
+          showNotification('Не вдалося зберегти файл.', 'error');
         }
-    }, [generatedCodeLines]);
+    }, [codeStringForExport, generatedCodeLines, showComments]);
 
     const handleOpenOrRunCodeOnline = useCallback((runImmediately: boolean) => {
-        const codeString = generatedCodeLines.map(line => line.content).join('\n');
+        const codeString = codeStringForExport;
         if (!codeString) {
             showNotification('Немає коду для запуску.', 'error');
             return;
@@ -1688,7 +1684,7 @@ export default function App(): React.ReactNode {
             console.error("Error creating online IDE link:", e);
             showNotification('Не вдалося створити посилання для онлайн IDE.', 'error');
         }
-    }, [generatedCodeLines]);
+    }, [codeStringForExport]);
 
 
   const handleDuplicate = useCallback(() => { if (selectedShapeId) duplicateShape(selectedShapeId); }, [selectedShapeId, duplicateShape]);
@@ -1711,6 +1707,39 @@ export default function App(): React.ReactNode {
     }
   }, []);
 
+    const handleLocateSelectedShape = useCallback(() => {
+        if (!selectedShapeId || !viewportRef.current) return;
+        const shape = shapes.find(s => s.id === selectedShapeId);
+        if (!shape) return;
+
+        const shapeBbox = getVisualBoundingBox(shape);
+        if (!shapeBbox || shapeBbox.width === 0 || shapeBbox.height === 0) return;
+
+        const rulerOffset = showAxes ? RULER_THICKNESS : 0;
+        const canvasViewportWidth = viewportSize.width - rulerOffset;
+        const canvasViewportHeight = viewportSize.height - rulerOffset;
+        
+        const PADDING_FACTOR = 0.8; // Use 80% of the viewport to leave some margin
+        const availableWidth = canvasViewportWidth * PADDING_FACTOR;
+        const availableHeight = canvasViewportHeight * PADDING_FACTOR;
+
+        const scaleX = availableWidth / shapeBbox.width;
+        const scaleY = availableHeight / shapeBbox.height;
+        let newScale = Math.min(scaleX, scaleY);
+        newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
+
+        const shapeCenterX = shapeBbox.x + shapeBbox.width / 2;
+        const shapeCenterY = shapeBbox.y + shapeBbox.height / 2;
+
+        const viewportCenterX = canvasViewportWidth / 2;
+        const viewportCenterY = canvasViewportHeight / 2;
+
+        const newX = viewportCenterX - (shapeCenterX * newScale);
+        const newY = viewportCenterY - (shapeCenterY * newScale);
+
+        setViewTransform({ scale: newScale, x: newX, y: newY });
+    }, [selectedShapeId, shapes, showAxes, viewportSize, setViewTransform]);
+
   useEffect(() => {
     const handleFullscreenChange = () => {
         setIsFullscreen(!!document.fullscreenElement);
@@ -1730,13 +1759,13 @@ export default function App(): React.ReactNode {
         }
 
         if (e.key === 'Escape' && isFullscreen) {
-            e.preventDefault(); // Запобігти стандартній дії браузера (миттєвий вихід)
-            if (escapeHoldTimer.current === null) { // Почати таймер, лише якщо він ще не запущений
+            e.preventDefault();
+            if (escapeHoldTimer.current === null) {
                 escapeHoldTimer.current = window.setTimeout(() => {
                     if (document.exitFullscreen) {
                         document.exitFullscreen();
                     }
-                    escapeHoldTimer.current = null; // Скинути таймер
+                    escapeHoldTimer.current = null;
                 }, ESCAPE_HOLD_DURATION);
             }
         }
@@ -1852,7 +1881,6 @@ export default function App(): React.ReactNode {
 
     const handleKeyUp = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
-            // Якщо користувач відпускає Esc, скасувати таймер
             if (escapeHoldTimer.current !== null) {
                 clearTimeout(escapeHoldTimer.current);
                 escapeHoldTimer.current = null;
@@ -1975,6 +2003,20 @@ export default function App(): React.ReactNode {
         }
     }, []);
 
+  const handleSetFillColor = useCallback((color: string) => {
+      setFillColor(color);
+      setPreviewFillColor(null);
+  }, []);
+
+  const handleSetStrokeColor = useCallback((color: string) => {
+      setStrokeColor(color);
+      setPreviewStrokeColor(null);
+  }, []);
+
+  const handleSetTextColor = useCallback((color: string) => {
+      setTextColor(color);
+      setPreviewTextColor(null);
+  }, []);
 
   return (
     <div className="h-screen bg-[var(--bg-app)] text-[var(--text-primary)] font-sans flex flex-col selection:bg-[var(--accent-primary)] selection:text-[var(--accent-text)] overflow-hidden">
@@ -2052,10 +2094,10 @@ export default function App(): React.ReactNode {
               isStrokeEnabled={isStrokeEnabled}
               setIsStrokeEnabled={setIsStrokeEnabled}
               fillColor={fillColor}
-              setFillColor={setFillColor}
+              setFillColor={handleSetFillColor}
               setPreviewFillColor={setPreviewFillColor}
               strokeColor={strokeColor}
-              setStrokeColor={setStrokeColor}
+              setStrokeColor={handleSetStrokeColor}
               setPreviewStrokeColor={setPreviewStrokeColor}
               strokeWidth={strokeWidth}
               setStrokeWidth={setStrokeWidth}
@@ -2083,7 +2125,7 @@ export default function App(): React.ReactNode {
               setShapePreview={setShapePreview}
               cancelShapePreview={cancelShapePreview}
               textColor={textColor}
-              setTextColor={setTextColor}
+              setTextColor={handleSetTextColor}
               setPreviewTextColor={setPreviewTextColor}
               textFont={textFont}
               setTextFont={setTextFont}
@@ -2115,10 +2157,12 @@ export default function App(): React.ReactNode {
                         showComments={showComments}
                         setShowComments={setShowComments}
                         generatorType={generatorType}
+                        // FIX: Changed prop name from `onSwitchToLocalFromError` to `onSwitchToLocalGenerator` to match `CodeDisplayProps`.
                         onSwitchToLocalGenerator={handleSwitchToLocalFromError}
                         onOpenSettingsToGenerator={handleOpenSettingsToGenerator}
                         onSaveCode={() => setIsSaveCodeModalOpen(true)}
                         onOpenOrRunCodeOnline={handleOpenOrRunCodeOnline}
+                        codeStringForExport={codeStringForExport}
                     />
                 </div>
             </aside>}
@@ -2172,6 +2216,8 @@ export default function App(): React.ReactNode {
                             cursorPos={cursorPos}
                             onZoomChange={handleZoomChange}
                             onResetZoom={handleResetZoom}
+                            onLocateSelectedShape={handleLocateSelectedShape}
+                            selectedShapeId={selectedShapeId}
                         />
                     </>
                 ) : (
@@ -2182,6 +2228,8 @@ export default function App(): React.ReactNode {
                         onOpenRecent={handleOpenRecent}
                         onRemoveProject={handleRemoveRecentProject}
                         onClearAllProjects={handleClearAllRecentProjects}
+                        hasActiveProject={projectWasEverActive}
+                        onReturnToProject={() => setIsProjectActive(true)}
                     />
                 )}
             </div>
@@ -2209,6 +2257,7 @@ export default function App(): React.ReactNode {
                         activeTool={activeTool} activePointIndex={activePointIndex} setActivePointIndex={setActivePointIndex}
                         deletePoint={deletePoint} addPoint={addPoint} convertToPath={convertToPath} showNotification={showNotification}
                         setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview}
+                        fillColor={fillColor} strokeColor={strokeColor}
                     />
                 </div>
             </aside>}

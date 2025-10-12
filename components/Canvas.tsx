@@ -221,8 +221,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     const id = new Date().toISOString();
     let newShape: Shape | null = null;
     switch (activeTool) {
-        case 'rectangle': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'rectangle', x: pos.x, y: pos.y, width: 0, height: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', isAspectRatioLocked: false, joinstyle: 'miter' }; break;
-        case 'square': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'rectangle', x: pos.x, y: pos.y, width: 0, height: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', isAspectRatioLocked: true, joinstyle: 'miter' }; break;
+        case 'rectangle': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'rectangle', x: pos.x, y: pos.y, width: 0, height: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', isAspectRatioLocked: false }; break;
+        case 'square': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'rectangle', x: pos.x, y: pos.y, width: 0, height: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', isAspectRatioLocked: true }; break;
         case 'circle': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'ellipse', cx: pos.x, cy: pos.y, rx: 0, ry: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', isAspectRatioLocked: true }; break;
         case 'ellipse': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'ellipse', cx: pos.x, cy: pos.y, rx: 0, ry: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', isAspectRatioLocked: false }; break;
         case 'line': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'line', points: [{...pos}, {...pos}], stroke: strokeColor, strokeWidth, rotation: 0, capstyle: 'round', state: 'normal' }; break;
@@ -360,7 +360,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 let width = Math.abs(pos.x - startPos.x);
                 let height = Math.abs(pos.y - startPos.y);
 
-                if (shape.isAspectRatioLocked) {
+                if (shape.isAspectRatioLocked || e.shiftKey) {
                     width = height = Math.max(width, height);
                 }
 
@@ -369,7 +369,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     const y = pos.y < startPos.y ? startPos.y - height : startPos.y;
                     updatedShape = { ...shape, x, y, width, height };
                 } else {
-                    if (shape.isAspectRatioLocked) {
+                    if (shape.isAspectRatioLocked || e.shiftKey) {
                       width = height = Math.max(Math.abs(pos.x - startPos.x), Math.abs(pos.y - startPos.y)) * 2;
                     } else {
                       width *= 2;
@@ -384,7 +384,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 let width = Math.abs(pos.x - startPos.x);
                 let height = Math.abs(pos.y - startPos.y);
                 
-                if ('isAspectRatioLocked' in shape && shape.isAspectRatioLocked) {
+                if (('isAspectRatioLocked' in shape && shape.isAspectRatioLocked) || e.shiftKey) {
                     width = height = Math.max(width, height);
                 }
 
@@ -393,7 +393,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                      const y = pos.y < startPos.y ? startPos.y - height : startPos.y;
                      updatedShape = { ...shape, x, y, width, height };
                 } else {
-                    if ('isAspectRatioLocked' in shape && shape.isAspectRatioLocked) {
+                    if (('isAspectRatioLocked' in shape && shape.isAspectRatioLocked) || e.shiftKey) {
                         width = height = Math.max(Math.abs(pos.x - startPos.x), Math.abs(pos.y - startPos.y)) * 2;
                     } else {
                         width *= 2;
@@ -407,7 +407,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 const dx = pos.x - startPos.x;
                 const dy = pos.y - startPos.y;
 
-                if (shape.isAspectRatioLocked) {
+                if (shape.isAspectRatioLocked || e.shiftKey) {
                     const dist = Math.hypot(dx, dy);
                     const r = drawMode === 'center' ? dist : dist / 2;
                     const cx = drawMode === 'center' ? startPos.x : startPos.x + dx / 2;
@@ -598,8 +598,17 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         }
         case 'duplicating':
         case 'dragging': {
-            const dx = pos.x - action.startPos.x;
-            const dy = pos.y - action.startPos.y;
+            let dx = pos.x - action.startPos.x;
+            let dy = pos.y - action.startPos.y;
+
+            if (e.shiftKey) {
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    dy = 0; // Constrain to horizontal movement
+                } else {
+                    dx = 0; // Constrain to vertical movement
+                }
+            }
+
             const { initialShape } = action;
 
             switch (initialShape.type) {
@@ -638,7 +647,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             const isHorizontalHandle = handle.includes('left') || handle.includes('right');
             const isVerticalHandle = handle.includes('top') || handle.includes('bottom');
             
-            const isLocked = ('isAspectRatioLocked' in initialShape && initialShape.isAspectRatioLocked);
+            const isLocked = ('isAspectRatioLocked' in initialShape && initialShape.isAspectRatioLocked) || e.shiftKey;
 
             if (isHorizontalHandle && isVerticalHandle) { // Corner handle
                 let width = Math.abs(mousePosLocal.x - anchorPointLocal.x);
@@ -881,8 +890,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   }, [action, drawMode, activeTransformShape, getTransformedPointerPosition, setViewTransform, getPointerPosition, setCursorPos]);
 
   const handleMouseUp = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    // If a pan was started but not dragged, it's a click on empty space -> deselect.
-    if (action?.type === 'panning' && !hasDraggedRef.current) {
+    // If a pan was started with the left mouse but not dragged, it's a click on empty space -> deselect.
+    // This prevents deselecting when middle-mouse panning.
+    if (action?.type === 'panning' && !hasDraggedRef.current && e.button === 0) {
         onSelectShape(null);
     }
     

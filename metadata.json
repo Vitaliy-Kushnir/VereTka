@@ -1,5 +1,5 @@
 {
-  "name": "Veretka - Vector Editor for Tkinter",
+  "name": "Veretka - Vector Editor for Canvas Tkinter",
   "description": "A simple vector editor that uses the Gemini API to generate Python Tkinter code that reproduces a drawing.",
   "requestFramePermissions": [],
   "prompt": ""

@@ -665,6 +665,27 @@ export function getFinalPoints(shape: Shape, overrideCenter?: { x: number; y: nu
 }
 
 export const getVisualBoundingBox = (shape: Shape, overrideCenter?: { x: number; y: number }): { x: number, y: number, width: number, height: number } | null => {
+    // Optimization for rotated ellipses and circles.
+    if (shape.type === 'ellipse') {
+        const { cx, cy, rx, ry, rotation = 0 } = shape;
+        const angleRad = (rotation * Math.PI) / 180;
+        const cos = Math.cos(angleRad);
+        const sin = Math.sin(angleRad);
+
+        const term1 = Math.pow(rx * cos, 2) + Math.pow(ry * sin, 2);
+        const term2 = Math.pow(rx * sin, 2) + Math.pow(ry * cos, 2);
+        
+        const width = 2 * Math.sqrt(term1);
+        const height = 2 * Math.sqrt(term2);
+
+        return {
+            x: cx - width / 2,
+            y: cy - height / 2,
+            width: width,
+            height: height,
+        };
+    }
+    
     const finalPoints = getFinalPoints(shape, overrideCenter);
     if (!finalPoints || finalPoints.length === 0) {
         // Fallback for shapes without points (like a zero-size rectangle)
