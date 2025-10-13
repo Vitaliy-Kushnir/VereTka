@@ -70,13 +70,15 @@ function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, ca
         }
     }
 
-    const commonLineProps = (s: LineShape | BezierCurveShape | PolylineShape | ArcShape | PathShape) => {
-        if (s.arrow && s.arrow !== 'none' && s.arrowshape) {
+    const commonLineProps = (s: LineShape | BezierCurveShape | PolylineShape | PathShape) => {
+        const isClosed = (s.type === 'polyline' || s.type === 'bezier') && s.isClosed;
+
+        if (s.arrow && s.arrow !== 'none' && s.arrowshape && !isClosed) {
             options.arrow = s.arrow;
             const w = s.strokeWidth > 0 ? s.strokeWidth : 1;
             options.arrowshape = s.arrowshape.map(v => round(v * w));
         }
-        if (s.capstyle) {
+        if (s.capstyle && !isClosed) {
             options.capstyle = s.capstyle;
         }
     };
@@ -106,7 +108,7 @@ function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, ca
         return `${canvasVarName}.create_line(${flattenedPoints}${formatOptions(options)})`;
     }
 
-    if (shape.type === 'line' || shape.type === 'bezier' || shape.type === 'polyline' || shape.type === 'arc' || shape.type === 'pencil') {
+    if (shape.type === 'line' || shape.type === 'bezier' || shape.type === 'polyline' || shape.type === 'pencil') {
         commonLineProps(shape);
     }
 

@@ -1,4 +1,5 @@
 
+
 export type Tool = 
     | 'select' 
     | 'edit-points' 
@@ -200,11 +201,11 @@ export interface ArcShape extends BaseShape, RotatableShape, FillableShape, Dash
     start: number;
     extent: number;
     style: 'pieslice' | 'chord' | 'arc';
+    isExtentLocked?: boolean;
+    // FIX: Add properties to allow arcs to have arrows and capstyles, like other line-like shapes.
     capstyle?: 'butt' | 'round' | 'projecting';
     arrow?: 'none' | 'first' | 'last' | 'both';
     arrowshape?: [number, number, number];
-    activeStroke?: string;
-    isExtentLocked?: boolean;
 }
 
 export interface TextShape extends BaseShape, RotatableShape, FillableShape {

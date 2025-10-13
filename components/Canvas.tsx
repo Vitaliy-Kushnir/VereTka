@@ -243,7 +243,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             const finalFillColor = style === 'arc' ? 'none' : fillColor;
             const extent = (style === 'pieslice' || style === 'chord') ? 270 : 90;
             
-            newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'arc', x: pos.x, y: pos.y, width: 0, height: 0, fill: finalFillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', start: 0, extent, style, capstyle: 'round', isAspectRatioLocked: false };
+            newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'arc', x: pos.x, y: pos.y, width: 0, height: 0, fill: finalFillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', start: 0, extent, style, isAspectRatioLocked: false };
             break;
         }
         case 'polygon':
@@ -1237,7 +1237,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     const arrowMarkers = useMemo(() => {
         const markers = new Map<string, { color: string; shapeParams: [number, number, number] }>();
         itemsToRender.forEach(shape => {
-            if ((shape.type === 'line' || shape.type === 'bezier' || shape.type === 'pencil' || (shape.type === 'polyline' && !shape.isClosed) || (shape.type === 'arc' && shape.style === 'arc')) && shape.arrow && shape.arrow !== 'none' && shape.stroke !== 'none' && shape.strokeWidth > 0 && shape.arrowshape) {
+            if ((shape.type === 'line' || shape.type === 'bezier' || shape.type === 'pencil' || (shape.type === 'polyline' && !shape.isClosed) || (shape.type === 'arc' && shape.style === 'arc')) && 'arrow' in shape && shape.arrow && shape.arrow !== 'none' && shape.stroke !== 'none' && shape.strokeWidth > 0 && shape.arrowshape) {
                 const [d1m, d2m, d3m] = shape.arrowshape;
                 const w = shape.strokeWidth;
                 const d1 = d1m * w;
@@ -1545,7 +1545,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     } as React.CSSProperties,
                 };
                 
-                const lineLikeProps = (s: LineShape | BezierCurveShape | PolylineShape | PathShape | ArcShape) => {
+                const lineLikeProps = (s: LineShape | BezierCurveShape | PolylineShape | PathShape) => {
                     const hasVisibleStroke = s.stroke !== 'none' && s.strokeWidth > 0;
                     let dashArray;
                     const hasDash = 'dash' in s && s.dash && s.dash.length > 0 && s.strokeWidth > 0;
@@ -1610,7 +1610,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     case 'arc': {
                          const arcShape = shape as ArcShape;
                         const d = getArcPathData(arcShape);
-                        const arcProps: any = { ...commonVisibleProps, fill: arcShape.style === 'arc' ? 'none' : arcShape.fill, ...lineLikeProps(arcShape) };
+                        const arcProps: any = { ...commonVisibleProps, fill: arcShape.style === 'arc' ? 'none' : arcShape.fill };
+                        if (arcShape.dash) arcProps.strokeDasharray = arcShape.dash.map(v => v * arcShape.strokeWidth).join(' ');
+                        if (arcShape.dashoffset) arcProps.strokeDashoffset = arcShape.dashoffset;
                         if (arcShape.stipple && arcShape.fill !== 'none' && arcShape.style !== 'arc') arcProps.mask = `url(#mask-${arcShape.stipple})`;
                         return (
                             <g key={shape.id}>

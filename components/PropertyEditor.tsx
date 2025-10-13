@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Shape, LineShape, BezierCurveShape, PathShape, JoinStyle, PolygonShape, IsoscelesTriangleShape, RhombusShape, ParallelogramShape, TrapezoidShape, PolylineShape, RectangleShape, EllipseShape, Tool, ArcShape, RightTriangleShape, TextShape, ImageShape, BitmapShape, BuiltInBitmap } from '../types';
 import { getVisualBoundingBox, getFinalPoints, getPolygonSideLength, getBoundingBox, getPolygonRadiusFromSideLength, getEditablePoints, getShapeCenter, getTextBoundingBox, rotatePoint } from '../lib/geometry';
@@ -38,6 +37,7 @@ declare global {
 }
 
 type FillableShape = Exclude<Extract<Shape, { fill: string }>, PathShape>;
+// FIX: Add RectangleShape to the JoinableShape union type.
 type JoinableShape = 
     | PolygonShape 
     | IsoscelesTriangleShape 
@@ -47,7 +47,8 @@ type JoinableShape =
     | TrapezoidShape 
     | PolylineShape
     | BezierCurveShape
-    | PathShape;
+    | PathShape
+    | RectangleShape;
 type StippleableShape = 
     | RectangleShape 
     | EllipseShape 
@@ -793,7 +794,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
         </>
     );
     
-    const lineLikeControls = (shape: LineShape | BezierCurveShape | PolylineShape | PathShape | ArcShape) => {
+    const lineLikeControls = (shape: LineShape | BezierCurveShape | PolylineShape | PathShape) => {
         const isClosed = (shape.type === 'polyline' || shape.type === 'bezier') && shape.isClosed;
 
         const strokeWidth = shape.strokeWidth > 0 ? shape.strokeWidth : 1;
@@ -810,16 +811,16 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
         return (
             <>
                 <hr className="border-[var(--border-secondary)] my-2" />
-                <InputWrapper>
-                    <Label htmlFor={`${shape.id}-capstyle`} title="Стиль кінців незамкнених ліній.">Стиль кінця:</Label>
-                    <Select id={`${shape.id}-capstyle`} value={shape.capstyle ?? 'round'} onChange={v => updateShape({ ...shape, capstyle: v as any })} title="Визначає, як виглядають кінці ліній.">
-                        <option value="butt">Плаский</option>
-                        <option value="round">Круглий</option>
-                        <option value="projecting">Квадратний</option>
-                    </Select>
-                </InputWrapper>
                 {!isClosed && (
                     <>
+                        <InputWrapper>
+                            <Label htmlFor={`${shape.id}-capstyle`} title="Стиль кінців незамкнених ліній.">Стиль кінця:</Label>
+                            <Select id={`${shape.id}-capstyle`} value={shape.capstyle ?? 'round'} onChange={v => updateShape({ ...shape, capstyle: v as any })} title="Визначає, як виглядають кінці ліній.">
+                                <option value="butt">Плаский</option>
+                                <option value="round">Круглий</option>
+                                <option value="projecting">Квадратний</option>
+                            </Select>
+                        </InputWrapper>
                         <InputWrapper>
                             <Label htmlFor={`${shape.id}-arrow`} title="Додати стрілки на кінці лінії.">Стрілки:</Label>
                             <Select id={`${shape.id}-arrow`} value={shape.arrow ?? 'none'} onChange={v => {
@@ -858,6 +859,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
                 <FillControls shape={rect} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} fillColor={fillColor} showNotification={showNotification} />
                 <StippleControls shape={rect} updateShape={updateShape} />
                 <StrokeControls shape={rect} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} strokeColor={strokeColor} showNotification={showNotification} />
+                {joinStyleControls(rect)}
             </>;
         }
         case 'ellipse': {
@@ -1138,7 +1140,6 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
                 <FillControls shape={arc} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} fillColor={fillColor} showNotification={showNotification} />
                 <StippleControls shape={arc} updateShape={updateShape} />
                 <StrokeControls shape={arc} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} roundFn={roundToHundredths} strokeColor={strokeColor} showNotification={showNotification} />
-                {arc.style === 'arc' && lineLikeControls(arc)}
             </>;
         }
         case 'text': {

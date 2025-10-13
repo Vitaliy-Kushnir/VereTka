@@ -9,6 +9,7 @@ interface ConfirmationModalProps {
   message: string;
   confirmText?: string;
   cancelText?: string;
+  variant?: 'primary' | 'destructive';
 }
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
@@ -19,8 +20,13 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   message,
   confirmText = "Продовжити",
   cancelText = "Скасувати",
+  variant = 'destructive',
 }) => {
   if (!isOpen) return null;
+
+  const confirmButtonClass = variant === 'primary' 
+    ? "bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)]"
+    : "bg-[var(--destructive-bg)] hover:bg-[var(--destructive-bg-hover)]";
 
   return (
     <div
@@ -53,7 +59,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           </button>
           <button
             onClick={onConfirm}
-            className="px-6 py-2 rounded-lg font-semibold bg-[var(--destructive-bg)] text-[var(--accent-text)] hover:bg-[var(--destructive-bg-hover)] transition-colors"
+            className={`px-6 py-2 rounded-lg font-semibold text-[var(--accent-text)] transition-colors ${confirmButtonClass}`}
           >
             {confirmText}
           </button>

@@ -1,4 +1,3 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { type Shape } from '../types';
 
@@ -55,6 +54,18 @@ export async function generateTkinterCode(
 
         if (newShape.type === 'rectangle') {
             delete newShape.joinstyle;
+        }
+        
+        if (newShape.type === 'arc' || newShape.type === 'pieslice' || newShape.type === 'chord') {
+            delete newShape.capstyle;
+            delete newShape.arrow;
+            delete newShape.arrowshape;
+        }
+
+        if ((newShape.type === 'polyline' || newShape.type === 'bezier') && newShape.isClosed) {
+            delete newShape.capstyle;
+            delete newShape.arrow;
+            delete newShape.arrowshape;
         }
 
         if (newShape.name) {

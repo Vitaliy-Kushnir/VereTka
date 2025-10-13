@@ -1467,6 +1467,7 @@ export const ColorInput: React.FC<{
                     message={`Колір "${conversionChoice.name}" не є стандартним веб-кольором. У редакторі він може відображатися чорним. Зберегти назву чи перетворити на HEX (${conversionChoice.hex}) для коректного відображення?`}
                     confirmText="Перетворити на HEX"
                     cancelText="Зберегти назву"
+                    variant="primary"
                 />
             )}
     </>

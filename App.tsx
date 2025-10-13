@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { type Shape, type Tool, type DrawMode, PolylineShape, BezierCurveShape, ViewTransform, RectangleShape, ImageShape, IsoscelesTriangleShape, TrapezoidShape, ParallelogramShape, PathShape, CanvasAction, LineShape, PolygonShape, ArcShape, RightTriangleShape, TextShape, BitmapShape, RotatableShape, EllipseShape, type ProjectTemplate, type NewProjectSettings, FillableShape } from './types';
 import Canvas from './components/Canvas';
@@ -35,7 +34,7 @@ type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
 type SettingsTab = 'canvas' | 'grid' | 'appearance' | 'generator' | 'templates';
 
-const APP_VERSION = '1.2.5';
+const APP_VERSION = '1.2.9';
 const RULER_THICKNESS = 24;
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 30;
@@ -234,9 +233,18 @@ const MenuBar: React.FC<{
                 <span className="truncate" title={props.projectName}>{props.isProjectActive ? props.projectName : ''}</span>
             </div>
             
-            <div className="flex items-center">
+            <div className="flex items-center gap-2">
+                <button onClick={() => props.setTheme(props.theme === 'dark' ? 'light' : 'dark')} title="Змінити тему" className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]">
+                    {props.theme === 'dark' ? <SunIcon size={18}/> : <MoonIcon size={18}/>}
+                </button>
+                <button onClick={props.onToggleFullscreen} title={props.isFullscreen ? 'Вийти з повноекранного режиму (F11)' : 'Повноекранний режим (F11)'} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]">
+                    {props.isFullscreen ? <ExitFullscreenIcon size={18}/> : <FullscreenIcon size={18}/>}
+                </button>
                 <div className="relative">
-                    <button onClick={props.onOpenSettings} className={`px-3 py-1 rounded-md hover:bg-[var(--bg-secondary)]`}>Налаштування</button>
+                    <button onClick={props.onOpenSettings} className={`flex items-center gap-2 px-3 py-1 rounded-md hover:bg-[var(--bg-secondary)]`}>
+                        <SettingsIcon size={16}/>
+                        <span>Налаштування</span>
+                    </button>
                 </div>
             </div>
         </nav>
@@ -340,10 +348,16 @@ const ToolControls: React.FC<ToolControlsProps> = ({
   const handleCancelTextPreview = useCallback(() => setPreviewTextColor(null), [setPreviewTextColor]);
 
   const showDrawMode = useMemo(() => ['rectangle', 'square', 'circle', 'ellipse', 'triangle', 'right-triangle', 'polygon', 'star', 'rhombus', 'trapezoid', 'parallelogram', 'arc', 'pieslice', 'chord'].includes(activeTool), [activeTool]);
-  const showFill = useMemo(() => !['select', 'edit-points', 'line', 'pencil', 'polyline', 'bezier', 'image', 'bitmap', 'text'].includes(activeTool), [activeTool]);
+  const showFill = useMemo(() => ['rectangle', 'square', 'circle', 'ellipse', 'triangle', 'right-triangle', 'rhombus', 'trapezoid', 'parallelogram', 'pieslice', 'chord', 'polygon', 'star', 'polyline', 'bezier'].includes(activeTool), [activeTool]);
   const showStroke = useMemo(() => !['select', 'edit-points', 'image', 'bitmap', 'text'].includes(activeTool), [activeTool]);
   const showSides = useMemo(() => ['polygon', 'star'].includes(activeTool), [activeTool]);
   const showTextControls = useMemo(() => activeTool === 'text', [activeTool]);
+
+  const isFillForToolDisabled = useMemo(() => {
+    // Corresponds to the logic in PropertyEditor: new polylines/beziers are open, and 'arc' tool creates an unfillable arc.
+    // 'arc' is already excluded by showFill, so we only need to handle polyline and bezier.
+    return ['polyline', 'bezier'].includes(activeTool);
+  }, [activeTool]);
 
   const standardWebFonts = { "Sans-Serif": ["Arial", "Calibri", "Helvetica", "Segoe UI", "Tahoma", "Trebuchet MS", "Verdana"], "Serif": ["Times New Roman", "Georgia", "Garamond"], "Monospace": ["Courier New", "Consolas", "Lucida Console", "Monaco"], };
   const tkFonts = ["TkDefaultFont", "TkTextFont", "TkFixedFont", "TkMenuFont", "TkHeadingFont", "TkCaptionFont", "TkSmallCaptionFont", "TkIconFont", "TkTooltipFont"];
@@ -358,8 +372,8 @@ const ToolControls: React.FC<ToolControlsProps> = ({
       )}
       {showFill && (
         <PropertyControl label="Заливка" htmlFor="fillColor">
-          <input id="fillEnable" type="checkbox" checked={isFillEnabled} onChange={e => setIsFillEnabled(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" />
-          <ColorInput id="fillColor" value={fillColor} onChange={setFillColor} onPreview={setPreviewFillColor} onCancel={handleCancelFillPreview} disabled={!isFillEnabled} />
+          <input id="fillEnable" type="checkbox" checked={isFillEnabled && !isFillForToolDisabled} onChange={e => setIsFillEnabled(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" disabled={isFillForToolDisabled} />
+          <ColorInput id="fillColor" value={fillColor} onChange={setFillColor} onPreview={setPreviewFillColor} onCancel={handleCancelFillPreview} disabled={!isFillEnabled || isFillForToolDisabled} />
         </PropertyControl>
       )}
       {showStroke && (
@@ -369,7 +383,7 @@ const ToolControls: React.FC<ToolControlsProps> = ({
             <ColorInput id="strokeColor" value={strokeColor} onChange={setStrokeColor} onPreview={setPreviewStrokeColor} onCancel={handleCancelStrokePreview} disabled={!isStrokeEnabled} />
           </PropertyControl>
           <PropertyControl label="Товщина" htmlFor="strokeWidth">
-            <div className="w-20">
+            <div className="w-16">
                 <NumberInput id="strokeWidth" min={1} max={100} value={strokeWidth} onChange={setStrokeWidth} disabled={!isStrokeEnabled} />
             </div>
           </PropertyControl>
@@ -445,6 +459,16 @@ const ContextualControls: React.FC<ContextualControlsProps> = ({ selectedShape, 
   };
 
   const hasFill = 'fill' in selectedShape && selectedShape.type !== 'text';
+  const isFillDisabledForShape = useMemo(() => {
+    if (!selectedShape) return true;
+    if (selectedShape.type === 'arc' && selectedShape.style === 'arc') {
+        return true;
+    }
+    if ((selectedShape.type === 'polyline' || selectedShape.type === 'bezier') && !selectedShape.isClosed) {
+        return true;
+    }
+    return false;
+  }, [selectedShape]);
   const hasStroke = 'stroke' in selectedShape && 'strokeWidth' in selectedShape && !['image', 'bitmap', 'text'].includes(selectedShape.type);
   const hasSides = selectedShape.type === 'polygon' || selectedShape.type === 'star';
   const isText = selectedShape.type === 'text';
@@ -455,8 +479,8 @@ const ContextualControls: React.FC<ContextualControlsProps> = ({ selectedShape, 
       <>
           {hasFill && (
               <PropertyControl label="Заливка" htmlFor={`${selectedShape.id}-ctx-fill`}>
-                   <input type="checkbox" checked={selectedShape.fill !== 'none'} onChange={e => handleFillToggle(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" />
-                  <ColorInput id={`${selectedShape.id}-ctx-fill`} value={selectedShape.fill === 'none' ? '#000000' : selectedShape.fill} onChange={v => handleUpdate({ fill: v })} onPreview={v => setShapePreview(selectedShape.id, { fill: v })} onCancel={cancelShapePreview} disabled={selectedShape.fill === 'none'} />
+                   <input type="checkbox" checked={selectedShape.fill !== 'none' && !isFillDisabledForShape} onChange={e => handleFillToggle(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" disabled={isFillDisabledForShape} />
+                  <ColorInput id={`${selectedShape.id}-ctx-fill`} value={selectedShape.fill === 'none' ? '#000000' : selectedShape.fill} onChange={v => handleUpdate({ fill: v })} onPreview={v => setShapePreview(selectedShape.id, { fill: v })} onCancel={cancelShapePreview} disabled={selectedShape.fill === 'none' || isFillDisabledForShape} />
               </PropertyControl>
           )}
           {hasStroke && (
@@ -466,7 +490,7 @@ const ContextualControls: React.FC<ContextualControlsProps> = ({ selectedShape, 
                       <ColorInput id={`${selectedShape.id}-ctx-stroke`} value={selectedShape.stroke === 'none' ? '#ffffff' : selectedShape.stroke} onChange={v => handleUpdate({ stroke: v })} onPreview={v => setShapePreview(selectedShape.id, { stroke: v })} onCancel={cancelShapePreview} disabled={selectedShape.stroke === 'none'} />
                   </PropertyControl>
                   <PropertyControl label="Товщина" htmlFor={`${selectedShape.id}-ctx-strokeWidth`}>
-                    <div className="w-20">
+                    <div className="w-16">
                       <NumberInput id={`${selectedShape.id}-ctx-strokeWidth`} min={0} value={selectedShape.strokeWidth} onChange={v => handleUpdate({ strokeWidth: v })} disabled={selectedShape.stroke === 'none'} />
                     </div>
                   </PropertyControl>
@@ -528,8 +552,6 @@ const TopToolbar: React.FC<{
     onDuplicate: () => void; isShapeSelected: boolean;
     activeTool: Tool; setActiveTool: (tool: Tool) => void;
     onOpenMobileLeft: () => void; onOpenMobileRight: () => void;
-    theme: Theme; setTheme: (theme: Theme) => void;
-    onToggleFullscreen: () => void; isFullscreen: boolean;
     selectedShape: Shape | null;
     updateShape: (s: Shape) => void;
     setShapePreview: (shapeId: string, overrides: Partial<Shape>) => void;
@@ -541,7 +563,7 @@ const TopToolbar: React.FC<{
 }> = React.memo((props) => {
     const { 
         isGenerating, hasShapes, onUndo, onRedo, canUndo, canRedo, onDuplicate, isShapeSelected, onOpenMobileLeft, onOpenMobileRight,
-        theme, setTheme, onToggleFullscreen, isFullscreen, selectedShape, activeTool, setActiveTool, onGenerate, showGenerateButton, onClear
+        selectedShape, activeTool, setActiveTool, onGenerate, showGenerateButton, onClear
     } = props;
     
     return (
@@ -568,12 +590,6 @@ const TopToolbar: React.FC<{
 
         {/* Right side actions */}
         <div className="flex items-center gap-2">
-             <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Змінити тему" className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]">
-                {theme === 'dark' ? <SunIcon/> : <MoonIcon/>}
-            </button>
-             <button onClick={onToggleFullscreen} title={isFullscreen ? 'Вийти з повноекранного режиму (F11)' : 'Повноекранний режим (F11)'} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]">
-                {isFullscreen ? <ExitFullscreenIcon/> : <FullscreenIcon/>}
-            </button>
              {/* Mobile Toggles */}
              <div className="md:hidden flex items-center gap-2">
                 <button onClick={onOpenMobileRight} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"><CodeIcon/></button>
@@ -606,7 +622,7 @@ export default function App(): React.ReactNode {
   const [activePointIndex, setActivePointIndex] = useState<number | null>(null);
 
   const [drawMode, setDrawMode] = useState<DrawMode>('corner');
-  const [isFillEnabled, setIsFillEnabled] = useState<boolean>(false);
+  const [isFillEnabled, setIsFillEnabled] = useState<boolean>(true);
   const [isStrokeEnabled, setIsStrokeEnabled] = useState<boolean>(true);
   const [fillColor, setFillColor] = useState<string>('#4f46e5');
   const [strokeColor, setStrokeColor] = useState<string>('#000000');
@@ -677,7 +693,14 @@ export default function App(): React.ReactNode {
   const [theme, setTheme] = useState<Theme>('dark');
   const [fileHandle, setFileHandle] = useState<FileSystemFileHandle | null>(null);
 
-  const [confirmationAction, setConfirmationAction] = useState<{ title: string; message: string; onConfirm: () => void; } | null>(null);
+  const [confirmationAction, setConfirmationAction] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    confirmText?: string;
+    cancelText?: string;
+    variant?: 'primary' | 'destructive';
+  } | null>(null);
   const [isProjectActive, setIsProjectActive] = useState(false);
   const { projects: recentProjects, addRecentProject, openRecentProject, removeRecentProject, clearAllProjects } = useRecentProjects();
   
@@ -1269,12 +1292,8 @@ export default function App(): React.ReactNode {
   }, [confirmAction]);
 
   const handleGoHome = useCallback(() => {
-    confirmAction(
-        () => setIsProjectActive(false),
-        'Повернутися на головну?',
-        'Усі незбережені зміни в поточному проєкті буде втрачено. Ви впевнені?'
-    );
-  }, [confirmAction]);
+    setIsProjectActive(false);
+  }, []);
 
   const getSaveData = useCallback((pName: string) => ({
     projectName: pName,
@@ -1669,21 +1688,36 @@ export default function App(): React.ReactNode {
             showNotification('Немає коду для запуску.', 'error');
             return;
         }
-        try {
-            const encoder = new TextEncoder();
-            const uint8array = encoder.encode(codeString);
-            let binaryString = '';
-            uint8array.forEach((byte) => {
-                binaryString += String.fromCharCode(byte);
-            });
-            const base64 = btoa(binaryString);
-            const param = runImmediately ? 'runcode' : 'code';
-            const url = `https://yepython.pp.ua/?${param}=${base64}`;
-            window.open(url, '_blank', 'noopener,noreferrer');
-        } catch (e) {
-            console.error("Error creating online IDE link:", e);
-            showNotification('Не вдалося створити посилання для онлайн IDE.', 'error');
-        }
+
+        const openUrl = () => {
+             try {
+                const encoder = new TextEncoder();
+                const uint8array = encoder.encode(codeString);
+                let binaryString = '';
+                uint8array.forEach((byte) => {
+                    binaryString += String.fromCharCode(byte);
+                });
+                const base64 = btoa(binaryString);
+                const param = runImmediately ? 'runcode' : 'code';
+                const url = `https://yepython.pp.ua/?${param}=${base64}`;
+                window.open(url, '_blank', 'noopener,noreferrer');
+            } catch (e) {
+                console.error("Error creating online IDE link:", e);
+                showNotification('Не вдалося створити посилання для онлайн IDE.', 'error');
+            }
+        };
+
+        setConfirmationAction({
+            title: 'Перехід на зовнішній ресурс',
+            message: 'Ви збираєтеся перейти на сторонній ресурс та відкрити код у онлайн-редакторі ЄPython. Деякі елементи (напр. специфічні шрифти, кольори) можуть відображатися інакше, ніж у редакторі. Продовжити?',
+            onConfirm: () => {
+                openUrl();
+                setConfirmationAction(null);
+            },
+            variant: 'primary',
+            confirmText: 'Так, перейти',
+            cancelText: 'Залишитись'
+        });
     }, [codeStringForExport]);
 
 
@@ -2029,7 +2063,7 @@ export default function App(): React.ReactNode {
               <p className="text-[var(--text-secondary)]">
                 На жаль, для коректної роботи редактора "ВереTkа" потрібен більший екран.
                 <br />
-                Будь ласка, відкрийте цей застосунок на комп'ютері або планшеті.
+                Будь ласка, відкрийте цей застосунок на комп'ютері чи планшеті або оберніть екран.
               </p>
             </div>
           </div>
@@ -2116,10 +2150,6 @@ export default function App(): React.ReactNode {
               isShapeSelected={!!selectedShapeId}
               onOpenMobileLeft={handleOpenMobileLeft}
               onOpenMobileRight={handleOpenMobileRight}
-              theme={theme}
-              setTheme={setTheme}
-              onToggleFullscreen={handleToggleFullscreen}
-              isFullscreen={isFullscreen}
               selectedShape={selectedShape}
               updateShape={updateShape}
               setShapePreview={setShapePreview}
@@ -2331,6 +2361,9 @@ export default function App(): React.ReactNode {
                 message={confirmationAction.message}
                 onConfirm={confirmationAction.onConfirm}
                 onClose={() => setConfirmationAction(null)}
+                confirmText={confirmationAction.confirmText}
+                cancelText={confirmationAction.cancelText}
+                variant={confirmationAction.variant}
               />
           )}
           {isSaveAsModalOpen && (
