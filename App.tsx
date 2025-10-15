@@ -706,8 +706,6 @@ export default function App(): React.ReactNode {
   
   const [isScreenTooSmall, setIsScreenTooSmall] = useState(false);
   const [projectTemplates, setProjectTemplates] = useState<ProjectTemplate[]>([]);
-  const escapeHoldTimer = useRef<number | null>(null);
-  const ESCAPE_HOLD_DURATION = 2000; // 2 seconds
   const [projectWasEverActive, setProjectWasEverActive] = useState(false);
 
   const codeStringForExport = useMemo(() => {
@@ -1793,15 +1791,7 @@ export default function App(): React.ReactNode {
         }
 
         if (e.key === 'Escape' && isFullscreen) {
-            e.preventDefault();
-            if (escapeHoldTimer.current === null) {
-                escapeHoldTimer.current = window.setTimeout(() => {
-                    if (document.exitFullscreen) {
-                        document.exitFullscreen();
-                    }
-                    escapeHoldTimer.current = null;
-                }, ESCAPE_HOLD_DURATION);
-            }
+            e.preventDefault(); // Block the default browser action of exiting fullscreen.
         }
 
         const isEditingText = (e.target as HTMLElement).matches('input, textarea, [contenteditable="true"]');
@@ -1913,23 +1903,9 @@ export default function App(): React.ReactNode {
         }
     };
 
-    const handleKeyUp = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-            if (escapeHoldTimer.current !== null) {
-                clearTimeout(escapeHoldTimer.current);
-                escapeHoldTimer.current = null;
-            }
-        }
-    };
-
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
     return () => {
         window.removeEventListener('keydown', handleKeyDown);
-        window.removeEventListener('keyup', handleKeyUp);
-        if (escapeHoldTimer.current) {
-            clearTimeout(escapeHoldTimer.current);
-        }
     };
   }, [selectedShapeId, activeTool, activePointIndex, deletePoint, deleteShape, duplicateShape, undo, redo, canUndo, canRedo, handleSaveProject, handleSetActiveTool, shapes, updateShape, inlineEditingShapeId, handleToggleFullscreen, isFullscreen]);
 

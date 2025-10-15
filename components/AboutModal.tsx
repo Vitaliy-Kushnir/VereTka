@@ -40,10 +40,10 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, version }) => 
                     
                     <div>
                         <p>
-                            <strong className="text-[var(--text-primary)]">Автор ідеї та розробник:</strong> Віталій Кушнір
+                            <strong className="text-[var(--text-primary)]">Ідея та розробка:</strong> Віталій Кушнір
                         </p>
                         <p>
-                           <strong className="text-[var(--text-primary)]">Доопрацювання та підтримка:</strong> AI-асистент на базі Google Gemini.
+                           <strong className="text-[var(--text-primary)]">Підтримка:</strong> AI-асистент на базі Google Gemini.
                         </p>
                          <p className="mt-2">
                            Створено за допомогою <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="underline text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)]">AI Studio Google</a>.
