@@ -31,7 +31,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
         const markers = new Map<string, { color: string; shapeParams: [number, number, number] }>();
         shapes.forEach(shape => {
             if (!shape) return;
-            if ((shape.type === 'line' || shape.type === 'bezier' || (shape.type === 'polyline' && !shape.isClosed)) && shape.arrow && shape.arrow !== 'none' && shape.stroke !== 'none' && shape.strokeWidth > 0 && shape.arrowshape) {
+            if ((shape.type === 'line' || shape.type === 'bezier' || shape.type === 'pencil' || (shape.type === 'polyline' && !shape.isClosed)) && shape.arrow && shape.arrow !== 'none' && shape.stroke !== 'none' && shape.strokeWidth > 0 && shape.arrowshape) {
                 const [d1m, d2m, d3m] = shape.arrowshape;
                 const w = shape.strokeWidth;
                 const d1 = d1m * w;
@@ -96,15 +96,36 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
                             <mask id="mask-bitmap-warning"><rect x="0" y="0" width="100%" height="100%" fill="url(#pattern-gray50)"/></mask>
                             {arrowMarkers.map(({ color, shapeParams }) => {
                                 const [d1, d2, d3] = shapeParams;
-                                if (d1 <= 0 || d2 <= 0) return null;
+                                if (d2 === 0 || d3 === 0) return null;
                                 const key = `${color.replace(/[^a-zA-Z0-9]/g, '')}-${d1}-${d2}-${d3}`;
+                                
+                                const arrowPath = `M 0,0 L ${-d2},${d3} L ${-d1},0 L ${-d2},${-d3} Z`;
+                                
+                                const viewBox = `${-d2 * 1.1} ${-d3 * 1.1} ${d2 * 1.1} ${d3 * 2.2}`;
+                                const markerWidth = d2;
+                                const markerHeight = d3 * 2;
+
                                 return (
                                     <React.Fragment key={key}>
-                                        <marker id={`arrow-end-${key}`} viewBox={`0 0 ${d1} ${d2}`} refX={d1} refY={d2 / 2} markerUnits="userSpaceOnUse" markerWidth={d1} markerHeight={d2} orient="auto">
-                                            <path d={`M 0,0 L ${d1},${d2/2} L 0,${d2} L ${d3},${d2/2} z`} fill={color} />
+                                        <marker 
+                                            id={`arrow-end-${key}`}
+                                            viewBox={viewBox}
+                                            refX={0} refY={0}
+                                            markerUnits="userSpaceOnUse"
+                                            markerWidth={markerWidth} markerHeight={markerHeight}
+                                            orient="auto"
+                                        >
+                                            <path d={arrowPath} fill={color} />
                                         </marker>
-                                        <marker id={`arrow-start-${key}`} viewBox={`0 0 ${d1} ${d2}`} refX={d1} refY={d2 / 2} markerUnits="userSpaceOnUse" markerWidth={d1} markerHeight={d2} orient="auto-start-reverse">
-                                            <path d={`M 0,0 L ${d1},${d2/2} L 0,${d2} L ${d3},${d2/2} z`} fill={color} />
+                                        <marker 
+                                            id={`arrow-start-${key}`}
+                                            viewBox={viewBox}
+                                            refX={0} refY={0}
+                                            markerUnits="userSpaceOnUse"
+                                            markerWidth={markerWidth} markerHeight={markerHeight}
+                                            orient="auto-start-reverse"
+                                        >
+                                            <path d={arrowPath} fill={color} />
                                         </marker>
                                     </React.Fragment>
                                 )
@@ -122,7 +143,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
                                 transform: getTransform(shape),
                             };
                             
-                            const lineLikeProps = (s: LineShape | BezierCurveShape | PolylineShape | PathShape | ArcShape) => {
+                            const lineLikeProps = (s: LineShape | BezierCurveShape | PolylineShape | PathShape) => {
                                 const hasVisibleStroke = s.stroke !== 'none' && s.strokeWidth > 0;
                                 let dashArray;
                                 const hasDash = 'dash' in s && s.dash && s.dash.length > 0 && s.strokeWidth > 0;
@@ -175,8 +196,10 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
                                 }
                                 case 'arc': {
                                     const arcShape = shape as ArcShape;
-                                    const arcProps: any = { ...staticProps, d: getArcPathData(arcShape), fill: arcShape.style === 'arc' ? 'none' : arcShape.fill, ...lineLikeProps(arcShape) };
+                                    const arcProps: any = { ...staticProps, d: getArcPathData(arcShape), fill: arcShape.style === 'arc' ? 'none' : arcShape.fill };
                                     if (arcShape.stipple && arcShape.fill !== 'none' && arcShape.style !== 'arc') arcProps.mask = `url(#mask-${arcShape.stipple})`;
+                                    if (arcShape.dash) arcProps.strokeDasharray = arcShape.dash.map(v => v * arcShape.strokeWidth).join(' ');
+                                    if (arcShape.dashoffset) arcProps.strokeDashoffset = arcShape.dashoffset;
                                     return <path key={shape.id} {...arcProps} />;
                                 }
                                 case 'line':

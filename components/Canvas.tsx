@@ -225,8 +225,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         case 'square': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'rectangle', x: pos.x, y: pos.y, width: 0, height: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', isAspectRatioLocked: true }; break;
         case 'circle': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'ellipse', cx: pos.x, cy: pos.y, rx: 0, ry: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', isAspectRatioLocked: true }; break;
         case 'ellipse': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'ellipse', cx: pos.x, cy: pos.y, rx: 0, ry: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', isAspectRatioLocked: false }; break;
-        case 'line': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'line', points: [{...pos}, {...pos}], stroke: strokeColor, strokeWidth, rotation: 0, capstyle: 'round', state: 'normal' }; break;
-        case 'pencil': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'pencil', points: [pos], stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'round', capstyle: 'round', isAspectRatioLocked: false }; break;
+        case 'line': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'line', points: [{...pos}, {...pos}], stroke: strokeColor, strokeWidth, rotation: 0, capstyle: 'round', arrowshape: [8, 10, 3], state: 'normal' }; break;
+        case 'pencil': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'pencil', points: [pos], stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'round', capstyle: 'round', arrowshape: [8, 10, 3], isAspectRatioLocked: false }; break;
         case 'triangle': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'triangle', x: pos.x, y: pos.y, width: 0, height: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'miter', topVertexOffset: 0, isAspectRatioLocked: false }; break;
         case 'right-triangle': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'right-triangle', x: pos.x, y: pos.y, width: 0, height: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'miter', isAspectRatioLocked: false }; break;
         case 'rhombus': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'rhombus', x: pos.x, y: pos.y, width: 0, height: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'miter', isAspectRatioLocked: false }; break;
@@ -1237,12 +1237,12 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     const arrowMarkers = useMemo(() => {
         const markers = new Map<string, { color: string; shapeParams: [number, number, number] }>();
         itemsToRender.forEach(shape => {
-            if ((shape.type === 'line' || shape.type === 'bezier' || shape.type === 'pencil' || (shape.type === 'polyline' && !shape.isClosed) || (shape.type === 'arc' && shape.style === 'arc')) && 'arrow' in shape && shape.arrow && shape.arrow !== 'none' && shape.stroke !== 'none' && shape.strokeWidth > 0 && shape.arrowshape) {
+            if ((shape.type === 'line' || shape.type === 'bezier' || shape.type === 'pencil' || (shape.type === 'polyline' && !shape.isClosed)) && 'arrow' in shape && shape.arrow && shape.arrow !== 'none' && shape.stroke !== 'none' && shape.strokeWidth > 0 && shape.arrowshape) {
                 const [d1m, d2m, d3m] = shape.arrowshape;
                 const w = shape.strokeWidth;
-                const d1 = d1m * w;
-                const d2 = d2m * w;
-                const d3 = d3m * w;
+                const d1 = d1m * w; // tip dist
+                const d2 = d2m * w; // wing dist
+                const d3 = d3m * w; // width
 
                 const key = JSON.stringify({ color: shape.stroke, shape: [d1, d2, d3] });
                 if (!markers.has(key)) {
@@ -1457,35 +1457,38 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 <mask id="mask-bitmap-warning"><rect x="0" y="0" width="100%" height="100%" fill="url(#pattern-gray50)"/></mask>
 
                 {arrowMarkers.map(({ color, shapeParams }) => {
-                    const [d1, d2, d3] = shapeParams;
-                    if (d1 <= 0 || d2 <= 0) return null;
+                    const [d1, d2, d3] = shapeParams; // tip_dist, wing_dist, width
+                    if (d2 === 0 || d3 === 0) return null;
                     const key = `${color.replace(/[^a-zA-Z0-9]/g, '')}-${d1}-${d2}-${d3}`;
+
+                    // Path with tip at (0,0) pointing left (into negative X).
+                    const arrowPath = `M 0,0 L ${-d2},${d3} L ${-d1},0 L ${-d2},${-d3} Z`;
                     
+                    const viewBox = `${-d2 * 1.1} ${-d3 * 1.1} ${d2 * 1.1} ${d3 * 2.2}`;
+                    const markerWidth = d2;
+                    const markerHeight = d3 * 2;
+
                     return (
                         <React.Fragment key={key}>
                             <marker
                                 id={`arrow-end-${key}`}
-                                viewBox={`0 0 ${d1} ${d2}`}
-                                refX={d1}
-                                refY={d2 / 2}
+                                viewBox={viewBox}
+                                refX={0} refY={0}
                                 markerUnits="userSpaceOnUse"
-                                markerWidth={d1}
-                                markerHeight={d2}
+                                markerWidth={markerWidth} markerHeight={markerHeight}
                                 orient="auto"
                             >
-                                <path d={`M 0,0 L ${d1},${d2/2} L 0,${d2} L ${d3},${d2/2} z`} fill={color} />
+                                <path d={arrowPath} fill={color} />
                             </marker>
                             <marker
                                 id={`arrow-start-${key}`}
-                                viewBox={`0 0 ${d1} ${d2}`}
-                                refX={d1}
-                                refY={d2 / 2}
+                                viewBox={viewBox}
+                                refX={0} refY={0}
                                 markerUnits="userSpaceOnUse"
-                                markerWidth={d1}
-                                markerHeight={d2}
+                                markerWidth={markerWidth} markerHeight={markerHeight}
                                 orient="auto-start-reverse"
                             >
-                                <path d={`M 0,0 L ${d1},${d2/2} L 0,${d2} L ${d3},${d2/2} z`} fill={color} />
+                                <path d={arrowPath} fill={color} />
                             </marker>
                         </React.Fragment>
                     )

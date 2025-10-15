@@ -41,6 +41,7 @@ const SaveCodeModal: React.FC<SaveCodeModalProps> = ({ isOpen, onClose, onSave, 
                 </header>
 
                 <div className="p-6 space-y-4">
+                    <p className="text-sm text-[var(--text-secondary)]">Задайте назву та оберіть необхідне розширення (тип) файлу.</p>
                     <InputWrapper>
                         <Label htmlFor="codeFileName" title="Введіть назву для вашого файлу.">Назва файлу:</Label>
                         <div className="flex items-center w-full">

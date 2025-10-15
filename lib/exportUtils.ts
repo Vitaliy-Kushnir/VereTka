@@ -129,7 +129,7 @@ function shapeToSvgString(shape: Shape): string {
         return `stroke-linejoin="${joinstyle}" ${joinstyle === 'miter' ? 'stroke-miterlimit="10"' : ''}`;
     };
 
-    const lineLikeProps = (s: LineShape | BezierCurveShape | PolylineShape | PathShape | ArcShape): string => {
+    const lineLikeProps = (s: LineShape | BezierCurveShape | PolylineShape | PathShape) => {
         let props = `stroke-linecap="${(s.capstyle === 'projecting' ? 'square' : s.capstyle) ?? 'butt'}"`;
         if ('dash' in s && s.dash && s.dash.length > 0 && s.strokeWidth > 0) {
             props += ` stroke-dasharray="${s.dash.map(v => v * s.strokeWidth).join(' ')}"`;
@@ -182,7 +182,7 @@ function shapeToSvgString(shape: Shape): string {
         }
         case 'arc': {
              const fill = shape.style === 'arc' ? 'none' : shape.fill;
-             return `<path d="${getArcPathData(shape)}" ${commonProps(shape)} fill="${fill}" ${lineLikeProps(shape)} />`;
+             return `<path d="${getArcPathData(shape)}" ${commonProps(shape)} fill="${fill}" />`;
         }
         default: { // All other shapes become paths
             const unrotatedShape = { ...shape, rotation: 0 };
@@ -208,7 +208,7 @@ export function generateSvg(shapes: Shape[], width: number, height: number, back
         if (!shape) return;
         if ('stipple' in shape && shape.stipple) usedStipples.add(shape.stipple);
         if (shape.type === 'bitmap') usedBitmaps.add(shape.bitmapType);
-        if ((shape.type === 'line' || shape.type === 'bezier' || shape.type === 'polyline' || shape.type === 'arc') && shape.arrow && shape.arrow !== 'none' && shape.stroke !== 'none' && shape.strokeWidth > 0 && shape.arrowshape) {
+        if ((shape.type === 'line' || shape.type === 'bezier' || shape.type === 'pencil' || (shape.type === 'polyline' && !shape.isClosed)) && shape.arrow && shape.arrow !== 'none' && shape.stroke !== 'none' && shape.strokeWidth > 0 && shape.arrowshape) {
              const [d1m, d2m, d3m] = shape.arrowshape;
              const w = shape.strokeWidth > 0 ? shape.strokeWidth : 1;
              const key = `${shape.stroke.replace(/[^a-zA-Z0-9]/g, '')}-${d1m*w}-${d2m*w}-${d3m*w}`;
@@ -232,14 +232,21 @@ export function generateSvg(shapes: Shape[], width: number, height: number, back
     
     const markerDefs = Array.from(usedMarkers.values()).map(({ color, shapeParams }) => {
         const [d1, d2, d3] = shapeParams;
-        if (d1 <= 0 || d2 <= 0) return '';
+        if (d2 === 0 || d3 === 0) return null;
         const key = `${color.replace(/[^a-zA-Z0-9]/g, '')}-${d1}-${d2}-${d3}`;
+        
+        const arrowPath = `M 0,0 L ${-d2},${d3} L ${-d1},0 L ${-d2},${-d3} Z`;
+
+        const viewBox = `${-d2 * 1.1} ${-d3 * 1.1} ${d2 * 1.1} ${d3 * 2.2}`;
+        const markerWidth = d2;
+        const markerHeight = d3 * 2;
+
         return `
-            <marker id="arrow-end-${key}" viewBox="0 0 ${d1} ${d2}" refX="${d1}" refY="${d2 / 2}" markerUnits="userSpaceOnUse" markerWidth="${d1}" markerHeight="${d2}" orient="auto">
-                <path d="M 0,0 L ${d1},${d2/2} L 0,${d2} L ${d3},${d2/2} z" fill="${color}" />
+            <marker id="arrow-end-${key}" viewBox="${viewBox}" refX="0" refY="0" markerUnits="userSpaceOnUse" markerWidth="${markerWidth}" markerHeight="${markerHeight}" orient="auto">
+                <path d="${arrowPath}" fill="${color}" />
             </marker>
-            <marker id="arrow-start-${key}" viewBox="0 0 ${d1} ${d2}" refX="0" refY="${d2 / 2}" markerUnits="userSpaceOnUse" markerWidth="${d1}" markerHeight="${d2}" orient="auto-start-reverse">
-                <path d="M ${d1},0 L 0,${d2/2} L ${d1},${d2} L ${d1-d3},${d2/2} z" fill="${color}" />
+            <marker id="arrow-start-${key}" viewBox="${viewBox}" refX="0" refY="0" markerUnits="userSpaceOnUse" markerWidth="${markerWidth}" markerHeight="${markerHeight}" orient="auto-start-reverse">
+                <path d="${arrowPath}" fill="${color}" />
             </marker>`;
     }).join('\n');
 

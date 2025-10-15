@@ -34,7 +34,7 @@ type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
 type SettingsTab = 'canvas' | 'grid' | 'appearance' | 'generator' | 'templates';
 
-const APP_VERSION = '1.2.9';
+const APP_VERSION = '1.2.10';
 const RULER_THICKNESS = 24;
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 30;
@@ -1709,7 +1709,7 @@ export default function App(): React.ReactNode {
 
         setConfirmationAction({
             title: 'Перехід на зовнішній ресурс',
-            message: 'Ви збираєтеся перейти на сторонній ресурс та відкрити код у онлайн-редакторі ЄPython. Деякі елементи (напр. специфічні шрифти, кольори) можуть відображатися інакше, ніж у редакторі. Продовжити?',
+            message: 'Ви збираєтеся відкрити код у онлайн-редакторі ЄPython. Деякі елементи (напр. специфічні шрифти, кольори) можуть відображатися інакше, ніж у редакторі. Продовжити?',
             onConfirm: () => {
                 openUrl();
                 setConfirmationAction(null);
@@ -2163,7 +2163,7 @@ export default function App(): React.ReactNode {
               setTextFontSize={setTextFontSize}
           />}
 
-           <main className="flex-grow grid grid-cols-1 md:grid-cols-[380px_1fr] lg:grid-cols-[380px_1fr_260px] min-h-0">
+           <main className="flex-grow grid grid-cols-1 md:grid-cols-[380px_1fr] lg:grid-cols-[380px_1fr_340px] min-h-0">
              
             {/* Left Column */}
             {isProjectActive && <aside className={`${isLeftPanelVisible ? 'fixed inset-0 bg-[var(--bg-app)]/95 backdrop-blur-sm z-40 p-4 flex flex-col' : 'hidden'} md:static md:bg-transparent md:z-auto md:p-0 md:flex flex-col gap-4 min-h-0 bg-[var(--bg-primary)]/50 md:p-2`}>
@@ -2379,7 +2379,7 @@ export default function App(): React.ReactNode {
                 isOpen={true}
                 onClose={() => setIsSaveCodeModalOpen(false)}
                 onSave={handleSaveCode}
-                currentProjectName={projectName.replace(/\. ВереTkа$/, '')}
+                currentProjectName={projectName}
             />
           )}
           {isSaveTemplateModalOpen && (

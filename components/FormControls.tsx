@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect, forwardRef, useCallback, useMemo } from 'react';
 import { DASH_STYLES } from '../lib/constants';
-import { CheckIcon, XIcon, RefreshIcon } from './icons';
+import { CheckIcon, XIcon, RefreshIcon, ChevronDownIcon } from './icons';
 import ConfirmationModal from './ConfirmationModal';
 
 export const InputWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <div className="flex items-center gap-2">{children}</div>
+    <div className="relative flex items-center gap-2">{children}</div>
 );
 
 export const Label: React.FC<{ htmlFor: string; children?: React.ReactNode; title?: string }> = ({ htmlFor, children, title }) => (
@@ -1165,7 +1165,7 @@ export const ColorInput: React.FC<{
         if (!inputValue) return PRIMARY_WEB_COLORS;
         const searchTerm = inputValue.toLowerCase().trim();
         if (searchTerm.startsWith('#') || searchTerm === '') return PRIMARY_WEB_COLORS;
-        return PRIMARY_WEB_COLORS.filter(color => color.name.toLowerCase().includes(searchTerm));
+        return TKINTER_NAMED_COLORS.filter(color => color.name.toLowerCase().includes(searchTerm) || color.hex.toLowerCase().includes(searchTerm));
     }, [inputValue]);
 
     const hexValue = useMemo(() => toHex(inputValue) || '#000000', [inputValue]);
@@ -1528,7 +1528,7 @@ export const DashSelect: React.FC<{
     };
 
     return (
-        <div ref={dropdownRef} className="relative w-full" onMouseLeave={() => setIsOpen(false)}>
+        <div ref={dropdownRef} className="static w-full">
             <button
                 id={id}
                 type="button"
@@ -1538,10 +1538,10 @@ export const DashSelect: React.FC<{
                 title="Вибрати готовий стиль штрихування або налаштувати власний"
             >
                 <span className="truncate">{selectedStyle.name}</span>
-                <span className="transform transition-transform text-[var(--text-tertiary)]">{isOpen ? '▲' : '▼'}</span>
+                <ChevronDownIcon size={16} className={`transform transition-transform text-[var(--text-tertiary)] ${isOpen ? 'rotate-180' : 'rotate-0'}`} />
             </button>
             {isOpen && (
-                <div className="absolute z-10 top-full left-0 mt-0 w-full bg-[var(--bg-tertiary)] rounded-md shadow-lg max-h-60 overflow-y-auto border border-[var(--border-secondary)]">
+                <div className="absolute z-10 top-full left-0 right-0 mt-0 bg-[var(--bg-tertiary)] rounded-md shadow-lg max-h-60 overflow-y-auto border border-[var(--border-secondary)]">
                     {DASH_STYLES.map(style => (
                         <button
                             key={style.name}
@@ -1560,7 +1560,7 @@ export const DashSelect: React.FC<{
                                     />
                                 </svg>
                             </div>
-                            <span className="flex-grow truncate">{style.name}</span>
+                            <span className="flex-grow">{style.name}</span>
                         </button>
                     ))}
                 </div>

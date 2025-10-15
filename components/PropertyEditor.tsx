@@ -781,7 +781,11 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
       </>
     );
     
-    const joinStyleControls = (shape: JoinableShape) => (
+    const joinStyleControls = (shape: JoinableShape) => {
+      // Don't show joinstyle for closed polylines that are axis-aligned rectangles.
+      if (shape.type === 'polyline' && shape.isClosed && isCollapsible(shape)) return null;
+      
+      return (
         <>
             <InputWrapper>
                 <Label htmlFor={`${shape.id}-joinstyle`} title="Стиль з'єднання сегментів лінії.">Стиль з'єднання:</Label>
@@ -792,58 +796,56 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
                 </Select>
             </InputWrapper>
         </>
-    );
+      );
+    };
     
     const lineLikeControls = (shape: LineShape | BezierCurveShape | PolylineShape | PathShape) => {
         const isClosed = (shape.type === 'polyline' || shape.type === 'bezier') && shape.isClosed;
+        if (isClosed) return null;
 
         const strokeWidth = shape.strokeWidth > 0 ? shape.strokeWidth : 1;
-        const [d1m, d2m, d3m] = shape.arrowshape ?? [4, 4, 1.5];
+        const [d1m, d2m, d3m] = shape.arrowshape ?? [8, 10, 3];
 
         const handleArrowChange = (index: number, absoluteValue: number) => {
             if (strokeWidth === 0) return;
-            const newMultipliers = [...(shape.arrowshape ?? [4, 4, 1.5])];
+            const newMultipliers = [...(shape.arrowshape ?? [8, 10, 3])];
             const newMultiplier = absoluteValue / strokeWidth;
-            newMultipliers[index] = parseFloat(newMultiplier.toFixed(2)); // Round to avoid float issues
+            newMultipliers[index] = parseFloat(newMultiplier.toFixed(2));
             updateShape({ ...shape, arrowshape: newMultipliers as [number, number, number] });
         };
         
         return (
             <>
                 <hr className="border-[var(--border-secondary)] my-2" />
-                {!isClosed && (
-                    <>
-                        <InputWrapper>
-                            <Label htmlFor={`${shape.id}-capstyle`} title="Стиль кінців незамкнених ліній.">Стиль кінця:</Label>
-                            <Select id={`${shape.id}-capstyle`} value={shape.capstyle ?? 'round'} onChange={v => updateShape({ ...shape, capstyle: v as any })} title="Визначає, як виглядають кінці ліній.">
-                                <option value="butt">Плаский</option>
-                                <option value="round">Круглий</option>
-                                <option value="projecting">Квадратний</option>
-                            </Select>
-                        </InputWrapper>
-                        <InputWrapper>
-                            <Label htmlFor={`${shape.id}-arrow`} title="Додати стрілки на кінці лінії.">Стрілки:</Label>
-                            <Select id={`${shape.id}-arrow`} value={shape.arrow ?? 'none'} onChange={v => {
-                                const newShape = {...shape, arrow: v as any};
-                                if (v !== 'none' && !shape.arrowshape) {
-                                    newShape.arrowshape = [4, 4, 1.5]; // New multiplier defaults
-                                }
-                                updateShape(newShape);
-                            }} title="Додати стрілки на початок, кінець або на обидва кінці лінії.">
-                                <option value="none">Немає</option>
-                                <option value="first">На початку</option>
-                                <option value="last">В кінці</option>
-                                <option value="both">На обох кінцях</option>
-                            </Select>
-                        </InputWrapper>
-                        {shape.arrow && shape.arrow !== 'none' && (
-                            <div className="space-y-2 pl-4 border-l-2 border-[var(--border-secondary)] ml-2 mt-2 pt-2">
-                                <InputWrapper><Label htmlFor={`${shape.id}-arrow-d1`} title="Абсолютна довжина стрілки в пікселях.">Довжина:</Label><NumberInput id={`${shape.id}-arrow-d1`} value={roundToHundredths(d1m * strokeWidth)} onChange={v => handleArrowChange(0, v)} min={0} title="Абсолютна довжина стрілки в пікселях" smartRound={false} /></InputWrapper>
-                                <InputWrapper><Label htmlFor={`${shape.id}-arrow-d2`} title="Абсолютна ширина стрілки в пікселях.">Ширина:</Label><NumberInput id={`${shape.id}-arrow-d2`} value={roundToHundredths(d2m * strokeWidth)} onChange={v => handleArrowChange(1, v)} min={0} title="Абсолютна ширина стрілки в пікселях" smartRound={false} /></InputWrapper>
-                                <InputWrapper><Label htmlFor={`${shape.id}-arrow-d3`} title="Абсолютна ширина основи стрілки в пікселях.">Ширина основи:</Label><NumberInput id={`${shape.id}-arrow-d3`} value={roundToHundredths(d3m * strokeWidth)} onChange={v => handleArrowChange(2, v)} min={0} title="Абсолютна ширина основи стрілки в пікселях" smartRound={false} /></InputWrapper>
-                            </div>
-                        )}
-                    </>
+                <InputWrapper>
+                    <Label htmlFor={`${shape.id}-capstyle`} title="Стиль кінців незамкнених ліній.">Стиль кінця:</Label>
+                    <Select id={`${shape.id}-capstyle`} value={shape.capstyle ?? 'round'} onChange={v => updateShape({ ...shape, capstyle: v as any })} title="Визначає, як виглядають кінці ліній.">
+                        <option value="butt">Плаский</option>
+                        <option value="round">Круглий</option>
+                        <option value="projecting">Квадратний</option>
+                    </Select>
+                </InputWrapper>
+                <InputWrapper>
+                    <Label htmlFor={`${shape.id}-arrow`} title="Додати стрілки на кінці лінії.">Стрілки:</Label>
+                    <Select id={`${shape.id}-arrow`} value={shape.arrow ?? 'none'} onChange={v => {
+                        const newShape = {...shape, arrow: v as any};
+                        if (v !== 'none' && !shape.arrowshape) {
+                            newShape.arrowshape = [8, 10, 3]; // Standard Tkinter defaults
+                        }
+                        updateShape(newShape);
+                    }} title="Додати стрілки на початок, кінець або на обидва кінці лінії.">
+                        <option value="none">Немає</option>
+                        <option value="first">На початку</option>
+                        <option value="last">В кінці</option>
+                        <option value="both">На обох кінцях</option>
+                    </Select>
+                </InputWrapper>
+                {shape.arrow && shape.arrow !== 'none' && (
+                    <div className="space-y-2 pl-4 border-l-2 border-[var(--border-secondary)] ml-2 mt-2 pt-2">
+                        <InputWrapper><Label htmlFor={`${shape.id}-arrow-d1`} title="Відстань від кінця лінії до вістря стрілки.">Відступ вістря:</Label><NumberInput id={`${shape.id}-arrow-d1`} value={roundToHundredths(d1m * strokeWidth)} onChange={v => handleArrowChange(0, v)} min={0} smartRound={false} /></InputWrapper>
+                        <InputWrapper><Label htmlFor={`${shape.id}-arrow-d2`} title="Відстань від кінця лінії до найширшої частини стрілки.">Відступ крил:</Label><NumberInput id={`${shape.id}-arrow-d2`} value={roundToHundredths(d2m * strokeWidth)} onChange={v => handleArrowChange(1, v)} min={0} smartRound={false} /></InputWrapper>
+                        <InputWrapper><Label htmlFor={`${shape.id}-arrow-d3`} title="Ширина одного крила стрілки. Загальна ширина буде вдвічі більшою.">Ширина крила:</Label><NumberInput id={`${shape.id}-arrow-d3`} value={roundToHundredths(d3m * strokeWidth)} onChange={v => handleArrowChange(2, v)} min={0} smartRound={false} /></InputWrapper>
+                    </div>
                 )}
             </>
         )
