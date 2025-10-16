@@ -757,7 +757,9 @@ export default function App(): React.ReactNode {
 
     const generateProjectThumbnail = useCallback((shapesToRender: Shape[], width: number, height: number, bgColor: string): string => {
         const svgString = generateSvg(shapesToRender, width, height, bgColor);
-        return `data:image/svg+xml;base64,${btoa(svgString)}`;
+        // FIX: Correctly encode UTF-8 strings for btoa to prevent errors with non-Latin characters in text shapes.
+        const correctlyEncoded = unescape(encodeURIComponent(svgString));
+        return `data:image/svg+xml;base64,${btoa(correctlyEncoded)}`;
     }, []);
     
   const getProjectSignature = useCallback((pName: string, s: Shape[]) => {
