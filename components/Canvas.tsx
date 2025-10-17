@@ -1327,6 +1327,21 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
         return brightness < 128 ? `rgba(255, 255, 255, ${finalOpacity})` : `rgba(0, 0, 0, ${finalOpacity})`;
     }, [backgroundColor, viewTransform.scale]);
+
+    const fineGridStrokeColor = useMemo(() => {
+        const hex = backgroundColor.replace('#', '');
+        if (hex.length < 6) return 'rgba(0, 0, 0, 0.07)';
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+
+        const baseOpacity = 0.07; // Lighter than the main grid's 0.15
+        const scaleFactor = Math.log10(Math.max(1, viewTransform.scale));
+        const finalOpacity = Math.min(baseOpacity + scaleFactor * 0.1, 0.5); // Increase opacity less aggressively
+
+        return brightness < 128 ? `rgba(255, 255, 255, ${finalOpacity})` : `rgba(0, 0, 0, ${finalOpacity})`;
+    }, [backgroundColor, viewTransform.scale]);
     
   const formatNumber = (num: number) => Math.round(num * 100) / 100;
   
@@ -1408,6 +1423,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 {showGrid && (
                     <pattern id="grid" width={gridSize} height={gridSize} patternUnits="userSpaceOnUse">
                         <path d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`} fill="none" stroke={gridStrokeColor} strokeWidth={1 / viewTransform.scale}/>
+                    </pattern>
+                )}
+                {showGrid && viewTransform.scale > 10 && (
+                     <pattern id="fine-grid" width="1" height="1" patternUnits="userSpaceOnUse">
+                        <path d="M 1 0 L 0 0 0 1" fill="none" stroke={fineGridStrokeColor} strokeWidth={1 / viewTransform.scale} />
                     </pattern>
                 )}
                 
@@ -1507,6 +1527,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 />
                 {/* Grid rect */}
                 {showGrid && <rect x="0" y="0" width={width} height={height} fill="url(#grid)" style={{pointerEvents: 'none'}} />}
+                {showGrid && viewTransform.scale > 10 && (
+                    <rect x="0" y="0" width={width} height={height} fill="url(#fine-grid)" style={{ pointerEvents: 'none' }} />
+                )}
 
             {itemsToRender.filter(Boolean).map(shape => {
                 if (shape.state === 'hidden') return null;
@@ -1548,7 +1571,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     } as React.CSSProperties,
                 };
                 
-                const lineLikeProps = (s: LineShape | BezierCurveShape | PolylineShape | PathShape) => {
+                const lineLikeProps = (s: LineShape | BezierCurveShape | PolylineShape | PathShape | ArcShape) => {
                     const hasVisibleStroke = s.stroke !== 'none' && s.strokeWidth > 0;
                     let dashArray;
                     const hasDash = 'dash' in s && s.dash && s.dash.length > 0 && s.strokeWidth > 0;
@@ -1613,9 +1636,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     case 'arc': {
                          const arcShape = shape as ArcShape;
                         const d = getArcPathData(arcShape);
-                        const arcProps: any = { ...commonVisibleProps, fill: arcShape.style === 'arc' ? 'none' : arcShape.fill };
-                        if (arcShape.dash) arcProps.strokeDasharray = arcShape.dash.map(v => v * arcShape.strokeWidth).join(' ');
-                        if (arcShape.dashoffset) arcProps.strokeDashoffset = arcShape.dashoffset;
+                        const arcProps: any = { ...commonVisibleProps, fill: arcShape.style === 'arc' ? 'none' : arcShape.fill, ...lineLikeProps(arcShape) };
                         if (arcShape.stipple && arcShape.fill !== 'none' && arcShape.style !== 'arc') arcProps.mask = `url(#mask-${arcShape.stipple})`;
                         return (
                             <g key={shape.id}>
@@ -1748,7 +1769,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         const polyProps: any = { ...commonVisibleProps, fill: polyShape.fill, ...joinStyleProps(polyShape) };
                         if (polyShape.stipple && polyShape.fill !== 'none') polyProps.mask = `url(#mask-${polyShape.stipple})`;
                         if (polyShape.dash) polyProps.strokeDasharray = polyShape.dash.map(v => v * polyShape.strokeWidth).join(' ');
-                        if (polyShape.dashoffset) polyProps.strokeDashoffset = polyShape.dashoffset;
+                        if (polyShape.dashoffset) polyProps.strokeDashoffset = polyProps.dashoffset;
                         
                         if(polyShape.smooth) {
                              const d = getSmoothedPathData(getPolygonPointsAsArray(shape as PolygonShape), true, true);

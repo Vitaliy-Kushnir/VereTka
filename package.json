@@ -2,7 +2,7 @@
 {
   "name": "veretka",
   "private": true,
-  "version": "1.2.10",
+  "version": "1.2.11",
   "type": "module",
   "homepage": "https://Vitaliy-Kushnir.github.io/VereTka",
   "scripts": {

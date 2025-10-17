@@ -4,15 +4,15 @@ import { CheckIcon, XIcon, RefreshIcon, ChevronDownIcon } from './icons';
 import ConfirmationModal from './ConfirmationModal';
 
 export const InputWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <div className="relative flex items-center gap-2">{children}</div>
+    <div className="flex items-center gap-2">{children}</div>
 );
 
 export const Label: React.FC<{ htmlFor: string; children?: React.ReactNode; title?: string }> = ({ htmlFor, children, title }) => (
-    <label htmlFor={htmlFor} className="text-sm font-medium text-[var(--text-secondary)] w-24 flex-shrink-0" title={title}>{children}</label>
+    <label htmlFor={htmlFor} className="text-sm font-medium text-[var(--text-secondary)] w-28 flex-shrink-0" title={title}>{children}</label>
 );
 
-export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: number; onChange: (value: number) => void, disabled?: boolean; step?: number; min?: number; max?: number; onFocus?: () => void, title?: string, className?: string, smartRound?: boolean }> (
-    ({ id, value, onChange, disabled, step = 1, min, max, onFocus, title, className, smartRound = true }, forwardedRef) => {
+export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: number; onChange: (value: number) => void, disabled?: boolean; step?: number; min?: number; max?: number; onFocus?: React.FocusEventHandler<HTMLInputElement>; title?: string, className?: string, smartRound?: boolean, unit?: string; onBlur?: React.FocusEventHandler<HTMLInputElement>; onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>; autoFocus?: boolean }> (
+    ({ id, value, onChange, disabled, step = 1, min, max, onFocus, title, className, smartRound = true, unit, onBlur, onKeyDown, autoFocus }, forwardedRef) => {
     
     const [displayValue, setDisplayValue] = useState(String(value));
     const internalRef = useRef<HTMLInputElement>(null);
@@ -63,6 +63,9 @@ export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: num
         }
         
         setDisplayValue(String(num));
+        if (onBlur) {
+            onBlur(e);
+        }
     };
 
     const handleStep = (direction: 'up' | 'down') => {
@@ -86,6 +89,14 @@ export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: num
         onChange(nextValue);
     };
 
+    const handleLocalKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'ArrowUp') { e.preventDefault(); handleStep('up'); }
+        if (e.key === 'ArrowDown') { e.preventDefault(); handleStep('down'); }
+        if (onKeyDown) {
+            onKeyDown(e);
+        }
+    };
+
     return (
         <div className={`relative w-full group ${disabled ? 'opacity-50' : ''}`}>
             <input
@@ -99,18 +110,21 @@ export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: num
                 disabled={disabled}
                 onFocus={onFocus}
                 title={title}
-                className={`bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2 py-1 w-full h-8 border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none disabled:cursor-not-allowed pr-6 ${className ?? ''}`}
-                onKeyDown={(e) => {
-                    if (e.key === 'ArrowUp') { e.preventDefault(); handleStep('up'); }
-                    if (e.key === 'ArrowDown') { e.preventDefault(); handleStep('down'); }
-                }}
+                className={`bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2 py-1 w-full h-8 border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none disabled:cursor-not-allowed ${unit ? 'pr-12' : 'pr-6'} ${className ?? ''}`}
+                onKeyDown={handleLocalKeyDown}
+                autoFocus={autoFocus}
             />
+            {unit && !disabled && (
+                <span className="absolute right-7 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] pointer-events-none">
+                    {unit}
+                </span>
+            )}
             {!disabled && (
                 <div className="absolute right-1 top-0 h-full flex-col justify-center items-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity hidden sm:flex">
-                    <button onClick={() => handleStep('up')} className="px-1 h-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]" tabIndex={-1}>
+                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleStep('up')} className="px-1 h-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]" tabIndex={-1}>
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
                     </button>
-                    <button onClick={() => handleStep('down')} className="px-1 h-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]" tabIndex={-1}>
+                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleStep('down')} className="px-1 h-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]" tabIndex={-1}>
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                     </button>
                 </div>

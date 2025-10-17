@@ -34,7 +34,7 @@ type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
 type SettingsTab = 'canvas' | 'grid' | 'appearance' | 'generator' | 'templates';
 
-const APP_VERSION = '1.2.10';
+const APP_VERSION = '1.2.11';
 const RULER_THICKNESS = 24;
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 30;
@@ -1706,18 +1706,36 @@ export default function App(): React.ReactNode {
                 showNotification('Не вдалося створити посилання для онлайн IDE.', 'error');
             }
         };
-
-        setConfirmationAction({
-            title: 'Перехід на зовнішній ресурс',
-            message: 'Ви збираєтеся відкрити код у онлайн-редакторі ЄPython. Деякі елементи (напр. специфічні шрифти, кольори) можуть відображатися інакше, ніж у редакторі. Продовжити?',
-            onConfirm: () => {
-                openUrl();
-                setConfirmationAction(null);
-            },
-            variant: 'primary',
-            confirmText: 'Так, перейти',
-            cancelText: 'Залишитись'
-        });
+        
+        // A conservative limit for URL length. Base64 encoding adds ~33%.
+        // 1500 * 4/3 = 2000. Most browsers support at least 2048 characters.
+        const CODE_LENGTH_THRESHOLD = 1500;
+        
+        if (codeString.length > CODE_LENGTH_THRESHOLD) {
+            setConfirmationAction({
+                title: 'Код занадто великий',
+                message: "Згенерований код може бути занадто великим для прямого відкриття в онлайн IDE, що може спричинити помилку 'URI Too Long'. Рекомендується скопіювати код або зберегти його у файл і відкрити вручну. Бажаєте продовжити спробу відкриття?",
+                onConfirm: () => {
+                    openUrl();
+                    setConfirmationAction(null);
+                },
+                variant: 'primary',
+                confirmText: 'Спробувати все одно',
+                cancelText: 'Скасувати'
+            });
+        } else {
+             setConfirmationAction({
+                title: 'Перехід на зовнішній ресурс',
+                message: 'Ви збираєтеся відкрити код у онлайн-редакторі ЄPython. Деякі елементи (напр. специфічні шрифти, кольори) можуть відображатися інакше, ніж у редакторі. Продовжити?',
+                onConfirm: () => {
+                    openUrl();
+                    setConfirmationAction(null);
+                },
+                variant: 'primary',
+                confirmText: 'Так, перейти',
+                cancelText: 'Залишитись'
+            });
+        }
     }, [codeStringForExport]);
 
 
@@ -2141,7 +2159,7 @@ export default function App(): React.ReactNode {
               setTextFontSize={setTextFontSize}
           />}
 
-           <main className="flex-grow grid grid-cols-1 md:grid-cols-[380px_1fr] lg:grid-cols-[380px_1fr_340px] min-h-0">
+           <main className="flex-grow grid grid-cols-1 md:grid-cols-[380px_1fr] lg:grid-cols-[380px_1fr_280px] min-h-0">
              
             {/* Left Column */}
             {isProjectActive && <aside className={`${isLeftPanelVisible ? 'fixed inset-0 bg-[var(--bg-app)]/95 backdrop-blur-sm z-40 p-4 flex flex-col' : 'hidden'} md:static md:bg-transparent md:z-auto md:p-0 md:flex flex-col gap-4 min-h-0 bg-[var(--bg-primary)]/50 md:p-2`}>

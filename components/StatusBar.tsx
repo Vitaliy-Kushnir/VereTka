@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { LocateIcon } from './icons';
+import { NumberInput } from './FormControls';
 
 interface StatusBarProps {
   zoomLevel: number;
@@ -14,6 +15,8 @@ const MIN_SCALE = 0.05;
 const MAX_SCALE = 30;
 
 const StatusBar: React.FC<StatusBarProps> = ({ zoomLevel, cursorPos, onZoomChange, onResetZoom, onLocateSelectedShape, selectedShapeId }) => {
+  const [isEditingZoom, setIsEditingZoom] = useState(false);
+  
   const formatNumber = (num: number) => Math.round(num * 100) / 100;
   const formattedZoom = `${Math.round(zoomLevel * 100)}%`;
 
@@ -53,13 +56,34 @@ const StatusBar: React.FC<StatusBarProps> = ({ zoomLevel, cursorPos, onZoomChang
           className="w-24 h-1 bg-[var(--bg-secondary)] rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--accent-primary)]"
           title={`Масштаб: ${formattedZoom}`}
         />
-        <button
-          onClick={onResetZoom}
-          className="w-12 text-center hover:text-[var(--text-primary)]"
-          title="Скинути масштаб до 100%"
-        >
-          {formattedZoom}
-        </button>
+        {isEditingZoom ? (
+            <div className="w-20">
+                 <NumberInput
+                    id="zoom-input"
+                    value={Math.round(zoomLevel * 100)}
+                    onChange={(val) => onZoomChange(val / 100)}
+                    onBlur={() => setIsEditingZoom(false)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === 'Escape') {
+                             (e.target as HTMLInputElement).blur();
+                        }
+                    }}
+                    autoFocus
+                    min={Math.round(MIN_SCALE * 100)}
+                    max={Math.round(MAX_SCALE * 100)}
+                    unit="%"
+                    smartRound={false}
+                />
+            </div>
+        ) : (
+            <button
+                onClick={() => setIsEditingZoom(true)}
+                className="w-16 text-center hover:text-[var(--text-primary)]"
+                title="Натисніть, щоб змінити масштаб"
+            >
+                {formattedZoom}
+            </button>
+        )}
         <button
             onClick={onLocateSelectedShape}
             disabled={!selectedShapeId}
