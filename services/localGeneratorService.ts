@@ -9,7 +9,7 @@ const round = (num: number): number => {
 
 const formatOptions = (options: Record<string, any>): string => {
     const parts = Object.entries(options)
-        .filter(([, value]) => value !== undefined && value !== null && value !== '' && !(Array.isArray(value) && value.length === 0))
+        .filter(([, value]) => value !== undefined && value !== null && !(Array.isArray(value) && value.length === 0))
         .map(([key, value]) => {
             if (typeof value === 'string') {
                 // For arrow style etc, they should not be quoted again if they are already strings
@@ -33,7 +33,7 @@ const generateLocalComment = (shape: Shape): string => {
 };
 
 
-function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, canvasVarName: string): string | null {
+function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, canvasVarName: string, outlineWithFill: boolean): string | null {
     if (shape.state === 'hidden') return null;
     
     const options: Record<string, any> = {};
@@ -43,17 +43,27 @@ function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, ca
                            (shape.type === 'bezier' && !shape.isClosed) ||
                            (shape.type === 'arc' && shape.style === 'arc'));
 
-    if (shape.state !== 'normal') options.state = shape.state;
-    if ('fill' in shape && shape.fill !== 'none' && !isUnclosedLine) options.fill = shape.fill;
-    
-    if (shape.stroke !== 'none' && shape.strokeWidth > 0) {
+    const hasFill = 'fill' in shape && shape.fill !== 'none' && !isUnclosedLine;
+    const hasStroke = shape.stroke !== 'none' && shape.strokeWidth > 0;
+
+    if (hasFill) {
+        options.fill = shape.fill;
+    }
+
+    if (hasStroke) {
         options.width = round(shape.strokeWidth);
         if (isUnclosedLine) {
-            options.fill = shape.stroke;
+            options.fill = shape.stroke; // Tkinter uses 'fill' for line color
         } else {
             options.outline = shape.stroke;
         }
+    } else { // No stroke
+        if (hasFill && outlineWithFill && !isUnclosedLine) {
+            options.outline = "";
+        }
     }
+
+    if (shape.state !== 'normal') options.state = shape.state;
     
     if (shape.type !== 'rectangle' && 'joinstyle' in shape && shape.joinstyle) {
         options.joinstyle = shape.joinstyle;
@@ -236,7 +246,8 @@ export async function generateTkinterCodeLocally(
     backgroundColor: string,
     projectName: string,
     canvasVarName: string,
-    autoGenerateComments: boolean
+    autoGenerateComments: boolean,
+    outlineWithFill: boolean
 ): Promise<{ codeLines: CodeLine[] }> {
     
     const finalCanvasVarName = canvasVarName.trim() || 'c';
@@ -281,7 +292,7 @@ export async function generateTkinterCodeLocally(
         codeLines.push({ content: "# Об'єкти для малювання відсутні", shapeId: null });
     } else {
         shapes.forEach(shape => {
-            const lineContent = shapeToTkinterString(shape, imageVarMap, finalCanvasVarName);
+            const lineContent = shapeToTkinterString(shape, imageVarMap, finalCanvasVarName, outlineWithFill);
             if (lineContent) {
                 let commentToUse = shape.comment;
                 if (autoGenerateComments && !commentToUse) {

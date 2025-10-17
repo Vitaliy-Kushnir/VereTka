@@ -17,6 +17,7 @@ import AboutModal from './components/AboutModal';
 import HelpModal from './components/HelpModal';
 import ApiKeyModal from './components/ApiKeyModal';
 import FeedbackModal from './components/FeedbackModal';
+import CheatCodeModal from './components/CheatCodeModal';
 import { saveFile, generateSvg, exportToRaster, openProjectFile, saveToHandle } from './lib/exportUtils';
 import { SquareIcon, CodeIcon, XIcon, AxesIcon, FitToScreenIcon, SelectIcon, EditPointsIcon, RectangleIcon, EllipseIcon, CircleIcon, LineIcon, PolylineIcon, BezierIcon, PolygonIcon, PencilIcon, TriangleIcon, RightTriangleIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, PiesliceIcon, ChordIcon, ArcIcon, StarIcon, TextIcon, ImageIcon, BitmapIcon, UndoIcon, RedoIcon, DuplicateIcon, TrashIcon, GridIcon, SettingsIcon, DrawFromCornerIcon, DrawFromCenterIcon, CheckIcon, MenuIcon, SunIcon, MoonIcon, HomeIcon, BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, SadMonitorIcon, FullscreenIcon, ExitFullscreenIcon } from './components/icons';
 import { getFinalPoints, getVisualBoundingBox, getBoundingBox, getEditablePoints, getShapeCenter } from './lib/geometry';
@@ -32,7 +33,7 @@ import SaveTemplateModal from './components/SaveTemplateModal';
 
 type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
-type SettingsTab = 'canvas' | 'grid' | 'appearance' | 'generator' | 'templates';
+type SettingsTab = 'canvas' | 'grid' | 'appearance' | 'code' | 'templates';
 
 const APP_VERSION = '1.2.11';
 const RULER_THICKNESS = 24;
@@ -254,7 +255,8 @@ const MenuBar: React.FC<{
 const LeftToolbar: React.FC<{
     activeTool: Tool;
     setActiveTool: (tool: Tool) => void;
-}> = React.memo(({ activeTool, setActiveTool }) => {
+    activeCheats: Set<string>;
+}> = React.memo(({ activeTool, setActiveTool, activeCheats }) => {
     const iconSize = 18;
     const tools: { name: Tool; label: string; icon: React.ReactNode; group: number; disabled?: boolean }[] = [
         // Group 1: Primitives
@@ -279,7 +281,7 @@ const LeftToolbar: React.FC<{
         { name: 'text', label: 'Текст', icon: <TextIcon size={iconSize} />, group: 3 },
         // Group 4: Other
         { name: 'pencil', label: 'Олівець', icon: <PencilIcon size={iconSize} />, group: 4 },
-        { name: 'image', label: 'Зображення', icon: <ImageIcon size={iconSize} />, group: 4, disabled: true },
+        { name: 'image', label: 'Зображення', icon: <ImageIcon size={iconSize} />, group: 4, disabled: !activeCheats.has('001') && !activeCheats.has('002') },
         { name: 'bitmap', label: 'Bitmap', icon: <BitmapIcon size={iconSize} />, group: 4, disabled: true },
     ];
 
@@ -670,6 +672,7 @@ export default function App(): React.ReactNode {
   const [generatorType, setGeneratorType] = useState<GeneratorType>('local');
   const [highlightCodeOnSelection, setHighlightCodeOnSelection] = useState<boolean>(true);
   const [autoGenerateComments, setAutoGenerateComments] = useState<boolean>(true);
+  const [outlineWithFill, setOutlineWithFill] = useState<boolean>(true);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(!!document.fullscreenElement);
 
   // State for temporary visual overrides (e.g., color picking preview)
@@ -707,6 +710,31 @@ export default function App(): React.ReactNode {
   const [isScreenTooSmall, setIsScreenTooSmall] = useState(false);
   const [projectTemplates, setProjectTemplates] = useState<ProjectTemplate[]>([]);
   const [projectWasEverActive, setProjectWasEverActive] = useState(false);
+
+  const [isCheatCodeModalOpen, setIsCheatCodeModalOpen] = useState(false);
+  const [activeCheats, setActiveCheats] = useState<Set<string>>(new Set());
+
+  const handleActivateCheat = useCallback((code: string) => {
+    if (code === '000') {
+        setActiveCheats(new Set());
+    } else {
+        setActiveCheats(prev => new Set(prev).add(code));
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleCheatCodeHotKey = (e: KeyboardEvent) => {
+        if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'c') {
+            e.preventDefault();
+            setIsCheatCodeModalOpen(true);
+        }
+    };
+
+    window.addEventListener('keydown', handleCheatCodeHotKey);
+    return () => {
+        window.removeEventListener('keydown', handleCheatCodeHotKey);
+    };
+  }, []);
 
   const codeStringForExport = useMemo(() => {
     const lines = showComments 
@@ -767,9 +795,9 @@ export default function App(): React.ReactNode {
         projectName: pName,
         shapes: s,
         canvasSettings: { width: canvasWidth, height: canvasHeight, bgColor: canvasBgColor, varName: canvasVarName },
-        uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments }
+        uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill }
     });
-  }, [canvasWidth, canvasHeight, canvasBgColor, canvasVarName, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments]);
+  }, [canvasWidth, canvasHeight, canvasBgColor, canvasVarName, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill]);
 
   const lastSavedSignatureRef = useRef('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -867,9 +895,9 @@ export default function App(): React.ReactNode {
     setTimeout(() => setNotification(null), duration);
   };
 
-  const addShape = useCallback((shape: Shape) => {
+  const addShape = useCallback((shape: Shape, isDuplication = false) => {
     setShapes(prevShapes => [...prevShapes, shape]);
-    if (shape.type !== 'polyline' && shape.type !== 'bezier') {
+    if (isDuplication || (shape.type !== 'polyline' && shape.type !== 'bezier')) {
         setSelectedShapeId(shape.id);
         setActiveTool('select');
     }
@@ -1170,12 +1198,18 @@ export default function App(): React.ReactNode {
     setIsLoading(true);
     setError(null);
     setGeneratedCodeLines([]);
+
+    let shapesForGeneration = shapes;
+    if (activeCheats.has('002')) {
+        shapesForGeneration = shapes.filter(s => s.type !== 'image');
+    }
+
     try {
       if (generatorType === 'local') {
-        const { codeLines } = await generateTkinterCodeLocally(shapes, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments);
+        const { codeLines } = await generateTkinterCodeLocally(shapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill);
         setGeneratedCodeLines(codeLines);
       } else {
-        const code = await generateTkinterCode(apiKey!, shapes, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments);
+        const code = await generateTkinterCode(apiKey!, shapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill);
         const lines = code.split('\n');
         const codeLines = lines.map(line => {
             const match = line.match(/(.*?) # ID:([a-zA-Z0-9.-]+)/);
@@ -1196,18 +1230,22 @@ export default function App(): React.ReactNode {
     } finally {
       setIsLoading(false);
     }
-  }, [shapes, canvasWidth, canvasHeight, canvasBgColor, projectName, generatorType, canvasVarName, autoGenerateComments, apiKey]);
+  }, [shapes, canvasWidth, canvasHeight, canvasBgColor, projectName, generatorType, canvasVarName, autoGenerateComments, apiKey, activeCheats, outlineWithFill]);
 
   useEffect(() => {
     if (generatorType === 'local' && isProjectActive) {
         const generate = async () => {
-            const { codeLines } = await generateTkinterCodeLocally(shapes, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments);
+            let shapesForGeneration = shapes;
+            if (activeCheats.has('002')) {
+                shapesForGeneration = shapes.filter(s => s.type !== 'image');
+            }
+            const { codeLines } = await generateTkinterCodeLocally(shapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill);
             setGeneratedCodeLines(codeLines);
             setShapesAtGenerationTime(JSON.parse(JSON.stringify(shapes)));
         };
         generate();
     }
-  }, [shapes, canvasWidth, canvasHeight, canvasBgColor, generatorType, projectName, isProjectActive, canvasVarName, autoGenerateComments]);
+  }, [shapes, canvasWidth, canvasHeight, canvasBgColor, generatorType, projectName, isProjectActive, canvasVarName, autoGenerateComments, activeCheats, outlineWithFill]);
   
   const hasUnsyncedChangesWithCode = useMemo(() => {
     if (!shapesAtGenerationTime) return false;
@@ -1225,6 +1263,7 @@ export default function App(): React.ReactNode {
     setIsDrawingBezier(false);
     setBezierPoints([]);
     setShapesAtGenerationTime(null);
+    setActiveCheats(new Set());
     setFileHandle(null);
   };
 
@@ -1301,8 +1340,8 @@ export default function App(): React.ReactNode {
     thumbnail: generateProjectThumbnail(shapes, canvasWidth, canvasHeight, canvasBgColor),
     canvasSettings: { width: canvasWidth, height: canvasHeight, bgColor: canvasBgColor, varName: canvasVarName },
     viewTransform,
-    uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments }
-  }), [shapes, canvasWidth, canvasHeight, canvasBgColor, canvasVarName, viewTransform, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, generateProjectThumbnail]);
+    uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill }
+  }), [shapes, canvasWidth, canvasHeight, canvasBgColor, canvasVarName, viewTransform, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateProjectThumbnail]);
 
     const handleSaveProject = useCallback(async () => {
         if (!hasUnsavedChanges && fileHandle) {
@@ -1475,6 +1514,7 @@ export default function App(): React.ReactNode {
             setGeneratorType(ui.generatorType || 'local');
             setHighlightCodeOnSelection(ui.highlightCodeOnSelection ?? true);
             setAutoGenerateComments(ui.autoGenerateComments ?? true);
+            setOutlineWithFill(ui.outlineWithFill ?? true);
             
             lastSavedSignatureRef.current = getProjectSignature(newProjectName, savedData.shapes);
 
@@ -1976,8 +2016,8 @@ export default function App(): React.ReactNode {
         showNotification('Перемкнено на локальний генератор. Код буде оновлено автоматично.', 'info');
     }, []);
     
-    const handleOpenSettingsToGenerator = useCallback(() => {
-        setSettingsInitialTab('generator');
+    const handleOpenSettingsToCode = useCallback(() => {
+        setSettingsInitialTab('code');
         setIsSettingsOpen(true);
     }, []);
     
@@ -2169,6 +2209,7 @@ export default function App(): React.ReactNode {
                 <LeftToolbar
                     activeTool={activeTool}
                     setActiveTool={handleSetActiveTool}
+                    activeCheats={activeCheats}
                 />
                 <div className="flex-1 min-h-0 mt-2">
                     <CodeDisplay 
@@ -2185,7 +2226,7 @@ export default function App(): React.ReactNode {
                         generatorType={generatorType}
                         // FIX: Changed prop name from `onSwitchToLocalFromError` to `onSwitchToLocalGenerator` to match `CodeDisplayProps`.
                         onSwitchToLocalGenerator={handleSwitchToLocalFromError}
-                        onOpenSettingsToGenerator={handleOpenSettingsToGenerator}
+                        onOpenSettingsToGenerator={handleOpenSettingsToCode}
                         onSaveCode={() => setIsSaveCodeModalOpen(true)}
                         onOpenOrRunCodeOnline={handleOpenOrRunCodeOnline}
                         codeStringForExport={codeStringForExport}
@@ -2288,6 +2329,15 @@ export default function App(): React.ReactNode {
                 </div>
             </aside>}
           </main>
+          
+          {isCheatCodeModalOpen && (
+            <CheatCodeModal
+                isOpen={isCheatCodeModalOpen}
+                onClose={() => setIsCheatCodeModalOpen(false)}
+                onActivate={handleActivateCheat}
+                showNotification={showNotification}
+            />
+          )}
 
            {isSettingsOpen && (
             <SettingsModal
@@ -2310,6 +2360,7 @@ export default function App(): React.ReactNode {
               generatorType={generatorType} setGeneratorType={setGeneratorType}
               highlightCodeOnSelection={highlightCodeOnSelection} setHighlightCodeOnSelection={setHighlightCodeOnSelection}
               autoGenerateComments={autoGenerateComments} setAutoGenerateComments={setAutoGenerateComments}
+              outlineWithFill={outlineWithFill} setOutlineWithFill={setOutlineWithFill}
             />
           )}
           {isApiKeyModalOpen && (

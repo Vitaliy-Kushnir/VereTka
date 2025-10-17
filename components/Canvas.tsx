@@ -10,7 +10,7 @@ interface CanvasProps {
   height: number;
   backgroundColor: string;
   shapes: Shape[];
-  addShape: (shape: Shape) => void;
+  addShape: (shape: Shape, isDuplication?: boolean) => void;
   updateShape: (shape: Shape) => void;
   activeTool: Tool;
   drawMode: DrawMode;
@@ -918,7 +918,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 ...activeTransformShape, 
                 id: new Date().toISOString() 
             };
-            addShape(newShape);
+            addShape(newShape, true);
             showNotification('Фігуру дубльовано.');
         }
     } else if (action?.type === 'point-editing' && activeTransformShape) {

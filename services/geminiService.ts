@@ -36,7 +36,8 @@ export async function generateTkinterCode(
     canvasBgColor: string,
     projectName: string,
     canvasVarName: string,
-    autoGenerateComments: boolean
+    autoGenerateComments: boolean,
+    outlineWithFill: boolean
 ): Promise<string> {
     
     if (!apiKey) {
@@ -101,6 +102,7 @@ Here are the specifications:
     *   Draw all the shapes provided below.
     *   For each shape, you MUST add a comment with its unique ID right before the drawing command, in the format: \`# ID:shape-id-123\`. This is critical for mapping code back to the editor.
     *   ${autoGenerateComments ? 'Add a short, descriptive comment for each shape based on its properties (e.g., `# A blue square`).' : 'Do not add any descriptive comments unless one is provided in the shape object\'s "comment" property.'}
+    ${outlineWithFill ? `*   **Important Rule for Outlines:** For any closed shape that has a fill color but no stroke (stroke is "none" or strokeWidth is 0), you MUST add \`outline=""\` to its drawing command. This prevents Tkinter from adding a default 1px black border. This rule applies to rectangles, ovals, polygons, pieslices, and chords.` : ''}
     *   End the script with \`root.mainloop()\`.
 
 3.  **Shapes to Draw (JSON format):**
