@@ -890,10 +890,10 @@ export default function App(): React.ReactNode {
   }, [isProjectActive]);
 
 
-  const showNotification = (message: string, type: 'info' | 'error' = 'info', duration: number = 3000) => {
+  const showNotification = useCallback((message: string, type: 'info' | 'error' = 'info', duration: number = 3000) => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), duration);
-  };
+  }, []);
 
   const addShape = useCallback((shape: Shape, isDuplication = false) => {
     setShapes(prevShapes => [...prevShapes, shape]);
@@ -1017,7 +1017,7 @@ export default function App(): React.ReactNode {
     setShapes(prevShapes => [...prevShapes, newShape]);
     setSelectedShapeId(newShape.id);
     showNotification('Фігуру дубльовано.');
-  }, [shapes, setShapes]);
+  }, [shapes, setShapes, showNotification]);
   
   const moveShape = useCallback((id: string, direction: 'up' | 'down') => {
     setShapes(prevShapes => {
@@ -1074,7 +1074,7 @@ export default function App(): React.ReactNode {
     updateShape(newPolyline);
     setActiveTool('edit-points');
     showNotification('Фігуру перетворено на контур.');
-  }, [shapes, updateShape]);
+  }, [shapes, updateShape, showNotification]);
 
 
   const handleSelectShape = useCallback((id: string | null) => {
@@ -1163,6 +1163,14 @@ export default function App(): React.ReactNode {
     };
 
     const handleSetActiveTool = useCallback((tool: Tool) => {
+        if (tool === 'edit-points') {
+            const shape = shapes.find(s => s.id === selectedShapeId);
+            if (shape?.type === 'text') {
+                showNotification('Режим редагування вузлів недоступний для тексту.', 'info');
+                return;
+            }
+        }
+        
         if (isDrawingPolyline) handleCompletePolyline(false);
         if (isDrawingBezier) handleCancelBezier();
         setActivePointIndex(null);
@@ -1174,7 +1182,7 @@ export default function App(): React.ReactNode {
         } else { setIsDrawingBezier(false); }
         if (tool === 'image') fileInputRef.current?.click();
         else { setPendingImage(null); setActiveTool(tool); }
-    }, [isDrawingPolyline, isDrawingBezier, handleCompletePolyline, handleCancelBezier]);
+    }, [isDrawingPolyline, isDrawingBezier, handleCompletePolyline, handleCancelBezier, shapes, selectedShapeId, showNotification]);
 
   const selectedShape = useMemo(() => {
     const foundShape = shapes.find((s) => s?.id === selectedShapeId) ?? null;
@@ -1230,7 +1238,7 @@ export default function App(): React.ReactNode {
     } finally {
       setIsLoading(false);
     }
-  }, [shapes, canvasWidth, canvasHeight, canvasBgColor, projectName, generatorType, canvasVarName, autoGenerateComments, apiKey, activeCheats, outlineWithFill]);
+  }, [shapes, canvasWidth, canvasHeight, canvasBgColor, projectName, generatorType, canvasVarName, autoGenerateComments, apiKey, activeCheats, outlineWithFill, showNotification]);
 
   useEffect(() => {
     if (generatorType === 'local' && isProjectActive) {
@@ -1291,7 +1299,7 @@ export default function App(): React.ReactNode {
       'Очистити полотно?',
       'Усі незбережені зміни буде втрачено. Ви впевнені?'
     );
-  }, [confirmAction]);
+  }, [confirmAction, showNotification]);
 
   const handleNewProject = useCallback((settings: NewProjectSettings, templateId: string | null) => {
     performClear();
@@ -1389,7 +1397,7 @@ export default function App(): React.ReactNode {
                 showNotification('Не вдалося зберегти проєкт.', 'error');
             }
         }
-    }, [hasUnsavedChanges, fileHandle, getSaveData, projectName, getProjectSignature, shapes, addRecentProject]);
+    }, [hasUnsavedChanges, fileHandle, getSaveData, projectName, getProjectSignature, shapes, addRecentProject, showNotification]);
 
     const handleSaveProjectAs = useCallback(async (newProjectNameFromModal: string) => {
         setIsSaveAsModalOpen(false);
@@ -1419,7 +1427,7 @@ export default function App(): React.ReactNode {
             console.error("Не вдалося зберегти проєкт", error);
             showNotification('Не вдалося зберегти проєкт.', 'error');
         }
-    }, [getSaveData, shapes, addRecentProject, getProjectSignature]);
+    }, [getSaveData, shapes, addRecentProject, getProjectSignature, showNotification]);
 
     const handleSaveTemplate = useCallback((name: string) => {
         const newTemplate: ProjectTemplate = {
@@ -1447,7 +1455,7 @@ export default function App(): React.ReactNode {
             return updatedTemplates;
         });
         setIsSaveTemplateModalOpen(false);
-    }, [shapes, canvasWidth, canvasHeight, canvasBgColor, canvasVarName]);
+    }, [shapes, canvasWidth, canvasHeight, canvasBgColor, canvasVarName, showNotification]);
 
     const handleDeleteTemplate = useCallback((templateId: string) => {
         setConfirmationAction({
@@ -1468,7 +1476,7 @@ export default function App(): React.ReactNode {
                 setConfirmationAction(null);
             }
         });
-    }, []);
+    }, [showNotification]);
 
     const handleRenameTemplate = useCallback((templateId: string, newName: string) => {
         setProjectTemplates(prev => {
@@ -1482,7 +1490,7 @@ export default function App(): React.ReactNode {
             }
             return updatedTemplates;
         });
-    }, []);
+    }, [showNotification]);
 
   const processLoadedData = useCallback((fileContent: string, fileName?: string, handle?: FileSystemFileHandle | null) => {
     try {
@@ -1535,7 +1543,7 @@ export default function App(): React.ReactNode {
         console.error("Помилка парсингу файлу проєкту", e);
         showNotification('Не вдалося завантажити проєкт. Файл пошкоджено.', 'error');
     }
-  }, [resetHistory, getProjectSignature, addRecentProject, fitCanvasToView, activeTool]);
+  }, [resetHistory, getProjectSignature, addRecentProject, fitCanvasToView, activeTool, showNotification]);
 
   const loadProject = useCallback(async () => {
     let result: { handle: FileSystemFileHandle; content: string } | null = null;
@@ -1555,7 +1563,7 @@ export default function App(): React.ReactNode {
     } else {
         projectLoadInputRef.current?.click();
     }
-  }, [processLoadedData]);
+  }, [processLoadedData, showNotification]);
   
   const handleLoadProject = useCallback(() => {
     confirmAction(
@@ -1632,7 +1640,7 @@ export default function App(): React.ReactNode {
         console.error('Помилка експорту:', err);
         showNotification('Не вдалося експортувати зображення.', 'error');
     }
-  }, [shapes, canvasWidth, canvasHeight, canvasBgColor, projectName]);
+  }, [shapes, canvasWidth, canvasHeight, canvasBgColor, projectName, showNotification]);
 
   const handleOpenRecent = useCallback(async (project: RecentProject) => {
     try {
@@ -1645,7 +1653,7 @@ export default function App(): React.ReactNode {
         console.error('Не вдалося відкрити останній проєкт:', err);
         showNotification(`Не вдалося відкрити проєкт: ${err instanceof Error ? err.message : 'Невідома помилка'}.`, 'error', 5000);
     }
-  }, [openRecentProject, processLoadedData]);
+  }, [openRecentProject, processLoadedData, showNotification]);
   
   const handleRemoveRecentProject = useCallback((project: RecentProject) => {
     setConfirmationAction({
@@ -1657,7 +1665,7 @@ export default function App(): React.ReactNode {
             setConfirmationAction(null);
         }
     });
-  }, [removeRecentProject]);
+  }, [removeRecentProject, showNotification]);
 
   const handleClearAllRecentProjects = useCallback(() => {
     if (recentProjects.length === 0) return;
@@ -1670,7 +1678,7 @@ export default function App(): React.ReactNode {
             setConfirmationAction(null);
         }
     });
-  }, [clearAllProjects, recentProjects.length]);
+  }, [clearAllProjects, recentProjects.length, showNotification]);
 
 
     const handleSaveCode = useCallback(async (fileName: string, extension: '.py' | '.txt', includeLineNumbers: boolean) => {
@@ -1720,7 +1728,7 @@ export default function App(): React.ReactNode {
           console.error('Не вдалося зберегти файл:', err);
           showNotification('Не вдалося зберегти файл.', 'error');
         }
-    }, [codeStringForExport, generatedCodeLines, showComments]);
+    }, [codeStringForExport, generatedCodeLines, showComments, showNotification]);
 
     const handleOpenOrRunCodeOnline = useCallback((runImmediately: boolean) => {
         const codeString = codeStringForExport;
@@ -1776,7 +1784,7 @@ export default function App(): React.ReactNode {
                 cancelText: 'Залишитись'
             });
         }
-    }, [codeStringForExport]);
+    }, [codeStringForExport, showNotification]);
 
 
   const handleDuplicate = useCallback(() => { if (selectedShapeId) duplicateShape(selectedShapeId); }, [selectedShapeId, duplicateShape]);
@@ -1797,7 +1805,7 @@ export default function App(): React.ReactNode {
             document.exitFullscreen();
         }
     }
-  }, []);
+  }, [showNotification]);
 
     const handleLocateSelectedShape = useCallback(() => {
         if (!selectedShapeId || !viewportRef.current) return;
@@ -2014,7 +2022,7 @@ export default function App(): React.ReactNode {
         setGeneratorType('local');
         setError(null); // Clear the Gemini error
         showNotification('Перемкнено на локальний генератор. Код буде оновлено автоматично.', 'info');
-    }, []);
+    }, [showNotification]);
     
     const handleOpenSettingsToCode = useCallback(() => {
         setSettingsInitialTab('code');
@@ -2071,7 +2079,7 @@ export default function App(): React.ReactNode {
         } else {
             showNotification('Ключ API видалено.', 'info');
         }
-    }, []);
+    }, [showNotification]);
 
   const handleSetFillColor = useCallback((color: string) => {
       setFillColor(color);

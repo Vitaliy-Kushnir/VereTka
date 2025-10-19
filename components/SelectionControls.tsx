@@ -120,21 +120,21 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, set
         );
     }, [shape, scaledHandleSize, scaledStrokeWidth]);
 
-    if (activeTool === 'edit-points') {
+    if (activeTool === 'edit-points' && shape.type !== 'text') {
         // getEditablePoints returns LOCAL, UN-ROTATED points.
         const localPoints = getEditablePoints(shape);
         if (!localPoints) return null;
 
         // For display, we rotate these local points around the shape's center.
         let displayPoints: { x: number, y: number }[];
-        if (action?.type === 'point-editing' && rotation !== 0) {
-            // During a point-edit drag of a rotated shape, use the stable center.
+        if (action?.type === 'point-editing') { // <-- ВИПРАВЛЕННЯ: Спрощена та надійніша умова
+            // During a point-edit drag, ALWAYS use the stable center from the action.
             displayPoints = localPoints.map(p => rotatePoint(p, action.center, rotation));
         } else {
-            // Otherwise, use the shape's current center.
+            // Otherwise, for static display, use the shape's current calculated center.
             displayPoints = localPoints.map(p => rotatePoint(p, center, rotation));
         }
-         
+
         const handleNodeDown = (e: React.MouseEvent | React.TouchEvent, pointIndex: number) => {
             e.stopPropagation();
             setActivePointIndex(pointIndex);
@@ -219,13 +219,15 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, set
                  newShape = newPolyline;
             }
             
+            const originalCenter = getShapeCenter(shape); // <-- ВИПРАВЛЕННЯ: Отримуємо центр з ОРИГІНАЛЬНОЇ фігури
+            if (!originalCenter) return;
+
             updateShape(newShape);
-            
             setActivePointIndex(index2);
-            // The action needs the updated shape and its new center to work with
-            const newCenter = getShapeCenter(newShape);
-            if (!newCenter) return;
-            setAction({ type: 'point-editing', initialShape: newShape, pointIndex: index2, center: newCenter });
+            
+            // The action needs the updated shape, but the ORIGINAL stable center
+            setAction({ type: 'point-editing', initialShape: newShape, 
+            pointIndex: index2, center: originalCenter }); // <-- ВИПРАВЛЕННЯ: Передаємо стабільний центр
         };
 
         const isShapeClosed = (
@@ -325,9 +327,9 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, set
             const initialMousePos = getSnappedMousePosition(getPointerPosition(eventForPosition));
             
             const mouseAngleRad = Math.atan2(
-                initialMousePos.y - handleCenter.y,
+                (initialMousePos.y - handleCenter.y), // Додати знак мінус
                 initialMousePos.x - handleCenter.x
-            );
+);
             const shapeAngleRad = shape.rotation * Math.PI / 180;
             const startAngleOffset = shapeAngleRad - mouseAngleRad;
             
@@ -425,7 +427,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, set
         const initialMousePos = getSnappedMousePosition(getPointerPosition(eventForPosition));
         
         const mouseAngleRad = Math.atan2(
-            initialMousePos.y - handleCenter.y,
+            -(initialMousePos.y - handleCenter.y),
             initialMousePos.x - handleCenter.x
         );
         const shapeAngleRad = ('rotation' in shape ? shape.rotation : 0) * Math.PI / 180;
@@ -609,7 +611,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, set
 
     return (
         <React.Fragment>
-            <g transform={`rotate(${rotation} ${center.x} ${center.y})`}>
+            <g transform={`rotate(${-rotation} ${center.x} ${center.y})`}>
                 <rect 
                     x={bbox.x} y={bbox.y} width={bbox.width} height={bbox.height} 
                     fill="none" stroke="var(--selection-stroke)" strokeWidth={scaledStrokeWidth} 
@@ -638,7 +640,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, set
                                 stroke="var(--selection-stroke)"
                                 strokeWidth={scaledStrokeWidth}
                                 style={{ pointerEvents: 'none' }} 
-                                transform={`rotate(${-rotation} ${rotatedPos.x} ${rotatedPos.y})`}
+                                transform={`rotate(${rotation} ${rotatedPos.x} ${rotatedPos.y})`}
                             />
                             <rect 
                                 x={rotatedPos.x - scaledTouchHandleSize / 2} 
@@ -654,7 +656,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, set
                 {('rotation' in shape) && shape.rotation !== undefined && (
                     <g onMouseDown={handleRotateDown} onTouchStart={handleRotateDown} data-handle="true" style={{ cursor: action ? 'inherit' : ROTATE_CURSOR_STYLE }}>
                         <line x1={center.x} y1={center.y} x2={rotationHandlePos.x} y2={rotationHandlePos.y} stroke="var(--selection-stroke)" strokeWidth={scaledStrokeWidth} style={{ pointerEvents: 'none' }} />
-                        <circle cx={rotationHandlePos.x} cy={rotationHandlePos.y} r={scaledHandleSize / 2} fill="var(--bg-primary)" stroke="var(--selection-stroke)" strokeWidth={scaledStrokeWidth} style={{pointerEvents: 'none'}} transform={`rotate(${-rotation} ${rotationHandlePos.x} ${rotationHandlePos.y})`} />
+                        <circle cx={rotationHandlePos.x} cy={rotationHandlePos.y} r={scaledHandleSize / 2} fill="var(--bg-primary)" stroke="var(--selection-stroke)" strokeWidth={scaledStrokeWidth} style={{pointerEvents: 'none'}} transform={`rotate(${rotation} ${rotationHandlePos.x} ${rotationHandlePos.y})`} />
                         <circle cx={rotationHandlePos.x} cy={rotationHandlePos.y} r={scaledTouchHandleSize / 2} fill="transparent" />
                     </g>
                 )}

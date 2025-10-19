@@ -22,7 +22,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
     const getTransform = (shape: Shape) => {
         if ('rotation' in shape && shape.rotation && shape.rotation !== 0) {
             const center = shape.type === 'text' ? {x: shape.x, y: shape.y} : getShapeCenter(shape);
-            if(center) return `rotate(${shape.rotation} ${center.x} ${center.y})`;
+            if(center) return `rotate(${-shape.rotation} ${center.x} ${center.y})`;
         }
         return undefined;
     };

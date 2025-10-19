@@ -1542,7 +1542,7 @@ export const DashSelect: React.FC<{
     };
 
     return (
-        <div ref={dropdownRef} className="static w-full">
+        <div ref={dropdownRef} className="relative w-full">
             <button
                 id={id}
                 type="button"
@@ -1555,7 +1555,7 @@ export const DashSelect: React.FC<{
                 <ChevronDownIcon size={16} className={`transform transition-transform text-[var(--text-tertiary)] ${isOpen ? 'rotate-180' : 'rotate-0'}`} />
             </button>
             {isOpen && (
-                <div className="absolute z-10 top-full left-0 right-0 mt-0 bg-[var(--bg-tertiary)] rounded-md shadow-lg max-h-60 overflow-y-auto border border-[var(--border-secondary)]">
+                <div className="absolute z-10 top-full right-0 mt-0 bg-[var(--bg-tertiary)] rounded-md shadow-lg max-h-60 overflow-y-auto border border-[var(--border-secondary)] w-[calc(100%+7.5rem)]">
                     {DASH_STYLES.map(style => (
                         <button
                             key={style.name}

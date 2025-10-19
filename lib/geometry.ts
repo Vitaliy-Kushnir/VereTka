@@ -537,7 +537,7 @@ export const getShapeCenter = (shape: Shape): { x: number; y: number } | null =>
 };
 
 export const rotatePoint = (point: { x: number; y: number }, center: { x: number; y: number }, angleDegrees: number): { x: number; y: number } => {
-  const angleRad = angleDegrees * (Math.PI / 180);
+  const angleRad = -angleDegrees * (Math.PI / 180);
   const cos = Math.cos(angleRad);
   const sin = Math.sin(angleRad);
   const translatedX = point.x - center.x;

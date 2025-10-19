@@ -15,7 +15,7 @@ const CheatCodeModal: React.FC<CheatCodeModalProps> = ({ isOpen, onClose, onActi
 
     const handleActivate = () => {
         const trimmedValue = inputValue.trim();
-        const match = trimmedValue.match(/^№(\d{3})$/);
+        const match = trimmedValue.match(/^#(\d{3})$/);
 
         if (match) {
             const codeNumber = match[1];
@@ -31,7 +31,7 @@ const CheatCodeModal: React.FC<CheatCodeModalProps> = ({ isOpen, onClose, onActi
                 showNotification(`Невірний чит-код: "${trimmedValue}"`, 'error');
             }
         } else {
-            showNotification('Неправильний формат коду. Очікується "№000".', 'error');
+            showNotification('Неправильний формат коду. Очікується "#000".', 'error');
         }
         setInputValue('');
     };
@@ -57,7 +57,7 @@ const CheatCodeModal: React.FC<CheatCodeModalProps> = ({ isOpen, onClose, onActi
                 </header>
 
                 <div className="p-6 space-y-4">
-                    <p className="text-sm text-center text-[var(--text-tertiary)]">Введіть код у форматі №000</p>
+                    <p className="text-sm text-center text-[var(--text-tertiary)]">Введіть код у форматі #000</p>
                     <input 
                         type="text" 
                         value={inputValue} 

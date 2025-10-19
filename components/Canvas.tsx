@@ -467,21 +467,32 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
     switch(action.type) {
         case 'point-editing': {
-            const { initialShape, pointIndex, center } = action;
-            const targetShape = initialShape as PolylineShape | PathShape | BezierCurveShape | LineShape;
+            // The pointIndex and stable center are the only things needed from the action for this logic.
+            const { pointIndex, center } = action;
             
-            const rotation = 'rotation' in initialShape ? initialShape.rotation : 0;
+            // CRITICAL FIX: Use shapeToTransform, which holds the cumulative changes from the drag,
+            // as the base for the next update. Do NOT use action.initialShape.
+            const targetShape = shapeToTransform as PolylineShape | PathShape | BezierCurveShape | LineShape;
+            
+            // Get rotation from the current shape being transformed.
+            const rotation = 'rotation' in targetShape ? targetShape.rotation : 0;
+            
+            // Un-rotate the current mouse position to find its location in the shape's local coordinate system.
             let finalPos = pos;
             if (rotation !== 0) {
-                // Use the stable center from the action object
+                // Use the stable center from the action object.
                 finalPos = rotatePoint(pos, center, -rotation);
             }
 
+            // Update the single point that is being dragged.
             const newPoints = [...targetShape.points];
             newPoints[pointIndex] = finalPos;
+            
+            // Create the new temporary shape for this frame.
             updatedShape = { ...targetShape, points: newPoints as any };
             break;
         }
+        
         case 'arc-angle-editing': {
             const { initialShape, handle, center, initialMouseAngle } = action;
             // Get current angle in a CCW system (Y-up)
@@ -875,7 +886,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             const { center, startAngle: startAngleOffset, initialShape } = action;
             if (!('rotation' in initialShape)) break;
 
-            const currentMouseAngleRad = Math.atan2(pos.y - center.y, pos.x - center.x);
+            const currentMouseAngleRad = Math.atan2(-(pos.y - center.y), pos.x - center.x);
             const newRotationRad = currentMouseAngleRad + startAngleOffset;
             let newRotationDeg = newRotationRad * 180 / Math.PI;
 
@@ -1229,7 +1240,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   const getTransform = (shape: Shape) => {
     if ('rotation' in shape && shape.rotation && shape.rotation !== 0) {
         const center = shape.type === 'text' ? {x: shape.x, y: shape.y} : getShapeCenter(shape);
-        if(center) return `rotate(${shape.rotation} ${center.x} ${center.y})`;
+        if(center) return `rotate(${-shape.rotation} ${center.x} ${center.y})`;
     }
     return undefined;
   };
@@ -1239,7 +1250,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         itemsToRender.forEach(shape => {
             if ((shape.type === 'line' || shape.type === 'bezier' || shape.type === 'pencil' || (shape.type === 'polyline' && !shape.isClosed)) && 'arrow' in shape && shape.arrow && shape.arrow !== 'none' && shape.stroke !== 'none' && shape.strokeWidth > 0 && shape.arrowshape) {
                 const [d1m, d2m, d3m] = shape.arrowshape;
-                const w = shape.strokeWidth;
+                const w = shape.strokeWidth > 0 ? shape.strokeWidth : 1;
                 const d1 = d1m * w; // tip dist
                 const d2 = d2m * w; // wing dist
                 const d3 = d3m * w; // width
@@ -1546,7 +1557,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     const { center } = action;
                     const rotation = 'rotation' in shape && shape.rotation ? shape.rotation : 0;
                     if (rotation !== 0 && center) {
-                        transform = `rotate(${rotation} ${center.x} ${center.y})`;
+                        transform = `rotate(${-rotation} ${center.x} ${center.y})`;
                     }
                 }
                 
@@ -1769,7 +1780,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         const polyProps: any = { ...commonVisibleProps, fill: polyShape.fill, ...joinStyleProps(polyShape) };
                         if (polyShape.stipple && polyShape.fill !== 'none') polyProps.mask = `url(#mask-${polyShape.stipple})`;
                         if (polyShape.dash) polyProps.strokeDasharray = polyShape.dash.map(v => v * polyShape.strokeWidth).join(' ');
-                        if (polyShape.dashoffset) polyProps.strokeDashoffset = polyProps.dashoffset;
+                        if (polyShape.dashoffset) polyProps.strokeDashoffset = polyShape.dashoffset;
                         
                         if(polyShape.smooth) {
                              const d = getSmoothedPathData(getPolygonPointsAsArray(shape as PolygonShape), true, true);

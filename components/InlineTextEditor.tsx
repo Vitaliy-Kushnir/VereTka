@@ -101,7 +101,7 @@ const InlineTextEditor: React.FC<InlineTextEditorProps> = ({ shape, viewTransfor
     fontStyle: shape.slant === 'italic' ? 'italic' : 'normal',
     textAlign: shape.justify,
     // The textarea itself is now positioned correctly, so we just rotate it around its top-left corner.
-    transform: `rotate(${shape.rotation}deg)`,
+    transform: `rotate(${-shape.rotation}deg)`,
     transformOrigin: `0 0`,
     whiteSpace: 'pre-wrap',
     cursor: 'text',
