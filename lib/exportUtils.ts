@@ -184,17 +184,24 @@ function shapeToSvgString(shape: Shape): string {
              const fill = shape.style === 'arc' ? 'none' : shape.fill;
              return `<path d="${getArcPathData(shape)}" ${commonProps(shape)} fill="${fill}" />`;
         }
-        default: { // All other shapes become paths
-            const unrotatedShape = { ...shape, rotation: 0 };
-            const unrotatedPoints = getFinalPoints(unrotatedShape);
-            if (!unrotatedPoints) return '';
-
-            const d = unrotatedPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+        default: { // All other shapes become paths by baking their transforms into the points
+            const finalPoints = getFinalPoints(shape); // This gets points WITH rotation applied
+            if (!finalPoints || finalPoints.length === 0) return '';
+    
+            const d = finalPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+            // Fix: Remove check for 'arc' type as it's handled in a separate case and will not appear in the default block. This resolves the type error.
             const isClosed = shape.type !== 'line' && shape.type !== 'pencil' && !(shape.type === 'polyline' && !shape.isClosed) && !(shape.type === 'bezier' && !shape.isClosed);
             const path = `${d} ${isClosed ? 'Z' : ''}`;
             const fill = isClosed && 'fill' in shape ? fillProps(shape as any) : 'fill="none"';
             
-            return `<path d="${path}" ${commonProps(shape)} ${fill} ${lineLikeProps(shape as any)} ${joinStyleProps(shape as any)} />`;
+            // We have baked the rotation into the points, so we must remove the transform attribute.
+            // We create a temporary shape without rotation for commonProps.
+            const shapeWithoutRotation = { ...shape };
+            if ('rotation' in shapeWithoutRotation) {
+                (shapeWithoutRotation as any).rotation = 0;
+            }
+
+            return `<path d="${path}" ${commonProps(shapeWithoutRotation)} ${fill} ${lineLikeProps(shape as any)} ${joinStyleProps(shape as any)} />`;
         }
     }
 }
