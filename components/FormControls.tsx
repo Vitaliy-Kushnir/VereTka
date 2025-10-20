@@ -90,8 +90,17 @@ export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: num
     };
 
     const handleLocalKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'ArrowUp') { e.preventDefault(); handleStep('up'); }
-        if (e.key === 'ArrowDown') { e.preventDefault(); handleStep('down'); }
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            handleStep('up');
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            handleStep('down');
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            (e.target as HTMLInputElement).blur();
+        }
+
         if (onKeyDown) {
             onKeyDown(e);
         }
