@@ -185,10 +185,16 @@ function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, ca
                 if (a.style !== 'pieslice') {
                     options.style = a.style;
                 }
+                
+                // FIX: For style='arc', Tkinter uses 'outline' for the line color.
+                // The general logic sets 'fill' for unclosed lines, so we move it to 'outline'.
                 if (a.style === 'arc') {
-                     if (options.outline && options.fill && options.fill !== options.outline) delete options.fill; 
-                     else if (options.fill && !options.outline) delete options.fill;
+                    if (options.fill) {
+                        options.outline = options.fill;
+                        delete options.fill;
+                    }
                 }
+
                 const a_coords = [a.x, a.y, a.x + a.width, a.y + a.height].map(round).join(', ');
                 return `${canvasVarName}.create_arc(${a_coords}${formatOptions(options)})`;
         }
@@ -204,10 +210,16 @@ function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, ca
             if (a.style !== 'pieslice') {
                 options.style = a.style;
             }
+            
+            // FIX: For style='arc', Tkinter uses 'outline' for the line color.
+            // The general logic sets 'fill' for unclosed lines, so we move it to 'outline'.
             if (a.style === 'arc') {
-                if (options.outline && options.fill && options.fill !== options.outline) delete options.fill;
-                else if (options.fill && !options.outline) delete options.fill;
+                if (options.fill) {
+                    options.outline = options.fill;
+                    delete options.fill;
+                }
             }
+            
             const a_coords = [a.x, a.y, a.x + a.width, a.y + a.height].map(round).join(', ');
             return `${canvasVarName}.create_arc(${a_coords}${formatOptions(options)})`;
         }

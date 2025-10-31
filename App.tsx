@@ -40,6 +40,8 @@ const RULER_THICKNESS = 24;
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 30;
 const MIN_SCREEN_WIDTH = 1024; // Minimum width in pixels for the app to be usable
+const AUTOSAVE_KEY = 'veretka-autosave-session';
+const AUTOSAVE_INTERVAL = 2 * 60 * 1000; // 2 minutes
 
 // Custom hook to handle clicks outside a component
 const useClickOutside = (ref: React.RefObject<HTMLElement>, handler: (event: MouseEvent) => void) => {
@@ -710,6 +712,7 @@ export default function App(): React.ReactNode {
   const [isScreenTooSmall, setIsScreenTooSmall] = useState(false);
   const [projectTemplates, setProjectTemplates] = useState<ProjectTemplate[]>([]);
   const [projectWasEverActive, setProjectWasEverActive] = useState(false);
+  const [autosavedProjectData, setAutosavedProjectData] = useState<string | null>(null);
 
   const [isCheatCodeModalOpen, setIsCheatCodeModalOpen] = useState(false);
   const [activeCheats, setActiveCheats] = useState<Set<string>>(new Set());
@@ -1273,9 +1276,10 @@ export default function App(): React.ReactNode {
     setShapesAtGenerationTime(null);
     setActiveCheats(new Set());
     setFileHandle(null);
+    localStorage.removeItem(AUTOSAVE_KEY);
   };
 
-  const confirmAction = useCallback((action: () => void, title: string, message: string) => {
+  const confirmAction = useCallback((action: () => void, title: string, message: string, confirmText?: string, cancelText?: string, variant?: 'primary' | 'destructive') => {
     if (!hasUnsavedChanges) {
       action();
       return;
@@ -1286,7 +1290,10 @@ export default function App(): React.ReactNode {
       onConfirm: () => {
         action();
         setConfirmationAction(null);
-      }
+      },
+      confirmText,
+      cancelText,
+      variant
     });
   }, [hasUnsavedChanges]);
 
@@ -1323,7 +1330,8 @@ export default function App(): React.ReactNode {
         resetHistory([]);
         lastSavedSignatureRef.current = getProjectSignature(settings.projectName, []);
     }
-
+    
+    localStorage.removeItem(AUTOSAVE_KEY);
     setProjectWasEverActive(true);
     setIsNewProjectModalOpen(false);
     setIsProjectActive(true);
@@ -1339,8 +1347,15 @@ export default function App(): React.ReactNode {
   }, [confirmAction]);
 
   const handleGoHome = useCallback(() => {
-    setIsProjectActive(false);
-  }, []);
+    confirmAction(
+      () => setIsProjectActive(false),
+      'Повернутись на головну?',
+      'У вас є незбережені зміни. Ваша робота періодично автозберігається. Якщо ви вийдете, ви зможете відновити останню автозбережену версію при наступному запуску. Продовжити вихід на головний екран?',
+      'Так, вийти',
+      'Скасувати',
+      'primary'
+    );
+  }, [confirmAction]);
 
   const getSaveData = useCallback((pName: string) => ({
     projectName: pName,
@@ -1365,6 +1380,7 @@ export default function App(): React.ReactNode {
                 lastSavedSignatureRef.current = getProjectSignature(projectName, shapes);
                 addRecentProject(fileHandle, saveData.thumbnail);
                 showNotification('Проєкт збережено.', 'info');
+                localStorage.removeItem(AUTOSAVE_KEY);
             } catch (error) {
                 console.error("Не вдалося зберегти у файл", error);
                 showNotification('Не вдалося зберегти у файл. Спробуйте "Зберегти як...".', 'error');
@@ -1391,6 +1407,7 @@ export default function App(): React.ReactNode {
                     lastSavedSignatureRef.current = getProjectSignature(finalProjectName, shapes);
                     addRecentProject(newHandle, saveData.thumbnail);
                     showNotification('Проєкт збережено.', 'info');
+                    localStorage.removeItem(AUTOSAVE_KEY);
                 }
             } catch (error) {
                 console.error("Не вдалося зберегти проєкт", error);
@@ -1422,6 +1439,7 @@ export default function App(): React.ReactNode {
                 lastSavedSignatureRef.current = getProjectSignature(finalProjectName, shapes);
                 addRecentProject(newHandle, saveData.thumbnail);
                 showNotification('Проєкт збережено.', 'info');
+                localStorage.removeItem(AUTOSAVE_KEY);
             }
         } catch (error) {
             console.error("Не вдалося зберегти проєкт", error);
@@ -1535,6 +1553,7 @@ export default function App(): React.ReactNode {
                 addRecentProject(handle, savedData.thumbnail);
             }
             showNotification('Проєкт успішно завантажено.', 'info');
+            localStorage.removeItem(AUTOSAVE_KEY);
             setTimeout(fitCanvasToView, 0);
         } else {
             showNotification('Неправильний формат файлу проєкту.', 'error');
@@ -2096,6 +2115,54 @@ export default function App(): React.ReactNode {
       setPreviewTextColor(null);
   }, []);
 
+    // On initial load, check for an autosaved project
+    useEffect(() => {
+        try {
+            const data = localStorage.getItem(AUTOSAVE_KEY);
+            if (data) {
+                setAutosavedProjectData(data);
+            }
+        } catch (e) {
+            console.error("Failed to read autosave from localStorage", e);
+        }
+    }, []);
+
+    // Autosave interval
+    useEffect(() => {
+        if (!isProjectActive || !hasUnsavedChanges) {
+            return;
+        }
+
+        const handler = setInterval(() => {
+            try {
+                const saveData = getSaveData(projectName);
+                const autosavePayload = { ...saveData, autosaveTimestamp: new Date().toISOString() };
+                localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(autosavePayload));
+                showNotification('Проєкт автоматично збережено.', 'info', 1500);
+            } catch (e) {
+                console.error("Failed to autosave project to localStorage", e);
+                showNotification('Помилка автозбереження.', 'error');
+            }
+        }, AUTOSAVE_INTERVAL);
+
+        return () => clearInterval(handler);
+    }, [isProjectActive, hasUnsavedChanges, getSaveData, projectName, showNotification]);
+
+    const handleRestoreAutosave = () => {
+        if (autosavedProjectData) {
+            processLoadedData(autosavedProjectData);
+            setAutosavedProjectData(null);
+            // processLoadedData already clears the key, but to be safe:
+            localStorage.removeItem(AUTOSAVE_KEY);
+        }
+    };
+
+    const handleDismissAutosave = () => {
+        localStorage.removeItem(AUTOSAVE_KEY);
+        setAutosavedProjectData(null);
+        showNotification("Автозбережену версію видалено.", 'info');
+    };
+
   return (
     <div className="h-screen bg-[var(--bg-app)] text-[var(--text-primary)] font-sans flex flex-col selection:bg-[var(--accent-primary)] selection:text-[var(--accent-text)] overflow-hidden">
       {isScreenTooSmall && (
@@ -2305,6 +2372,9 @@ export default function App(): React.ReactNode {
                         onClearAllProjects={handleClearAllRecentProjects}
                         hasActiveProject={projectWasEverActive}
                         onReturnToProject={() => setIsProjectActive(true)}
+                        autosavedProjectData={autosavedProjectData}
+                        onRestoreAutosave={handleRestoreAutosave}
+                        onDismissAutosave={handleDismissAutosave}
                     />
                 )}
             </div>

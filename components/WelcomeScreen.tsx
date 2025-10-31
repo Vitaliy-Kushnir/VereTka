@@ -1,5 +1,5 @@
-import React from 'react';
-import { NewFileIcon, OpenFileIcon, HistoryIcon, XIcon, ArrowRightIcon } from './icons';
+import React, { useMemo } from 'react';
+import { NewFileIcon, OpenFileIcon, HistoryIcon, XIcon, ArrowRightIcon, RefreshIcon } from './icons';
 
 interface RecentProject {
     name: string;
@@ -17,9 +17,16 @@ interface WelcomeScreenProps {
     onClearAllProjects: () => void;
     hasActiveProject: boolean;
     onReturnToProject: () => void;
+    autosavedProjectData: string | null;
+    onRestoreAutosave: () => void;
+    onDismissAutosave: () => void;
 }
 
-const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onCreateNew, onLoadProject, recentProjects, onOpenRecent, onRemoveProject, onClearAllProjects, hasActiveProject, onReturnToProject }) => {
+const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ 
+    onCreateNew, onLoadProject, recentProjects, onOpenRecent, onRemoveProject, 
+    onClearAllProjects, hasActiveProject, onReturnToProject,
+    autosavedProjectData, onRestoreAutosave, onDismissAutosave 
+}) => {
     
     const formatRelativeDate = (date: Date) => {
         const now = new Date();
@@ -32,9 +39,51 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onCreateNew, onLoadProjec
         return date.toLocaleDateString();
     };
 
+    const parsedAutosave = useMemo(() => {
+        if (!autosavedProjectData) return null;
+        try {
+            const data = JSON.parse(autosavedProjectData);
+            return {
+                name: data.projectName,
+                timestamp: data.autosaveTimestamp ? new Date(data.autosaveTimestamp) : null
+            };
+        } catch {
+            return null;
+        }
+    }, [autosavedProjectData]);
+
     return (
         <div className="w-full h-full bg-[var(--bg-app)] rounded-lg flex flex-col p-8 sm:p-12 lg:p-16 overflow-y-auto">
             <div className="max-w-7xl mx-auto w-full">
+                 {/* Autosave Restore Banner */}
+                {parsedAutosave && (
+                    <div className="bg-yellow-900/50 border border-yellow-500/50 text-yellow-200 text-sm rounded-lg p-4 mb-12 flex items-center justify-between gap-4 animate-fade-in-down">
+                        <div className="flex items-center gap-4">
+                            <RefreshIcon size={24} className="flex-shrink-0" />
+                            <div>
+                                <p className="font-bold text-yellow-100">Знайдено автозбережену версію!</p>
+                                <p>
+                                    Проєкт "{parsedAutosave.name}" був збережений {parsedAutosave.timestamp?.toLocaleString('uk-UA') ?? 'нещодавно'}.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                            <button 
+                                onClick={onRestoreAutosave} 
+                                className="px-4 py-1.5 rounded-md font-semibold bg-yellow-600 text-white hover:bg-yellow-500 transition-colors"
+                            >
+                                Відновити
+                            </button>
+                            <button 
+                                onClick={onDismissAutosave} 
+                                className="p-2 rounded-md hover:bg-white/10"
+                                title="Відхилити та видалити автозбережену версію"
+                            >
+                                <XIcon size={16} />
+                            </button>
+                        </div>
+                    </div>
+                )}
                 {/* Header */}
                 <header className="text-center mb-16 animate-fade-in-down">
                     <div className="inline-flex items-center gap-6 mb-6">
