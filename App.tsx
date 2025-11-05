@@ -35,7 +35,7 @@ type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
 type SettingsTab = 'canvas' | 'grid' | 'appearance' | 'code' | 'templates';
 
-const APP_VERSION = '1.2.11';
+const APP_VERSION = '1.2.12';
 const RULER_THICKNESS = 24;
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 30;
@@ -85,6 +85,7 @@ const MenuBar: React.FC<{
     onSaveProjectAs: () => void;
     onSaveAsTemplate: () => void;
     onLoadProject: () => void;
+    onImportImage: () => void;
     onExport: () => void;
     onUndo: () => void;
     onRedo: () => void;
@@ -169,6 +170,7 @@ const MenuBar: React.FC<{
                             <MenuItem onClick={() => handleMenuClick(props.onSaveProjectAs, closeFile)} disabled={!props.isProjectActive}>Зберегти як...</MenuItem>
                             <MenuItem onClick={() => handleMenuClick(props.onSaveAsTemplate, closeFile)} disabled={!props.isProjectActive}>Зберегти як шаблон...</MenuItem>
                             <MenuItem onClick={() => handleMenuClick(props.onLoadProject, closeFile)}>Завантажити проєкт...</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onImportImage, closeFile)} disabled={!props.isProjectActive}>Імпортувати зображення...</MenuItem>
                             <hr className="border-[var(--border-secondary)] my-1"/>
                             <MenuItem onClick={() => handleMenuClick(props.onExport, closeFile)} disabled={!props.isProjectActive}>Експортувати як...</MenuItem>
                             <hr className="border-[var(--border-secondary)] my-1"/>
@@ -692,6 +694,7 @@ export default function App(): React.ReactNode {
   const [isRightPanelVisible, setIsRightPanelVisible] = useState(false);
 
   const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [isImportingImage, setIsImportingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const projectLoadInputRef = useRef<HTMLInputElement>(null);
   
@@ -899,12 +902,15 @@ export default function App(): React.ReactNode {
   }, []);
 
   const addShape = useCallback((shape: Shape, isDuplication = false) => {
+    if (isImportingImage) {
+        setIsImportingImage(false);
+    }
     setShapes(prevShapes => [...prevShapes, shape]);
     if (isDuplication || (shape.type !== 'polyline' && shape.type !== 'bezier')) {
         setSelectedShapeId(shape.id);
         setActiveTool('select');
     }
-  }, [setShapes]);
+  }, [setShapes, isImportingImage]);
 
   const updateShape = useCallback((updatedShape: Shape) => {
     cancelShapePreview();
@@ -1165,6 +1171,11 @@ export default function App(): React.ReactNode {
         if (e.target) e.target.value = '';
     };
 
+    const handleImportImage = useCallback(() => {
+        setIsImportingImage(true);
+        fileInputRef.current?.click();
+    }, []);
+
     const handleSetActiveTool = useCallback((tool: Tool) => {
         if (tool === 'edit-points') {
             const shape = shapes.find(s => s.id === selectedShapeId);
@@ -1198,7 +1209,8 @@ export default function App(): React.ReactNode {
   }, [shapes, inlineEditingShapeId]);
 
   const handleGenerateCode = useCallback(async () => {
-    if (shapes.length === 0) { showNotification('Спочатку намалюйте щось на полотні!', 'info'); return; }
+    const shapesForGeneration = shapes.filter(s => !(s.type === 'image' && s.isImport));
+    if (shapesForGeneration.length === 0) { showNotification('Спочатку намалюйте щось на полотні!', 'info'); return; }
     
     if (generatorType === 'gemini' && !apiKey) {
         showNotification('Будь ласка, введіть ваш ключ Gemini API у налаштуваннях.', 'info');
@@ -1210,17 +1222,17 @@ export default function App(): React.ReactNode {
     setError(null);
     setGeneratedCodeLines([]);
 
-    let shapesForGeneration = shapes;
+    let finalShapesForGeneration = shapesForGeneration;
     if (activeCheats.has('002')) {
-        shapesForGeneration = shapes.filter(s => s.type !== 'image');
+        finalShapesForGeneration = shapesForGeneration.filter(s => s.type !== 'image');
     }
 
     try {
       if (generatorType === 'local') {
-        const { codeLines } = await generateTkinterCodeLocally(shapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill);
+        const { codeLines } = await generateTkinterCodeLocally(finalShapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill);
         setGeneratedCodeLines(codeLines);
       } else {
-        const code = await generateTkinterCode(apiKey!, shapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill);
+        const code = await generateTkinterCode(apiKey!, finalShapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill);
         const lines = code.split('\n');
         const codeLines = lines.map(line => {
             const match = line.match(/(.*?) # ID:([a-zA-Z0-9.-]+)/);
@@ -1246,9 +1258,9 @@ export default function App(): React.ReactNode {
   useEffect(() => {
     if (generatorType === 'local' && isProjectActive) {
         const generate = async () => {
-            let shapesForGeneration = shapes;
+            let shapesForGeneration = shapes.filter(s => !(s.type === 'image' && s.isImport));
             if (activeCheats.has('002')) {
-                shapesForGeneration = shapes.filter(s => s.type !== 'image');
+                shapesForGeneration = shapesForGeneration.filter(s => s.type !== 'image');
             }
             const { codeLines } = await generateTkinterCodeLocally(shapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill);
             setGeneratedCodeLines(codeLines);
@@ -1357,14 +1369,17 @@ export default function App(): React.ReactNode {
     );
   }, [confirmAction]);
 
-  const getSaveData = useCallback((pName: string) => ({
-    projectName: pName,
-    shapes,
-    thumbnail: generateProjectThumbnail(shapes, canvasWidth, canvasHeight, canvasBgColor),
-    canvasSettings: { width: canvasWidth, height: canvasHeight, bgColor: canvasBgColor, varName: canvasVarName },
-    viewTransform,
-    uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill }
-  }), [shapes, canvasWidth, canvasHeight, canvasBgColor, canvasVarName, viewTransform, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateProjectThumbnail]);
+  const getSaveData = useCallback((pName: string) => {
+    const shapesToSave = shapes;
+    return {
+        projectName: pName,
+        shapes: shapesToSave,
+        thumbnail: generateProjectThumbnail(shapesToSave, canvasWidth, canvasHeight, canvasBgColor),
+        canvasSettings: { width: canvasWidth, height: canvasHeight, bgColor: canvasBgColor, varName: canvasVarName },
+        viewTransform,
+        uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill }
+    };
+  }, [shapes, canvasWidth, canvasHeight, canvasBgColor, canvasVarName, viewTransform, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateProjectThumbnail]);
 
     const handleSaveProject = useCallback(async () => {
         if (!hasUnsavedChanges && fileHandle) {
@@ -1448,6 +1463,7 @@ export default function App(): React.ReactNode {
     }, [getSaveData, shapes, addRecentProject, getProjectSignature, showNotification]);
 
     const handleSaveTemplate = useCallback((name: string) => {
+        const shapesToSave = shapes;
         const newTemplate: ProjectTemplate = {
             id: Date.now().toString(),
             name,
@@ -1458,7 +1474,7 @@ export default function App(): React.ReactNode {
                 bgColor: canvasBgColor,
                 canvasVarName: canvasVarName,
             },
-            shapes: JSON.parse(JSON.stringify(shapes)), // Deep copy
+            shapes: JSON.parse(JSON.stringify(shapesToSave)), // Deep copy
         };
     
         setProjectTemplates(prev => {
@@ -1618,7 +1634,8 @@ export default function App(): React.ReactNode {
     setIsExportModalOpen(false);
     showNotification('Експорт зображення...', 'info', 1500);
     try {
-        const svgString = generateSvg(shapes, canvasWidth, canvasHeight, canvasBgColor);
+        const shapesToExport = shapes;
+        const svgString = generateSvg(shapesToExport, canvasWidth, canvasHeight, canvasBgColor);
         const suggestedName = `${projectName}.${settings.format}`;
 
         if (settings.format === 'svg') {
@@ -2199,6 +2216,7 @@ export default function App(): React.ReactNode {
             onSaveProjectAs={() => setIsSaveAsModalOpen(true)}
             onSaveAsTemplate={() => setIsSaveTemplateModalOpen(true)}
             onLoadProject={handleLoadProject}
+            onImportImage={handleImportImage}
             onExport={() => setIsExportModalOpen(true)}
             onUndo={undo}
             onRedo={redo}
@@ -2344,6 +2362,7 @@ export default function App(): React.ReactNode {
                                     onCompleteBezier={handleCompleteBezier} onCancelBezier={handleCancelBezier} showGrid={showGrid} gridSize={gridSize} snapStep={snapToGrid ? gridSnapStep : 1} viewTransform={viewTransform}
                                     setViewTransform={setViewTransform} activePointIndex={activePointIndex} setActivePointIndex={setActivePointIndex} showCursorCoords={showCursorCoords} showRotationAngle={showRotationAngle}
                                     pendingImage={pendingImage} setPendingImage={setPendingImage} setCursorPos={setCursorPos}
+                                    isImportingImage={isImportingImage}
                                     showNotification={showNotification}
                                     onStartInlineEdit={handleStartInlineEdit}
                                     inlineEditingShapeId={inlineEditingShapeId}
@@ -2452,7 +2471,7 @@ export default function App(): React.ReactNode {
           {isPreviewOpen && shapesAtGenerationTime && (
             <PreviewModal 
                 projectName={projectName}
-                shapes={shapesAtGenerationTime} 
+                shapes={shapesAtGenerationTime.filter(s => !(s.type === 'image' && s.isImport))} 
                 width={canvasWidth} 
                 height={canvasHeight} 
                 backgroundColor={canvasBgColor} 

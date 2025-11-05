@@ -46,7 +46,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, version }) => 
                            <strong className="text-[var(--text-primary)]">Підтримка:</strong> AI-асистент на базі Google Gemini.
                         </p>
                          <p className="mt-2">
-                           Створено за допомогою <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="underline text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)]">AI Studio Google</a>.
+                           Створено за допомогою <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="underline text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)]">AI Studio Google</a>, Visual Studio Code.
                         </p>
                     </div>
 

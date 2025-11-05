@@ -11,8 +11,8 @@ export const Label: React.FC<{ htmlFor: string; children?: React.ReactNode; titl
     <label htmlFor={htmlFor} className="text-sm font-medium text-[var(--text-secondary)] w-28 flex-shrink-0" title={title}>{children}</label>
 );
 
-export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: number; onChange: (value: number) => void, disabled?: boolean; step?: number; min?: number; max?: number; onFocus?: React.FocusEventHandler<HTMLInputElement>; title?: string, className?: string, smartRound?: boolean, unit?: string; onBlur?: React.FocusEventHandler<HTMLInputElement>; onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>; autoFocus?: boolean }> (
-    ({ id, value, onChange, disabled, step = 1, min, max, onFocus, title, className, smartRound = true, unit, onBlur, onKeyDown, autoFocus }, forwardedRef) => {
+export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: number; onChange: (value: number) => void, disabled?: boolean; step?: number; min?: number; max?: number; onFocus?: React.FocusEventHandler<HTMLInputElement>; title?: string, className?: string, smartRound?: boolean, unit?: string; onBlur?: React.FocusEventHandler<HTMLInputElement>; onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>; autoFocus?: boolean, stepLogic?: 'grid' }> (
+    ({ id, value, onChange, disabled, step = 1, min, max, onFocus, title, className, smartRound = true, unit, onBlur, onKeyDown, autoFocus, stepLogic }, forwardedRef) => {
     
     const [displayValue, setDisplayValue] = useState(String(value));
     const internalRef = useRef<HTMLInputElement>(null);
@@ -76,7 +76,24 @@ export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: num
 
         let nextValue: number;
         
-        if (smartRound && currentValue % 1 !== 0) {
+        if (stepLogic === 'grid') {
+            const isUp = direction === 'up';
+            if (isUp) {
+                if (currentValue < 1) {
+                    nextValue = currentValue + 0.1;
+                } else {
+                    nextValue = Math.floor(currentValue) + 1;
+                }
+            } else { // down
+                if (currentValue <= 1) {
+                    nextValue = currentValue - 0.1;
+                } else {
+                    nextValue = Math.ceil(currentValue) - 1;
+                }
+            }
+            // fix floating point issues
+            nextValue = Math.round(nextValue * 10) / 10;
+        } else if (smartRound && currentValue % 1 !== 0) {
             nextValue = direction === 'up' ? Math.ceil(currentValue) : Math.floor(currentValue);
         } else {
             nextValue = currentValue + (direction === 'up' ? step : -step);

@@ -231,6 +231,7 @@ export interface ImageShape extends BaseShape, RotatableShape {
     width: number;
     height: number;
     src: string;
+    isImport?: boolean;
 }
 
 export interface BitmapShape extends BaseShape, RotatableShape {

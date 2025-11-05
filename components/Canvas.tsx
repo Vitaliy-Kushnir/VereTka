@@ -44,6 +44,7 @@ interface CanvasProps {
   showRotationAngle: boolean;
   pendingImage: string | null;
   setPendingImage: (src: string | null) => void;
+  isImportingImage: boolean;
   setCursorPos: (pos: {x:number, y:number} | null) => void;
   showNotification: (message: string, type?: 'info' | 'error') => void;
   onStartInlineEdit: (shapeId: string) => void;
@@ -100,6 +101,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         activePointIndex, setActivePointIndex,
         showCursorCoords, showRotationAngle,
         pendingImage, setPendingImage,
+        isImportingImage,
         setCursorPos,
         showNotification,
         onStartInlineEdit,
@@ -286,7 +288,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 img.onload = () => {
                     const newImageShape: ImageShape = {
                         id,
-                        name: TOOL_TYPE_TO_NAME[activeTool],
+                        name: isImportingImage ? 'Зображення [імпорт]' : TOOL_TYPE_TO_NAME[activeTool],
                         type: 'image',
                         x: pos.x,
                         y: pos.y,
@@ -298,6 +300,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         rotation: 0,
                         state: 'normal',
                         isAspectRatioLocked: true,
+                        isImport: isImportingImage,
                     };
                     addShape(newImageShape);
                     setPendingImage(null); // Clear after placing
@@ -332,7 +335,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     } else if (newShape) {
         addShape(newShape);
     }
-  }, [activeTool, shapes, onSelectShape, fillColor, strokeColor, strokeWidth, textColor, textFont, textFontSize, numberOfSides, isDrawingPolyline, setPolylinePoints, isDrawingBezier, setBezierPoints, getTransformedPointerPosition, getPointerPosition, selectedShapeId, pendingImage, setPendingImage, addShape]);
+  }, [activeTool, shapes, onSelectShape, fillColor, strokeColor, strokeWidth, textColor, textFont, textFontSize, numberOfSides, isDrawingPolyline, setPolylinePoints, isDrawingBezier, setBezierPoints, getTransformedPointerPosition, getPointerPosition, selectedShapeId, pendingImage, setPendingImage, addShape, isImportingImage]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rawPos = getPointerPosition(e);
@@ -1553,61 +1556,38 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 
                 let transform = getTransform(shape);
                 const isThisShapeBeingPointEdited = action?.type === 'point-editing' && shape.id === action.initialShape.id;
+                // FIX: Complete the variable name from `isThisShapeBeing` to `isThisShapeBeingPointEdited`.
                 if (isThisShapeBeingPointEdited) {
-                    const { center } = action;
-                    const rotation = 'rotation' in shape && shape.rotation ? shape.rotation : 0;
-                    if (rotation !== 0 && center) {
-                        transform = `rotate(${-rotation} ${center.x} ${center.y})`;
-                    }
+                    transform = undefined;
                 }
-                
-                const commonVisibleProps = {
+
+                // FIX: Removed explicit type React.SVGProps<any> to allow the 'data-id' attribute,
+                // which was causing a TypeScript error. Type inference correctly handles validation on spread.
+                const staticProps = {
+                    'data-id': shape.id,
                     stroke: shape.stroke,
                     strokeWidth: shape.strokeWidth,
+                    style: { 
+                        opacity: shape.state === 'disabled' || isDuplicationPreview ? 0.5 : 1,
+                        cursor: shapeCursor,
+                     },
                     transform: transform,
-                    style: {
-                        pointerEvents: 'none',
-                        opacity: isDisabled ? 0.5 : (isDuplicationPreview ? 0.6 : 1),
-                    } as React.CSSProperties,
                 };
 
-                const commonHitboxProps = {
-                    'data-id': shape.id,
-                    key: `${shape.id}-hitbox`,
-                    transform: transform,
-                    stroke: 'transparent',
-                    strokeWidth: hitboxStrokeWidth,
-                    style: {
-                        cursor: shapeCursor,
-                    } as React.CSSProperties,
-                };
-                
                 const lineLikeProps = (s: LineShape | BezierCurveShape | PolylineShape | PathShape | ArcShape) => {
                     const hasVisibleStroke = s.stroke !== 'none' && s.strokeWidth > 0;
                     let dashArray;
                     const hasDash = 'dash' in s && s.dash && s.dash.length > 0 && s.strokeWidth > 0;
                     if (hasDash) {
-                        const cap = 'capstyle' in s && s.capstyle ? s.capstyle : 'butt';
-                        dashArray = s.dash!.map((value, index) => {
-                            const isDashSegment = index % 2 === 0;
-                            if (isDashSegment) { // It's a dash
-                                if (value <= 2) { // It's a "dot"
-                                    if (cap === 'round') return 0.01; // Use cap to make a circle
-                                    else return s.strokeWidth; // Use width to make a square
-                                }
-                            }
-                            // It's a long dash or any gap
-                            return value * s.strokeWidth;
-                        }).join(' ');
+                        dashArray = s.dash!.map(value => value * s.strokeWidth).join(' ');
                     }
-
                     const dashOffset = 'dashoffset' in s ? s.dashoffset : undefined;
-                    const lineCap: 'butt' | 'round' | 'square' = (s.capstyle === 'projecting' ? 'square' : s.capstyle) ?? 'round';
+                    const lineCap: 'butt' | 'round' | 'square' = (s.capstyle === 'projecting' ? 'square' : s.capstyle) ?? 'butt';
                     
                     let markerStart, markerEnd;
-                    if (hasVisibleStroke && s.arrow && s.arrow !== 'none' && s.arrowshape) {
+                    if (hasVisibleStroke && 'arrow' in s && s.arrow && s.arrow !== 'none' && s.arrowshape) {
                         const [d1m, d2m, d3m] = s.arrowshape;
-                        const w = s.strokeWidth > 0 ? s.strokeWidth : 1;
+                        const w = s.strokeWidth;
                         const d1 = d1m * w;
                         const d2 = d2m * w;
                         const d3 = d3m * w;
@@ -1617,214 +1597,125 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     }
                     return { strokeDasharray: dashArray, strokeDashoffset: dashOffset, markerStart, markerEnd, strokeLinecap: lineCap };
                 };
+                
+                const finalStaticProps: any = {
+                    ...staticProps,
+                    strokeWidth: (shape.type === 'line' || shape.type === 'pencil' || (shape.type === 'polyline' && !shape.isClosed)) ? hitboxStrokeWidth : shape.strokeWidth,
+                    pointerEvents: (shape.type === 'line' || shape.type === 'pencil' || (shape.type === 'polyline' && !shape.isClosed)) ? 'stroke' : 'all',
+                }
 
                 switch (shape.type) {
                     case 'rectangle': {
-                        const rectProps: any = { ...commonVisibleProps, fill: shape.fill, ...joinStyleProps(shape) };
+                        const rectProps: any = { ...finalStaticProps, x: shape.x, y: shape.y, width: shape.width, height: shape.height, fill: shape.fill, ...joinStyleProps(shape) };
                         if (shape.stipple && shape.fill !== 'none') rectProps.mask = `url(#mask-${shape.stipple})`;
                         if (shape.dash) rectProps.strokeDasharray = shape.dash.map(v => v * shape.strokeWidth).join(' ');
                         if (shape.dashoffset) rectProps.strokeDashoffset = shape.dashoffset;
-                        return (
-                            <g key={shape.id}>
-                                <rect {...commonHitboxProps} x={shape.x} y={shape.y} width={shape.width} height={shape.height} fill="transparent" style={{...commonHitboxProps.style, pointerEvents: isDisabled ? 'none' : (shape.fill === 'none' ? 'stroke' : 'all')}} />
-                                <rect x={shape.x} y={shape.y} width={shape.width} height={shape.height} {...rectProps} />
-                            </g>
-                        );
+                        return <rect key={shape.id} {...rectProps} />;
                     }
                     case 'ellipse': {
                         const ellipse = shape as EllipseShape;
-                        const ellipseProps: any = { ...commonVisibleProps, fill: ellipse.fill };
+                        const ellipseProps: any = { ...finalStaticProps, cx: ellipse.cx, cy: ellipse.cy, rx: ellipse.rx, ry: ellipse.ry, fill: ellipse.fill };
                         if (ellipse.stipple && ellipse.fill !== 'none') ellipseProps.mask = `url(#mask-${ellipse.stipple})`;
                         if (ellipse.dash) ellipseProps.strokeDasharray = ellipse.dash.map(v => v * ellipse.strokeWidth).join(' ');
                         if (ellipse.dashoffset) ellipseProps.strokeDashoffset = ellipse.dashoffset;
-                        return (
-                            <g key={ellipse.id}>
-                                <ellipse {...commonHitboxProps} cx={ellipse.cx} cy={ellipse.cy} rx={ellipse.rx} ry={ellipse.ry} fill="transparent" style={{...commonHitboxProps.style, pointerEvents: isDisabled ? 'none' : (ellipse.fill === 'none' ? 'stroke' : 'all')}} />
-                                <ellipse cx={ellipse.cx} cy={ellipse.cy} rx={ellipse.rx} ry={ellipse.ry} {...ellipseProps} />
-                            </g>
-                        );
+                        return <ellipse key={ellipse.id} {...ellipseProps} />;
                     }
                     case 'arc': {
-                         const arcShape = shape as ArcShape;
-                        const d = getArcPathData(arcShape);
-                        const arcProps: any = { ...commonVisibleProps, fill: arcShape.style === 'arc' ? 'none' : arcShape.fill, ...lineLikeProps(arcShape) };
+                        const arcShape = shape as ArcShape;
+                        const arcProps: any = { ...finalStaticProps, d: getArcPathData(arcShape), fill: arcShape.style === 'arc' ? 'none' : arcShape.fill };
                         if (arcShape.stipple && arcShape.fill !== 'none' && arcShape.style !== 'arc') arcProps.mask = `url(#mask-${arcShape.stipple})`;
-                        return (
-                            <g key={shape.id}>
-                                <path {...commonHitboxProps} d={d} fill="transparent" style={{...commonHitboxProps.style, pointerEvents: isDisabled ? 'none' : (arcShape.fill === 'none' || arcShape.style === 'arc' ? 'stroke' : 'all')}} />
-                                <path d={d} {...arcProps} />
-                            </g>
-                        );
+                        if (arcShape.dash) arcProps.strokeDasharray = arcShape.dash.map(v => v * arcShape.strokeWidth).join(' ');
+                        if (arcShape.dashoffset) arcProps.strokeDashoffset = arcShape.dashoffset;
+                        return <path key={shape.id} {...arcProps} />;
                     }
                     case 'line':
-                        return (
-                            <g key={shape.id}>
-                                <line {...commonHitboxProps} x1={shape.points[0].x} y1={shape.points[0].y} x2={shape.points[1].x} y2={shape.points[1].y} style={{...commonHitboxProps.style, pointerEvents: isDisabled ? 'none' : 'stroke'}} />
-                                <line x1={shape.points[0].x} y1={shape.points[0].y} x2={shape.points[1].x} y2={shape.points[1].y} {...commonVisibleProps} {...lineLikeProps(shape)} />
-                            </g>
-                        );
-                     case 'bezier': {
-                        const d = getSmoothedPathData(shape.points, shape.smooth, shape.isClosed);
+                        return <line key={shape.id} {...finalStaticProps} stroke={shape.stroke} strokeWidth={shape.strokeWidth} x1={shape.points[0].x} y1={shape.points[0].y} x2={shape.points[1].x} y2={shape.points[1].y} {...lineLikeProps(shape)} />;
+                    case 'bezier':
                         const fill = shape.isClosed ? shape.fill : 'none';
-                        return (
-                            <g key={shape.id}>
-                                <path {...commonHitboxProps} d={d} fill="transparent" style={{...commonHitboxProps.style, pointerEvents: isDisabled ? 'none' : (fill === 'none' ? 'stroke' : 'all')}} />
-                                <path d={d} {...commonVisibleProps} fill={fill} {...lineLikeProps(shape)} {...joinStyleProps(shape)} />
-                            </g>
-                        );
-                     }
-                    case 'pencil': {
-                        const d = getPolylinePointsAsPath(shape.points);
-                        return (
-                             <g key={shape.id}>
-                                <path {...commonHitboxProps} d={d} fill="transparent" style={{...commonHitboxProps.style, pointerEvents: isDisabled ? 'none' : 'stroke'}} />
-                                <path d={d} {...commonVisibleProps} fill="none" strokeLinecap="round" {...joinStyleProps(shape)} {...lineLikeProps(shape)} />
-                            </g>
-                        );
-                    }
+                        return <path key={shape.id} {...finalStaticProps} stroke={shape.stroke} strokeWidth={shape.strokeWidth} d={getSmoothedPathData(shape.points, shape.smooth, shape.isClosed)} fill={fill} {...lineLikeProps(shape)} {...joinStyleProps(shape)} />;
+                    case 'pencil':
+                        return <path key={shape.id} {...finalStaticProps} stroke={shape.stroke} strokeWidth={shape.strokeWidth} d={getPolylinePointsAsPath(shape.points)} fill="none" strokeLinecap="round" {...joinStyleProps(shape)} {...lineLikeProps(shape)} />;
                     case 'polyline': {
-                        const polyProps: React.SVGProps<any> = { ...commonVisibleProps, ...joinStyleProps(shape) };
+                        const polyProps: React.SVGProps<any> = { ...finalStaticProps, ...joinStyleProps(shape) };
                         if (shape.stipple && shape.isClosed && shape.fill !== 'none') polyProps.mask = `url(#mask-${shape.stipple})`;
                         if (shape.dash) polyProps.strokeDasharray = shape.dash.map(v => v * shape.strokeWidth).join(' ');
                         if (shape.dashoffset) polyProps.strokeDashoffset = shape.dashoffset;
                         
-                        const fill = shape.isClosed ? shape.fill : 'none';
-                        
                         if (!shape.isClosed) {
+                            polyProps.fill = 'none';
                             Object.assign(polyProps, lineLikeProps(shape));
+                        } else {
+                            polyProps.fill = shape.fill;
                         }
 
-                        if (shape.smooth) {
-                            const d = getSmoothedPathData(shape.points, true, shape.isClosed);
-                            return (
-                                <g key={shape.id}>
-                                    <path {...commonHitboxProps} d={d} fill="transparent" style={{...commonHitboxProps.style, pointerEvents: isDisabled ? 'none' : (fill === 'none' ? 'stroke' : 'all')}} />
-                                    <path {...polyProps} d={d} fill={fill} />
-                                </g>
-                            );
-                        }
-                        if (shape.isClosed) {
-                            const points = formatPointsForSvg(shape.points);
-                            return (
-                                <g key={shape.id}>
-                                    <polygon {...commonHitboxProps} points={points} fill="transparent" style={{...commonHitboxProps.style, pointerEvents: isDisabled ? 'none' : (fill === 'none' ? 'stroke' : 'all')}} />
-                                    <polygon {...polyProps} points={points} fill={fill} />
-                                </g>
-                            );
-                        }
-                        return (
-                            <g key={shape.id}>
-                                <polyline {...commonHitboxProps} points={formatPointsForSvg(shape.points)} fill="transparent" style={{...commonHitboxProps.style, pointerEvents: isDisabled ? 'none' : 'stroke'}} />
-                                <polyline {...polyProps} points={formatPointsForSvg(shape.points)} fill="none" />
-                            </g>
-                        );
+                        if (shape.smooth) return <path key={shape.id} {...polyProps} d={getSmoothedPathData(shape.points, true, shape.isClosed)} />;
+                        if (shape.isClosed) return <polygon key={shape.id} {...polyProps} points={formatPointsForSvg(shape.points)} />;
+                        return <polyline key={shape.id} {...polyProps} points={formatPointsForSvg(shape.points)} fill="none" />;
                     }
                     case 'triangle': {
-                        const points = formatPointsForSvg(getIsoscelesTrianglePoints(shape));
-                        const props: any = { ...commonVisibleProps, fill: shape.fill, ...joinStyleProps(shape) };
+                        const props: any = { ...finalStaticProps, points: formatPointsForSvg(getIsoscelesTrianglePoints(shape)), fill: shape.fill, ...joinStyleProps(shape) };
+                        if (shape.stipple && shape.fill !== 'none') props.mask = `url(#mask-${shape.stipple})`;
                         if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * shape.strokeWidth).join(' ');
-                        return (
-                            <g key={shape.id}>
-                                <polygon {...commonHitboxProps} points={points} fill="transparent" style={{...commonHitboxProps.style, pointerEvents: isDisabled ? 'none' : (shape.fill === 'none' ? 'stroke' : 'all')}} />
-                                <polygon {...props} points={points} />
-                            </g>
-                        );
+                        if (shape.dashoffset) props.strokeDashoffset = shape.dashoffset;
+                        return <polygon key={shape.id} {...props} />;
                     }
                     case 'right-triangle': {
-                        const points = formatPointsForSvg(getRightTrianglePoints(shape));
-                        const props: any = { ...commonVisibleProps, fill: shape.fill, ...joinStyleProps(shape) };
+                        const props: any = { ...finalStaticProps, points: formatPointsForSvg(getRightTrianglePoints(shape)), fill: shape.fill, ...joinStyleProps(shape) };
+                        if (shape.stipple && shape.fill !== 'none') props.mask = `url(#mask-${shape.stipple})`;
                         if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * shape.strokeWidth).join(' ');
-                         return (
-                            <g key={shape.id}>
-                                <polygon {...commonHitboxProps} points={points} fill="transparent" style={{...commonHitboxProps.style, pointerEvents: isDisabled ? 'none' : (shape.fill === 'none' ? 'stroke' : 'all')}} />
-                                <polygon {...props} points={points} />
-                            </g>
-                        );
+                        if (shape.dashoffset) props.strokeDashoffset = shape.dashoffset;
+                        return <polygon key={shape.id} {...props} />;
                     }
                     case 'rhombus': {
-                        const points = formatPointsForSvg(getRhombusPoints(shape));
-                        const props: any = { ...commonVisibleProps, fill: shape.fill, ...joinStyleProps(shape) };
+                        const props: any = { ...finalStaticProps, points: formatPointsForSvg(getRhombusPoints(shape)), fill: shape.fill, ...joinStyleProps(shape) };
+                        if (shape.stipple && shape.fill !== 'none') props.mask = `url(#mask-${shape.stipple})`;
                         if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * shape.strokeWidth).join(' ');
-                         return (
-                            <g key={shape.id}>
-                                <polygon {...commonHitboxProps} points={points} fill="transparent" style={{...commonHitboxProps.style, pointerEvents: isDisabled ? 'none' : (shape.fill === 'none' ? 'stroke' : 'all')}} />
-                                <polygon {...props} points={points} />
-                            </g>
-                        );
+                        if (shape.dashoffset) props.strokeDashoffset = shape.dashoffset;
+                        return <polygon key={shape.id} {...props} />;
                     }
                     case 'trapezoid': {
-                         const points = formatPointsForSvg(getTrapezoidPoints(shape));
-                         const props: any = { ...commonVisibleProps, fill: shape.fill, ...joinStyleProps(shape) };
-                         if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * shape.strokeWidth).join(' ');
-                         return (
-                            <g key={shape.id}>
-                                <polygon {...commonHitboxProps} points={points} fill="transparent" style={{...commonHitboxProps.style, pointerEvents: isDisabled ? 'none' : (shape.fill === 'none' ? 'stroke' : 'all')}} />
-                                <polygon {...props} points={points} />
-                            </g>
-                        );
+                        const props: any = { ...finalStaticProps, points: formatPointsForSvg(getTrapezoidPoints(shape)), fill: shape.fill, ...joinStyleProps(shape) };
+                        if (shape.stipple && shape.fill !== 'none') props.mask = `url(#mask-${shape.stipple})`;
+                        if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * shape.strokeWidth).join(' ');
+                        if (shape.dashoffset) props.strokeDashoffset = shape.dashoffset;
+                        return <polygon key={shape.id} {...props} />;
                     }
                     case 'parallelogram': {
-                        const points = formatPointsForSvg(getParallelogramPoints(shape));
-                        const props: any = { ...commonVisibleProps, fill: shape.fill, ...joinStyleProps(shape) };
+                        const props: any = { ...finalStaticProps, points: formatPointsForSvg(getParallelogramPoints(shape)), fill: shape.fill, ...joinStyleProps(shape) };
+                        if (shape.stipple && shape.fill !== 'none') props.mask = `url(#mask-${shape.stipple})`;
                         if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * shape.strokeWidth).join(' ');
-                         return (
-                            <g key={shape.id}>
-                                <polygon {...commonHitboxProps} points={points} fill="transparent" style={{...commonHitboxProps.style, pointerEvents: isDisabled ? 'none' : (shape.fill === 'none' ? 'stroke' : 'all')}} />
-                                <polygon {...props} points={points} />
-                            </g>
-                        );
+                        if (shape.dashoffset) props.strokeDashoffset = shape.dashoffset;
+                        return <polygon key={shape.id} {...props} />;
                     }
                     case 'polygon':
                     case 'star': {
                         const polyShape = shape as PolygonShape;
-                        const polyProps: any = { ...commonVisibleProps, fill: polyShape.fill, ...joinStyleProps(polyShape) };
+                        const polyProps: any = { ...finalStaticProps, fill: polyShape.fill, ...joinStyleProps(polyShape) };
                         if (polyShape.stipple && polyShape.fill !== 'none') polyProps.mask = `url(#mask-${polyShape.stipple})`;
                         if (polyShape.dash) polyProps.strokeDasharray = polyShape.dash.map(v => v * polyShape.strokeWidth).join(' ');
                         if (polyShape.dashoffset) polyProps.strokeDashoffset = polyShape.dashoffset;
-                        
-                        if(polyShape.smooth) {
-                             const d = getSmoothedPathData(getPolygonPointsAsArray(shape as PolygonShape), true, true);
-                             return (
-                                <g key={shape.id}>
-                                    <path {...commonHitboxProps} d={d} fill="transparent" style={{...commonHitboxProps.style, pointerEvents: isDisabled ? 'none' : (polyShape.fill === 'none' ? 'stroke' : 'all')}} />
-                                    <path {...polyProps} d={d} />
-                                </g>
-                            )
-                        }
-                        
-                        const points = formatPointsForSvg(getPolygonPointsAsArray(shape as PolygonShape));
-                         return (
-                            <g key={shape.id}>
-                                <polygon {...commonHitboxProps} points={points} fill="transparent" style={{...commonHitboxProps.style, pointerEvents: isDisabled ? 'none' : (polyShape.fill === 'none' ? 'stroke' : 'all')}} />
-                                <polygon {...polyProps} points={points} />
-                            </g>
-                        );
+
+                        if(polyShape.smooth) return <path key={shape.id} {...polyProps} d={getSmoothedPathData(getFinalPoints(shape)!, true, true)} />
+                        return <polygon key={shape.id} {...polyProps} points={formatPointsForSvg(getPolygonPointsAsArray(shape as PolygonShape))} />;
                     }
                     case 'text': {
-                        const { text, font, fontSize, weight, slant, underline, overstrike, fill, anchor, justify, width: wrapWidth } = shape;
-                        const lines = processTextLines(shape);
-                        const bbox = getTextBoundingBox(shape);
+                        const textShape = shape as TextShape;
+                        const { font, fontSize, weight, slant, underline, overstrike, fill, justify } = textShape;
+                        const lines = processTextLines(textShape);
+                        const bbox = getTextBoundingBox(textShape);
                         if (!bbox) return null;
 
                         const textAnchor = justify === 'center' ? 'middle' : justify === 'right' ? 'end' : 'start';
-
+                        
                         let textBlockX;
-                        if (textAnchor === 'start') {
-                            textBlockX = bbox.x;
-                        } else if (textAnchor === 'middle') {
-                            textBlockX = bbox.x + bbox.width / 2;
-                        } else { // 'end'
-                            textBlockX = bbox.x + bbox.width;
-                        }
-
-                        if (wrapWidth > 0) {
-                            if (textAnchor === 'middle') {
-                                textBlockX = bbox.x + wrapWidth / 2;
-                            } else if (textAnchor === 'end') {
-                                textBlockX = bbox.x + wrapWidth;
-                            } else {
-                                textBlockX = bbox.x;
-                            }
+                        if (textAnchor === 'start') textBlockX = bbox.x;
+                        else if (textAnchor === 'middle') textBlockX = bbox.x + bbox.width / 2;
+                        else textBlockX = bbox.x + bbox.width;
+                        
+                        if (textShape.width > 0) {
+                            if (textAnchor === 'middle') textBlockX = bbox.x + textShape.width / 2;
+                            else if (textAnchor === 'end') textBlockX = bbox.x + textShape.width;
+                            else textBlockX = bbox.x;
                         }
 
                         const textStyles: React.CSSProperties = {
@@ -1832,70 +1723,62 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                             fontSize: fontSize,
                             fontWeight: weight,
                             fontStyle: slant === 'italic' ? 'italic' : 'normal',
-                            textDecoration: `${underline ? 'underline' : ''} ${overstrike ? 'line-through' : ''}`,
-                            visibility: shape.id === inlineEditingShapeId ? 'hidden' : 'visible',
+                            textDecoration: `${underline ? 'underline' : ''} ${overstrike ? 'line-through' : ''}`.trim(),
+                            whiteSpace: 'pre',
                         };
 
                         return (
-                            <g key={shape.id} data-id={shape.id}>
-                                {/* Hitbox for text is the bounding box */}
-                                <rect 
-                                    {...commonHitboxProps}
-                                    x={bbox.x} y={bbox.y} width={bbox.width} height={bbox.height} 
-                                    fill="transparent"
-                                    style={{...commonHitboxProps.style, pointerEvents: isDisabled ? 'none' : 'all'}}
-                                />
-                                <text
-                                    {...commonVisibleProps}
-                                    x={textBlockX}
-                                    y={bbox.y}
-                                    fill={fill}
-                                    textAnchor={textAnchor}
-                                    dominantBaseline="hanging"
-                                    style={{ ...commonVisibleProps.style, ...textStyles, whiteSpace: 'pre' }}
-                                >
-                                     {lines.map((line, index) => {
-                                        return (
-                                            <tspan key={index} x={textBlockX} dy={index === 0 ? 0 : `${fontSize * 1.2}px`}>
-                                                {line}
-                                            </tspan>
-                                        );
-                                    })}
-                                </text>
-                            </g>
+                            <text
+                                key={textShape.id}
+                                {...staticProps}
+                                x={textBlockX}
+                                y={bbox.y}
+                                fill={fill}
+                                textAnchor={textAnchor}
+                                dominantBaseline="hanging"
+                                style={{ ...staticProps.style, ...textStyles }}
+                            >
+                                {lines.map((line, index) => (
+                                    <tspan key={index} data-id={shape.id} x={textBlockX} dy={index === 0 ? 0 : `${fontSize * 1.2}px`}>
+                                        {line}
+                                    </tspan>
+                                ))}
+                            </text>
                         );
                     }
                     case 'image': {
+                        const imageShape = shape as ImageShape;
                         return (
-                             <g key={shape.id}>
-                                <rect {...commonHitboxProps} x={shape.x} y={shape.y} width={shape.width} height={shape.height} fill="transparent" style={{...commonHitboxProps.style, pointerEvents: isDisabled ? 'none' : 'all'}} />
-                                <image href={shape.src} x={shape.x} y={shape.y} width={shape.width} height={shape.height} {...commonVisibleProps} />
-                            </g>
+                            <image
+                                key={imageShape.id}
+                                href={imageShape.src}
+                                x={imageShape.x}
+                                y={imageShape.y}
+                                width={imageShape.width}
+                                height={imageShape.height}
+                                {...finalStaticProps}
+                            />
                         );
                     }
                     case 'bitmap': {
-                        const { x, y, width, height, bitmapType, foreground, background } = shape;
-                        let maskId;
-                        if (bitmapType.startsWith('gray')) maskId = `url(#mask-${bitmapType})`;
-                        else maskId = `url(#mask-bitmap-${bitmapType})`;
-                        
+                        const bitmapShape = shape as BitmapShape;
+                        const { x, y, width: bmpWidth, height: bmpHeight, bitmapType, foreground, background } = bitmapShape;
+                        const maskId = bitmapType.startsWith('gray')
+                            ? `url(#mask-${bitmapType})`
+                            : `url(#mask-bitmap-${bitmapType})`;
+
                         return (
-                            <g key={shape.id}>
-                                <rect {...commonHitboxProps} x={x} y={y} width={width} height={height} fill="transparent" style={{...commonHitboxProps.style, pointerEvents: isDisabled ? 'none' : 'all'}}/>
-                                <g {...commonVisibleProps}>
-                                    <rect x={x} y={y} width={width} height={height} fill={background} />
-                                    <rect x={x} y={y} width={width} height={height} fill={foreground} mask={maskId} />
-                                </g>
+                            <g key={bitmapShape.id} {...staticProps} data-id={shape.id}>
+                                <rect data-id={shape.id} x={x} y={y} width={bmpWidth} height={bmpHeight} fill={background} />
+                                <rect data-id={shape.id} x={x} y={y} width={bmpWidth} height={bmpHeight} fill={foreground} mask={maskId} />
                             </g>
                         );
                     }
-                    default:
-                        return null;
+                    default: return null;
                 }
             })}
-            
-            {selectedShape && selectedShape.state === 'normal' && (
-                <SelectionControls 
+             {selectedShape && (
+                <SelectionControls
                     shape={selectedShape}
                     setAction={setAction}
                     svgRef={svgRef}
@@ -1911,8 +1794,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             )}
             </g>
         </svg>
-      </div>
+    </div>
   );
 };
-
 export default Canvas;

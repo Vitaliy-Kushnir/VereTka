@@ -172,7 +172,7 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                 </InputWrapper>
                                 <InputWrapper>
                                     <Label htmlFor="gridSnapStep">Крок прив'язки:</Label>
-                                    <NumberInput id="gridSnapStep" value={props.gridSnapStep} onChange={props.setGridSnapStep} min={1} step={1} />
+                                    <NumberInput id="gridSnapStep" value={props.gridSnapStep} onChange={props.setGridSnapStep} min={0.1} max={10} stepLogic="grid" />
                                 </InputWrapper>
                             </div>
                         )}
