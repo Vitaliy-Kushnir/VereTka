@@ -186,42 +186,44 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                         )}
                     </div>
                     {recentProjects.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                            {recentProjects.map((project, index) => (
-                                <div 
-                                    key={project.name + index}
-                                    className="w-full flex flex-col rounded-lg bg-[var(--bg-primary)] border border-[var(--border-primary)] hover:border-[var(--border-secondary)] transition-all duration-200 ease-in-out text-left group relative"
-                                >
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onRemoveProject(project);
-                                        }}
-                                        className="absolute top-1 right-1 z-10 p-1 rounded-full bg-[var(--bg-secondary)]/50 text-[var(--text-tertiary)] hover:bg-[var(--destructive-bg)] hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                                        title="Видалити зі списку"
+                        <div className="max-h-[29rem] overflow-y-auto pr-2 -mr-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                {recentProjects.map((project, index) => (
+                                    <div 
+                                        key={project.name + index}
+                                        className="w-full flex flex-col rounded-lg bg-[var(--bg-primary)] border border-[var(--border-primary)] hover:border-[var(--border-secondary)] transition-all duration-200 ease-in-out text-left group relative"
                                     >
-                                        <XIcon size={14} />
-                                    </button>
-                                    
-                                    <button onClick={() => onOpenRecent(project)} className="w-full h-full flex flex-col">
-                                        <div className="w-full h-32 bg-[var(--bg-secondary)] flex items-center justify-center rounded-t-lg overflow-hidden">
-                                            {project.thumbnail ? (
-                                                <img src={project.thumbnail} alt={`Ескіз ${project.name}`} className="w-full h-full object-contain" />
-                                            ) : (
-                                                <span className="text-xs text-[var(--text-tertiary)]">Немає ескізу</span>
-                                            )}
-                                        </div>
-                                        <div className="p-4 flex-grow flex flex-col justify-between">
-                                            <p className="font-semibold text-[var(--text-primary)] break-words line-clamp-2" title={project.name.replace(/\.vec\.json$/, '')}>
-                                                {project.name.replace(/\.vec\.json$/, '')}
-                                            </p>
-                                            <p className="text-xs text-[var(--text-tertiary)] mt-2">
-                                                Відкрито: {formatRelativeDate(new Date(project.lastOpened))}
-                                            </p>
-                                        </div>
-                                    </button>
-                                </div>
-                            ))}
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onRemoveProject(project);
+                                            }}
+                                            className="absolute top-1 right-1 z-10 p-1 rounded-full bg-[var(--bg-secondary)]/50 text-[var(--text-tertiary)] hover:bg-[var(--destructive-bg)] hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                            title="Видалити зі списку"
+                                        >
+                                            <XIcon size={14} />
+                                        </button>
+                                        
+                                        <button onClick={() => onOpenRecent(project)} className="w-full h-full flex flex-col">
+                                            <div className="w-full h-32 bg-[var(--bg-secondary)] flex items-center justify-center rounded-t-lg overflow-hidden">
+                                                {project.thumbnail ? (
+                                                    <img src={project.thumbnail} alt={`Ескіз ${project.name}`} className="w-full h-full object-contain" />
+                                                ) : (
+                                                    <span className="text-xs text-[var(--text-tertiary)]">Немає ескізу</span>
+                                                )}
+                                            </div>
+                                            <div className="p-4 h-24 flex flex-col justify-between">
+                                                <p className="font-semibold text-[var(--text-primary)] break-words line-clamp-2" title={project.name.replace(/\.vec\.json$/, '')}>
+                                                    {project.name.replace(/\.vec\.json$/, '')}
+                                                </p>
+                                                <p className="text-xs text-[var(--text-tertiary)] mt-2">
+                                                    Відкрито: {formatRelativeDate(new Date(project.lastOpened))}
+                                                </p>
+                                            </div>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     ) : (
                         <div className="text-center text-[var(--text-tertiary)] py-10 border-2 border-dashed border-[var(--border-primary)] rounded-lg">

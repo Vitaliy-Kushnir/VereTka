@@ -10,6 +10,11 @@ interface ConfirmationModalProps {
   confirmText?: string;
   cancelText?: string;
   variant?: 'primary' | 'destructive';
+  alternativeAction?: {
+    text: string;
+    onClick: () => void;
+    title?: string;
+  };
 }
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
@@ -21,6 +26,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   confirmText = "Продовжити",
   cancelText = "Скасувати",
   variant = 'destructive',
+  alternativeAction,
 }) => {
   if (!isOpen) return null;
 
@@ -57,6 +63,15 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           >
             {cancelText}
           </button>
+          {alternativeAction && (
+            <button
+                onClick={alternativeAction.onClick}
+                title={alternativeAction.title}
+                className="px-6 py-2 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-500 transition-colors"
+            >
+                {alternativeAction.text}
+            </button>
+          )}
           <button
             onClick={onConfirm}
             className={`px-6 py-2 rounded-lg font-semibold text-[var(--accent-text)] transition-colors ${confirmButtonClass}`}

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Shape, Tool, PolylineShape } from '../types';
 import { ArrowUpIcon, ArrowDownIcon, TrashIcon, SquareIcon, CircleIcon, LineIcon, EllipseIcon, PencilIcon, TriangleIcon, PolygonIcon, StarIcon, SelectIcon, EditPointsIcon, PolylineIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, BezierIcon, RectangleIcon, ArcIcon, PiesliceIcon, ChordIcon, RightTriangleIcon, EyeIcon, EyeOffIcon, TextIcon, ImageIcon, BitmapIcon, LocateIcon } from './icons';
@@ -155,6 +156,19 @@ const ShapeList: React.FC<ShapeListProps> = ({ shapes, selectedShapeId, onSelect
         setDraggedId(shapeId);
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', shapeId);
+        
+        // Create a custom drag image (ghost)
+        const li = e.currentTarget as HTMLLIElement;
+        // clone it to remove the "dragging" opacity effect from the ghost image immediately
+        const clone = li.cloneNode(true) as HTMLElement;
+        clone.style.backgroundColor = 'var(--bg-secondary)';
+        clone.style.position = 'absolute';
+        clone.style.top = '-1000px';
+        clone.style.width = `${li.offsetWidth}px`;
+        clone.style.opacity = '1';
+        document.body.appendChild(clone);
+        e.dataTransfer.setDragImage(clone, 10, 10);
+        setTimeout(() => document.body.removeChild(clone), 0);
     };
 
     const handleDragOver = (e: React.DragEvent<HTMLLIElement>, shapeId: string) => {
@@ -249,13 +263,19 @@ const ShapeList: React.FC<ShapeListProps> = ({ shapes, selectedShapeId, onSelect
                                     onDragLeave={isEditing ? undefined : handleDragLeave}
                                     onDrop={isEditing ? undefined : (e) => handleDrop(e, shape.id)}
                                     onDragEnd={isEditing ? undefined : handleDragEnd}
-                                    className={`group flex items-center justify-between p-2 rounded-md transition-all duration-150 cursor-pointer 
+                                    className={`group flex items-center justify-between p-2 rounded-md transition-all duration-150 cursor-pointer relative
                                         ${isSelected ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]'}
                                         ${draggedId === shape.id ? 'opacity-30' : ''}
-                                        ${isDragOverTop ? 'border-t-2 border-[var(--selection-stroke)]' : 'border-t-2 border-transparent -mb-0.5'}
-                                        ${isDragOverBottom ? 'border-b-2 border-[var(--selection-stroke)]' : 'border-b-2 border-transparent -mt-0.5'}
                                     `}
                                 >
+                                    {/* Drop Insertion Indicators */}
+                                    {isDragOverTop && (
+                                        <div className="absolute -top-[3px] left-0 right-0 h-[3px] bg-[var(--selection-stroke)] rounded-full shadow-[0_0_4px_var(--selection-stroke)] z-50 pointer-events-none animate-pulse"></div>
+                                    )}
+                                    {isDragOverBottom && (
+                                        <div className="absolute -bottom-[3px] left-0 right-0 h-[3px] bg-[var(--selection-stroke)] rounded-full shadow-[0_0_4px_var(--selection-stroke)] z-50 pointer-events-none animate-pulse"></div>
+                                    )}
+
                                     <div className="flex items-center gap-3 truncate">
                                         <button onClick={(e) => handleToggleVisibility(e, shape)} title={shape.state === 'hidden' ? 'Показати' : 'Приховати'} className="flex-shrink-0 p-1 rounded hover:bg-[var(--bg-hover)]">
                                             {shape.state === 'hidden' ? <EyeOffIcon /> : <EyeIcon />}

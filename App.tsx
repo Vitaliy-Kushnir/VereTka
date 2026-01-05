@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { type Shape, type Tool, type DrawMode, PolylineShape, BezierCurveShape, ViewTransform, RectangleShape, ImageShape, IsoscelesTriangleShape, TrapezoidShape, ParallelogramShape, PathShape, CanvasAction, LineShape, PolygonShape, ArcShape, RightTriangleShape, TextShape, BitmapShape, RotatableShape, EllipseShape, type ProjectTemplate, type NewProjectSettings, FillableShape } from './types';
 import Canvas from './components/Canvas';
@@ -35,7 +36,7 @@ type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
 type SettingsTab = 'canvas' | 'grid' | 'appearance' | 'code' | 'templates';
 
-const APP_VERSION = '1.2.12';
+const APP_VERSION = '1.2.14';
 const RULER_THICKNESS = 24;
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 30;
@@ -678,6 +679,7 @@ export default function App(): React.ReactNode {
   const [autoGenerateComments, setAutoGenerateComments] = useState<boolean>(true);
   const [outlineWithFill, setOutlineWithFill] = useState<boolean>(true);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(!!document.fullscreenElement);
+  const [maxRecentProjects, setMaxRecentProjects] = useState(12);
 
   // State for temporary visual overrides (e.g., color picking preview)
   const [previewOverrides, setPreviewOverrides] = useState<Record<string, Partial<Shape>>>({});
@@ -708,9 +710,14 @@ export default function App(): React.ReactNode {
     confirmText?: string;
     cancelText?: string;
     variant?: 'primary' | 'destructive';
+    alternativeAction?: {
+      text: string;
+      onClick: () => void;
+      title?: string;
+    };
   } | null>(null);
   const [isProjectActive, setIsProjectActive] = useState(false);
-  const { projects: recentProjects, addRecentProject, openRecentProject, removeRecentProject, clearAllProjects } = useRecentProjects();
+  const { projects: recentProjects, addRecentProject, openRecentProject, removeRecentProject, clearAllProjects } = useRecentProjects(maxRecentProjects);
   
   const [isScreenTooSmall, setIsScreenTooSmall] = useState(false);
   const [projectTemplates, setProjectTemplates] = useState<ProjectTemplate[]>([]);
@@ -719,6 +726,25 @@ export default function App(): React.ReactNode {
 
   const [isCheatCodeModalOpen, setIsCheatCodeModalOpen] = useState(false);
   const [activeCheats, setActiveCheats] = useState<Set<string>>(new Set());
+
+    useEffect(() => {
+        try {
+            const savedSettings = localStorage.getItem('veretka-app-settings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                if (typeof settings.maxRecentProjects === 'number') {
+                    setMaxRecentProjects(settings.maxRecentProjects);
+                }
+            }
+        } catch (e) { console.error("Failed to load app settings", e); }
+    }, []);
+
+    useEffect(() => {
+        try {
+            const settings = { maxRecentProjects };
+            localStorage.setItem('veretka-app-settings', JSON.stringify(settings));
+        } catch (e) { console.error("Failed to save app settings", e); }
+    }, [maxRecentProjects]);
 
   const handleActivateCheat = useCallback((code: string) => {
     if (code === '000') {
@@ -1291,7 +1317,7 @@ export default function App(): React.ReactNode {
     localStorage.removeItem(AUTOSAVE_KEY);
   };
 
-  const confirmAction = useCallback((action: () => void, title: string, message: string, confirmText?: string, cancelText?: string, variant?: 'primary' | 'destructive') => {
+  const confirmAction = useCallback((action: () => void, title: string, message: string, confirmText?: string, cancelText?: string, variant?: 'primary' | 'destructive', alternativeAction?: { text: string, onClick: () => void, title?: string }) => {
     if (!hasUnsavedChanges) {
       action();
       return;
@@ -1305,7 +1331,8 @@ export default function App(): React.ReactNode {
       },
       confirmText,
       cancelText,
-      variant
+      variant,
+      alternativeAction,
     });
   }, [hasUnsavedChanges]);
 
@@ -1773,17 +1800,27 @@ export default function App(): React.ReactNode {
             return;
         }
 
-        const openUrl = () => {
+        const handleCopyAndGo = () => {
+            navigator.clipboard.writeText(codeString);
+            showNotification('Код скопійовано в буфер обміну.', 'info');
+            window.open('https://yepython.pp.ua/', '_blank', 'noopener,noreferrer');
+            setConfirmationAction(null);
+        };
+
+        const openUrl = (code?: string) => {
              try {
-                const encoder = new TextEncoder();
-                const uint8array = encoder.encode(codeString);
-                let binaryString = '';
-                uint8array.forEach((byte) => {
-                    binaryString += String.fromCharCode(byte);
-                });
-                const base64 = btoa(binaryString);
-                const param = runImmediately ? 'runcode' : 'code';
-                const url = `https://yepython.pp.ua/?${param}=${base64}`;
+                let url = 'https://yepython.pp.ua/';
+                if (code) {
+                    const encoder = new TextEncoder();
+                    const uint8array = encoder.encode(code);
+                    let binaryString = '';
+                    uint8array.forEach((byte) => {
+                        binaryString += String.fromCharCode(byte);
+                    });
+                    const base64 = btoa(binaryString);
+                    const param = runImmediately ? 'runcode' : 'code';
+                    url += `?${param}=${base64}`;
+                }
                 window.open(url, '_blank', 'noopener,noreferrer');
             } catch (e) {
                 console.error("Error creating online IDE link:", e);
@@ -1798,29 +1835,31 @@ export default function App(): React.ReactNode {
         if (codeString.length > CODE_LENGTH_THRESHOLD) {
             setConfirmationAction({
                 title: 'Код занадто великий',
-                message: "Згенерований код може бути занадто великим для прямого відкриття в онлайн IDE, що може спричинити помилку 'URI Too Long'. Рекомендується скопіювати код або зберегти його у файл і відкрити вручну. Бажаєте продовжити спробу відкриття?",
+                message: "Згенерований код занадто великий для прямого відкриття в онлайн IDE через обмеження довжини URL. Ви можете скопіювати код і вставити його вручну, або спробувати відкрити довге посилання, що може не спрацювати.",
                 onConfirm: () => {
-                    openUrl();
+                    openUrl(codeString);
                     setConfirmationAction(null);
                 },
                 variant: 'primary',
                 confirmText: 'Спробувати все одно',
-                cancelText: 'Скасувати'
+                cancelText: 'Скасувати',
+                alternativeAction: {
+                    text: 'Скопіювати код і перейти',
+                    onClick: handleCopyAndGo,
+                    title: 'Копіює код в буфер обміну та відкриває ЄPython у новій вкладці для ручної вставки'
+                }
             });
         } else {
-             setConfirmationAction({
-                title: 'Перехід на зовнішній ресурс',
-                message: 'Ви збираєтеся відкрити код у онлайн-редакторі ЄPython. Деякі елементи (напр. специфічні шрифти, кольори) можуть відображатися інакше, ніж у редакторі. Продовжити?',
-                onConfirm: () => {
-                    openUrl();
-                    setConfirmationAction(null);
-                },
-                variant: 'primary',
-                confirmText: 'Так, перейти',
-                cancelText: 'Залишитись'
-            });
+             confirmAction(
+                () => openUrl(codeString),
+                'Перехід на зовнішній ресурс',
+                'Ви збираєтеся відкрити код у онлайн-редакторі ЄPython. Деякі елементи (напр. специфічні шрифти, кольори) можуть відображатися інакше, ніж у редакторі. Продовжити?',
+                'Так, перейти',
+                'Залишитись',
+                'primary'
+            );
         }
-    }, [codeStringForExport, showNotification]);
+    }, [codeStringForExport, showNotification, confirmAction]);
 
 
   const handleDuplicate = useCallback(() => { if (selectedShapeId) duplicateShape(selectedShapeId); }, [selectedShapeId, duplicateShape]);
@@ -2292,7 +2331,7 @@ export default function App(): React.ReactNode {
               setTextFontSize={setTextFontSize}
           />}
 
-           <main className="flex-grow grid grid-cols-1 md:grid-cols-[380px_1fr] lg:grid-cols-[380px_1fr_280px] min-h-0">
+           <main className="flex-grow grid grid-cols-1 md:grid-cols-[380px_1fr] lg:grid-cols-[380px_1fr_295px] min-h-0">
              
             {/* Left Column */}
             {isProjectActive && <aside className={`${isLeftPanelVisible ? 'fixed inset-0 bg-[var(--bg-app)]/95 backdrop-blur-sm z-40 p-4 flex flex-col' : 'hidden'} md:static md:bg-transparent md:z-auto md:p-0 md:flex flex-col gap-4 min-h-0 bg-[var(--bg-primary)]/50 md:p-2`}>
@@ -2379,6 +2418,8 @@ export default function App(): React.ReactNode {
                             onResetZoom={handleResetZoom}
                             onLocateSelectedShape={handleLocateSelectedShape}
                             selectedShapeId={selectedShapeId}
+                            showCursorCoords={showCursorCoords}
+                            setShowCursorCoords={setShowCursorCoords}
                         />
                     </>
                 ) : (
@@ -2458,6 +2499,8 @@ export default function App(): React.ReactNode {
               highlightCodeOnSelection={highlightCodeOnSelection} setHighlightCodeOnSelection={setHighlightCodeOnSelection}
               autoGenerateComments={autoGenerateComments} setAutoGenerateComments={setAutoGenerateComments}
               outlineWithFill={outlineWithFill} setOutlineWithFill={setOutlineWithFill}
+              maxRecentProjects={maxRecentProjects}
+              setMaxRecentProjects={setMaxRecentProjects}
             />
           )}
           {isApiKeyModalOpen && (
@@ -2508,6 +2551,7 @@ export default function App(): React.ReactNode {
                 confirmText={confirmationAction.confirmText}
                 cancelText={confirmationAction.cancelText}
                 variant={confirmationAction.variant}
+                alternativeAction={confirmationAction.alternativeAction}
               />
           )}
           {isSaveAsModalOpen && (

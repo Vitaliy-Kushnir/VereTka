@@ -9,12 +9,23 @@ interface StatusBarProps {
   onResetZoom: () => void;
   onLocateSelectedShape: () => void;
   selectedShapeId: string | null;
+  showCursorCoords: boolean;
+  setShowCursorCoords: (show: boolean) => void;
 }
 
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 30;
 
-const StatusBar: React.FC<StatusBarProps> = ({ zoomLevel, cursorPos, onZoomChange, onResetZoom, onLocateSelectedShape, selectedShapeId }) => {
+const StatusBar: React.FC<StatusBarProps> = ({ 
+  zoomLevel, 
+  cursorPos, 
+  onZoomChange, 
+  onResetZoom, 
+  onLocateSelectedShape, 
+  selectedShapeId,
+  showCursorCoords,
+  setShowCursorCoords
+}) => {
   const [isEditingZoom, setIsEditingZoom] = useState(false);
   
   const formatNumber = (num: number) => Math.round(num * 100) / 100;
@@ -42,8 +53,18 @@ const StatusBar: React.FC<StatusBarProps> = ({ zoomLevel, cursorPos, onZoomChang
 
   return (
     <div className="bg-[var(--bg-primary)]/80 h-6 flex-shrink-0 px-3 flex items-center justify-between text-xs text-[var(--text-tertiary)] select-none">
-      <div className="font-mono w-48">
-        {cursorPos ? `X: ${formatNumber(cursorPos.x)} Y: ${formatNumber(cursorPos.y)}` : ''}
+      <div className="flex items-center gap-2 w-48">
+        <input
+            id="statusbar-show-coords"
+            type="checkbox"
+            checked={showCursorCoords}
+            onChange={(e) => setShowCursorCoords(e.target.checked)}
+            className="w-3 h-3 rounded-sm text-[var(--accent-primary)] focus:ring-0 focus:ring-offset-0 bg-[var(--bg-secondary)] border-[var(--border-primary)] cursor-pointer"
+            title="Показувати/приховувати координати біля курсора"
+        />
+        <label htmlFor="statusbar-show-coords" className="font-mono cursor-pointer" title="Координати курсора на полотні">
+            {cursorPos ? `X: ${formatNumber(cursorPos.x)} Y: ${formatNumber(cursorPos.y)}` : ''}
+        </label>
       </div>
       <div className="flex items-center gap-2">
         <input

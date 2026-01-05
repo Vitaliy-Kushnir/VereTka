@@ -10,7 +10,6 @@ export interface RecentProject {
 const DB_NAME = 'VeretkaDB';
 const DB_VERSION = 1;
 const STORE_NAME = 'recentProjects';
-const MAX_RECENT_PROJECTS = 10;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -31,7 +30,7 @@ const getDb = (): Promise<IDBDatabase> => {
     return dbPromise;
 };
 
-export const useRecentProjects = () => {
+export const useRecentProjects = (maxProjects: number) => {
     const [projects, setProjects] = useState<RecentProject[]>([]);
 
     const loadProjects = useCallback(async () => {
@@ -76,7 +75,7 @@ export const useRecentProjects = () => {
             
             const allItemsReq = store.getAll();
             allItemsReq.onsuccess = () => {
-                if (allItemsReq.result.length > MAX_RECENT_PROJECTS) {
+                if (allItemsReq.result.length > maxProjects) {
                     const allItems = allItemsReq.result as RecentProject[];
                     allItems.sort((a, b) => new Date(a.lastOpened).getTime() - new Date(b.lastOpened).getTime());
                     const keyToDelete = allItems[0].name;
@@ -90,7 +89,7 @@ export const useRecentProjects = () => {
         } catch (error) {
             console.error("Failed to add recent project:", error);
         }
-    }, [loadProjects]);
+    }, [loadProjects, maxProjects]);
 
     const removeRecentProject = useCallback(async (projectName: string) => {
         if (typeof indexedDB === 'undefined') return;

@@ -40,6 +40,8 @@ interface SettingsModalProps {
   setAutoGenerateComments: (show: boolean) => void;
   outlineWithFill: boolean;
   setOutlineWithFill: (show: boolean) => void;
+  maxRecentProjects: number;
+  setMaxRecentProjects: (count: number) => void;
   initialTab?: 'canvas' | 'grid' | 'appearance' | 'code' | 'templates';
 }
 
@@ -231,6 +233,13 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                         <p className="text-xs text-[var(--text-tertiary)] mt-1">Динамічно відображає кут у підказці біля курсора.</p>
                                     </label>
                                 </div>
+
+                                <h3 className="text-lg font-semibold text-[var(--text-secondary)] pt-4">Головний екран</h3>
+                                <InputWrapper>
+                                    <Label htmlFor="maxRecentProjects" title="Максимальна кількість проєктів для збереження у списку 'Останні'.">К-сть проєктів:</Label>
+                                    <NumberInput id="maxRecentProjects" value={props.maxRecentProjects} onChange={props.setMaxRecentProjects} min={0} max={50} step={1} />
+                                </InputWrapper>
+                                <div className="pl-32 -mt-3"><p className="text-xs text-[var(--text-tertiary)]">Макс. кількість проєктів у списку "Останні".</p></div>
                             </div>
                         )}
                         {activeTab === 'code' && (
