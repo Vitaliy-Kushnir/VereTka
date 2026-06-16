@@ -1,7 +1,9 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { XIcon } from './icons';
 import { InputWrapper, Label, NumberInput, ColorInput } from './FormControls';
 import { type ProjectTemplate } from '../types';
+import { useLanguage } from './LanguageContext';
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -52,6 +54,7 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
     const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
     const [editingTemplateName, setEditingTemplateName] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
+    const { t, language, setLanguage } = useLanguage();
 
     useEffect(() => {
         if (editingTemplateId && inputRef.current) {
@@ -118,7 +121,7 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                 onClick={e => e.stopPropagation()}
             >
                 <header className="flex justify-between items-center p-4 border-b border-[var(--border-primary)] flex-shrink-0">
-                    <h2 className="text-xl font-bold text-[var(--text-primary)]">Налаштування</h2>
+                    <h2 className="text-xl font-bold text-[var(--text-primary)]">{t('settings.title')}</h2>
                     <button onClick={props.onClose} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full">
                         <XIcon />
                     </button>
@@ -126,29 +129,29 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                 
                 <div className="flex flex-grow min-h-0">
                     <nav className="w-48 flex-shrink-0 border-r border-[var(--border-primary)] p-4 space-y-2">
-                        <TabButton tab="canvas" label="Полотно" />
-                        <TabButton tab="grid" label="Сітка" />
-                        <TabButton tab="appearance" label="Вигляд" />
-                        <TabButton tab="code" label="Код" />
-                        <TabButton tab="templates" label="Шаблони" />
+                        <TabButton tab="canvas" label={t('settings.tab.canvas')} />
+                        <TabButton tab="grid" label={t('settings.tab.grid')} />
+                        <TabButton tab="appearance" label={t('settings.tab.appearance')} />
+                        <TabButton tab="code" label={t('settings.tab.code')} />
+                        <TabButton tab="templates" label={t('settings.tab.templates')} />
                     </nav>
 
                     <div className="flex-grow p-6 space-y-4 overflow-y-auto">
                         {activeTab === 'canvas' && (
                             <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-[var(--text-secondary)]">Розмір полотна</h3>
+                                <h3 className="text-lg font-semibold text-[var(--text-secondary)]">{t('settings.canvas.size')}</h3>
                                 <InputWrapper>
-                                    <Label htmlFor="canvasWidth">Ширина:</Label>
+                                    <Label htmlFor="canvasWidth">{t('settings.canvas.width')}</Label>
                                     <NumberInput id="canvasWidth" value={props.canvasWidth} onChange={props.setCanvasWidth} min={100} step={10} />
                                 </InputWrapper>
                                 <InputWrapper>
-                                    <Label htmlFor="canvasHeight">Висота:</Label>
+                                    <Label htmlFor="canvasHeight">{t('settings.canvas.height')}</Label>
                                     <NumberInput id="canvasHeight" value={props.canvasHeight} onChange={props.setCanvasHeight} min={100} step={10} />
                                 </InputWrapper>
                                 
-                                <h3 className="text-lg font-semibold text-[var(--text-secondary)] pt-2">Тло</h3>
+                                <h3 className="text-lg font-semibold text-[var(--text-secondary)] pt-2">{t('settings.canvas.background')}</h3>
                                 <InputWrapper>
-                                    <Label htmlFor="canvasBgColor">Колір тла:</Label>
+                                    <Label htmlFor="canvasBgColor">{t('settings.canvas.bgColor')}</Label>
                                     <ColorInput 
                                         id="canvasBgColor" 
                                         value={props.canvasBgColor} 
@@ -157,30 +160,48 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                         onCancel={() => props.setPreviewCanvasBgColor(null)}
                                     />
                                 </InputWrapper>
-                                <h3 className="text-lg font-semibold text-[var(--text-secondary)] pt-2">Відображення в коді</h3>
+                                <h3 className="text-lg font-semibold text-[var(--text-secondary)] pt-2">{t('settings.canvas.codeDisplay')}</h3>
                                 <InputWrapper>
-                                    <Label htmlFor="canvasVarName">Назва полотна:</Label>
+                                    <Label htmlFor="canvasVarName">{t('settings.canvas.varName')}</Label>
                                     <input id="canvasVarName" type="text" value={props.canvasVarName} onChange={e => handleCanvasNameChange(e.target.value)} onBlur={e => { if (e.target.value.trim() === '') { props.setCanvasVarName('c'); } }} className="bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2 py-1 w-full border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none" />
                                 </InputWrapper>
-                                <div className="pl-32 -mt-3"><p className="text-xs text-[var(--text-tertiary)]">(Лише латинські літери, цифри та "_". Не може починатись з цифри)</p></div>
+                                <div className="pl-32 -mt-3"><p className="text-xs text-[var(--text-tertiary)]">{t('settings.canvas.varNameDesc')}</p></div>
                             </div>
                         )}
                         {activeTab === 'grid' && (
                             <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-[var(--text-secondary)]">Налаштування сітки</h3>
+                                <h3 className="text-lg font-semibold text-[var(--text-secondary)]">{t('settings.grid.settings')}</h3>
                                 <InputWrapper>
-                                    <Label htmlFor="gridSize">Крок сітки:</Label>
+                                    <Label htmlFor="gridSize">{t('settings.grid.size')}</Label>
                                     <NumberInput id="gridSize" value={props.gridSize} onChange={props.setGridSize} min={1} step={1} />
                                 </InputWrapper>
                                 <InputWrapper>
-                                    <Label htmlFor="gridSnapStep">Крок прив'язки:</Label>
+                                    <Label htmlFor="gridSnapStep">{t('settings.grid.snapStep')}</Label>
                                     <NumberInput id="gridSnapStep" value={props.gridSnapStep} onChange={props.setGridSnapStep} min={0.1} max={10} stepLogic="grid" />
                                 </InputWrapper>
                             </div>
                         )}
                         {activeTab === 'appearance' && (
                             <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-[var(--text-secondary)]">Інтерфейс</h3>
+                                <h3 className="text-lg font-semibold text-[var(--text-secondary)]">{t('settings.appearance.interface')}</h3>
+                                <div className="flex items-center justify-between py-2 border-b border-[var(--border-secondary)] mb-2">
+                                    <label className="text-sm font-medium text-[var(--text-secondary)]">{t('settings.appearance.language')}</label>
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={() => setLanguage('uk')}
+                                            className={`px-3 py-1 rounded text-sm font-medium transition ${language === 'uk' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'}`}
+                                        >
+                                            Українська
+                                        </button>
+                                        <button 
+                                            onClick={() => setLanguage('en')}
+                                            className={`px-3 py-1 rounded text-sm font-medium transition ${language === 'en' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'}`}
+                                        >
+                                            English
+                                        </button>
+                                    </div>
+                                </div>
+
                                 <div className="flex items-start pt-2">
                                     <input
                                         id="showTkinterNames"
@@ -190,8 +211,8 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                         className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]"
                                     />
                                     <label htmlFor="showTkinterNames" className="ml-3 text-sm font-medium text-[var(--text-secondary)]">
-                                        Показувати назви команд Tkinter
-                                        <p className="text-xs text-[var(--text-tertiary)] mt-1">Наприклад: "Прямокутник [rectangle]".</p>
+                                        {t('settings.appearance.showTkinterNames')}
+                                        <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.appearance.showTkinterNamesDesc')}</p>
                                     </label>
                                 </div>
                                 <div className="flex items-start pt-2">
@@ -203,8 +224,8 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                         className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]"
                                     />
                                     <label htmlFor="showAxes" className="ml-3 text-sm font-medium text-[var(--text-secondary)]">
-                                        Показувати лінійки
-                                        <p className="text-xs text-[var(--text-tertiary)] mt-1">Відображає лінійки зліва та зверху від полотна.</p>
+                                        {t('settings.appearance.showAxes')}
+                                        <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.appearance.showAxesDesc')}</p>
                                     </label>
                                 </div>
                                 <div className="flex items-start pt-2">
@@ -216,8 +237,8 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                         className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]"
                                     />
                                     <label htmlFor="showCursorCoords" className="ml-3 text-sm font-medium text-[var(--text-secondary)]">
-                                        Показувати координати біля курсора
-                                        <p className="text-xs text-[var(--text-tertiary)] mt-1">Динамічно відображає координати X/Y поруч з курсором.</p>
+                                        {t('settings.appearance.showCursorCoords')}
+                                        <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.appearance.showCursorCoordsDesc')}</p>
                                     </label>
                                 </div>
                                 <div className="flex items-start pt-2">
@@ -229,56 +250,56 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                         className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]"
                                     />
                                     <label htmlFor="showRotationAngle" className="ml-3 text-sm font-medium text-[var(--text-secondary)]">
-                                        Показувати кут при обертанні
-                                        <p className="text-xs text-[var(--text-tertiary)] mt-1">Динамічно відображає кут у підказці біля курсора.</p>
+                                        {t('settings.appearance.showRotationAngle')}
+                                        <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.appearance.showRotationAngleDesc')}</p>
                                     </label>
                                 </div>
 
-                                <h3 className="text-lg font-semibold text-[var(--text-secondary)] pt-4">Головний екран</h3>
+                                <h3 className="text-lg font-semibold text-[var(--text-secondary)] pt-4">{t('settings.appearance.homeScreen')}</h3>
                                 <InputWrapper>
-                                    <Label htmlFor="maxRecentProjects" title="Максимальна кількість проєктів для збереження у списку 'Останні'.">К-сть проєктів:</Label>
+                                    <Label htmlFor="maxRecentProjects" title={t('settings.appearance.maxRecentProjectsDesc')}>{t('settings.appearance.maxRecentProjects')}</Label>
                                     <NumberInput id="maxRecentProjects" value={props.maxRecentProjects} onChange={props.setMaxRecentProjects} min={0} max={50} step={1} />
                                 </InputWrapper>
-                                <div className="pl-32 -mt-3"><p className="text-xs text-[var(--text-tertiary)]">Макс. кількість проєктів у списку "Останні".</p></div>
+                                <div className="pl-32 -mt-3"><p className="text-xs text-[var(--text-tertiary)]">{t('settings.appearance.maxRecentProjectsDesc')}</p></div>
                             </div>
                         )}
                         {activeTab === 'code' && (
                             <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-[var(--text-secondary)]">Метод генерації</h3>
+                                <h3 className="text-lg font-semibold text-[var(--text-secondary)]">{t('settings.code.generatorMethod')}</h3>
                                 <div className="space-y-2">
                                     <label className="flex items-start p-3 rounded-lg border-2 border-transparent has-[:checked]:border-[var(--accent-primary)] has-[:checked]:bg-[var(--accent-primary)]/10 transition-colors cursor-pointer">
                                         <input type="radio" name="generatorType" value="local" checked={props.generatorType === 'local'} onChange={() => handleGeneratorChange('local')} className="w-4 h-4 mt-1 text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" />
                                         <div className="ml-3">
-                                            <span className="font-semibold text-sm text-[var(--text-primary)]">Локальний генератор</span>
-                                            <p className="text-xs text-[var(--text-tertiary)] mt-1">Швидко, працює офлайн. Рекомендовано.</p>
+                                            <span className="font-semibold text-sm text-[var(--text-primary)]">{t('settings.code.local')}</span>
+                                            <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.code.localDesc')}</p>
                                         </div>
                                     </label>
                                     <label className="flex items-start p-3 rounded-lg border-2 border-transparent has-[:checked]:border-[var(--accent-primary)] has-[:checked]:bg-[var(--accent-primary)]/10 transition-colors cursor-pointer">
                                         <input type="radio" name="generatorType" value="gemini" checked={props.generatorType === 'gemini'} onChange={() => handleGeneratorChange('gemini')} className="w-4 h-4 mt-1 text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" />
                                         <div className="ml-3">
-                                            <span className="font-semibold text-sm text-[var(--text-primary)]">Gemini API</span>
-                                            <p className="text-xs text-[var(--text-tertiary)] mt-1">Вимагає ключ API та інтернет-з'єднання.</p>
+                                            <span className="font-semibold text-sm text-[var(--text-primary)]">{t('settings.code.gemini')}</span>
+                                            <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.code.geminiDesc')}</p>
                                         </div>
                                     </label>
                                 </div>
 
                                 {props.generatorType === 'gemini' && (
                                     <button onClick={props.onOpenApiKeyModal} className="w-full text-center px-4 py-2 rounded-md font-semibold bg-[var(--bg-tertiary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors">
-                                        Керувати ключем API
+                                        {t('settings.code.manageKey')}
                                     </button>
                                 )}
 
                                 <hr className="border-[var(--border-secondary)] my-4" />
-                                <h3 className="text-lg font-semibold text-[var(--text-secondary)]">Налаштування коду</h3>
-                                <label htmlFor="outlineWithFill" className="flex items-start pt-2"><input id="outlineWithFill" type="checkbox" checked={props.outlineWithFill} onChange={e => props.setOutlineWithFill(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" /><div className="ml-3 text-sm font-medium text-[var(--text-secondary)]">Додавати `outline=""`<p className="text-xs text-[var(--text-tertiary)] mt-1">Для фігур із заливкою, але без контуру, щоб уникнути рамки в 1px.</p></div></label>
-                                <label htmlFor="autoGenerateComments" className="flex items-start pt-2"><input id="autoGenerateComments" type="checkbox" checked={props.autoGenerateComments} onChange={e => props.setAutoGenerateComments(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" /><div className="ml-3 text-sm font-medium text-[var(--text-secondary)]">Автоматичні коментарі<p className="text-xs text-[var(--text-tertiary)] mt-1">Додає опис для кожної фігури у коді.</p></div></label>
-                                <label htmlFor="showLineNumbers" className="flex items-start pt-2"><input id="showLineNumbers" type="checkbox" checked={props.showLineNumbers} onChange={e => props.setShowLineNumbers(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" /><div className="ml-3 text-sm font-medium text-[var(--text-secondary)]">Номери рядків<p className="text-xs text-[var(--text-tertiary)] mt-1">Показувати номери рядків у вікні коду.</p></div></label>
-                                <label htmlFor="highlightCodeOnSelection" className="flex items-start pt-2 has-[:disabled]:opacity-50 has-[:disabled]:cursor-not-allowed"><input id="highlightCodeOnSelection" type="checkbox" checked={props.highlightCodeOnSelection} onChange={e => props.setHighlightCodeOnSelection(e.target.checked)} disabled={props.generatorType === 'gemini'} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" /><div className="ml-3 text-sm font-medium text-[var(--text-secondary)]">Підсвічувати код<p className="text-xs text-[var(--text-tertiary)] mt-1">Підсвічувати рядок коду, що відповідає вибраній фігурі.</p></div></label>
+                                <h3 className="text-lg font-semibold text-[var(--text-secondary)]">{t('settings.code.settings')}</h3>
+                                <label htmlFor="outlineWithFill" className="flex items-start pt-2"><input id="outlineWithFill" type="checkbox" checked={props.outlineWithFill} onChange={e => props.setOutlineWithFill(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" /><div className="ml-3 text-sm font-medium text-[var(--text-secondary)]">{t('settings.code.outline')}<p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.code.outlineDesc')}</p></div></label>
+                                <label htmlFor="autoGenerateComments" className="flex items-start pt-2"><input id="autoGenerateComments" type="checkbox" checked={props.autoGenerateComments} onChange={e => props.setAutoGenerateComments(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" /><div className="ml-3 text-sm font-medium text-[var(--text-secondary)]">{t('settings.code.comments')}<p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.code.commentsDesc')}</p></div></label>
+                                <label htmlFor="showLineNumbers" className="flex items-start pt-2"><input id="showLineNumbers" type="checkbox" checked={props.showLineNumbers} onChange={e => props.setShowLineNumbers(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" /><div className="ml-3 text-sm font-medium text-[var(--text-secondary)]">{t('settings.code.lineNumbers')}<p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.code.lineNumbersDesc')}</p></div></label>
+                                <label htmlFor="highlightCodeOnSelection" className="flex items-start pt-2 has-[:disabled]:opacity-50 has-[:disabled]:cursor-not-allowed"><input id="highlightCodeOnSelection" type="checkbox" checked={props.highlightCodeOnSelection} onChange={e => props.setHighlightCodeOnSelection(e.target.checked)} disabled={props.generatorType === 'gemini'} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" /><div className="ml-3 text-sm font-medium text-[var(--text-secondary)]">{t('settings.code.highlight')}<p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.code.highlightDesc')}</p></div></label>
                             </div>
                         )}
                         {activeTab === 'templates' && (
                             <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-[var(--text-secondary)]">Шаблони проєктів</h3>
+                                <h3 className="text-lg font-semibold text-[var(--text-secondary)]">{t('settings.templates.title')}</h3>
                                 {props.templates.length > 0 ? (
                                     <div className="space-y-2">
                                         {props.templates.map(template => (
@@ -302,21 +323,21 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                                         disabled={!!editingTemplateId}
                                                         className="text-xs px-2 py-1 rounded-md bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
-                                                        Перейменувати
+                                                        {t('settings.templates.rename')}
                                                     </button>
                                                     <button
                                                         onClick={() => props.onDeleteTemplate(template.id)}
                                                         disabled={!!editingTemplateId}
                                                         className="text-xs px-2 py-1 rounded-md bg-[var(--destructive-bg)] text-[var(--accent-text)] hover:bg-[var(--destructive-bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
-                                                        Видалити
+                                                        {t('settings.templates.delete')}
                                                     </button>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                 ) : (
-                                    <p className="text-sm text-[var(--text-tertiary)]">Шаблони не збережено. Ви можете зберегти поточне полотно як шаблон через меню "Файл".</p>
+                                    <p className="text-sm text-[var(--text-tertiary)]">{t('settings.templates.empty')}</p>
                                 )}
                             </div>
                         )}
@@ -328,7 +349,7 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                         onClick={props.onClose}
                         className="px-6 py-2 rounded-lg font-semibold bg-[var(--accent-primary)] text-[var(--accent-text)] hover:bg-[var(--accent-primary-hover)] transition-colors"
                     >
-                        Закрити
+                        {t('settings.close')}
                     </button>
                 </footer>
             </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useMemo, useCallback } from 'react';
 import { type Shape, type Tool, type CanvasAction, type RotatableShape, type RectangleShape, type EllipseShape, type PathShape, type LineShape, PolylineShape, PolygonShape, DrawMode, IsoscelesTriangleShape, RhombusShape, ParallelogramShape, TrapezoidShape, BezierCurveShape, ViewTransform, JoinStyle, ArcShape, RightTriangleShape, TransformHandle, TextShape, ImageShape, BitmapShape } from '../types';
 import { SelectionControls } from './SelectionControls';
@@ -569,11 +570,19 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 }
             }
             
-            newLeftRatio = Math.max(0, newLeftRatio);
-            newRightRatio = Math.max(0, newRightRatio);
-
-            if (newLeftRatio + newRightRatio >= 1) {
-                break;
+            if (initialShape.isSymmetrical) {
+                if (newLeftRatio >= 0.5) {
+                    newLeftRatio = 0.49;
+                    newRightRatio = 0.49;
+                }
+            } else {
+                if (newLeftRatio + newRightRatio >= 1) {
+                    if (handle === 'left') {
+                        newLeftRatio = 0.99 - newRightRatio;
+                    } else {
+                        newRightRatio = 0.99 - newLeftRatio;
+                    }
+                }
             }
 
             updatedShape = { 
@@ -819,10 +828,78 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     };
                     break;
                 }
+                case 'trapezoid': {
+                    const trap = initialShape as TrapezoidShape;
+                    const initialLocalVertices = getTrapezoidPoints(trap);
+                    const visualBbox = getBoundingBox({ ...trap, rotation: 0 })!;
+
+                    const scaleX = visualBbox.width > 0 ? newWidth / visualBbox.width : 1;
+                    const scaleY = visualBbox.height > 0 ? newHeight / visualBbox.height : 1;
+
+                    const scaledVertices = initialLocalVertices.map(v => ({
+                        x: anchorPointLocal.x + (v.x - anchorPointLocal.x) * scaleX,
+                        y: anchorPointLocal.y + (v.y - anchorPointLocal.y) * scaleY,
+                    }));
+
+                    const all_x = scaledVertices.map(v => v.x);
+                    const all_y = scaledVertices.map(v => v.y);
+                    const newVisualBboxLocal = {
+                        x: Math.min(...all_x),
+                        y: Math.min(...all_y),
+                        width: Math.max(...all_x) - Math.min(...all_x),
+                        height: Math.max(...all_y) - Math.min(...all_y),
+                    };
+
+                    let newShapeWidth = 0;
+                    let newShapeHeight = 0;
+                    let newShapeX_local = 0;
+                    let newShapeY_local = 0;
+                    let newLeftOffsetRatio = trap.topLeftOffsetRatio;
+                    let newRightOffsetRatio = trap.topRightOffsetRatio;
+
+                    if (trap.isFlippedVertically) {
+                        newShapeY_local = scaledVertices[0].y;
+                        newShapeHeight = scaledVertices[3].y - scaledVertices[0].y;
+                        newShapeX_local = scaledVertices[0].x;
+                        newShapeWidth = scaledVertices[1].x - scaledVertices[0].x;
+                        if (newShapeWidth > 0) {
+                            newLeftOffsetRatio = (scaledVertices[3].x - scaledVertices[0].x) / newShapeWidth;
+                            newRightOffsetRatio = (scaledVertices[1].x - scaledVertices[2].x) / newShapeWidth;
+                        }
+                    } else {
+                        newShapeY_local = scaledVertices[0].y;
+                        newShapeHeight = scaledVertices[3].y - scaledVertices[0].y;
+                        newShapeX_local = scaledVertices[3].x;
+                        newShapeWidth = scaledVertices[2].x - scaledVertices[3].x;
+                        if (newShapeWidth > 0) {
+                            newLeftOffsetRatio = (scaledVertices[0].x - scaledVertices[3].x) / newShapeWidth;
+                            newRightOffsetRatio = (scaledVertices[2].x - scaledVertices[1].x) / newShapeWidth;
+                        }
+                    }
+                    
+                    const deltaX = newShapeX_local - newVisualBboxLocal.x;
+                    const deltaY = newShapeY_local - newVisualBboxLocal.y;
+
+                    const newVisualX_global = newGlobalCenter.x - newVisualBboxLocal.width / 2;
+                    const newVisualY_global = newGlobalCenter.y - newVisualBboxLocal.height / 2;
+                
+                    const finalShapeX = newVisualX_global + deltaX;
+                    const finalShapeY = newVisualY_global + deltaY;
+
+                    updatedShape = {
+                        ...trap,
+                        x: finalShapeX,
+                        y: finalShapeY,
+                        width: Math.abs(newShapeWidth),
+                        height: Math.abs(newShapeHeight),
+                        topLeftOffsetRatio: newLeftOffsetRatio,
+                        topRightOffsetRatio: newRightOffsetRatio
+                    };
+                    break;
+                }
                 case 'rectangle':
                 case 'right-triangle':
                 case 'rhombus':
-                case 'trapezoid':
                 case 'parallelogram':
                 case 'arc':
                 case 'image':
@@ -1600,7 +1677,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 
                 const finalStaticProps: any = {
                     ...staticProps,
-                    strokeWidth: (shape.type === 'line' || shape.type === 'pencil' || (shape.type === 'polyline' && !shape.isClosed)) ? hitboxStrokeWidth : shape.strokeWidth,
+                    strokeWidth: shape.strokeWidth, // Завжди використовуємо візуальну товщину
                     pointerEvents: (shape.type === 'line' || shape.type === 'pencil' || (shape.type === 'polyline' && !shape.isClosed)) ? 'stroke' : 'all',
                 }
 
@@ -1629,12 +1706,62 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         return <path key={shape.id} {...arcProps} />;
                     }
                     case 'line':
-                        return <line key={shape.id} {...finalStaticProps} stroke={shape.stroke} strokeWidth={shape.strokeWidth} x1={shape.points[0].x} y1={shape.points[0].y} x2={shape.points[1].x} y2={shape.points[1].y} {...lineLikeProps(shape)} />;
-                    case 'bezier':
+                        return (
+                            <React.Fragment key={shape.id}>
+                                <line 
+                                    x1={shape.points[0].x} y1={shape.points[0].y} x2={shape.points[1].x} y2={shape.points[1].y} 
+                                    stroke="transparent" strokeWidth={hitboxStrokeWidth}
+                                    data-id={shape.id}
+                                    strokeLinecap={shape.capstyle === 'projecting' ? 'square' : (shape.capstyle ?? 'butt')}
+                                    transform={finalStaticProps.transform}
+                                    style={{ cursor: finalStaticProps.style.cursor, pointerEvents: 'stroke' }}
+                                />
+                                <line {...finalStaticProps} stroke={shape.stroke} strokeWidth={shape.strokeWidth} x1={shape.points[0].x} y1={shape.points[0].y} x2={shape.points[1].x} y2={shape.points[1].y} {...lineLikeProps(shape)} style={{ ...finalStaticProps.style, pointerEvents: 'none' }} />
+                            </React.Fragment>
+                        );
+                    case 'bezier': {
                         const fill = shape.isClosed ? shape.fill : 'none';
-                        return <path key={shape.id} {...finalStaticProps} stroke={shape.stroke} strokeWidth={shape.strokeWidth} d={getSmoothedPathData(shape.points, shape.smooth, shape.isClosed)} fill={fill} {...lineLikeProps(shape)} {...joinStyleProps(shape)} />;
-                    case 'pencil':
-                        return <path key={shape.id} {...finalStaticProps} stroke={shape.stroke} strokeWidth={shape.strokeWidth} d={getPolylinePointsAsPath(shape.points)} fill="none" strokeLinecap="round" {...joinStyleProps(shape)} {...lineLikeProps(shape)} />;
+                        const pathData = getSmoothedPathData(shape.points, shape.smooth, shape.isClosed);
+                        
+                        if (!shape.isClosed) {
+                             return (
+                                <React.Fragment key={shape.id}>
+                                    <path 
+                                        d={pathData} 
+                                        stroke="transparent" 
+                                        strokeWidth={hitboxStrokeWidth} 
+                                        fill="none" 
+                                        strokeLinecap={shape.capstyle === 'projecting' ? 'square' : (shape.capstyle ?? 'round')}
+                                        strokeLinejoin={shape.joinstyle ?? 'round'}
+                                        transform={finalStaticProps.transform}
+                                        data-id={shape.id}
+                                        style={{ cursor: finalStaticProps.style.cursor, pointerEvents: 'stroke' }}
+                                    />
+                                    <path {...finalStaticProps} stroke={shape.stroke} strokeWidth={shape.strokeWidth} d={pathData} fill={fill} {...lineLikeProps(shape)} {...joinStyleProps(shape)} style={{ ...finalStaticProps.style, pointerEvents: 'none' }} />
+                                </React.Fragment>
+                             )
+                        }
+                        return <path key={shape.id} {...finalStaticProps} stroke={shape.stroke} strokeWidth={shape.strokeWidth} d={pathData} fill={fill} {...lineLikeProps(shape)} {...joinStyleProps(shape)} />;
+                    }
+                    case 'pencil': {
+                        const d = getPolylinePointsAsPath(shape.points);
+                        return (
+                            <React.Fragment key={shape.id}>
+                                 <path 
+                                    d={d}
+                                    stroke="transparent"
+                                    strokeWidth={hitboxStrokeWidth}
+                                    fill="none"
+                                    strokeLinecap="round"
+                                    strokeLinejoin={shape.joinstyle ?? 'round'}
+                                    transform={finalStaticProps.transform}
+                                    data-id={shape.id}
+                                    style={{ cursor: finalStaticProps.style.cursor, pointerEvents: 'stroke' }}
+                                 />
+                                 <path {...finalStaticProps} stroke={shape.stroke} strokeWidth={shape.strokeWidth} d={d} fill="none" strokeLinecap="round" {...joinStyleProps(shape)} {...lineLikeProps(shape)} style={{ ...finalStaticProps.style, pointerEvents: 'none' }} />
+                            </React.Fragment>
+                        );
+                    }
                     case 'polyline': {
                         const polyProps: React.SVGProps<any> = { ...finalStaticProps, ...joinStyleProps(shape) };
                         if (shape.stipple && shape.isClosed && shape.fill !== 'none') polyProps.mask = `url(#mask-${shape.stipple})`;
@@ -1644,6 +1771,27 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         if (!shape.isClosed) {
                             polyProps.fill = 'none';
                             Object.assign(polyProps, lineLikeProps(shape));
+                            
+                            const d = shape.smooth ? getSmoothedPathData(shape.points, true, shape.isClosed) : null;
+                            const pointsStr = !shape.smooth ? formatPointsForSvg(shape.points) : null;
+
+                            return (
+                                <React.Fragment key={shape.id}>
+                                    {/* Hitbox */}
+                                    {shape.smooth ? (
+                                        <path d={d!} stroke="transparent" strokeWidth={hitboxStrokeWidth} fill="none" strokeLinecap="round" strokeLinejoin={shape.joinstyle ?? 'miter'} transform={finalStaticProps.transform} data-id={shape.id} style={{ cursor: finalStaticProps.style.cursor, pointerEvents: 'stroke' }} />
+                                    ) : (
+                                        <polyline points={pointsStr!} stroke="transparent" strokeWidth={hitboxStrokeWidth} fill="none" strokeLinecap={shape.capstyle === 'projecting' ? 'square' : (shape.capstyle ?? 'butt')} strokeLinejoin={shape.joinstyle ?? 'miter'} transform={finalStaticProps.transform} data-id={shape.id} style={{ cursor: finalStaticProps.style.cursor, pointerEvents: 'stroke' }} />
+                                    )}
+                                    
+                                    {/* Visual */}
+                                    {shape.smooth ? (
+                                        <path {...polyProps} d={d!} style={{ ...polyProps.style, pointerEvents: 'none' }} />
+                                    ) : (
+                                        <polyline {...polyProps} points={pointsStr!} fill="none" style={{ ...polyProps.style, pointerEvents: 'none' }} />
+                                    )}
+                                </React.Fragment>
+                            )
                         } else {
                             polyProps.fill = shape.fill;
                         }

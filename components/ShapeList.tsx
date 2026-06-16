@@ -4,6 +4,7 @@ import { Shape, Tool, PolylineShape } from '../types';
 import { ArrowUpIcon, ArrowDownIcon, TrashIcon, SquareIcon, CircleIcon, LineIcon, EllipseIcon, PencilIcon, TriangleIcon, PolygonIcon, StarIcon, SelectIcon, EditPointsIcon, PolylineIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, BezierIcon, RectangleIcon, ArcIcon, PiesliceIcon, ChordIcon, RightTriangleIcon, EyeIcon, EyeOffIcon, TextIcon, ImageIcon, BitmapIcon, LocateIcon } from './icons';
 import { getDefaultNameForShape, getTkinterType } from '../lib/constants';
 import { isPolylineAxisAlignedRectangle } from '../lib/geometry';
+import { useLanguage } from './LanguageContext';
 
 interface ShapeListProps {
   shapes: Shape[];
@@ -63,6 +64,7 @@ const ShapeList: React.FC<ShapeListProps> = ({ shapes, selectedShapeId, onSelect
     const [draggedId, setDraggedId] = useState<string | null>(null);
     const [dragOverId, setDragOverId] = useState<string | null>(null);
     const [dropPosition, setDropPosition] = useState<'top' | 'bottom' | null>(null);
+    const { t } = useLanguage();
     
     const listContainerRef = useRef<HTMLDivElement>(null);
     const itemRefs = useRef<Record<string, HTMLLIElement | null>>({});
@@ -204,28 +206,28 @@ const ShapeList: React.FC<ShapeListProps> = ({ shapes, selectedShapeId, onSelect
   return (
     <div className="shadow-lg h-full flex flex-col rounded-lg bg-[var(--bg-primary)]">
         <div className="flex justify-between items-center p-2 px-3 bg-[var(--bg-app)]/50 rounded-t-lg border-b border-[var(--border-primary)] flex-shrink-0">
-            <h2 className="font-semibold text-[var(--text-primary)] text-sm">Об'єкти</h2>
+            <h2 className="font-semibold text-[var(--text-primary)] text-sm">{t('list.title')}</h2>
             <div className="flex items-center gap-3">
                 <button
                     onClick={scrollToSelected}
                     disabled={!selectedShapeId || isSelectedItemVisible || isAutoScrollEnabled}
                     title={
                         isAutoScrollEnabled 
-                            ? "Автопошук увімкнено" 
+                            ? t('list.autoscroll.on')
                             : !selectedShapeId 
-                                ? "Виберіть об'єкт для пошуку" 
+                                ? t('list.autoscroll.noSelection')
                                 : isSelectedItemVisible 
-                                    ? "Виділений об'єкт вже видимий" 
-                                    : "Прокрутити до виділеного об'єкта"
+                                    ? t('list.autoscroll.visible')
+                                    : t('list.autoscroll.scroll')
                     }
                     className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] hover:text-[var(--text-primary)] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-[var(--text-tertiary)]"
                 >
                     <LocateIcon size={14} />
-                    <span>Знайти у списку</span>
+                    <span>{t('list.find')}</span>
                 </button>
                 <label 
                     className="flex items-center cursor-pointer select-none"
-                    title="Автоматично прокручувати до виділеного об'єкта"
+                    title={t('list.autoscroll.toggle')}
                 >
                     <input
                         type="checkbox"
@@ -277,7 +279,7 @@ const ShapeList: React.FC<ShapeListProps> = ({ shapes, selectedShapeId, onSelect
                                     )}
 
                                     <div className="flex items-center gap-3 truncate">
-                                        <button onClick={(e) => handleToggleVisibility(e, shape)} title={shape.state === 'hidden' ? 'Показати' : 'Приховати'} className="flex-shrink-0 p-1 rounded hover:bg-[var(--bg-hover)]">
+                                        <button onClick={(e) => handleToggleVisibility(e, shape)} title={shape.state === 'hidden' ? t('list.visibility.show') : t('list.visibility.hide')} className="flex-shrink-0 p-1 rounded hover:bg-[var(--bg-hover)]">
                                             {shape.state === 'hidden' ? <EyeOffIcon /> : <EyeIcon />}
                                         </button>
                                         <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center" style={{ opacity: shape.state === 'hidden' ? 0.5 : 1 }}>
@@ -311,18 +313,18 @@ const ShapeList: React.FC<ShapeListProps> = ({ shapes, selectedShapeId, onSelect
                                         <button
                                             onClick={(e) => { e.stopPropagation(); onMoveShape(shape.id, 'up'); }}
                                             disabled={!canMoveUp}
-                                            title="Перемістити вище"
+                                            title={t('list.moveUp')}
                                             className="p-1 rounded hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed"
                                         ><ArrowUpIcon /></button>
                                         <button
                                             onClick={(e) => { e.stopPropagation(); onMoveShape(shape.id, 'down'); }}
                                             disabled={!canMoveDown}
-                                            title="Перемістити нижче"
+                                            title={t('list.moveDown')}
                                             className="p-1 rounded hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed"
                                         ><ArrowDownIcon /></button>
                                         <button
                                             onClick={(e) => { e.stopPropagation(); onDeleteShape(shape.id); }}
-                                            title="Видалити"
+                                            title={t('list.delete')}
                                             className="p-1 rounded text-[var(--destructive-text)] hover:bg-[var(--destructive-bg)] hover:text-[var(--accent-text)]"
                                         ><TrashIcon size={16} /></button>
                                     </div>
@@ -332,7 +334,7 @@ const ShapeList: React.FC<ShapeListProps> = ({ shapes, selectedShapeId, onSelect
                     </ul>
                 ) : (
                     <div className="text-center text-[var(--text-tertiary)] py-8 px-4">
-                        <p className="text-sm">Немає об'єктів.</p>
+                        <p className="text-sm">{t('list.empty')}</p>
                     </div>
                 )}
             </div>

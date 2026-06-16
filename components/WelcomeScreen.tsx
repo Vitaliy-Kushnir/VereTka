@@ -1,5 +1,7 @@
+
 import React, { useMemo } from 'react';
 import { NewFileIcon, OpenFileIcon, HistoryIcon, XIcon, ArrowRightIcon, RefreshIcon } from './icons';
+import { useLanguage } from './LanguageContext';
 
 interface RecentProject {
     name: string;
@@ -27,16 +29,17 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     onClearAllProjects, hasActiveProject, onReturnToProject,
     autosavedProjectData, onRestoreAutosave, onDismissAutosave 
 }) => {
+    const { t, language } = useLanguage();
     
     const formatRelativeDate = (date: Date) => {
         const now = new Date();
         const diffSeconds = Math.round((now.getTime() - date.getTime()) / 1000);
         const diffDays = Math.floor(diffSeconds / 86400);
 
-        if (diffDays === 0) return 'Сьогодні';
-        if (diffDays === 1) return 'Вчора';
-        if (diffDays < 7) return `${diffDays} дні тому`;
-        return date.toLocaleDateString();
+        if (diffDays === 0) return t('welcome.date.today');
+        if (diffDays === 1) return t('welcome.date.yesterday');
+        if (diffDays < 7) return t('welcome.date.daysAgo').replace('{days}', diffDays.toString());
+        return date.toLocaleDateString(language === 'uk' ? 'uk-UA' : 'en-US');
     };
 
     const parsedAutosave = useMemo(() => {
@@ -61,9 +64,9 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                         <div className="flex items-center gap-4">
                             <RefreshIcon size={24} className="flex-shrink-0" />
                             <div>
-                                <p className="font-bold text-yellow-100">Знайдено автозбережену версію!</p>
+                                <p className="font-bold text-yellow-100">{t('welcome.autosave.found')}</p>
                                 <p>
-                                    Проєкт "{parsedAutosave.name}" був збережений {parsedAutosave.timestamp?.toLocaleString('uk-UA') ?? 'нещодавно'}.
+                                    {t('welcome.autosave.message').replace('{name}', parsedAutosave.name).replace('{time}', parsedAutosave.timestamp?.toLocaleString(language === 'uk' ? 'uk-UA' : 'en-US') ?? t('welcome.autosave.recently'))}
                                 </p>
                             </div>
                         </div>
@@ -72,12 +75,12 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                                 onClick={onRestoreAutosave} 
                                 className="px-4 py-1.5 rounded-md font-semibold bg-yellow-600 text-white hover:bg-yellow-500 transition-colors"
                             >
-                                Відновити
+                                {t('welcome.autosave.restore')}
                             </button>
                             <button 
                                 onClick={onDismissAutosave} 
                                 className="p-2 rounded-md hover:bg-white/10"
-                                title="Відхилити та видалити автозбережену версію"
+                                title={t('welcome.autosave.dismiss')}
                             >
                                 <XIcon size={16} />
                             </button>
@@ -108,18 +111,17 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                         </div>
                         <div className="text-center">
                             <h1 className="text-7xl md:text-7xl font-extrabold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-                                ВереTkа
+                                {t('welcome.title')}
                             </h1>
                             <p className="text-xl md:text-2xl text-[var(--text-secondary)] font-medium italic mt-2">
-                                Перетворюйте ваші малюнки<br /> на готовий код для Canvas Tkinter
+                                {t('welcome.subtitle')}
                             </p>
                         </div>
                     </div>
                      <div className="mt-4 max-w-3xl mx-auto">
                          <hr className="my-2 border-[var(--border-secondary)] w-1/2 mx-auto" />
                          <p className="text-md text-[var(--text-tertiary)] mt-2">
-                             Простий векторний редактор <br />
-                             із функцією швидкої генерації коду Python (Tkinter) на основі ваших малюнків
+                             {t('welcome.description')}
                          </p>
                      </div>
                 </header>
@@ -132,8 +134,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                     >
                         <NewFileIcon size={32} className="text-indigo-400 flex-shrink-0" />
                         <div>
-                            <h2 className="text-lg font-semibold text-[var(--text-primary)]">Створити новий проєкт</h2>
-                            <p className="text-sm text-[var(--text-tertiary)] mt-1">Почати з чистого полотна та нових ідей.</p>
+                            <h2 className="text-lg font-semibold text-[var(--text-primary)]">{t('welcome.action.new')}</h2>
+                            <p className="text-sm text-[var(--text-tertiary)] mt-1">{t('welcome.action.newDesc')}</p>
                         </div>
                     </button>
                     <button 
@@ -142,8 +144,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                     >
                         <OpenFileIcon size={32} className="text-purple-400 flex-shrink-0" />
                         <div>
-                            <h2 className="text-lg font-semibold text-[var(--text-primary)]">Завантажити проєкт</h2>
-                            <p className="text-sm text-[var(--text-tertiary)] mt-1">Відкрити існуючий файл .vec.json.</p>
+                            <h2 className="text-lg font-semibold text-[var(--text-primary)]">{t('welcome.action.load')}</h2>
+                            <p className="text-sm text-[var(--text-tertiary)] mt-1">{t('welcome.action.loadDesc')}</p>
                         </div>
                     </button>
                 </div>
@@ -160,8 +162,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                                 >
                                     <ArrowRightIcon size={32} className="flex-shrink-0 transition-transform group-hover:translate-x-1" />
                                     <div>
-                                        <h2 className="text-lg font-semibold">Повернутися до проєкту</h2>
-                                        <p className="text-sm text-[var(--accent-text)] opacity-80 mt-1">Продовжити редагування вашого малюнка.</p>
+                                        <h2 className="text-lg font-semibold">{t('welcome.action.return')}</h2>
+                                        <p className="text-sm text-[var(--accent-text)] opacity-80 mt-1">{t('welcome.action.returnDesc')}</p>
                                     </div>
                                 </button>
                             </div>
@@ -174,14 +176,14 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                     <div className="flex items-center justify-between gap-3 mb-6">
                         <div className="flex items-center gap-3">
                             <HistoryIcon size={20} className="text-[var(--text-tertiary)]" />
-                            <h2 className="text-xl font-semibold text-[var(--text-secondary)]">Останні проєкти</h2>
+                            <h2 className="text-xl font-semibold text-[var(--text-secondary)]">{t('welcome.recent.title')}</h2>
                         </div>
                         {recentProjects.length > 0 && (
                             <button 
                                 onClick={onClearAllProjects}
                                 className="text-xs text-[var(--destructive-text)] hover:underline"
                             >
-                                Очистити список
+                                {t('welcome.recent.clear')}
                             </button>
                         )}
                     </div>
@@ -199,7 +201,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                                                 onRemoveProject(project);
                                             }}
                                             className="absolute top-1 right-1 z-10 p-1 rounded-full bg-[var(--bg-secondary)]/50 text-[var(--text-tertiary)] hover:bg-[var(--destructive-bg)] hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                                            title="Видалити зі списку"
+                                            title={t('welcome.recent.delete')}
                                         >
                                             <XIcon size={14} />
                                         </button>
@@ -209,7 +211,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                                                 {project.thumbnail ? (
                                                     <img src={project.thumbnail} alt={`Ескіз ${project.name}`} className="w-full h-full object-contain" />
                                                 ) : (
-                                                    <span className="text-xs text-[var(--text-tertiary)]">Немає ескізу</span>
+                                                    <span className="text-xs text-[var(--text-tertiary)]">{t('welcome.recent.noThumbnail')}</span>
                                                 )}
                                             </div>
                                             <div className="p-4 h-24 flex flex-col justify-between">
@@ -217,7 +219,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                                                     {project.name.replace(/\.vec\.json$/, '')}
                                                 </p>
                                                 <p className="text-xs text-[var(--text-tertiary)] mt-2">
-                                                    Відкрито: {formatRelativeDate(new Date(project.lastOpened))}
+                                                    {t('welcome.recent.opened')}: {formatRelativeDate(new Date(project.lastOpened))}
                                                 </p>
                                             </div>
                                         </button>
@@ -227,8 +229,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                         </div>
                     ) : (
                         <div className="text-center text-[var(--text-tertiary)] py-10 border-2 border-dashed border-[var(--border-primary)] rounded-lg">
-                            <p>Список останніх проєктів порожній.</p>
-                            <p className="text-xs mt-1">Почніть роботу, створивши або завантаживши проєкт.</p>
+                            <p>{t('welcome.recent.empty')}</p>
+                            <p className="text-xs mt-1">{t('welcome.recent.emptyDesc')}</p>
                         </div>
                     )}
                 </section>

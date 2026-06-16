@@ -31,6 +31,7 @@ import { useRecentProjects, type RecentProject } from './hooks/useRecentProjects
 import SaveCodeModal from './components/SaveCodeModal';
 import InlineTextEditor from './components/InlineTextEditor';
 import SaveTemplateModal from './components/SaveTemplateModal';
+import { useLanguage } from './components/LanguageContext';
 
 type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
@@ -121,6 +122,7 @@ const MenuBar: React.FC<{
     const { isOpen: isObjectOpen, toggle: toggleObject, close: closeObject, wrapperProps: objectProps } = useDropdown();
     const { isOpen: isViewOpen, toggle: toggleView, close: closeView, wrapperProps: viewProps } = useDropdown();
     const { isOpen: isHelpOpen, toggle: toggleHelp, close: closeHelp, wrapperProps: helpProps } = useDropdown();
+    const { t } = useLanguage();
     
     const handleMenuClick = (action: () => void, closeMenu: () => void) => {
         action();
@@ -152,7 +154,7 @@ const MenuBar: React.FC<{
                     <>
                         <button 
                             onClick={props.onGoHome} 
-                            title="На головну"
+                            title={t('menu.home')}
                             className="px-2 py-1 rounded-md hover:bg-[var(--bg-secondary)]"
                         >
                             <HomeIcon size={18}/>
@@ -162,74 +164,74 @@ const MenuBar: React.FC<{
                 )}
                 {/* File Menu */}
                 <div {...fileProps} className="relative">
-                    <button onClick={toggleFile} className={`px-3 py-1 rounded-md ${isFileOpen ? 'bg-[var(--bg-secondary)]' : 'hover:bg-[var(--bg-secondary)]'}`}>Файл</button>
+                    <button onClick={toggleFile} className={`px-3 py-1 rounded-md ${isFileOpen ? 'bg-[var(--bg-secondary)]' : 'hover:bg-[var(--bg-secondary)]'}`}>{t('menu.file')}</button>
                     {isFileOpen && (
                         <div className="absolute top-full left-0 mt-0 w-56 bg-[var(--bg-secondary)] rounded-md shadow-lg py-1 z-50 border border-[var(--border-secondary)]">
-                            <MenuItem onClick={() => handleMenuClick(props.onNewProject, closeFile)}>Новий проєкт...</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onNewProject, closeFile)}>{t('menu.file.new')}</MenuItem>
                             <hr className="border-[var(--border-secondary)] my-1"/>
-                            <MenuItem onClick={() => handleMenuClick(props.onSaveProject, closeFile)} disabled={!props.canSave} shortcut="Ctrl+S">Зберегти</MenuItem>
-                            <MenuItem onClick={() => handleMenuClick(props.onSaveProjectAs, closeFile)} disabled={!props.isProjectActive}>Зберегти як...</MenuItem>
-                            <MenuItem onClick={() => handleMenuClick(props.onSaveAsTemplate, closeFile)} disabled={!props.isProjectActive}>Зберегти як шаблон...</MenuItem>
-                            <MenuItem onClick={() => handleMenuClick(props.onLoadProject, closeFile)}>Завантажити проєкт...</MenuItem>
-                            <MenuItem onClick={() => handleMenuClick(props.onImportImage, closeFile)} disabled={!props.isProjectActive}>Імпортувати зображення...</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onSaveProject, closeFile)} disabled={!props.canSave} shortcut="Ctrl+S">{t('menu.file.save')}</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onSaveProjectAs, closeFile)} disabled={!props.isProjectActive}>{t('menu.file.saveAs')}</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onSaveAsTemplate, closeFile)} disabled={!props.isProjectActive}>{t('menu.file.saveTemplate')}</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onLoadProject, closeFile)}>{t('menu.file.load')}</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onImportImage, closeFile)} disabled={!props.isProjectActive}>{t('menu.file.importImage')}</MenuItem>
                             <hr className="border-[var(--border-secondary)] my-1"/>
-                            <MenuItem onClick={() => handleMenuClick(props.onExport, closeFile)} disabled={!props.isProjectActive}>Експортувати як...</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onExport, closeFile)} disabled={!props.isProjectActive}>{t('menu.file.export')}</MenuItem>
                             <hr className="border-[var(--border-secondary)] my-1"/>
-                            {props.showGenerateButton && <MenuItem onClick={() => handleMenuClick(props.onGenerate, closeFile)} disabled={!props.isProjectActive}>Згенерувати код...</MenuItem>}
+                            {props.showGenerateButton && <MenuItem onClick={() => handleMenuClick(props.onGenerate, closeFile)} disabled={!props.isProjectActive}>{t('menu.file.generate')}</MenuItem>}
                         </div>
                     )}
                 </div>
                  {/* Edit Menu */}
                 <div {...editProps} className="relative">
-                    <button onClick={toggleEdit} disabled={!props.isProjectActive} className={`px-3 py-1 rounded-md ${isEditOpen ? 'bg-[var(--bg-secondary)]' : 'hover:bg-[var(--bg-secondary)]'} disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent`}>Редагувати</button>
+                    <button onClick={toggleEdit} disabled={!props.isProjectActive} className={`px-3 py-1 rounded-md ${isEditOpen ? 'bg-[var(--bg-secondary)]' : 'hover:bg-[var(--bg-secondary)]'} disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent`}>{t('menu.edit')}</button>
                     {isEditOpen && props.isProjectActive && (
                         <div className="absolute top-full left-0 mt-0 w-56 bg-[var(--bg-secondary)] rounded-md shadow-lg py-1 z-50 border border-[var(--border-secondary)]">
-                            <MenuItem onClick={() => handleMenuClick(props.onUndo, closeEdit)} disabled={!props.canUndo} shortcut="Ctrl+Z">Скасувати</MenuItem>
-                            <MenuItem onClick={() => handleMenuClick(props.onRedo, closeEdit)} disabled={!props.canRedo} shortcut="Ctrl+Y">Повернути</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onUndo, closeEdit)} disabled={!props.canUndo} shortcut="Ctrl+Z">{t('menu.edit.undo')}</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onRedo, closeEdit)} disabled={!props.canRedo} shortcut="Ctrl+Y">{t('menu.edit.redo')}</MenuItem>
                             <hr className="border-[var(--border-secondary)] my-1"/>
-                            <MenuItem onClick={() => handleMenuClick(props.onDuplicate, closeEdit)} disabled={!props.isShapeSelected} shortcut="Ctrl+D">Дублювати</MenuItem>
-                            <MenuItem onClick={() => handleMenuClick(props.onDelete, closeEdit)} disabled={!props.isShapeSelected} shortcut="Del">Видалити</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onDuplicate, closeEdit)} disabled={!props.isShapeSelected} shortcut="Ctrl+D">{t('menu.edit.duplicate')}</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onDelete, closeEdit)} disabled={!props.isShapeSelected} shortcut="Del">{t('menu.edit.delete')}</MenuItem>
                         </div>
                     )}
                 </div>
                  {/* Object Menu */}
                 <div {...objectProps} className="relative">
-                    <button onClick={toggleObject} disabled={!props.isProjectActive} className={`px-3 py-1 rounded-md ${isObjectOpen ? 'bg-[var(--bg-secondary)]' : 'hover:bg-[var(--bg-secondary)]'} disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent`}>Об'єкт</button>
+                    <button onClick={toggleObject} disabled={!props.isProjectActive} className={`px-3 py-1 rounded-md ${isObjectOpen ? 'bg-[var(--bg-secondary)]' : 'hover:bg-[var(--bg-secondary)]'} disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent`}>{t('menu.object')}</button>
                     {isObjectOpen && props.isProjectActive && (
                         <div className="absolute top-full left-0 mt-0 w-56 bg-[var(--bg-secondary)] rounded-md shadow-lg py-1 z-50 border border-[var(--border-secondary)]">
-                            <MenuItem onClick={() => handleMenuClick(props.onConvertToPath, closeObject)} disabled={!props.canConvertToPath}>Перетворити на контур</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onConvertToPath, closeObject)} disabled={!props.canConvertToPath}>{t('menu.object.toPath')}</MenuItem>
                         </div>
                     )}
                 </div>
                  {/* View Menu */}
                 <div {...viewProps} className="relative">
-                    <button onClick={toggleView} className={`px-3 py-1 rounded-md ${isViewOpen ? 'bg-[var(--bg-secondary)]' : 'hover:bg-[var(--bg-secondary)]'}`}>Вигляд</button>
+                    <button onClick={toggleView} className={`px-3 py-1 rounded-md ${isViewOpen ? 'bg-[var(--bg-secondary)]' : 'hover:bg-[var(--bg-secondary)]'}`}>{t('menu.view')}</button>
                     {isViewOpen && (
                         <div className="absolute top-full left-0 mt-0 w-56 bg-[var(--bg-secondary)] rounded-md shadow-lg py-1 z-50 border border-[var(--border-secondary)]">
-                            <MenuItem onClick={() => handleMenuClick(props.onFitCanvasToView, closeView)} disabled={!props.isProjectActive}>Показати все полотно</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onFitCanvasToView, closeView)} disabled={!props.isProjectActive}>{t('menu.view.fit')}</MenuItem>
                             <MenuItem onClick={() => handleMenuClick(props.onToggleFullscreen, closeView)} shortcut="F11">
-                                {props.isFullscreen ? 'Вийти з повноекранного режиму' : 'Повноекранний режим'}
+                                {props.isFullscreen ? t('menu.view.exitFullscreen') : t('menu.view.fullscreen')}
                             </MenuItem>
                             <hr className="border-[var(--border-secondary)] my-1"/>
-                            <MenuCheckbox checked={props.showGrid} onChange={props.setShowGrid}>Сітка</MenuCheckbox>
-                            <MenuCheckbox checked={props.snapToGrid} onChange={props.setSnapToGrid}>Прив'язка до сітки</MenuCheckbox>
-                            <MenuCheckbox checked={props.showAxes} onChange={props.setShowAxes}>Лінійки</MenuCheckbox>
+                            <MenuCheckbox checked={props.showGrid} onChange={props.setShowGrid}>{t('menu.view.grid')}</MenuCheckbox>
+                            <MenuCheckbox checked={props.snapToGrid} onChange={props.setSnapToGrid}>{t('menu.view.snap')}</MenuCheckbox>
+                            <MenuCheckbox checked={props.showAxes} onChange={props.setShowAxes}>{t('menu.view.rulers')}</MenuCheckbox>
                             <hr className="border-[var(--border-secondary)] my-1"/>
-                            <div className="px-3 py-1.5 text-xs text-[var(--text-tertiary)]">Тема</div>
-                            <MenuItem onClick={() => {props.setTheme('dark'); closeView()}} selected={props.theme === 'dark'}>Темна</MenuItem>
-                            <MenuItem onClick={() => {props.setTheme('light'); closeView()}} selected={props.theme === 'light'}>Світла</MenuItem>
+                            <div className="px-3 py-1.5 text-xs text-[var(--text-tertiary)]">{t('menu.view.theme')}</div>
+                            <MenuItem onClick={() => {props.setTheme('dark'); closeView()}} selected={props.theme === 'dark'}>{t('menu.view.theme.dark')}</MenuItem>
+                            <MenuItem onClick={() => {props.setTheme('light'); closeView()}} selected={props.theme === 'light'}>{t('menu.view.theme.light')}</MenuItem>
                         </div>
                     )}
                 </div>
                  {/* Help Menu */}
                 <div {...helpProps} className="relative">
-                    <button onClick={toggleHelp} className={`px-3 py-1 rounded-md ${isHelpOpen ? 'bg-[var(--bg-secondary)]' : 'hover:bg-[var(--bg-secondary)]'}`}>Довідка</button>
+                    <button onClick={toggleHelp} className={`px-3 py-1 rounded-md ${isHelpOpen ? 'bg-[var(--bg-secondary)]' : 'hover:bg-[var(--bg-secondary)]'}`}>{t('menu.help')}</button>
                     {isHelpOpen && (
                         <div className="absolute top-full left-0 mt-0 w-56 bg-[var(--bg-secondary)] rounded-md shadow-lg py-1 z-50 border border-[var(--border-secondary)]">
-                            <MenuItem onClick={() => handleMenuClick(props.onOpenAbout, closeHelp)}>Про редактор</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onOpenAbout, closeHelp)}>{t('menu.help.about')}</MenuItem>
                             <hr className="border-[var(--border-secondary)] my-1"/>
-                            <MenuItem onClick={() => handleMenuClick(props.onOpenHelp, closeHelp)}>Довідка</MenuItem>
-                            <MenuItem onClick={() => handleMenuClick(props.onOpenFeedback, closeHelp)}>Залишити відгук</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onOpenHelp, closeHelp)}>{t('menu.help.manual')}</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onOpenFeedback, closeHelp)}>{t('menu.help.feedback')}</MenuItem>
                         </div>
                     )}
                 </div>
@@ -240,16 +242,16 @@ const MenuBar: React.FC<{
             </div>
             
             <div className="flex items-center gap-2">
-                <button onClick={() => props.setTheme(props.theme === 'dark' ? 'light' : 'dark')} title="Змінити тему" className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]">
+                <button onClick={() => props.setTheme(props.theme === 'dark' ? 'light' : 'dark')} title={t('menu.view.theme')} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]">
                     {props.theme === 'dark' ? <SunIcon size={18}/> : <MoonIcon size={18}/>}
                 </button>
-                <button onClick={props.onToggleFullscreen} title={props.isFullscreen ? 'Вийти з повноекранного режиму (F11)' : 'Повноекранний режим (F11)'} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]">
+                <button onClick={props.onToggleFullscreen} title={props.isFullscreen ? `${t('menu.view.exitFullscreen')} (F11)` : `${t('menu.view.fullscreen')} (F11)`} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]">
                     {props.isFullscreen ? <ExitFullscreenIcon size={18}/> : <FullscreenIcon size={18}/>}
                 </button>
                 <div className="relative">
                     <button onClick={props.onOpenSettings} className={`flex items-center gap-2 px-3 py-1 rounded-md hover:bg-[var(--bg-secondary)]`}>
                         <SettingsIcon size={16}/>
-                        <span>Налаштування</span>
+                        <span>{t('menu.settings')}</span>
                     </button>
                 </div>
             </div>
@@ -263,31 +265,33 @@ const LeftToolbar: React.FC<{
     activeCheats: Set<string>;
 }> = React.memo(({ activeTool, setActiveTool, activeCheats }) => {
     const iconSize = 18;
+    const { t } = useLanguage();
+    
     const tools: { name: Tool; label: string; icon: React.ReactNode; group: number; disabled?: boolean }[] = [
         // Group 1: Primitives
-        { name: 'rectangle', label: 'Прямокутник', icon: <RectangleIcon size={iconSize} />, group: 1 },
-        { name: 'square', label: 'Квадрат', icon: <SquareIcon size={iconSize} />, group: 1 },
-        { name: 'ellipse', label: 'Еліпс', icon: <EllipseIcon size={iconSize} />, group: 1 },
-        { name: 'circle', label: 'Коло', icon: <CircleIcon size={iconSize} />, group: 1 },
-        { name: 'line', label: 'Лінія', icon: <LineIcon size={iconSize} />, group: 2 },
-        { name: 'polyline', label: 'Ламана', icon: <PolylineIcon size={iconSize} />, group: 2 },
-        { name: 'bezier', label: "Крива Без'є", icon: <BezierIcon size={iconSize} />, group: 2 },
-        { name: 'arc', label: 'Дуга', icon: <ArcIcon size={iconSize} />, group: 2 },
-        { name: 'pieslice', label: 'Сектор', icon: <PiesliceIcon size={iconSize} />, group: 2 },
-        { name: 'chord', label: 'Сегмент', icon: <ChordIcon size={iconSize} />, group: 2 },
+        { name: 'rectangle', label: t('tool.rectangle'), icon: <RectangleIcon size={iconSize} />, group: 1 },
+        { name: 'square', label: t('tool.square'), icon: <SquareIcon size={iconSize} />, group: 1 },
+        { name: 'ellipse', label: t('tool.ellipse'), icon: <EllipseIcon size={iconSize} />, group: 1 },
+        { name: 'circle', label: t('tool.circle'), icon: <CircleIcon size={iconSize} />, group: 1 },
+        { name: 'line', label: t('tool.line'), icon: <LineIcon size={iconSize} />, group: 2 },
+        { name: 'polyline', label: t('tool.polyline'), icon: <PolylineIcon size={iconSize} />, group: 2 },
+        { name: 'bezier', label: t('tool.bezier'), icon: <BezierIcon size={iconSize} />, group: 2 },
+        { name: 'arc', label: t('tool.arc'), icon: <ArcIcon size={iconSize} />, group: 2 },
+        { name: 'pieslice', label: t('tool.pieslice'), icon: <PiesliceIcon size={iconSize} />, group: 2 },
+        { name: 'chord', label: t('tool.chord'), icon: <ChordIcon size={iconSize} />, group: 2 },
         // Group 3: Polygons
-        { name: 'polygon', label: 'Багатокутник', icon: <PolygonIcon size={iconSize} />, group: 3 },
-        { name: 'star', label: 'Зірка', icon: <StarIcon size={iconSize} />, group: 3 },
-        { name: 'triangle', label: 'Трикутник', icon: <TriangleIcon size={iconSize} />, group: 3 },
-        { name: 'right-triangle', label: 'Прямокутний трикутник', icon: <RightTriangleIcon size={iconSize} />, group: 3 },
-        { name: 'rhombus', label: 'Ромб', icon: <RhombusIcon size={iconSize} />, group: 3 },
-        { name: 'trapezoid', label: 'Трапеція', icon: <TrapezoidIcon size={iconSize} />, group: 3 },
-        { name: 'parallelogram', label: 'Паралелограм', icon: <ParallelogramIcon size={iconSize} />, group: 3 },
-        { name: 'text', label: 'Текст', icon: <TextIcon size={iconSize} />, group: 3 },
+        { name: 'polygon', label: t('tool.polygon'), icon: <PolygonIcon size={iconSize} />, group: 3 },
+        { name: 'star', label: t('tool.star'), icon: <StarIcon size={iconSize} />, group: 3 },
+        { name: 'triangle', label: t('tool.triangle'), icon: <TriangleIcon size={iconSize} />, group: 3 },
+        { name: 'right-triangle', label: t('tool.rightTriangle'), icon: <RightTriangleIcon size={iconSize} />, group: 3 },
+        { name: 'rhombus', label: t('tool.rhombus'), icon: <RhombusIcon size={iconSize} />, group: 3 },
+        { name: 'trapezoid', label: t('tool.trapezoid'), icon: <TrapezoidIcon size={iconSize} />, group: 3 },
+        { name: 'parallelogram', label: t('tool.parallelogram'), icon: <ParallelogramIcon size={iconSize} />, group: 3 },
+        { name: 'text', label: t('tool.text'), icon: <TextIcon size={iconSize} />, group: 3 },
         // Group 4: Other
-        { name: 'pencil', label: 'Олівець', icon: <PencilIcon size={iconSize} />, group: 4 },
-        { name: 'image', label: 'Зображення', icon: <ImageIcon size={iconSize} />, group: 4, disabled: !activeCheats.has('001') && !activeCheats.has('002') },
-        { name: 'bitmap', label: 'Bitmap', icon: <BitmapIcon size={iconSize} />, group: 4, disabled: true },
+        { name: 'pencil', label: t('tool.pencil'), icon: <PencilIcon size={iconSize} />, group: 4 },
+        { name: 'image', label: t('tool.image'), icon: <ImageIcon size={iconSize} />, group: 4, disabled: !activeCheats.has('001') && !activeCheats.has('002') },
+        { name: 'bitmap', label: t('tool.bitmap'), icon: <BitmapIcon size={iconSize} />, group: 4, disabled: true },
     ];
 
     return (
@@ -350,6 +354,7 @@ const ToolControls: React.FC<ToolControlsProps> = ({
   strokeWidth, setStrokeWidth, numberOfSides, setNumberOfSides, activeTool, 
   textColor, setTextColor, setPreviewTextColor, textFont, setTextFont, textFontSize, setTextFontSize
 }) => {
+  const { t } = useLanguage();
   const handleCancelFillPreview = useCallback(() => setPreviewFillColor(null), [setPreviewFillColor]);
   const handleCancelStrokePreview = useCallback(() => setPreviewStrokeColor(null), [setPreviewStrokeColor]);
   const handleCancelTextPreview = useCallback(() => setPreviewTextColor(null), [setPreviewTextColor]);
@@ -373,23 +378,23 @@ const ToolControls: React.FC<ToolControlsProps> = ({
     <>
       {showDrawMode && (
         <div className="flex items-center gap-1 bg-[var(--bg-app)] p-1 rounded-lg">
-          <button title="Малювати від кута" onClick={() => setDrawMode('corner')} className={`p-1.5 rounded ${drawMode === 'corner' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><DrawFromCornerIcon/></button>
-          <button title="Малювати від центру" onClick={() => setDrawMode('center')} className={`p-1.5 rounded ${drawMode === 'center' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><DrawFromCenterIcon/></button>
+          <button title={t('prop.drawMode.corner')} onClick={() => setDrawMode('corner')} className={`p-1.5 rounded ${drawMode === 'corner' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><DrawFromCornerIcon/></button>
+          <button title={t('prop.drawMode.center')} onClick={() => setDrawMode('center')} className={`p-1.5 rounded ${drawMode === 'center' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><DrawFromCenterIcon/></button>
         </div>
       )}
       {showFill && (
-        <PropertyControl label="Заливка" htmlFor="fillColor">
+        <PropertyControl label={t('prop.fill')} htmlFor="fillColor">
           <input id="fillEnable" type="checkbox" checked={isFillEnabled && !isFillForToolDisabled} onChange={e => setIsFillEnabled(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" disabled={isFillForToolDisabled} />
           <ColorInput id="fillColor" value={fillColor} onChange={setFillColor} onPreview={setPreviewFillColor} onCancel={handleCancelFillPreview} disabled={!isFillEnabled || isFillForToolDisabled} />
         </PropertyControl>
       )}
       {showStroke && (
         <>
-          <PropertyControl label="Контур" htmlFor="strokeColor">
+          <PropertyControl label={t('prop.stroke')} htmlFor="strokeColor">
             <input id="strokeEnable" type="checkbox" checked={isStrokeEnabled} onChange={e => setIsStrokeEnabled(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" />
             <ColorInput id="strokeColor" value={strokeColor} onChange={setStrokeColor} onPreview={setPreviewStrokeColor} onCancel={handleCancelStrokePreview} disabled={!isStrokeEnabled} />
           </PropertyControl>
-          <PropertyControl label="Товщина" htmlFor="strokeWidth">
+          <PropertyControl label={t('prop.width')} htmlFor="strokeWidth">
             <div className="w-16">
                 <NumberInput id="strokeWidth" min={1} max={100} value={strokeWidth} onChange={setStrokeWidth} disabled={!isStrokeEnabled} />
             </div>
@@ -397,7 +402,7 @@ const ToolControls: React.FC<ToolControlsProps> = ({
         </>
       )}
       {showSides && (
-        <PropertyControl label="Сторони" htmlFor="sides">
+        <PropertyControl label={t('prop.sides')} htmlFor="sides">
           <div className="w-20">
             <NumberInput id="sides" min={3} max={50} value={numberOfSides} onChange={setNumberOfSides} />
           </div>
@@ -405,10 +410,10 @@ const ToolControls: React.FC<ToolControlsProps> = ({
       )}
       {showTextControls && (
         <>
-          <PropertyControl label="Колір" htmlFor="textColor">
+          <PropertyControl label={t('prop.color')} htmlFor="textColor">
             <ColorInput id="textColor" value={textColor} onChange={setTextColor} onPreview={setPreviewTextColor} onCancel={handleCancelTextPreview} />
           </PropertyControl>
-          <PropertyControl label="Шрифт" htmlFor="textFont">
+          <PropertyControl label={t('prop.font')} htmlFor="textFont">
             <Select id="textFont" value={textFont} onChange={setTextFont} className="w-32 py-0.5">
               {Object.entries(standardWebFonts).map(([group, fonts]) => (
                 <optgroup label={group} key={group}>{fonts.map(f => <option key={f} value={f}>{f}</option>)}</optgroup>
@@ -416,7 +421,7 @@ const ToolControls: React.FC<ToolControlsProps> = ({
               <optgroup label="Шрифти Tkinter">{tkFonts.map(f => <option key={f} value={f}>{f}</option>)}</optgroup>
             </Select>
           </PropertyControl>
-          <PropertyControl label="Розмір" htmlFor="textFontSize">
+          <PropertyControl label={t('prop.size')} htmlFor="textFontSize">
             <div className="w-20">
                 <NumberInput id="textFontSize" min={1} value={textFontSize} onChange={setTextFontSize} />
             </div>
@@ -437,6 +442,7 @@ type ContextualControlsProps = {
 };
 
 const ContextualControls: React.FC<ContextualControlsProps> = ({ selectedShape, updateShape, setShapePreview, cancelShapePreview, fillColor, strokeColor }) => {
+  const { t } = useLanguage();
   const standardWebFonts = { "Sans-Serif": ["Arial", "Calibri", "Helvetica", "Segoe UI", "Tahoma", "Trebuchet MS", "Verdana"], "Serif": ["Times New Roman", "Georgia", "Garamond"], "Monospace": ["Courier New", "Consolas", "Lucida Console", "Monaco"], };
   const tkFonts = ["TkDefaultFont", "TkTextFont", "TkFixedFont", "TkMenuFont", "TkHeadingFont", "TkCaptionFont", "TkSmallCaptionFont", "TkIconFont", "TkTooltipFont"];
 
@@ -485,18 +491,18 @@ const ContextualControls: React.FC<ContextualControlsProps> = ({ selectedShape, 
   return (
       <>
           {hasFill && (
-              <PropertyControl label="Заливка" htmlFor={`${selectedShape.id}-ctx-fill`}>
+              <PropertyControl label={t('prop.fill')} htmlFor={`${selectedShape.id}-ctx-fill`}>
                    <input type="checkbox" checked={selectedShape.fill !== 'none' && !isFillDisabledForShape} onChange={e => handleFillToggle(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" disabled={isFillDisabledForShape} />
                   <ColorInput id={`${selectedShape.id}-ctx-fill`} value={selectedShape.fill === 'none' ? '#000000' : selectedShape.fill} onChange={v => handleUpdate({ fill: v })} onPreview={v => setShapePreview(selectedShape.id, { fill: v })} onCancel={cancelShapePreview} disabled={selectedShape.fill === 'none' || isFillDisabledForShape} />
               </PropertyControl>
           )}
           {hasStroke && (
               <>
-                  <PropertyControl label="Контур" htmlFor={`${selectedShape.id}-ctx-stroke`}>
+                  <PropertyControl label={t('prop.stroke')} htmlFor={`${selectedShape.id}-ctx-stroke`}>
                        <input type="checkbox" checked={selectedShape.stroke !== 'none'} onChange={e => handleStrokeToggle(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" />
                       <ColorInput id={`${selectedShape.id}-ctx-stroke`} value={selectedShape.stroke === 'none' ? '#ffffff' : selectedShape.stroke} onChange={v => handleUpdate({ stroke: v })} onPreview={v => setShapePreview(selectedShape.id, { stroke: v })} onCancel={cancelShapePreview} disabled={selectedShape.stroke === 'none'} />
                   </PropertyControl>
-                  <PropertyControl label="Товщина" htmlFor={`${selectedShape.id}-ctx-strokeWidth`}>
+                  <PropertyControl label={t('prop.width')} htmlFor={`${selectedShape.id}-ctx-strokeWidth`}>
                     <div className="w-16">
                       <NumberInput id={`${selectedShape.id}-ctx-strokeWidth`} min={0} value={selectedShape.strokeWidth} onChange={v => handleUpdate({ strokeWidth: v })} disabled={selectedShape.stroke === 'none'} />
                     </div>
@@ -504,7 +510,7 @@ const ContextualControls: React.FC<ContextualControlsProps> = ({ selectedShape, 
               </>
           )}
           {hasSides && (
-               <PropertyControl label="Сторони" htmlFor={`${selectedShape.id}-ctx-sides`}>
+               <PropertyControl label={t('prop.sides')} htmlFor={`${selectedShape.id}-ctx-sides`}>
                     <div className="w-20">
                         <NumberInput id={`${selectedShape.id}-ctx-sides`} min={3} max={50} value={(selectedShape as PolygonShape).sides} onChange={v => handleUpdate({ sides: v })} />
                     </div>
@@ -512,30 +518,30 @@ const ContextualControls: React.FC<ContextualControlsProps> = ({ selectedShape, 
           )}
           {isText && (
               <>
-                  <PropertyControl label="Колір" htmlFor={`${shape.id}-ctx-fill`}>
+                  <PropertyControl label={t('prop.color')} htmlFor={`${shape.id}-ctx-fill`}>
                       <ColorInput id={`${shape.id}-ctx-fill`} value={shape.fill} onChange={v => handleUpdate({ fill: v })} onPreview={v => setShapePreview(shape.id, { fill: v })} onCancel={cancelShapePreview} />
                   </PropertyControl>
-                  <PropertyControl label="Шрифт" htmlFor={`${shape.id}-ctx-font`}>
+                  <PropertyControl label={t('prop.font')} htmlFor={`${shape.id}-ctx-font`}>
                      <Select id={`${shape.id}-ctx-font`} value={shape.font} onChange={v => handleUpdate({ font: v })} className="w-32 py-0.5">
                           {Object.entries(standardWebFonts).map(([group, fonts]) => (<optgroup label={group} key={group}>{fonts.map(f => <option key={f} value={f}>{f}</option>)}</optgroup>))}
                           <optgroup label="Шрифти Tkinter">{tkFonts.map(f => <option key={f} value={f}>{f}</option>)}</optgroup>
                       </Select>
                   </PropertyControl>
-                  <PropertyControl label="Розмір" htmlFor={`${shape.id}-ctx-fontSize`}>
+                  <PropertyControl label={t('prop.size')} htmlFor={`${shape.id}-ctx-fontSize`}>
                         <div className="w-20">
                             <NumberInput id={`${shape.id}-ctx-fontSize`} min={1} value={round(shape.fontSize)} onChange={v => handleUpdate({ fontSize: v })} />
                         </div>
                   </PropertyControl>
                   <div className="flex items-center gap-0.5 bg-[var(--bg-app)] p-0.5 rounded-md">
-                      <button title="Виразний" onClick={() => handleUpdate({ weight: shape.weight === 'bold' ? 'normal' : 'bold' })} className={`p-1.5 rounded ${shape.weight === 'bold' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><BoldIcon size={16}/></button>
-                      <button title="Курсив" onClick={() => handleUpdate({ slant: shape.slant === 'italic' ? 'roman' : 'italic' })} className={`p-1.5 rounded ${shape.slant === 'italic' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><ItalicIcon size={16}/></button>
-                      <button title="Підкреслений" onClick={() => handleUpdate({ underline: !shape.underline })} className={`p-1.5 rounded ${shape.underline ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><UnderlineIcon size={16}/></button>
-                      <button title="Закреслений" onClick={() => handleUpdate({ overstrike: !shape.overstrike })} className={`p-1.5 rounded ${shape.overstrike ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><StrikethroughIcon size={16}/></button>
+                      <button title={t('style.bold')} onClick={() => handleUpdate({ weight: shape.weight === 'bold' ? 'normal' : 'bold' })} className={`p-1.5 rounded ${shape.weight === 'bold' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><BoldIcon size={16}/></button>
+                      <button title={t('style.italic')} onClick={() => handleUpdate({ slant: shape.slant === 'italic' ? 'roman' : 'italic' })} className={`p-1.5 rounded ${shape.slant === 'italic' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><ItalicIcon size={16}/></button>
+                      <button title={t('style.underline')} onClick={() => handleUpdate({ underline: !shape.underline })} className={`p-1.5 rounded ${shape.underline ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><UnderlineIcon size={16}/></button>
+                      <button title={t('style.strikethrough')} onClick={() => handleUpdate({ overstrike: !shape.overstrike })} className={`p-1.5 rounded ${shape.overstrike ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><StrikethroughIcon size={16}/></button>
                   </div>
                    <div className="flex items-center gap-0.5 bg-[var(--bg-app)] p-0.5 rounded-md">
-                      <button title="Ліворуч" onClick={() => handleUpdate({ justify: 'left' })} className={`p-1.5 rounded ${shape.justify === 'left' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><AlignLeftIcon size={16}/></button>
-                      <button title="Центр" onClick={() => handleUpdate({ justify: 'center' })} className={`p-1.5 rounded ${shape.justify === 'center' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><AlignCenterIcon size={16}/></button>
-                      <button title="Праворуч" onClick={() => handleUpdate({ justify: 'right' })} className={`p-1.5 rounded ${shape.justify === 'right' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><AlignRightIcon size={16}/></button>
+                      <button title={t('align.left')} onClick={() => handleUpdate({ justify: 'left' })} className={`p-1.5 rounded ${shape.justify === 'left' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><AlignLeftIcon size={16}/></button>
+                      <button title={t('align.center')} onClick={() => handleUpdate({ justify: 'center' })} className={`p-1.5 rounded ${shape.justify === 'center' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><AlignCenterIcon size={16}/></button>
+                      <button title={t('align.right')} onClick={() => handleUpdate({ justify: 'right' })} className={`p-1.5 rounded ${shape.justify === 'right' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><AlignRightIcon size={16}/></button>
                   </div>
               </>
           )}
@@ -572,17 +578,18 @@ const TopToolbar: React.FC<{
         isGenerating, hasShapes, onUndo, onRedo, canUndo, canRedo, onDuplicate, isShapeSelected, onOpenMobileLeft, onOpenMobileRight,
         selectedShape, activeTool, setActiveTool, onGenerate, showGenerateButton, onClear
     } = props;
+    const { t } = useLanguage();
     
     return (
     <div className="bg-[var(--bg-primary)] p-2 flex-shrink-0 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 select-none">
         {/* Left side actions */}
         <div className="flex items-center gap-1">
-            <button title="Скасувати (Ctrl+Z)" onClick={onUndo} disabled={!canUndo} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent"><UndoIcon/></button>
-            <button title="Повернути (Ctrl+Y)" onClick={onRedo} disabled={!canRedo} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent"><RedoIcon/></button>
+            <button title={`${t('menu.edit.undo')} (Ctrl+Z)`} onClick={onUndo} disabled={!canUndo} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent"><UndoIcon/></button>
+            <button title={`${t('menu.edit.redo')} (Ctrl+Y)`} onClick={onRedo} disabled={!canRedo} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent"><RedoIcon/></button>
             <div className="w-px h-6 bg-[var(--border-secondary)] mx-1"></div>
-            <button title="Вибрати (V)" onClick={() => setActiveTool('select')} className={`p-2 rounded-md ${activeTool === 'select' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}><SelectIcon /></button>
-            <button title="Редагувати вузли (A)" onClick={() => setActiveTool('edit-points')} className={`p-2 rounded-md ${activeTool === 'edit-points' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}><EditPointsIcon /></button>
-            <button title="Дублювати (Ctrl+D)" onClick={onDuplicate} disabled={!isShapeSelected} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent"><DuplicateIcon /></button>
+            <button title={`${t('tool.select')} (V)`} onClick={() => setActiveTool('select')} className={`p-2 rounded-md ${activeTool === 'select' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}><SelectIcon /></button>
+            <button title={`${t('tool.editPoints')} (A)`} onClick={() => setActiveTool('edit-points')} className={`p-2 rounded-md ${activeTool === 'edit-points' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}><EditPointsIcon /></button>
+            <button title={`${t('menu.edit.duplicate')} (Ctrl+D)`} onClick={onDuplicate} disabled={!isShapeSelected} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent"><DuplicateIcon /></button>
             <div className="w-px h-6 bg-[var(--border-secondary)] mx-1"></div>
             {/* Mobile Toggles */}
             <div className="md:hidden flex items-center gap-2">
@@ -602,11 +609,11 @@ const TopToolbar: React.FC<{
                 <button onClick={onOpenMobileRight} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"><CodeIcon/></button>
             </div>
             <div className="w-px h-6 bg-[var(--border-secondary)] mx-1 md:hidden"></div>
-            <button onClick={onClear} disabled={!hasShapes} className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md font-semibold transition-colors duration-200 bg-[var(--destructive-bg)] text-[var(--accent-text)] hover:bg-[var(--destructive-bg-hover)] disabled:bg-[var(--bg-disabled)] disabled:text-[var(--text-disabled)] disabled:cursor-not-allowed"><TrashIcon size={16}/><span>Очистити</span></button>
+            <button onClick={onClear} disabled={!hasShapes} className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md font-semibold transition-colors duration-200 bg-[var(--destructive-bg)] text-[var(--accent-text)] hover:bg-[var(--destructive-bg-hover)] disabled:bg-[var(--bg-disabled)] disabled:text-[var(--text-disabled)] disabled:cursor-not-allowed"><TrashIcon size={16}/><span>{t('action.clear')}</span></button>
             {showGenerateButton && (
                 <button onClick={onGenerate} disabled={isGenerating || !hasShapes} className="flex items-center gap-2 px-4 py-1.5 text-sm rounded-md font-semibold transition-colors duration-200 bg-[var(--accent-primary)] text-[var(--accent-text)] hover:bg-[var(--accent-primary-hover)] disabled:bg-[var(--bg-disabled)] disabled:text-[var(--text-disabled)] disabled:cursor-not-allowed">
                     <CodeIcon/>
-                    <span>{isGenerating ? 'Генерація...' : 'Згенерувати код'}</span>
+                    <span>{isGenerating ? t('action.generating') : t('action.generate')}</span>
                 </button>
             )}
         </div>
@@ -726,6 +733,8 @@ export default function App(): React.ReactNode {
 
   const [isCheatCodeModalOpen, setIsCheatCodeModalOpen] = useState(false);
   const [activeCheats, setActiveCheats] = useState<Set<string>>(new Set());
+  
+  const { t } = useLanguage();
 
     useEffect(() => {
         try {
@@ -1190,7 +1199,7 @@ export default function App(): React.ReactNode {
                 const base64String = event.target?.result as string;
                 setPendingImage(base64String);
                 setActiveTool('image'); 
-                showNotification('Клацніть на полотні, щоб розмістити зображення.');
+                showNotification(t('action.placeImage'));
             };
             reader.readAsDataURL(file);
         }
@@ -2407,7 +2416,7 @@ export default function App(): React.ReactNode {
                                     inlineEditingShapeId={inlineEditingShapeId}
                                 />
                             </div>
-                            <button onClick={fitCanvasToView} title="Показати все полотно" className="absolute bottom-4 right-4 z-10 p-2 bg-[var(--bg-primary)] text-[var(--text-secondary)] rounded-full shadow-lg hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
+                            <button onClick={fitCanvasToView} title={t('menu.view.fit')} className="absolute bottom-4 right-4 z-10 p-2 bg-[var(--bg-primary)] text-[var(--text-secondary)] rounded-full shadow-lg hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
                                 <FitToScreenIcon />
                             </button>
                         </div>

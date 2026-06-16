@@ -327,9 +327,9 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, set
             const initialMousePos = getSnappedMousePosition(getPointerPosition(eventForPosition));
             
             const mouseAngleRad = Math.atan2(
-                (initialMousePos.y - handleCenter.y), // Додати знак мінус
+                -(initialMousePos.y - handleCenter.y), // Added minus to invert Y axis for rotation
                 initialMousePos.x - handleCenter.x
-);
+            );
             const shapeAngleRad = shape.rotation * Math.PI / 180;
             const startAngleOffset = shapeAngleRad - mouseAngleRad;
             
