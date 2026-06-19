@@ -1,5 +1,7 @@
 
-import React, { useState, useRef, useMemo, useCallback } from 'react';
+import React, {useContext} from 'react';
+import { useLanguage } from './LanguageContext';
+import { useState, useRef, useMemo, useCallback } from 'react';
 import { type Shape, type Tool, type CanvasAction, type RotatableShape, type RectangleShape, type EllipseShape, type PathShape, type LineShape, PolylineShape, PolygonShape, DrawMode, IsoscelesTriangleShape, RhombusShape, ParallelogramShape, TrapezoidShape, BezierCurveShape, ViewTransform, JoinStyle, ArcShape, RightTriangleShape, TransformHandle, TextShape, ImageShape, BitmapShape } from '../types';
 import { SelectionControls } from './SelectionControls';
 import { getShapeCenter, rotatePoint, getBoundingBox, getIsoscelesTrianglePoints, getPolylinePointsAsPath, getPolygonPointsAsArray, getRhombusPoints, getTrapezoidPoints, getParallelogramPoints, getSmoothedPathData, getFinalPoints, getArcPathData, getRightTrianglePoints, getTextBoundingBox, processTextLines } from '../lib/geometry';
@@ -90,6 +92,7 @@ const formatPointsForSvg = (points: { x: number; y: number }[]): string => {
 };
 
 const Canvas: React.FC<CanvasProps> = (props) => {
+    const { t } = useLanguage();
     const { 
         width, height, backgroundColor, shapes, addShape, updateShape, 
         activeTool, drawMode, fillColor, strokeColor, strokeWidth, 
@@ -157,7 +160,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
         if (shapeToDuplicate) {
              // If the right-clicked shape isn't the currently selected one, select it first.
-            if (selectedShapeId !== clickedShapeId) {
+            if (clickedShapeId && selectedShapeId !== clickedShapeId) {
                 onSelectShape(clickedShapeId);
             }
             // Use a type-safe deep copy to prevent mutation issues
@@ -223,18 +226,21 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     onSelectShape(null);
     const id = new Date().toISOString();
     let newShape: Shape | null = null;
+    const toolNameKey = activeTool === 'right-triangle' ? 'rightTriangle' : activeTool;
+    const localizedToolName = t(`tool.${toolNameKey}`);
+
     switch (activeTool) {
-        case 'rectangle': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'rectangle', x: pos.x, y: pos.y, width: 0, height: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', isAspectRatioLocked: false }; break;
-        case 'square': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'rectangle', x: pos.x, y: pos.y, width: 0, height: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', isAspectRatioLocked: true }; break;
-        case 'circle': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'ellipse', cx: pos.x, cy: pos.y, rx: 0, ry: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', isAspectRatioLocked: true }; break;
-        case 'ellipse': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'ellipse', cx: pos.x, cy: pos.y, rx: 0, ry: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', isAspectRatioLocked: false }; break;
-        case 'line': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'line', points: [{...pos}, {...pos}], stroke: strokeColor, strokeWidth, rotation: 0, capstyle: 'round', arrowshape: [8, 10, 3], state: 'normal' }; break;
-        case 'pencil': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'pencil', points: [pos], stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'round', capstyle: 'round', arrowshape: [8, 10, 3], isAspectRatioLocked: false }; break;
-        case 'triangle': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'triangle', x: pos.x, y: pos.y, width: 0, height: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'miter', topVertexOffset: 0, isAspectRatioLocked: false }; break;
-        case 'right-triangle': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'right-triangle', x: pos.x, y: pos.y, width: 0, height: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'miter', isAspectRatioLocked: false }; break;
-        case 'rhombus': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'rhombus', x: pos.x, y: pos.y, width: 0, height: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'miter', isAspectRatioLocked: false }; break;
-        case 'trapezoid': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'trapezoid', x: pos.x, y: pos.y, width: 0, height: 0, topLeftOffsetRatio: 0.25, topRightOffsetRatio: 0.25, isSymmetrical: true, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'miter', isAspectRatioLocked: false }; break;
-        case 'parallelogram': newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'parallelogram', x: pos.x, y: pos.y, width: 0, height: 0, angle: 75, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'miter', isAspectRatioLocked: false }; break;
+        case 'rectangle': newShape = { id, name: localizedToolName, type: 'rectangle', x: pos.x, y: pos.y, width: 0, height: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', isAspectRatioLocked: false }; break;
+        case 'square': newShape = { id, name: localizedToolName, type: 'rectangle', x: pos.x, y: pos.y, width: 0, height: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', isAspectRatioLocked: true }; break;
+        case 'circle': newShape = { id, name: localizedToolName, type: 'ellipse', cx: pos.x, cy: pos.y, rx: 0, ry: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', isAspectRatioLocked: true }; break;
+        case 'ellipse': newShape = { id, name: localizedToolName, type: 'ellipse', cx: pos.x, cy: pos.y, rx: 0, ry: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', isAspectRatioLocked: false }; break;
+        case 'line': newShape = { id, name: localizedToolName, type: 'line', points: [{...pos}, {...pos}], stroke: strokeColor, strokeWidth, rotation: 0, capstyle: 'round', arrowshape: [8, 10, 3], state: 'normal' }; break;
+        case 'pencil': newShape = { id, name: localizedToolName, type: 'pencil', points: [pos], stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'round', capstyle: 'round', arrowshape: [8, 10, 3], isAspectRatioLocked: false }; break;
+        case 'triangle': newShape = { id, name: localizedToolName, type: 'triangle', x: pos.x, y: pos.y, width: 0, height: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'miter', topVertexOffset: 0, isAspectRatioLocked: false }; break;
+        case 'right-triangle': newShape = { id, name: localizedToolName, type: 'right-triangle', x: pos.x, y: pos.y, width: 0, height: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'miter', isAspectRatioLocked: false }; break;
+        case 'rhombus': newShape = { id, name: localizedToolName, type: 'rhombus', x: pos.x, y: pos.y, width: 0, height: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'miter', isAspectRatioLocked: false }; break;
+        case 'trapezoid': newShape = { id, name: localizedToolName, type: 'trapezoid', x: pos.x, y: pos.y, width: 0, height: 0, topLeftOffsetRatio: 0.25, topRightOffsetRatio: 0.25, isSymmetrical: true, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'miter', isAspectRatioLocked: false }; break;
+        case 'parallelogram': newShape = { id, name: localizedToolName, type: 'parallelogram', x: pos.x, y: pos.y, width: 0, height: 0, angle: 75, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'miter', isAspectRatioLocked: false }; break;
         case 'pieslice':
         case 'chord':
         case 'arc': {
@@ -246,13 +252,13 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             const finalFillColor = style === 'arc' ? 'none' : fillColor;
             const extent = (style === 'pieslice' || style === 'chord') ? 270 : 90;
             
-            newShape = { id, name: TOOL_TYPE_TO_NAME[activeTool], type: 'arc', x: pos.x, y: pos.y, width: 0, height: 0, fill: finalFillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', start: 0, extent, style, isAspectRatioLocked: false };
+            newShape = { id, name: localizedToolName, type: 'arc', x: pos.x, y: pos.y, width: 0, height: 0, fill: finalFillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', start: 0, extent, style, isAspectRatioLocked: false };
             break;
         }
         case 'polygon':
         case 'star':
             newShape = {
-                id, name: TOOL_TYPE_TO_NAME[activeTool], type: activeTool, cx: pos.x, cy: pos.y, radius: 0, sides: numberOfSides,
+                id, name: localizedToolName, type: activeTool, cx: pos.x, cy: pos.y, radius: 0, sides: numberOfSides,
                 fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'miter',
                 innerRadius: activeTool === 'star' ? 0 : undefined, isAspectRatioLocked: true,
             };
@@ -260,11 +266,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         case 'text': {
             newShape = {
                 id,
-                name: TOOL_TYPE_TO_NAME[activeTool],
+                name: localizedToolName,
                 type: 'text',
                 x: pos.x,
                 y: pos.y,
-                text: 'Текст',
+                text: t('tool.text'),
                 font: textFont,
                 fontSize: textFontSize,
                 weight: 'normal',
@@ -289,7 +295,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 img.onload = () => {
                     const newImageShape: ImageShape = {
                         id,
-                        name: isImportingImage ? 'Зображення [імпорт]' : TOOL_TYPE_TO_NAME[activeTool],
+                        name: isImportingImage ? t('tool.imageImport') : localizedToolName,
                         type: 'image',
                         x: pos.x,
                         y: pos.y,
@@ -313,7 +319,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         case 'bitmap': {
             newShape = {
                 id,
-                name: TOOL_TYPE_TO_NAME[activeTool],
+                name: localizedToolName,
                 type: 'bitmap',
                 x: pos.x,
                 y: pos.y,
@@ -1010,7 +1016,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 id: new Date().toISOString() 
             };
             addShape(newShape, true);
-            showNotification('Фігуру дубльовано.');
+            showNotification(t('canvas.shapeDuplicated'));
         }
     } else if (action?.type === 'point-editing' && activeTransformShape) {
         const { initialShape, center } = action;
@@ -1033,7 +1039,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     rotation: 0,
                     name: undefined as string | undefined
                 };
-                bakedShape.name = isOriginalNameCustom ? originalName : getDefaultNameForShape(bakedShape as Shape);
+                bakedShape.name = isOriginalNameCustom ? originalName : getDefaultNameForShape(bakedShape as Shape, t);
                 shapeToUpdate = bakedShape as Shape;
             } else {
                 // For primitives converted to polylines, lines, etc., use getFinalPoints.
@@ -1046,14 +1052,14 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         rotation: 0,
                         name: undefined
                     };
-                    bakedShape.name = isOriginalNameCustom ? originalName : getDefaultNameForShape(bakedShape);
+                    bakedShape.name = isOriginalNameCustom ? originalName : getDefaultNameForShape(bakedShape, t);
                     shapeToUpdate = bakedShape;
                 }
             }
         } else {
              // For unrotated shapes, just update the name if it has changed due to deformation.
             const finalShape = activeTransformShape;
-            const newName = isOriginalNameCustom ? originalName : getDefaultNameForShape(finalShape);
+            const newName = isOriginalNameCustom ? originalName : getDefaultNameForShape(finalShape, t);
             if (finalShape.name !== newName) {
                 shapeToUpdate = { ...finalShape, name: newName };
             }
@@ -1373,29 +1379,29 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             >
               <button
                 onClick={() => isDrawingPolyline ? onCompletePolyline(false) : onCompleteBezier(false)}
-                title="Завершити"
+                title={t('canvas.finish')}
                 disabled={!canComplete}
                 className={`${buttonBaseClass} ${canComplete ? enabledBlueClass : disabledClass}`}
               >
                 <CheckSquareIcon />
-                <span>Завершити</span>
+                <span>{t('canvas.finish')}</span>
               </button>
               <button
                 onClick={() => isDrawingPolyline ? onCompletePolyline(true) : onCompleteBezier(true)}
-                title="Замкнути контур"
+                title={t('canvas.closePoly')}
                 disabled={!canClose}
                 className={`${buttonBaseClass} ${canClose ? enabledBlueClass : disabledClass}`}
               >
                 <ClosePathIcon />
-                <span>Замкнути</span>
+                <span>{t('canvas.closePoly')}</span>
               </button>
               <button
                 onClick={() => isDrawingPolyline ? onCancelPolyline() : onCancelBezier()}
-                title="Скасувати"
+                title={t('action.cancel')}
                 className={`${buttonBaseClass} ${enabledRedClass}`}
               >
                 <XSquareIcon />
-                <span>Скасувати</span>
+                <span>{t('action.cancel')}</span>
               </button>
             </div>
         );
@@ -1494,9 +1500,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
               transform: 'translateY(-100%)',
             }}
           >
-            {isDuplicating && <div className="font-sans font-semibold">Дублювання</div>}
+            {isDuplicating && <div className="font-sans font-semibold">{t('canvas.duplicating')}</div>}
             {showRotationAngle && rotationInfo && (
-                <div>{`Кут: ${rotationInfo.absolute.toFixed(0)}° (Δ: ${rotationInfo.delta.toFixed(0)}°)`}</div>
+                <div>{`${t('canvas.angle')}: ${rotationInfo.absolute.toFixed(0)}° (Δ: ${rotationInfo.delta.toFixed(0)}°)`}</div>
             )}
             {showCursorCoords && (
                 <div>{`X: ${formatNumber(previewMousePos.x)}, Y: ${formatNumber(previewMousePos.y)}`}</div>

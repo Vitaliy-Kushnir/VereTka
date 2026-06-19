@@ -37,7 +37,7 @@ type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
 type SettingsTab = 'canvas' | 'grid' | 'appearance' | 'code' | 'templates';
 
-const APP_VERSION = '1.2.14';
+const APP_VERSION = '1.2.15';
 const RULER_THICKNESS = 24;
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 30;
@@ -296,7 +296,7 @@ const LeftToolbar: React.FC<{
 
     return (
         <aside className="bg-[var(--bg-primary)] rounded-lg p-1 flex flex-col items-center">
-            <div className="grid grid-cols-10 gap-0.5 w-full" role="group" aria-label="Інструменти">
+            <div className="grid grid-cols-10 gap-0.5 w-full" role="group" aria-label={t('app.1100')}>
                 {tools.map((tool, index) => {
                     const prevToolGroup = index > 0 ? tools[index - 1].group : -1;
                     const needsSeparator = tool.group !== prevToolGroup && index > 0;
@@ -418,7 +418,7 @@ const ToolControls: React.FC<ToolControlsProps> = ({
               {Object.entries(standardWebFonts).map(([group, fonts]) => (
                 <optgroup label={group} key={group}>{fonts.map(f => <option key={f} value={f}>{f}</option>)}</optgroup>
               ))}
-              <optgroup label="Шрифти Tkinter">{tkFonts.map(f => <option key={f} value={f}>{f}</option>)}</optgroup>
+              <optgroup label={t('app.1101')}>{tkFonts.map(f => <option key={f} value={f}>{f}</option>)}</optgroup>
             </Select>
           </PropertyControl>
           <PropertyControl label={t('prop.size')} htmlFor="textFontSize">
@@ -524,7 +524,7 @@ const ContextualControls: React.FC<ContextualControlsProps> = ({ selectedShape, 
                   <PropertyControl label={t('prop.font')} htmlFor={`${shape.id}-ctx-font`}>
                      <Select id={`${shape.id}-ctx-font`} value={shape.font} onChange={v => handleUpdate({ font: v })} className="w-32 py-0.5">
                           {Object.entries(standardWebFonts).map(([group, fonts]) => (<optgroup label={group} key={group}>{fonts.map(f => <option key={f} value={f}>{f}</option>)}</optgroup>))}
-                          <optgroup label="Шрифти Tkinter">{tkFonts.map(f => <option key={f} value={f}>{f}</option>)}</optgroup>
+                          <optgroup label={t('app.1101')}>{tkFonts.map(f => <option key={f} value={f}>{f}</option>)}</optgroup>
                       </Select>
                   </PropertyControl>
                   <PropertyControl label={t('prop.size')} htmlFor={`${shape.id}-ctx-fontSize`}>
@@ -622,9 +622,10 @@ const TopToolbar: React.FC<{
 });
 
 export default function App(): React.ReactNode {
+  const { t } = useLanguage();
   const { state: shapes, setState: setShapes, undo, redo, canUndo, canRedo, reset: resetHistory } = useHistoryState<Shape[]>([]);
   
-  const [projectName, setProjectName] = useState<string>('Новий малюнок. ВереTkа');
+  const [projectName, setProjectName] = useState<string>(t('app.1069'));
   const [activeTool, setActiveTool] = useState<Tool>('select');
   const [selectedShapeId, setSelectedShapeId] = useState<string | null>(null);
   const [inlineEditingShapeId, setInlineEditingShapeId] = useState<string | null>(null);
@@ -733,8 +734,6 @@ export default function App(): React.ReactNode {
 
   const [isCheatCodeModalOpen, setIsCheatCodeModalOpen] = useState(false);
   const [activeCheats, setActiveCheats] = useState<Set<string>>(new Set());
-  
-  const { t } = useLanguage();
 
     useEffect(() => {
         try {
@@ -1003,7 +1002,7 @@ export default function App(): React.ReactNode {
                 fill: 'fill' in shape && typeof shape.fill === 'string' && isClosed ? shape.fill : 'none',
                 joinstyle: 'joinstyle' in shape && shape.joinstyle ? shape.joinstyle : undefined,
             };
-            newPolyline.name = getDefaultNameForShape(newPolyline);
+            newPolyline.name = getDefaultNameForShape(newPolyline, t);
             return newPolyline;
         };
         setShapes(prevShapes => {
@@ -1060,7 +1059,7 @@ export default function App(): React.ReactNode {
 
     setShapes(prevShapes => [...prevShapes, newShape]);
     setSelectedShapeId(newShape.id);
-    showNotification('Фігуру дубльовано.');
+    showNotification(t('app.1102'));
   }, [shapes, setShapes, showNotification]);
   
   const moveShape = useCallback((id: string, direction: 'up' | 'down') => {
@@ -1113,11 +1112,11 @@ export default function App(): React.ReactNode {
 
     const oldName = shape.name;
     const isOldNameDefault = !oldName || isDefaultName(oldName);
-    newPolyline.name = isOldNameDefault ? getDefaultNameForShape(newPolyline) : oldName;
+    newPolyline.name = isOldNameDefault ? getDefaultNameForShape(newPolyline, t) : oldName;
     
     updateShape(newPolyline);
     setActiveTool('edit-points');
-    showNotification('Фігуру перетворено на контур.');
+    showNotification(t('app.1103'));
   }, [shapes, updateShape, showNotification]);
 
 
@@ -1151,7 +1150,7 @@ export default function App(): React.ReactNode {
         return;
     }
     const newShape: PolylineShape = {
-        id: new Date().toISOString(), name: isClosed ? 'Багатокутник' : 'Ламана', type: 'polyline', points: finalPoints, isClosed,
+        id: new Date().toISOString(), name: isClosed ? t('app.1104') : t('app.1105'), type: 'polyline', points: finalPoints, isClosed,
         fill: isClosed && isFillEnabled ? (previewFillColor ?? fillColor) : 'none', stroke: isStrokeEnabled ? (previewStrokeColor ?? strokeColor) : 'none', strokeWidth: isStrokeEnabled ? strokeWidth : 0, state: 'normal', rotation: 0, capstyle: 'round',
         isAspectRatioLocked: false,
     };
@@ -1178,7 +1177,7 @@ export default function App(): React.ReactNode {
         }
         if (finalPoints.length < 2) { setIsDrawingBezier(false); setBezierPoints([]); return; }
         const newShape: BezierCurveShape = {
-            id: new Date().toISOString(), name: isClosed ? "Багатокутник" : "Крива Без'є", type: 'bezier', points: finalPoints, smooth: true, splinesteps: 12, stroke: isStrokeEnabled ? (previewStrokeColor ?? strokeColor) : 'none',
+            id: new Date().toISOString(), name: isClosed ? t('app.1104') : t('app.1106'), type: 'bezier', points: finalPoints, smooth: true, splinesteps: 12, stroke: isStrokeEnabled ? (previewStrokeColor ?? strokeColor) : 'none',
             strokeWidth: isStrokeEnabled ? strokeWidth : 0, rotation: 0, capstyle: 'round', state: 'normal', isClosed: isClosed, fill: isClosed && isFillEnabled ? (previewFillColor ?? fillColor) : 'none',
             isAspectRatioLocked: false,
         };
@@ -1215,7 +1214,7 @@ export default function App(): React.ReactNode {
         if (tool === 'edit-points') {
             const shape = shapes.find(s => s.id === selectedShapeId);
             if (shape?.type === 'text') {
-                showNotification('Режим редагування вузлів недоступний для тексту.', 'info');
+                showNotification(t('app.1107'), 'info');
                 return;
             }
         }
@@ -1245,10 +1244,10 @@ export default function App(): React.ReactNode {
 
   const handleGenerateCode = useCallback(async () => {
     const shapesForGeneration = shapes.filter(s => !(s.type === 'image' && s.isImport));
-    if (shapesForGeneration.length === 0) { showNotification('Спочатку намалюйте щось на полотні!', 'info'); return; }
+    if (shapesForGeneration.length === 0) { showNotification(t('app.1108'), 'info'); return; }
     
     if (generatorType === 'gemini' && !apiKey) {
-        showNotification('Будь ласка, введіть ваш ключ Gemini API у налаштуваннях.', 'info');
+        showNotification(t('app.1109'), 'info');
         setIsApiKeyModalOpen(true);
         return;
     }
@@ -1264,7 +1263,7 @@ export default function App(): React.ReactNode {
 
     try {
       if (generatorType === 'local') {
-        const { codeLines } = await generateTkinterCodeLocally(finalShapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill);
+        const { codeLines } = await generateTkinterCodeLocally(finalShapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill, t);
         setGeneratedCodeLines(codeLines);
       } else {
         const code = await generateTkinterCode(apiKey!, finalShapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill);
@@ -1280,11 +1279,11 @@ export default function App(): React.ReactNode {
       }
         
       setShapesAtGenerationTime(JSON.parse(JSON.stringify(shapes)));
-      showNotification('Код успішно згенеровано!', 'info');
+      showNotification(t('app.1110'), 'info');
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Сталася невідома помилка.';
-      setError(`Не вдалося згенерувати код: ${errorMessage}`);
-      showNotification('Помилка генерації коду.', 'error', 5000);
+      const errorMessage = err instanceof Error ? err.message : t('app.1111');
+      setError(`${t('app.1112')} ${errorMessage}`);
+      showNotification(t('app.1113'), 'error', 5000);
     } finally {
       setIsLoading(false);
     }
@@ -1297,7 +1296,7 @@ export default function App(): React.ReactNode {
             if (activeCheats.has('002')) {
                 shapesForGeneration = shapesForGeneration.filter(s => s.type !== 'image');
             }
-            const { codeLines } = await generateTkinterCodeLocally(shapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill);
+            const { codeLines } = await generateTkinterCodeLocally(shapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill, t);
             setGeneratedCodeLines(codeLines);
             setShapesAtGenerationTime(JSON.parse(JSON.stringify(shapes)));
         };
@@ -1349,10 +1348,10 @@ export default function App(): React.ReactNode {
     confirmAction(
       () => {
         performClear();
-        showNotification('Полотно очищено.');
+        showNotification(t('app.1114'));
       },
-      'Очистити полотно?',
-      'Усі незбережені зміни буде втрачено. Ви впевнені?'
+      t('app.1115'),
+      t('app.1021')
     );
   }, [confirmAction, showNotification]);
 
@@ -1389,18 +1388,18 @@ export default function App(): React.ReactNode {
   const handleOpenNewProjectModal = useCallback(() => {
     confirmAction(
       () => setIsNewProjectModalOpen(true),
-      'Створити новий проєкт?',
-      'Усі незбережені зміни в поточному проєкті буде втрачено. Ви впевнені?'
+      t('app.1116'),
+      t('app.1117')
     );
   }, [confirmAction]);
 
   const handleGoHome = useCallback(() => {
     confirmAction(
       () => setIsProjectActive(false),
-      'Повернутись на головну?',
-      'У вас є незбережені зміни. Ваша робота періодично автозберігається. Якщо ви вийдете, ви зможете відновити останню автозбережену версію при наступному запуску. Продовжити вихід на головний екран?',
-      'Так, вийти',
-      'Скасувати',
+      t('app.1118'),
+      t('app.1119'),
+      t('app.1120'),
+      t('app.1121'),
       'primary'
     );
   }, [confirmAction]);
@@ -1419,7 +1418,7 @@ export default function App(): React.ReactNode {
 
     const handleSaveProject = useCallback(async () => {
         if (!hasUnsavedChanges && fileHandle) {
-            showNotification('Незбережених змін немає.', 'info');
+            showNotification(t('app.1122'), 'info');
             return;
         }
         
@@ -1430,11 +1429,11 @@ export default function App(): React.ReactNode {
                 await saveToHandle(fileHandle, JSON.stringify(saveData, null, 2));
                 lastSavedSignatureRef.current = getProjectSignature(projectName, shapes);
                 addRecentProject(fileHandle, saveData.thumbnail);
-                showNotification('Проєкт збережено.', 'info');
+                showNotification(t('app.1001'), 'info');
                 localStorage.removeItem(AUTOSAVE_KEY);
             } catch (error) {
-                console.error("Не вдалося зберегти у файл", error);
-                showNotification('Не вдалося зберегти у файл. Спробуйте "Зберегти як...".', 'error');
+                console.error(t('app.1123'), error);
+                showNotification(t('app.1124'), 'error');
             }
         } else {
             // New project: "Save" acts like "Save As" but without the name modal.
@@ -1445,7 +1444,7 @@ export default function App(): React.ReactNode {
                     jsonString,
                     `${projectName}.vec.json`,
                     [{
-                        description: 'Векторний проєкт',
+                        description: t('app.1000'),
                         accept: { 'application/json': ['.vec.json', '.json'] },
                     }],
                     'application/json'
@@ -1457,12 +1456,12 @@ export default function App(): React.ReactNode {
                     setProjectName(finalProjectName);
                     lastSavedSignatureRef.current = getProjectSignature(finalProjectName, shapes);
                     addRecentProject(newHandle, saveData.thumbnail);
-                    showNotification('Проєкт збережено.', 'info');
+                    showNotification(t('app.1001'), 'info');
                     localStorage.removeItem(AUTOSAVE_KEY);
                 }
             } catch (error) {
-                console.error("Не вдалося зберегти проєкт", error);
-                showNotification('Не вдалося зберегти проєкт.', 'error');
+                console.error(t('app.1002'), error);
+                showNotification(t('app.1003'), 'error');
             }
         }
     }, [hasUnsavedChanges, fileHandle, getSaveData, projectName, getProjectSignature, shapes, addRecentProject, showNotification]);
@@ -1477,7 +1476,7 @@ export default function App(): React.ReactNode {
                 jsonString,
                 `${newProjectNameFromModal}.vec.json`,
                 [{
-                    description: 'Векторний проєкт',
+                    description: t('app.1000'),
                     accept: { 'application/json': ['.vec.json', '.json'] },
                 }],
                 'application/json'
@@ -1489,12 +1488,12 @@ export default function App(): React.ReactNode {
                 setProjectName(finalProjectName);
                 lastSavedSignatureRef.current = getProjectSignature(finalProjectName, shapes);
                 addRecentProject(newHandle, saveData.thumbnail);
-                showNotification('Проєкт збережено.', 'info');
+                showNotification(t('app.1001'), 'info');
                 localStorage.removeItem(AUTOSAVE_KEY);
             }
         } catch (error) {
-            console.error("Не вдалося зберегти проєкт", error);
-            showNotification('Не вдалося зберегти проєкт.', 'error');
+            console.error(t('app.1002'), error);
+            showNotification(t('app.1003'), 'error');
         }
     }, [getSaveData, shapes, addRecentProject, getProjectSignature, showNotification]);
 
@@ -1504,7 +1503,7 @@ export default function App(): React.ReactNode {
             id: Date.now().toString(),
             name,
             settings: {
-                projectName: `Проєкт (з шаблону "${name}")`,
+                projectName: `${t('app.1004')} "${name}")`,
                 width: canvasWidth,
                 height: canvasHeight,
                 bgColor: canvasBgColor,
@@ -1517,10 +1516,10 @@ export default function App(): React.ReactNode {
             const updatedTemplates = [...prev, newTemplate];
             try {
                 localStorage.setItem('veretka-project-templates', JSON.stringify(updatedTemplates));
-                showNotification(`Шаблон "${name}" збережено.`, 'info');
+                showNotification(`${t('app.1005')}${name}${t('app.1006')}`, 'info');
             } catch (e) {
                 console.error("Failed to save project templates to localStorage", e);
-                showNotification('Не вдалося зберегти шаблон.', 'error');
+                showNotification(t('app.1007'), 'error');
             }
             return updatedTemplates;
         });
@@ -1529,17 +1528,17 @@ export default function App(): React.ReactNode {
 
     const handleDeleteTemplate = useCallback((templateId: string) => {
         setConfirmationAction({
-            title: "Видалити шаблон?",
-            message: "Ця дія назавжди видалить цей шаблон. Ви впевнені?",
+            title: t('app.1008'),
+            message: t('app.1009'),
             onConfirm: () => {
                 setProjectTemplates(prev => {
                     const updatedTemplates = prev.filter(t => t.id !== templateId);
                     try {
                         localStorage.setItem('veretka-project-templates', JSON.stringify(updatedTemplates));
-                        showNotification('Шаблон видалено.', 'info');
+                        showNotification(t('app.1010'), 'info');
                     } catch (e) {
                         console.error("Failed to delete project template from localStorage", e);
-                        showNotification('Не вдалося видалити шаблон.', 'error');
+                        showNotification(t('app.1011'), 'error');
                     }
                     return updatedTemplates;
                 });
@@ -1553,10 +1552,10 @@ export default function App(): React.ReactNode {
             const updatedTemplates = prev.map(t => t.id === templateId ? { ...t, name: newName } : t);
             try {
                 localStorage.setItem('veretka-project-templates', JSON.stringify(updatedTemplates));
-                showNotification('Шаблон перейменовано.', 'info');
+                showNotification(t('app.1012'), 'info');
             } catch (e) {
                 console.error("Failed to rename project template in localStorage", e);
-                showNotification('Не вдалося перейменувати шаблон.', 'error');
+                showNotification(t('app.1013'), 'error');
             }
             return updatedTemplates;
         });
@@ -1566,7 +1565,7 @@ export default function App(): React.ReactNode {
     try {
         const savedData = JSON.parse(fileContent);
         if (savedData.shapes && savedData.canvasSettings && savedData.viewTransform) {
-            const newProjectName = savedData.projectName || (fileName ? fileName.replace(/\.vec.json$/, '') : 'Завантажений проєкт');
+            const newProjectName = savedData.projectName || (fileName ? fileName.replace(/\.vec.json$/, '') : t('app.1014'));
             
             performClear();
             resetHistory(savedData.shapes);
@@ -1604,15 +1603,15 @@ export default function App(): React.ReactNode {
             if (handle) {
                 addRecentProject(handle, savedData.thumbnail);
             }
-            showNotification('Проєкт успішно завантажено.', 'info');
+            showNotification(t('app.1015'), 'info');
             localStorage.removeItem(AUTOSAVE_KEY);
             setTimeout(fitCanvasToView, 0);
         } else {
-            showNotification('Неправильний формат файлу проєкту.', 'error');
+            showNotification(t('app.1016'), 'error');
         }
     } catch (e) {
-        console.error("Помилка парсингу файлу проєкту", e);
-        showNotification('Не вдалося завантажити проєкт. Файл пошкоджено.', 'error');
+        console.error(t('app.1017'), e);
+        showNotification(t('app.1018'), 'error');
     }
   }, [resetHistory, getProjectSignature, addRecentProject, fitCanvasToView, activeTool, showNotification]);
 
@@ -1622,8 +1621,8 @@ export default function App(): React.ReactNode {
         try {
             result = await openProjectFile();
         } catch (err) {
-            console.error("Не вдалося завантажити проєкт через API", err);
-            showNotification('Не вдалося завантажити проєкт.', 'error');
+            console.error(t('app.1019'), err);
+            showNotification(t('app.1070'), 'error');
             return;
         }
     }
@@ -1639,8 +1638,8 @@ export default function App(): React.ReactNode {
   const handleLoadProject = useCallback(() => {
     confirmAction(
       loadProject,
-      'Завантажити проєкт?',
-      'Усі незбережені зміни буде втрачено. Ви впевнені?'
+      t('app.1020'),
+      t('app.1021')
     );
   }, [confirmAction, loadProject]);
 
@@ -1656,11 +1655,11 @@ export default function App(): React.ReactNode {
             processLoadedData(fileContent, file.name);
         } catch (error) {
             console.error("Не вдалося завантажити проєкт", error);
-            showNotification('Не вдалося завантажити проєкт. Файл може бути пошкоджений.', 'error');
+            showNotification(t('app.1022'), 'error');
         }
     };
     reader.onerror = () => {
-        showNotification('Не вдалося прочитати файл.', 'error');
+        showNotification(t('app.1023'), 'error');
     };
     reader.readAsText(file);
     if (e.target) e.target.value = '';
@@ -1668,7 +1667,7 @@ export default function App(): React.ReactNode {
   
   const handleExport = useCallback(async (settings: ExportSettings) => {
     setIsExportModalOpen(false);
-    showNotification('Експорт зображення...', 'info', 1500);
+    showNotification(t('app.1024'), 'info', 1500);
     try {
         const shapesToExport = shapes;
         const svgString = generateSvg(shapesToExport, canvasWidth, canvasHeight, canvasBgColor);
@@ -1679,7 +1678,7 @@ export default function App(): React.ReactNode {
                 svgString,
                 suggestedName,
                 [{
-                    description: 'SVG Зображення',
+                    description: t('app.1025'),
                     accept: { 'image/svg+xml': ['.svg'] },
                 }],
                 'image/svg+xml'
@@ -1696,7 +1695,7 @@ export default function App(): React.ReactNode {
             const res = await fetch(dataUrl);
             const blob = await res.blob();
             const mimeType = settings.format === 'png' ? 'image/png' : 'image/jpeg';
-            const description = settings.format === 'png' ? 'PNG Зображення' : 'JPEG Зображення';
+            const description = settings.format === 'png' ? t('app.1026') : t('app.1027');
             await saveFile(
                 blob,
                 suggestedName,
@@ -1707,10 +1706,10 @@ export default function App(): React.ReactNode {
                 mimeType
             );
         }
-        showNotification('Зображення успішно експортовано!', 'info');
+        showNotification(t('app.1028'), 'info');
     } catch (err) {
-        console.error('Помилка експорту:', err);
-        showNotification('Не вдалося експортувати зображення.', 'error');
+        console.error(t('app.1029'), err);
+        showNotification(t('app.1030'), 'error');
     }
   }, [shapes, canvasWidth, canvasHeight, canvasBgColor, projectName, showNotification]);
 
@@ -1722,18 +1721,18 @@ export default function App(): React.ReactNode {
             setFileHandle(project.handle);
         }
     } catch (err) {
-        console.error('Не вдалося відкрити останній проєкт:', err);
-        showNotification(`Не вдалося відкрити проєкт: ${err instanceof Error ? err.message : 'Невідома помилка'}.`, 'error', 5000);
+        console.error(t('app.1031'), err);
+        showNotification(`${t('app.1032')} ${err instanceof Error ? err.message : t('app.1033')}.`, 'error', 5000);
     }
   }, [openRecentProject, processLoadedData, showNotification]);
   
   const handleRemoveRecentProject = useCallback((project: RecentProject) => {
     setConfirmationAction({
-        title: `Видалити "${project.name.replace(/\.vec\.json$/, '')}"?`,
-        message: 'Ця дія видалить проєкт лише зі списку останніх, а не сам файл. Ви впевнені?',
+        title: `${t('app.1034')}${project.name.replace(/\.vec\.json$/, '')}${t('app.1035')}`,
+        message: t('app.1036'),
         onConfirm: () => {
             removeRecentProject(project.name);
-            showNotification('Проєкт видалено зі списку.');
+            showNotification(t('app.1037'));
             setConfirmationAction(null);
         }
     });
@@ -1742,11 +1741,11 @@ export default function App(): React.ReactNode {
   const handleClearAllRecentProjects = useCallback(() => {
     if (recentProjects.length === 0) return;
     setConfirmationAction({
-        title: 'Очистити список останніх проєктів?',
-        message: 'Ця дія видалить усі проєкти зі списку, але не самі файли. Ви впевнені?',
+        title: t('app.1038'),
+        message: t('app.1039'),
         onConfirm: () => {
             clearAllProjects();
-            showNotification('Список останніх проєктів очищено.');
+            showNotification(t('app.1040'));
             setConfirmationAction(null);
         }
     });
@@ -1771,16 +1770,16 @@ export default function App(): React.ReactNode {
         }
 
         if (!contentToSave) {
-          showNotification('Немає коду для збереження.', 'error');
+          showNotification(t('app.1041'), 'error');
           return;
         }
         
         if (extension === '.py') {
-            fileDescription = 'Python файл';
+            fileDescription = t('app.1042');
             mimeType = 'text/python';
             accept = { [mimeType]: ['.py'] };
         } else { // .txt
-            fileDescription = 'Текстовий файл';
+            fileDescription = t('app.1043');
             mimeType = 'text/plain';
             accept = { [mimeType]: ['.txt'] };
         }
@@ -1795,23 +1794,23 @@ export default function App(): React.ReactNode {
             }],
             mimeType
           );
-          showNotification('Файл успішно збережено.', 'info');
+          showNotification(t('app.1044'), 'info');
         } catch (err) {
-          console.error('Не вдалося зберегти файл:', err);
-          showNotification('Не вдалося зберегти файл.', 'error');
+          console.error(t('app.1045'), err);
+          showNotification(t('app.1046'), 'error');
         }
     }, [codeStringForExport, generatedCodeLines, showComments, showNotification]);
 
     const handleOpenOrRunCodeOnline = useCallback((runImmediately: boolean) => {
         const codeString = codeStringForExport;
         if (!codeString) {
-            showNotification('Немає коду для запуску.', 'error');
+            showNotification(t('app.1047'), 'error');
             return;
         }
 
         const handleCopyAndGo = () => {
             navigator.clipboard.writeText(codeString);
-            showNotification('Код скопійовано в буфер обміну.', 'info');
+            showNotification(t('app.1048'), 'info');
             window.open('https://yepython.pp.ua/', '_blank', 'noopener,noreferrer');
             setConfirmationAction(null);
         };
@@ -1833,7 +1832,7 @@ export default function App(): React.ReactNode {
                 window.open(url, '_blank', 'noopener,noreferrer');
             } catch (e) {
                 console.error("Error creating online IDE link:", e);
-                showNotification('Не вдалося створити посилання для онлайн IDE.', 'error');
+                showNotification(t('app.1049'), 'error');
             }
         };
         
@@ -1843,28 +1842,28 @@ export default function App(): React.ReactNode {
         
         if (codeString.length > CODE_LENGTH_THRESHOLD) {
             setConfirmationAction({
-                title: 'Код занадто великий',
-                message: "Згенерований код занадто великий для прямого відкриття в онлайн IDE через обмеження довжини URL. Ви можете скопіювати код і вставити його вручну, або спробувати відкрити довге посилання, що може не спрацювати.",
+                title: t('app.1050'),
+                message: t('app.1051'),
                 onConfirm: () => {
                     openUrl(codeString);
                     setConfirmationAction(null);
                 },
                 variant: 'primary',
-                confirmText: 'Спробувати все одно',
-                cancelText: 'Скасувати',
+                confirmText: t('app.1052'),
+                cancelText: t('app.1121'),
                 alternativeAction: {
-                    text: 'Скопіювати код і перейти',
+                    text: t('app.1053'),
                     onClick: handleCopyAndGo,
-                    title: 'Копіює код в буфер обміну та відкриває ЄPython у новій вкладці для ручної вставки'
+                    title: t('app.1054')
                 }
             });
         } else {
              confirmAction(
                 () => openUrl(codeString),
-                'Перехід на зовнішній ресурс',
-                'Ви збираєтеся відкрити код у онлайн-редакторі ЄPython. Деякі елементи (напр. специфічні шрифти, кольори) можуть відображатися інакше, ніж у редакторі. Продовжити?',
-                'Так, перейти',
-                'Залишитись',
+                t('app.1055'),
+                t('app.1056'),
+                t('app.1057'),
+                t('app.1058'),
                 'primary'
             );
         }
@@ -1882,7 +1881,7 @@ export default function App(): React.ReactNode {
   const handleToggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(err => {
-            showNotification(`Не вдалося увійти в повноекранний режим: ${err.message}`, 'error');
+            showNotification(`${t('app.1059')} ${err.message}`, 'error');
         });
     } else {
         if (document.exitFullscreen) {
@@ -2105,7 +2104,7 @@ export default function App(): React.ReactNode {
     const handleSwitchToLocalFromError = useCallback(() => {
         setGeneratorType('local');
         setError(null); // Clear the Gemini error
-        showNotification('Перемкнено на локальний генератор. Код буде оновлено автоматично.', 'info');
+        showNotification(t('app.1060'), 'info');
     }, [showNotification]);
     
     const handleOpenSettingsToCode = useCallback(() => {
@@ -2159,9 +2158,9 @@ export default function App(): React.ReactNode {
         setApiKey(key);
         setIsApiKeyModalOpen(false);
         if (key) {
-            showNotification('Ключ API збережено для поточної сесії.', 'info');
+            showNotification(t('app.1061'), 'info');
         } else {
-            showNotification('Ключ API видалено.', 'info');
+            showNotification(t('app.1062'), 'info');
         }
     }, [showNotification]);
 
@@ -2203,10 +2202,10 @@ export default function App(): React.ReactNode {
                 const saveData = getSaveData(projectName);
                 const autosavePayload = { ...saveData, autosaveTimestamp: new Date().toISOString() };
                 localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(autosavePayload));
-                showNotification('Проєкт автоматично збережено.', 'info', 1500);
+                showNotification(t('app.1063'), 'info', 1500);
             } catch (e) {
                 console.error("Failed to autosave project to localStorage", e);
-                showNotification('Помилка автозбереження.', 'error');
+                showNotification(t('app.1064'), 'error');
             }
         }, AUTOSAVE_INTERVAL);
 
@@ -2225,7 +2224,7 @@ export default function App(): React.ReactNode {
     const handleDismissAutosave = () => {
         localStorage.removeItem(AUTOSAVE_KEY);
         setAutosavedProjectData(null);
-        showNotification("Автозбережену версію видалено.", 'info');
+        showNotification(t('app.1065'), 'info');
     };
 
   return (
@@ -2235,11 +2234,11 @@ export default function App(): React.ReactNode {
           <div className="flex flex-col items-center gap-6">
             <SadMonitorIcon size={96} className="text-[var(--text-tertiary)]" />
             <div>
-              <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-4">Розмір екрана замалий</h1>
+              <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-4">{t('app.1066')}</h1>
               <p className="text-[var(--text-secondary)]">
-                На жаль, для коректної роботи редактора "ВереTkа" потрібен більший екран.
+                {t('app.1067')}
                 <br />
-                Будь ласка, відкрийте цей застосунок на комп'ютері чи планшеті або оберніть екран.
+                {t('app.1068')}
               </p>
             </div>
           </div>
@@ -2541,7 +2540,7 @@ export default function App(): React.ReactNode {
                 onClose={() => setIsNewProjectModalOpen(false)}
                 onCreate={handleNewProject}
                 initialSettings={{
-                    projectName: 'Новий малюнок. ВереTkа',
+                    projectName: t('app.1069'),
                     width: canvasWidth,
                     height: canvasHeight,
                     bgColor: '#ffffff',

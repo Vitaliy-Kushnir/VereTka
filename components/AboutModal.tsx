@@ -1,4 +1,5 @@
-import React from 'react';
+import React, {useContext} from 'react';
+import { useLanguage } from './LanguageContext';
 import { XIcon } from './icons';
 
 interface AboutModalProps {
@@ -8,6 +9,7 @@ interface AboutModalProps {
 }
 
 const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, version }) => {
+    const { t } = useLanguage();
     if (!isOpen) return null;
 
     return (
@@ -22,36 +24,36 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, version }) => 
                 onClick={e => e.stopPropagation()}
             >
                 <header className="flex justify-between items-center p-4 border-b border-[var(--border-primary)]">
-                    <h2 className="text-xl font-bold text-[var(--text-primary)]">Про редактор "ВереTkа"</h2>
-                    <button onClick={onClose} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full" aria-label="Закрити">
+                    <h2 className="text-xl font-bold text-[var(--text-primary)]">{t('about.title')}</h2>
+                    <button onClick={onClose} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full" aria-label={t('action.close')}>
                         <XIcon />
                     </button>
                 </header>
 
                 <div className="p-6 space-y-4 text-sm text-[var(--text-secondary)]">
                     <p>
-                        <strong className="text-[var(--text-primary)]">ВереTkа</strong> — це простий векторний редактор, призначений для швидкого створення графічних примітивів та генерації відповідного Python коду для бібліотеки Tkinter.
+                        <span dangerouslySetInnerHTML={{__html: t('about.p1')}}></span>
                     </p>
                     <p>
-                        Він використовує локальний генератор коду для миттєвого та надійного результату, а також може використовувати Google Gemini API для експериментальних можливостей.
+                        {t('about.p2')}
                     </p>
                     
                     <hr className="border-[var(--border-secondary)]" />
                     
                     <div>
                         <p>
-                            <strong className="text-[var(--text-primary)]">Ідея та розробка:</strong> Віталій Кушнір
+                            <span dangerouslySetInnerHTML={{__html: t('about.author')}}></span>
                         </p>
                         <p>
-                           <strong className="text-[var(--text-primary)]">Підтримка:</strong> AI-асистент на базі Google Gemini.
+                           <span dangerouslySetInnerHTML={{__html: t('about.support')}}></span>
                         </p>
                          <p className="mt-2">
-                           Створено за допомогою <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="underline text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)]">AI Studio Google</a>, Visual Studio Code.
+                           <span dangerouslySetInnerHTML={{__html: t('about.tech')}}></span>
                         </p>
                     </div>
 
                      <p className="text-xs text-center text-[var(--text-tertiary)] pt-4">
-                        Версія {version}
+                        {t('about.version')} {version}
                     </p>
                 </div>
 
@@ -60,7 +62,7 @@ const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, version }) => 
                         onClick={onClose}
                         className="px-6 py-2 rounded-lg font-semibold bg-[var(--accent-primary)] text-[var(--accent-text)] hover:bg-[var(--accent-primary-hover)] transition-colors"
                     >
-                        Закрити
+                        {t('action.close')}
                     </button>
                 </footer>
             </div>

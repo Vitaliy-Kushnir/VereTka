@@ -1,4 +1,5 @@
-import React from 'react';
+import React, {useContext} from 'react';
+import { useLanguage } from './LanguageContext';
 import { XIcon } from './icons';
 
 interface ConfirmationModalProps {
@@ -23,8 +24,8 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   onConfirm,
   title,
   message,
-  confirmText = "Продовжити",
-  cancelText = "Скасувати",
+  confirmText = "Continue",
+  cancelText = "Cancel",
   variant = 'destructive',
   alternativeAction,
 }) => {
@@ -47,7 +48,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       >
         <header className="flex justify-between items-center p-4 border-b border-[var(--border-primary)]">
           <h2 className="text-xl font-bold text-[var(--text-primary)]">{title}</h2>
-          <button onClick={onClose} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full" aria-label="Закрити">
+          <button onClick={onClose} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full" aria-label="Close">
             <XIcon />
           </button>
         </header>

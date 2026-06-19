@@ -4,6 +4,7 @@ import { XIcon } from './icons';
 import { InputWrapper, Label, NumberInput, ColorInput } from './FormControls';
 import { type ProjectTemplate } from '../types';
 import { useLanguage } from './LanguageContext';
+import { translations } from '../lib/translations';
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -186,19 +187,16 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                 <h3 className="text-lg font-semibold text-[var(--text-secondary)]">{t('settings.appearance.interface')}</h3>
                                 <div className="flex items-center justify-between py-2 border-b border-[var(--border-secondary)] mb-2">
                                     <label className="text-sm font-medium text-[var(--text-secondary)]">{t('settings.appearance.language')}</label>
-                                    <div className="flex gap-2">
-                                        <button 
-                                            onClick={() => setLanguage('uk')}
-                                            className={`px-3 py-1 rounded text-sm font-medium transition ${language === 'uk' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'}`}
-                                        >
-                                            Українська
-                                        </button>
-                                        <button 
-                                            onClick={() => setLanguage('en')}
-                                            className={`px-3 py-1 rounded text-sm font-medium transition ${language === 'en' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'}`}
-                                        >
-                                            English
-                                        </button>
+                                    <div className="flex gap-2 flex-wrap justify-end">
+                                        {Object.keys(translations).map((langKey) => (
+                                            <button 
+                                                key={langKey}
+                                                onClick={() => setLanguage(langKey)}
+                                                className={`px-3 py-1 rounded text-sm font-medium transition ${language === langKey ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'}`}
+                                            >
+                                                {translations[langKey as keyof typeof translations]['_languageName'] || langKey.toUpperCase()}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
 

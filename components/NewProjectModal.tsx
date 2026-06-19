@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, {useContext} from 'react';
+import { useLanguage } from './LanguageContext';
+import { useState, useEffect } from 'react';
 import { XIcon } from './icons';
 import { InputWrapper, Label, NumberInput, ColorInput, Select } from './FormControls';
 import { type ProjectTemplate, type NewProjectSettings } from '../types';
@@ -11,6 +13,7 @@ interface NewProjectModalProps {
 }
 
 const NewProjectModal: React.FC<NewProjectModalProps> = ({ onClose, onCreate, initialSettings, templates }) => {
+    const { t } = useLanguage();
     const [selectedTemplateId, setSelectedTemplateId] = useState<string | 'blank'>(templates.length > 0 ? 'blank' : 'blank');
     
     const [projectName, setProjectName] = useState('');
@@ -73,7 +76,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ onClose, onCreate, in
                 onClick={e => e.stopPropagation()}
             >
                 <header className="flex justify-between items-center p-4 border-b border-[var(--border-primary)]">
-                    <h2 className="text-xl font-bold text-[var(--text-primary)]">Новий проєкт</h2>
+                    <h2 className="text-xl font-bold text-[var(--text-primary)]">{t('project.new')}</h2>
                     <button onClick={onClose} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full">
                         <XIcon />
                     </button>
@@ -83,17 +86,17 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ onClose, onCreate, in
                     {templates.length > 0 && (
                         <>
                              <InputWrapper>
-                                <Label htmlFor="template-selection">Створити з:</Label>
+                                <Label htmlFor="template-selection">{t('project.createFrom')}</Label>
                                 <Select
                                     id="template-selection"
                                     value={selectedTemplateId}
                                     onChange={setSelectedTemplateId}
                                 >
-                                    <option value="blank">Чисте полотно</option>
-                                    <optgroup label="Ваші шаблони">
+                                    <option value="blank">{t('project.blankCanvas')}</option>
+                                    <optgroup label={t('project.yourTemplates')}>
                                         {templates.map(template => (
                                             <option key={template.id} value={template.id}>
-                                                {template.name} ({template.settings.width}x{template.settings.height}, {template.shapes.length} об.)
+                                                {template.name} ({template.settings.width}x{template.settings.height}, {template.shapes.length} {t('project.shapes')})
                                             </option>
                                         ))}
                                     </optgroup>
@@ -103,7 +106,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ onClose, onCreate, in
                         </>
                     )}
                     <InputWrapper>
-                        <Label htmlFor="projectName">Назва проєкту:</Label>
+                        <Label htmlFor="projectName">{t('project.name')}</Label>
                         <input 
                             id="projectName"
                             type="text" 
@@ -113,17 +116,17 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ onClose, onCreate, in
                             autoFocus
                         />
                     </InputWrapper>
-                    <h3 className="text-lg font-semibold text-[var(--text-tertiary)] pt-2">Налаштування полотна</h3>
+                    <h3 className="text-lg font-semibold text-[var(--text-tertiary)] pt-2">{t('project.canvasSettings')}</h3>
                     <InputWrapper>
-                        <Label htmlFor="canvasWidth">Ширина:</Label>
+                        <Label htmlFor="canvasWidth">{t('project.width')}</Label>
                         <NumberInput id="canvasWidth" value={width} onChange={setWidth} min={100} step={10} />
                     </InputWrapper>
                     <InputWrapper>
-                        <Label htmlFor="canvasHeight">Висота:</Label>
+                        <Label htmlFor="canvasHeight">{t('project.height')}</Label>
                         <NumberInput id="canvasHeight" value={height} onChange={setHeight} min={100} step={10} />
                     </InputWrapper>
                     <InputWrapper>
-                        <Label htmlFor="canvasVarName">Назва полотна:</Label>
+                        <Label htmlFor="canvasVarName">{t('project.canvasName')}</Label>
                         <input 
                             id="canvasVarName"
                             type="text" 
@@ -133,10 +136,10 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ onClose, onCreate, in
                         />
                     </InputWrapper>
                     <div className="pl-28 -mt-3">
-                        <p className="text-xs text-[var(--text-tertiary)]">(Лише латинські літери, цифри та "_". Не може починатись з цифри)</p>
+                        <p className="text-xs text-[var(--text-tertiary)]">{t('project.idWarning')}</p>
                     </div>
                      <InputWrapper>
-                        <Label htmlFor="canvasBgColor">Колір тла:</Label>
+                        <Label htmlFor="canvasBgColor">{t('project.bgColor')}</Label>
                         <ColorInput 
                             id="canvasBgColor" 
                             value={bgColor} 
@@ -152,13 +155,13 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ onClose, onCreate, in
                         onClick={onClose}
                         className="px-6 py-2 rounded-lg font-semibold bg-[var(--bg-tertiary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
                     >
-                        Скасувати
+                        {t('action.cancel')}
                     </button>
                      <button
                         onClick={handleCreate}
                         className="px-6 py-2 rounded-lg font-semibold bg-[var(--accent-primary)] text-[var(--accent-text)] hover:bg-[var(--accent-primary-hover)] transition-colors"
                     >
-                        Створити
+                        {t('action.create')}
                     </button>
                 </footer>
             </div>

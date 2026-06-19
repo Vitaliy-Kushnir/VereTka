@@ -3,6 +3,8 @@ import { DASH_STYLES } from '../lib/constants';
 import { CheckIcon, XIcon, RefreshIcon, ChevronDownIcon } from './icons';
 import ConfirmationModal from './ConfirmationModal';
 
+import { useLanguage } from './LanguageContext';
+
 export const InputWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <div className="flex items-center gap-2">{children}</div>
 );
@@ -1011,6 +1013,7 @@ const SortButton: React.FC<{
 );
 
 const AllColorsModal: React.FC<AllColorsModalProps> = ({ isOpen, onClose, onSelect, allColors }) => {
+    const { t } = useLanguage();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedColor, setSelectedColor] = useState<string | null>(null);
     const [sortType, setSortType] = useState<'group' | 'alpha' | 'hex'>('group');
@@ -1061,11 +1064,11 @@ const AllColorsModal: React.FC<AllColorsModalProps> = ({ isOpen, onClose, onSele
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
             <div className="bg-[var(--bg-primary)] rounded-lg shadow-2xl w-full max-w-2xl h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 <header className="flex justify-between items-center p-4 border-b border-[var(--border-primary)] flex-shrink-0">
-                    <h2 className="text-xl font-bold text-[var(--text-primary)]">Усі кольори Tkinter</h2>
+                    <h2 className="text-xl font-bold text-[var(--text-primary)]">All Tkinter Colors</h2>
                     <div className="relative w-64">
                         <input
                             type="text"
-                            placeholder="Пошук за назвою або HEX..."
+                            placeholder="Search by name or HEX..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                             className="w-full px-3 py-1.5 bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded-md border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none pr-8"
@@ -1074,37 +1077,37 @@ const AllColorsModal: React.FC<AllColorsModalProps> = ({ isOpen, onClose, onSele
                             <button
                                 onClick={() => setSearchTerm('')}
                                 className="absolute inset-y-0 right-0 px-2 flex items-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-                                title="Очистити пошук"
-                                aria-label="Очистити пошук"
+                                title="Clear search"
+                                aria-label="Clear search"
                             >
                                 <XIcon size={16} />
                             </button>
                         )}
                     </div>
-                    <button onClick={onClose} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full" aria-label="Закрити">
+                    <button onClick={onClose} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full" aria-label="Close">
                         <XIcon />
                     </button>
                 </header>
                 <div className="flex justify-start items-center p-2 px-4 border-b border-[var(--border-primary)] flex-shrink-0 gap-2">
-                    <span className="text-sm font-semibold text-[var(--text-tertiary)]">Сортувати:</span>
+                    <span className="text-sm font-semibold text-[var(--text-tertiary)]">Sort by:</span>
                     <div className="flex items-center gap-1">
                         <SortButton
-                            label="За групою"
+                            label="By group"
                             isActive={sortType === 'group'}
                             onClick={() => setSortType('group')}
-                            title="Сортувати за логічними групами кольорів"
+                            title="Sort by logical color groups"
                         />
                         <SortButton
-                            label="За алфавітом (A-Z)"
+                            label="Alphabetical (A-Z)"
                             isActive={sortType === 'alpha'}
                             onClick={() => setSortType('alpha')}
-                            title="Сортувати за назвою в алфавітному порядку"
+                            title="Sort by name alphabetically"
                         />
                         <SortButton
-                            label="За кодом (#)"
+                            label="By code (#)"
                             isActive={sortType === 'hex'}
                             onClick={() => setSortType('hex')}
-                            title="Сортувати за шістнадцятковим кодом"
+                            title="Sort by hexadecimal code"
                         />
                     </div>
                 </div>
@@ -1128,7 +1131,7 @@ const AllColorsModal: React.FC<AllColorsModalProps> = ({ isOpen, onClose, onSele
                 </div>
                  <footer className="p-4 bg-[var(--bg-app)]/50 rounded-b-lg flex justify-between items-center flex-shrink-0">
                     <div className="flex items-center gap-3">
-                        <span className="text-sm text-[var(--text-tertiary)]">Вибрано:</span>
+                        <span className="text-sm text-[var(--text-tertiary)]">Selected:</span>
                         {selectedColor ? (
                             <div className="flex items-center gap-2">
                                 <div className="w-5 h-5 rounded border border-white/20" style={{backgroundColor: selectedColor}}></div>
@@ -1138,15 +1141,15 @@ const AllColorsModal: React.FC<AllColorsModalProps> = ({ isOpen, onClose, onSele
                                 </span>
                             </div>
                         ) : (
-                            <span className="text-sm text-[var(--text-tertiary)] italic">Нічого</span>
+                            <span className="text-sm text-[var(--text-tertiary)] italic">None</span>
                         )}
                     </div>
                     <div className="flex items-center gap-3">
                         <button onClick={onClose} className="px-6 py-2 rounded-lg font-semibold bg-[var(--bg-tertiary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors">
-                            Скасувати
+                            {t('action.cancel')}
                         </button>
                         <button onClick={handleConfirm} disabled={!selectedColor} className="px-6 py-2 rounded-lg font-semibold bg-green-600 text-[var(--accent-text)] hover:bg-green-500 transition-colors disabled:bg-[var(--bg-disabled)] disabled:text-[var(--text-disabled)] disabled:cursor-not-allowed">
-                            Застосувати
+                            {t('action.apply')}
                         </button>
                     </div>
                 </footer>
@@ -1166,6 +1169,7 @@ export const ColorInput: React.FC<{
     title?: string;
     showNotification?: (message: string, type?: 'info' | 'error', duration?: number) => void;
 }> = ({ id, value, onChange, onPreview, onCancel, disabled, title, showNotification }) => {
+    const { t } = useLanguage();
     const [inputValue, setInputValue] = useState(value);
     const [isEditing, setIsEditing] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -1228,9 +1232,9 @@ export const ColorInput: React.FC<{
 
     const inputTitle = useMemo(() => {
         if (inputValue.trim().startsWith('#')) {
-            return "HEX-код у форматі #RRGGBB або #RGB. Дозволені символи: 0-9, a-f.";
+            return "HEX code in #RRGGBB or #RGB format. Allowed characters: 0-9, a-f.";
         }
-        return "Введіть назву кольору (напр., 'Red', 'LightBlue') або HEX-код.";
+        return "Enter color name (e.g. 'Red', 'LightBlue') or HEX code.";
     }, [inputValue]);
 
     const isValidWebColorName = (name: string): boolean => {
@@ -1417,7 +1421,7 @@ export const ColorInput: React.FC<{
                         type="button"
                         onClick={handleConversion}
                         className="absolute inset-y-0 right-0 px-2 flex items-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] z-10"
-                        title={`Перетворити на ${convertibleTo === 'hex' ? 'HEX-код' : 'назву'}`}
+                        title={`Convert to ${convertibleTo === 'hex' ? 'HEX code' : 'name'}`}
                     >
                         <RefreshIcon size={16} />
                     </button>
@@ -1430,7 +1434,7 @@ export const ColorInput: React.FC<{
                         type="button"
                         onClick={handleCancelClick}
                         className="p-2 rounded-md font-semibold transition-colors duration-200 text-red-500 hover:bg-[var(--destructive-bg)] hover:text-[var(--accent-text)]"
-                        title="Скасувати (Esc)"
+                        title="Cancel (Esc)"
                     >
                         <XIcon size={16} />
                     </button>
@@ -1438,7 +1442,7 @@ export const ColorInput: React.FC<{
                         type="button"
                         onClick={handleCommit}
                         className="p-2 rounded-md font-semibold transition-colors duration-200 bg-green-600 text-[var(--accent-text)] hover:bg-green-500"
-                        title="Підтвердити (Enter)"
+                        title="Confirm (Enter)"
                     >
                         <CheckIcon size={16} />
                     </button>
@@ -1466,7 +1470,7 @@ export const ColorInput: React.FC<{
                                     </button>
                                 ))
                             ) : (
-                                <div className="px-3 py-2 text-sm text-[var(--text-tertiary)]">Не знайдено</div>
+                                <div className="px-3 py-2 text-sm text-[var(--text-tertiary)]">Not found</div>
                             )}
                         </div>
                          <div className="p-1 border-t border-[var(--border-secondary)]">
@@ -1477,7 +1481,7 @@ export const ColorInput: React.FC<{
                                 }}
                                 className="w-full text-center px-3 py-2 text-sm text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 rounded-md"
                             >
-                                Усі кольори Tk...
+                                {t('color.allColorsShort')}
                             </button>
                         </div>
                     </div>
@@ -1503,10 +1507,10 @@ export const ColorInput: React.FC<{
                     isOpen={true}
                     onClose={handleConversionCancel}
                     onConfirm={handleConversionConfirm}
-                    title="Нестандартний колір"
-                    message={`Колір "${conversionChoice.name}" не є стандартним веб-кольором. У редакторі він може відображатися чорним. Зберегти назву чи перетворити на HEX (${conversionChoice.hex}) для коректного відображення?`}
-                    confirmText="Перетворити на HEX"
-                    cancelText="Зберегти назву"
+                    title="Non-standard color"
+                    message={`Color "${conversionChoice.name}" is not a standard web color. It might be black in the editor. Save keeping the name or convert to HEX (${conversionChoice.hex})?`}
+                    confirmText="Convert to HEX"
+                    cancelText="Keep name"
                     variant="primary"
                 />
             )}
@@ -1554,12 +1558,13 @@ export const DashSelect: React.FC<{
     disabled?: boolean;
     isCustom: boolean;
 }> = ({ id, value, onChange, disabled, isCustom }) => {
+    const { t } = useLanguage();
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     useClickOutside(dropdownRef, () => setIsOpen(false));
     
     const selectedStyle = isCustom 
-        ? { name: "Користувацький", pattern: value ?? [], description: "Власний стиль штрихування." } 
+        ? { nameKey: "Custom", pattern: value ?? [], descKey: "Custom dash style." } 
         : (DASH_STYLES.find(style => JSON.stringify(style.pattern) === JSON.stringify(value ?? [])) ?? DASH_STYLES[0]);
 
     const handleSelect = (pattern: number[]) => {
@@ -1575,18 +1580,18 @@ export const DashSelect: React.FC<{
                 onClick={() => setIsOpen(p => !p)}
                 disabled={disabled}
                 className="bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2 py-1 w-full border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
-                title="Вибрати готовий стиль штрихування або налаштувати власний"
+                title="Select preset dash style or configure custom"
             >
-                <span className="truncate">{selectedStyle.name}</span>
+                <span className="truncate">{isCustom ? "Custom" : t(selectedStyle.nameKey)}</span>
                 <ChevronDownIcon size={16} className={`transform transition-transform text-[var(--text-tertiary)] ${isOpen ? 'rotate-180' : 'rotate-0'}`} />
             </button>
             {isOpen && (
                 <div className="absolute z-10 top-full right-0 mt-0 bg-[var(--bg-tertiary)] rounded-md shadow-lg max-h-60 overflow-y-auto border border-[var(--border-secondary)] w-[calc(100%+7.5rem)]">
                     {DASH_STYLES.map(style => (
                         <button
-                            key={style.name}
+                            key={style.nameKey}
                             onClick={() => handleSelect(style.pattern)}
-                            title={style.description}
+                            title={t(style.descKey)}
                             className="w-full flex items-center gap-3 px-3 py-2 text-left text-sm text-[var(--text-primary)] hover:bg-[var(--accent-primary)] hover:text-[var(--accent-text)]"
                         >
                            <div className="w-20 flex-shrink-0 flex items-center justify-center h-4 mr-2">
@@ -1600,7 +1605,7 @@ export const DashSelect: React.FC<{
                                     />
                                 </svg>
                             </div>
-                            <span className="flex-grow">{style.name}</span>
+                            <span className="flex-grow">{t(style.nameKey)}</span>
                         </button>
                     ))}
                 </div>

@@ -127,7 +127,7 @@ const ShapeList: React.FC<ShapeListProps> = ({ shapes, selectedShapeId, onSelect
 
     const handleStartEditing = (shape: Shape) => {
         setEditingId(shape.id);
-        setEditingValue(shape.name || getDefaultNameForShape(shape));
+        setEditingValue(shape.name || getDefaultNameForShape(shape, t));
     };
 
     const handleFinishEditing = () => {
@@ -249,7 +249,7 @@ const ShapeList: React.FC<ShapeListProps> = ({ shapes, selectedShapeId, onSelect
                             const originalIndex = shapes.length - 1 - index;
                             const canMoveUp = originalIndex < shapes.length - 1;
                             const canMoveDown = originalIndex > 0;
-                            const defaultName = getDefaultNameForShape(shape);
+                            const defaultName = getDefaultNameForShape(shape, t);
                             const isDragOverTop = dragOverId === shape.id && dropPosition === 'top';
                             const isDragOverBottom = dragOverId === shape.id && dropPosition === 'bottom';
                             

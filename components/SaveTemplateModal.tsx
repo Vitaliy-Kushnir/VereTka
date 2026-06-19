@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLanguage } from './LanguageContext';
 import { XIcon } from './icons';
 import { InputWrapper, Label } from './FormControls';
 
@@ -8,7 +9,8 @@ interface SaveTemplateModalProps {
 }
 
 const SaveTemplateModal: React.FC<SaveTemplateModalProps> = ({ onClose, onSave }) => {
-    const [name, setName] = useState('Новий шаблон');
+    const { t } = useLanguage();
+    const [name, setName] = useState(t('template.new'));
 
     const handleSave = () => {
         if (name.trim()) {
@@ -28,15 +30,15 @@ const SaveTemplateModal: React.FC<SaveTemplateModalProps> = ({ onClose, onSave }
                 onClick={e => e.stopPropagation()}
             >
                 <header className="flex justify-between items-center p-4 border-b border-[var(--border-primary)]">
-                    <h2 className="text-xl font-bold text-[var(--text-primary)]">Зберегти як шаблон</h2>
-                    <button onClick={onClose} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full" aria-label="Закрити">
+                    <h2 className="text-xl font-bold text-[var(--text-primary)]">{t('template.saveAsTemplate')}</h2>
+                    <button onClick={onClose} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full" aria-label={t('action.close')}>
                         <XIcon />
                     </button>
                 </header>
 
                 <div className="p-6 space-y-4">
                     <InputWrapper>
-                        <Label htmlFor="templateName">Назва шаблону:</Label>
+                        <Label htmlFor="templateName">{t('template.name')}</Label>
                         <input 
                             id="templateName"
                             type="text" 
@@ -54,14 +56,14 @@ const SaveTemplateModal: React.FC<SaveTemplateModalProps> = ({ onClose, onSave }
                         onClick={onClose}
                         className="px-6 py-2 rounded-lg font-semibold bg-[var(--bg-tertiary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
                     >
-                        Скасувати
+                        {t('action.cancel')}
                     </button>
                      <button
                         onClick={handleSave}
                         disabled={!name.trim()}
                         className="px-6 py-2 rounded-lg font-semibold bg-[var(--accent-primary)] text-[var(--accent-text)] hover:bg-[var(--accent-primary-hover)] transition-colors disabled:bg-[var(--bg-disabled)] disabled:text-[var(--text-disabled)] disabled:cursor-not-allowed"
                     >
-                        Зберегти
+                        {t('action.save')}
                     </button>
                 </footer>
             </div>

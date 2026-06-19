@@ -1,4 +1,6 @@
-import React, { useMemo } from 'react';
+import React, {useContext} from 'react';
+import { useLanguage } from './LanguageContext';
+import { useMemo } from 'react';
 import { XIcon, MessageSquareIcon, ExternalLinkIcon } from './icons';
 
 interface FeedbackModalProps {
@@ -45,6 +47,7 @@ const getBrowserAndOsInfo = (): { browser: string; os: string } => {
 
 
 const FeedbackModal: React.FC<FeedbackModalProps> = ({ onClose, appVersion }) => {
+    const { t } = useLanguage();
   const { browser, os } = useMemo(() => getBrowserAndOsInfo(), []);
 
   // Base URL for the Google Form
@@ -78,8 +81,8 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ onClose, appVersion }) =>
         onClick={e => e.stopPropagation()}
       >
         <header className="flex justify-between items-center p-4 border-b border-[var(--border-primary)] flex-shrink-0">
-          <h2 className="text-xl font-bold text-[var(--text-primary)]">Залишити відгук</h2>
-          <button onClick={onClose} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full" aria-label="Закрити">
+          <h2 className="text-xl font-bold text-[var(--text-primary)]">{t('feedback.title')}</h2>
+          <button onClick={onClose} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full" aria-label={t('action.close')}>
             <XIcon />
           </button>
         </header>
@@ -89,13 +92,13 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ onClose, appVersion }) =>
               <MessageSquareIcon size={48} className="text-[var(--accent-primary)]"/>
             </div>
             <p className="text-md text-[var(--text-secondary)]">
-                Ваш відгук надзвичайно важливий для покращення редактора. Повідомлення про помилки, нові ідеї та просто враження допомагають робити "ВереTkа" кращою.
+                {t('feedback.p1')}
             </p>
             <p className="text-sm text-[var(--text-tertiary)]">
-                Найзручніший спосіб поділитися думками — заповнити спеціальну Google Форму. Це займе лише кілька хвилин.
+                {t('feedback.p2')}
             </p>
              <div className="text-xs text-[var(--text-tertiary)] bg-[var(--bg-secondary)] p-2 rounded-md">
-                <strong>Примітка:</strong> Дані про версію редактора, вашу ОС та браузер будуть додані до форми автоматично.
+                <span dangerouslySetInnerHTML={{__html: t('feedback.note')}}></span>
             </div>
             <div>
               <a 
@@ -105,7 +108,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ onClose, appVersion }) =>
                 onClick={onClose}
                 className="inline-flex items-center gap-3 px-6 py-3 rounded-lg font-semibold bg-[var(--accent-primary)] text-[var(--accent-text)] hover:bg-[var(--accent-primary-hover)] transition-colors text-lg"
               >
-                  <span>Перейти до форми відгуків</span>
+                  <span>{t('feedback.goto')}</span>
                   <ExternalLinkIcon size={20} />
               </a>
             </div>
@@ -116,7 +119,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ onClose, appVersion }) =>
             onClick={onClose}
             className="px-6 py-2 rounded-lg font-semibold bg-[var(--bg-tertiary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
           >
-            Закрити
+            {t('action.close')}
           </button>
         </footer>
       </div>

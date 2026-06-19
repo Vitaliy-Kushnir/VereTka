@@ -1,5 +1,5 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { NewFileIcon, OpenFileIcon, HistoryIcon, XIcon, ArrowRightIcon, RefreshIcon } from './icons';
 import { useLanguage } from './LanguageContext';
 
@@ -29,7 +29,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     onClearAllProjects, hasActiveProject, onReturnToProject,
     autosavedProjectData, onRestoreAutosave, onDismissAutosave 
 }) => {
-    const { t, language } = useLanguage();
+    const { t, language, setLanguage } = useLanguage();
+    const [isLanguageOpen, setIsLanguageOpen] = useState(false);
     
     const formatRelativeDate = (date: Date) => {
         const now = new Date();
@@ -56,7 +57,79 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     }, [autosavedProjectData]);
 
     return (
-        <div className="w-full h-full bg-[var(--bg-app)] rounded-lg flex flex-col p-8 sm:p-12 lg:p-16 overflow-y-auto">
+        <div className="w-full h-full bg-[var(--bg-app)] rounded-lg flex flex-col p-8 sm:p-12 lg:p-16 overflow-y-auto relative" onClick={() => setIsLanguageOpen(false)}>
+            <div className="absolute top-4 right-4 sm:top-8 sm:right-8 z-10 flex items-center">
+                <div className="relative" onClick={(e) => e.stopPropagation()}>
+                    <button
+                        onClick={() => setIsLanguageOpen(!isLanguageOpen)}
+                        className="bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-[var(--text-primary)] rounded-md pl-3 pr-8 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center gap-2 cursor-pointer hover:bg-[var(--bg-hover)] transition-colors shadow-sm"
+                        title={t('menu.edit.language') || 'Language'}
+                    >
+                        {language === 'uk' ? (
+                            <svg viewBox="0 0 24 16" width="24" height="16" className="rounded-sm flex-shrink-0" preserveAspectRatio="none">
+                                <rect width="24" height="8" fill="#0057B7"/>
+                                <rect y="8" width="24" height="8" fill="#FFDD00"/>
+                            </svg>
+                        ) : language === 'it' ? (
+                            <svg viewBox="0 0 3 2" width="24" height="16" className="rounded-sm flex-shrink-0" preserveAspectRatio="none">
+                                <rect width="1" height="2" fill="#009246"/>
+                                <rect x="1" width="1" height="2" fill="#F1F2F1"/>
+                                <rect x="2" width="1" height="2" fill="#CE2B37"/>
+                            </svg>
+                        ) : (
+                            <svg viewBox="0 0 60 30" width="24" height="16" className="rounded-sm flex-shrink-0 bg-[#012169]" preserveAspectRatio="none">
+                                <path d="M0,0 L60,30 M60,0 L0,30" stroke="#FFF" strokeWidth="6"/>
+                                <path d="M0,0 L60,30 M60,0 L0,30" stroke="#C8102E" strokeWidth="4"/>
+                                <path d="M30,0 L30,30 M0,15 L60,15" stroke="#FFF" strokeWidth="10"/>
+                                <path d="M30,0 L30,30 M0,15 L60,15" stroke="#C8102E" strokeWidth="6"/>
+                            </svg>
+                        )}
+                        {language === 'uk' ? 'Українська' : language === 'it' ? 'Italiano' : 'English'}
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[var(--text-secondary)]">
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </button>
+                    {isLanguageOpen && (
+                        <div className="absolute right-0 mt-1 w-40 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-md shadow-lg py-1 z-50">
+                            <button
+                                onClick={() => { setLanguage('uk'); setIsLanguageOpen(false); }}
+                                className="w-full text-left px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] flex items-center gap-2"
+                            >
+                                <svg viewBox="0 0 24 16" width="24" height="16" className="rounded-sm flex-shrink-0" preserveAspectRatio="none">
+                                    <rect width="24" height="8" fill="#0057B7"/>
+                                    <rect y="8" width="24" height="8" fill="#FFDD00"/>
+                                </svg>
+                                Українська
+                            </button>
+                            <button
+                                onClick={() => { setLanguage('en'); setIsLanguageOpen(false); }}
+                                className="w-full text-left px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] flex items-center gap-2"
+                            >
+                                <svg viewBox="0 0 60 30" width="24" height="16" className="rounded-sm flex-shrink-0 bg-[#012169]" preserveAspectRatio="none">
+                                    <path d="M0,0 L60,30 M60,0 L0,30" stroke="#FFF" strokeWidth="6"/>
+                                    <path d="M0,0 L60,30 M60,0 L0,30" stroke="#C8102E" strokeWidth="4"/>
+                                    <path d="M30,0 L30,30 M0,15 L60,15" stroke="#FFF" strokeWidth="10"/>
+                                    <path d="M30,0 L30,30 M0,15 L60,15" stroke="#C8102E" strokeWidth="6"/>
+                                </svg>
+                                English
+                            </button>
+                            <button
+                                onClick={() => { setLanguage('it'); setIsLanguageOpen(false); }}
+                                className="w-full text-left px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] flex items-center gap-2"
+                            >
+                                <svg viewBox="0 0 3 2" width="24" height="16" className="rounded-sm flex-shrink-0" preserveAspectRatio="none">
+                                    <rect width="1" height="2" fill="#009246"/>
+                                    <rect x="1" width="1" height="2" fill="#F1F2F1"/>
+                                    <rect x="2" width="1" height="2" fill="#CE2B37"/>
+                                </svg>
+                                Italiano
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
             <div className="max-w-7xl mx-auto w-full">
                  {/* Autosave Restore Banner */}
                 {parsedAutosave && (
@@ -209,7 +282,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                                         <button onClick={() => onOpenRecent(project)} className="w-full h-full flex flex-col">
                                             <div className="w-full h-32 bg-[var(--bg-secondary)] flex items-center justify-center rounded-t-lg overflow-hidden">
                                                 {project.thumbnail ? (
-                                                    <img src={project.thumbnail} alt={`Ескіз ${project.name}`} className="w-full h-full object-contain" />
+                                                    <img src={project.thumbnail} alt={`${t('welcome.thumbnail')} ${project.name}`} className="w-full h-full object-contain" />
                                                 ) : (
                                                     <span className="text-xs text-[var(--text-tertiary)]">{t('welcome.recent.noThumbnail')}</span>
                                                 )}

@@ -27,16 +27,16 @@ export const TOOL_TYPE_TO_NAME: Record<Tool, string> = {
     'bitmap': 'Bitmap',
 };
 
-export const DASH_STYLES: { name: string, pattern: number[], description: string }[] = [
-    { name: "Суцільна лінія", pattern: [], description: "Суцільна лінія без штрихів." },
-    { name: "Простий пунктир", pattern: [5, 3], description: "Штрих 5px, пропуск 3px." },
-    { name: "Довгі штрихи", pattern: [10, 5], description: "Штрих 10px, пропуск 5px." },
-    { name: "Дрібні точки", pattern: [2, 2], description: "Штрих 2px, пропуск 2px (виглядає як точки)." },
-    { name: "Розріджені точки", pattern: [2, 4], description: "Штрих 2px, пропуск 4px." },
-    { name: "Штрих-пунктир", pattern: [10, 3, 2, 3], description: "Штрих 10px, пропуск 3px, штрих 2px, пропуск 3px." },
-    { name: "Штрих і 2 точки", pattern: [15, 3, 2, 3, 2, 3], description: "Штрих 15px, пропуск 3px, штрих 2px, пропуск 3px, штрих 2px, пропуск 3px." },
-    { name: "Подвійна точка", pattern: [2, 3, 2, 6], description: "Штрих 2px, пропуск 3px, штрих 2px, пропуск 6px." },
-    { name: "Довгий+короткий штрих", pattern: [20, 5, 5, 5], description: "Штрих 20px, пропуск 5px, штрих 5px, пропуск 5px." },
+export const DASH_STYLES: { nameKey: string, pattern: number[], descKey: string }[] = [
+    { nameKey: "dash.solid", pattern: [], descKey: "dash.solid.desc" },
+    { nameKey: "dash.simple", pattern: [5, 3], descKey: "dash.simple.desc" },
+    { nameKey: "dash.long", pattern: [10, 5], descKey: "dash.long.desc" },
+    { nameKey: "dash.dots", pattern: [2, 2], descKey: "dash.dots.desc" },
+    { nameKey: "dash.sparseDots", pattern: [2, 4], descKey: "dash.sparseDots.desc" },
+    { nameKey: "dash.dashDot", pattern: [10, 3, 2, 3], descKey: "dash.dashDot.desc" },
+    { nameKey: "dash.dashTwoDots", pattern: [15, 3, 2, 3, 2, 3], descKey: "dash.dashTwoDots.desc" },
+    { nameKey: "dash.doubleDot", pattern: [2, 3, 2, 6], descKey: "dash.doubleDot.desc" },
+    { nameKey: "dash.longShort", pattern: [20, 5, 5, 5], descKey: "dash.longShort.desc" },
 ];
 
 
@@ -85,10 +85,15 @@ export const getTkinterType = (shape: Shape): string => {
 };
 
 
-export const getDefaultNameForShape = (s: Shape): string => {
+export const getDefaultNameForShape = (s: Shape, t: (key: string) => string): string => {
     // Priority 1: An arc shape's name is ALWAYS determined by its style, regardless of rotation.
     if (s.type === 'arc') {
-        return TOOL_TYPE_TO_NAME[s.style];
+        const style = s.style || 'pieslice';
+        return t(`tool.${style}`);
+    }
+    
+    if (s.name === 'Image [import]' || s.name === 'Зображення [імпорт]') {
+        return t('tool.imageImport');
     }
     
     const tkinterType = getTkinterType(s);
@@ -99,31 +104,32 @@ export const getDefaultNameForShape = (s: Shape): string => {
         // This handles rotated rectangles, ellipses, converted primitives, etc.
         // The arc case is already handled above, so this is now safe.
         if (s.type !== 'polygon' && s.type !== 'star') {
-            return 'Багатокутник';
+            return t('tool.polygon');
         }
     }
 
     // A polyline that becomes an axis-aligned rectangle
     if (tkinterType === 'rectangle' && s.type === 'polyline') {
-        return TOOL_TYPE_TO_NAME['rectangle'];
+        return t('tool.rectangle');
     }
 
     // Specific names based on other properties
     if (s.type === 'rectangle' && s.isAspectRatioLocked) {
-        return TOOL_TYPE_TO_NAME['square'];
+        return t('tool.square');
     }
      if (s.type === 'ellipse' && s.isAspectRatioLocked) {
-        return TOOL_TYPE_TO_NAME['circle'];
+        return t('tool.circle');
     }
     if (s.type === 'polyline') {
-        return s.isClosed ? 'Багатокутник' : TOOL_TYPE_TO_NAME['polyline'];
+        return s.isClosed ? t('tool.polygon') : t('tool.polyline');
     }
     if (s.type === 'bezier') {
-        return s.isClosed ? 'Багатокутник' : TOOL_TYPE_TO_NAME['bezier'];
+        return s.isClosed ? t('tool.polygon') : t('tool.bezier');
     }
 
     // Fallback to the default tool name
-    return TOOL_TYPE_TO_NAME[s.type];
+    let typeName = s.type === 'right-triangle' ? 'rightTriangle' : s.type;
+    return t(`tool.${typeName}`);
 };
 
 export const ROTATE_CURSOR_STYLE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='filter: drop-shadow(0px 1px 1px rgba(0,0,0,0.9))'%3E%3Cpath d='M23 4v6h-6'/%3E%3Cpath d='M20.49 15a9 9 0 1 1-2.12-9.36L23 10'/%3E%3C/svg%3E") 10 10, auto`;
@@ -148,8 +154,16 @@ export const getVisualFontFamily = (font: string): string => {
     return `${font}, sans-serif`;
 };
 
-const ALL_DEFAULT_NAMES = new Set(Object.values(TOOL_TYPE_TO_NAME));
-ALL_DEFAULT_NAMES.add('Багатокутник'); // From getDefaultNameForShape
+const ALL_DEFAULT_NAMES = new Set([
+    'Вибрати', 'Редагувати вузли', 'Прямокутник', 'Квадрат', 'Коло', 'Еліпс',
+    'Лінія', 'Олівець', 'Трикутник', 'Прямокутний трикутник', 'Багатокутник',
+    'Зірка', 'Ламана', 'Ромб', 'Трапеція', 'Паралелограм', "Крива Без'є",
+    'Дуга', 'Сектор', 'Сегмент', 'Текст', 'Зображення', 'Bitmap', 'Зображення [імпорт]',
+    'Select', 'Edit Points', 'Rectangle', 'Square', 'Circle', 'Ellipse',
+    'Line', 'Polyline', 'Bezier Curve', 'Arc', 'Pieslice', 'Chord', 'Polygon',
+    'Star', 'Triangle', 'Right Triangle', 'Rhombus', 'Trapezoid', 'Parallelogram',
+    'Text', 'Pencil', 'Image', 'Image [import]'
+]);
 
 export const isDefaultName = (name: string): boolean => {
     return ALL_DEFAULT_NAMES.has(name);

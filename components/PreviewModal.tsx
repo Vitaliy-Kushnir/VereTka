@@ -1,4 +1,6 @@
-import React, { useMemo } from 'react';
+import React, {useContext} from 'react';
+import { useLanguage } from './LanguageContext';
+import { useMemo } from 'react';
 import { Shape, LineShape, BezierCurveShape, PolylineShape, JoinStyle, PolygonShape, IsoscelesTriangleShape, RhombusShape, ParallelogramShape, TrapezoidShape, EllipseShape, ArcShape, PathShape, TextShape, ImageShape, BitmapShape, RightTriangleShape } from '../types';
 import { getIsoscelesTrianglePoints, getPolylinePointsAsPath, getPolygonPointsAsArray, getRhombusPoints, getTrapezoidPoints, getParallelogramPoints, getSmoothedPathData, getFinalPoints, getArcPathData, getShapeCenter, getTextBoundingBox, processTextLines, getRightTrianglePoints } from '../lib/geometry';
 import { XIcon } from './icons';
@@ -18,6 +20,7 @@ interface PreviewModalProps {
 }
 
 const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width, height, backgroundColor, onClose }) => {
+    const { t } = useLanguage();
     
     const getTransform = (shape: Shape) => {
         if ('rotation' in shape && shape.rotation && shape.rotation !== 0) {
@@ -64,7 +67,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
                 onClick={e => e.stopPropagation()}
             >
                 <header className="flex justify-between items-center p-2 px-4 border-b border-[var(--border-primary)] bg-[var(--bg-app)] rounded-t-lg flex-shrink-0">
-                    <h2 className="text-sm font-bold text-[var(--text-primary)] truncate" title={`Попередній перегляд: ${projectName}`}>Попередній перегляд: {projectName}</h2>
+                    <h2 className="text-sm font-bold text-[var(--text-primary)] truncate" title={`${t('preview.title')}: ${projectName}`}>{t('preview.title')}: {projectName}</h2>
                     <button onClick={onClose} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full">
                         <XIcon />
                     </button>

@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, {useContext} from 'react';
+import { useLanguage } from './LanguageContext';
+import { useState } from 'react';
 import { XIcon } from './icons';
 
 interface CheatCodeModalProps {
@@ -11,6 +13,7 @@ interface CheatCodeModalProps {
 const VALID_CODES = ['001', '002', '000'];
 
 const CheatCodeModal: React.FC<CheatCodeModalProps> = ({ isOpen, onClose, onActivate, showNotification }) => {
+    const { t } = useLanguage();
     const [inputValue, setInputValue] = useState('');
 
     const handleActivate = () => {
@@ -22,16 +25,16 @@ const CheatCodeModal: React.FC<CheatCodeModalProps> = ({ isOpen, onClose, onActi
             if (VALID_CODES.includes(codeNumber)) {
                 onActivate(codeNumber);
                 if (codeNumber === '000') {
-                    showNotification('Усі активні чит-коди скинуто.', 'info');
+                    showNotification(t('cheat.reset'), 'info');
                 } else {
-                    showNotification(`Чит-код "${trimmedValue}" активовано!`, 'info');
+                    showNotification(t('cheat.activated', { code: trimmedValue }), 'info');
                 }
                 onClose();
             } else {
-                showNotification(`Невірний чит-код: "${trimmedValue}"`, 'error');
+                showNotification(t('cheat.invalid', { code: trimmedValue }), 'error');
             }
         } else {
-            showNotification('Неправильний формат коду. Очікується "#000".', 'error');
+            showNotification(t('cheat.formatError'), 'error');
         }
         setInputValue('');
     };
@@ -50,14 +53,14 @@ const CheatCodeModal: React.FC<CheatCodeModalProps> = ({ isOpen, onClose, onActi
                 onClick={e => e.stopPropagation()}
             >
                 <header className="flex justify-between items-center p-4 border-b border-[var(--border-primary)]">
-                    <h2 className="text-xl font-bold text-[var(--text-primary)]">Введення чит-коду</h2>
-                    <button onClick={onClose} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full" aria-label="Закрити">
+                    <h2 className="text-xl font-bold text-[var(--text-primary)]">{t('cheat.title')}</h2>
+                    <button onClick={onClose} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full" aria-label={t('action.close')}>
                         <XIcon />
                     </button>
                 </header>
 
                 <div className="p-6 space-y-4">
-                    <p className="text-sm text-center text-[var(--text-tertiary)]">Введіть код у форматі #000</p>
+                    <p className="text-sm text-center text-[var(--text-tertiary)]">{t('cheat.desc')}</p>
                     <input 
                         type="text" 
                         value={inputValue} 
@@ -73,13 +76,13 @@ const CheatCodeModal: React.FC<CheatCodeModalProps> = ({ isOpen, onClose, onActi
                         onClick={onClose}
                         className="px-6 py-2 rounded-lg font-semibold bg-[var(--bg-tertiary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
                     >
-                        Скасувати
+                        {t('action.cancel')}
                     </button>
                      <button
                         onClick={handleActivate}
                         className="px-6 py-2 rounded-lg font-semibold bg-[var(--accent-primary)] text-[var(--accent-text)] hover:bg-[var(--accent-primary-hover)] transition-colors"
                     >
-                        Активувати
+                        {t('cheat.activate')}
                     </button>
                 </footer>
             </div>

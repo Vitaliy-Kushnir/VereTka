@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, {useContext} from 'react';
+import { useLanguage } from './LanguageContext';
+import { useState, useEffect } from 'react';
 import { LocateIcon } from './icons';
 import { NumberInput } from './FormControls';
 
@@ -26,6 +28,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
   showCursorCoords,
   setShowCursorCoords
 }) => {
+  const { t } = useLanguage();
   const [isEditingZoom, setIsEditingZoom] = useState(false);
   
   const formatNumber = (num: number) => Math.round(num * 100) / 100;
@@ -60,9 +63,9 @@ const StatusBar: React.FC<StatusBarProps> = ({
             checked={showCursorCoords}
             onChange={(e) => setShowCursorCoords(e.target.checked)}
             className="w-3 h-3 rounded-sm text-[var(--accent-primary)] focus:ring-0 focus:ring-offset-0 bg-[var(--bg-secondary)] border-[var(--border-primary)] cursor-pointer"
-            title="Показувати/приховувати координати біля курсора"
+            title={t('status.toggleCoords')}
         />
-        <label htmlFor="statusbar-show-coords" className="font-mono cursor-pointer" title="Координати курсора на полотні">
+        <label htmlFor="statusbar-show-coords" className="font-mono cursor-pointer" title={t('status.coords')}>
             {cursorPos ? `X: ${formatNumber(cursorPos.x)} Y: ${formatNumber(cursorPos.y)}` : ''}
         </label>
       </div>
@@ -75,7 +78,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
           value={zoomToSliderValue(zoomLevel)}
           onChange={handleSliderChange}
           className="w-24 h-1 bg-[var(--bg-secondary)] rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--accent-primary)]"
-          title={`Масштаб: ${formattedZoom}`}
+          title={`${t('status.zoom')}: ${formattedZoom}`}
         />
         {isEditingZoom ? (
             <div className="w-20">
@@ -100,7 +103,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
             <button
                 onClick={() => setIsEditingZoom(true)}
                 className="w-16 text-center hover:text-[var(--text-primary)]"
-                title="Натисніть, щоб змінити масштаб"
+                title={t('status.zoomClick')}
             >
                 {formattedZoom}
             </button>
@@ -109,7 +112,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
             onClick={onLocateSelectedShape}
             disabled={!selectedShapeId}
             className="p-1 rounded-md text-[var(--text-tertiary)] hover:text-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-[var(--text-tertiary)]"
-            title="Показати виділений об'єкт"
+            title={t('status.showSelected')}
         >
             <LocateIcon size={14} />
         </button>

@@ -1,4 +1,6 @@
-import React, { useMemo } from 'react';
+import React, {useContext} from 'react';
+import { useLanguage } from './LanguageContext';
+import { useMemo } from 'react';
 import { Shape, TransformHandle, CanvasAction, RotatableShape, Tool, BezierCurveShape, ViewTransform, RectangleShape, PolylineShape, ArcShape, TrapezoidShape, ParallelogramShape, IsoscelesTriangleShape, PathShape, EllipseShape, TextShape, PolygonShape } from '../types';
 import { getBoundingBox, getShapeCenter, rotatePoint, getEditablePoints, getIsoscelesTrianglePoints, findClosestPointOnSegment, getFinalPoints, getVisualBoundingBox, getTrapezoidPoints, getParallelogramPoints, getPolygonPointsAsArray } from '../lib/geometry';
 import { getDefaultNameForShape, ROTATE_CURSOR_STYLE, ADJUST_CURSOR_STYLE, isDefaultName } from '../lib/constants';
@@ -41,6 +43,7 @@ const getCursorForHandle = (handle: TransformHandle): string => {
 };
 
 export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, setAction, svgRef, activeTool, getSnappedMousePosition, viewTransform, getPointerPosition, activePointIndex, setActivePointIndex, updateShape, action }) => {
+    const { t } = useLanguage();
     if (!shape) return null;
 
     const scaledHandleSize = HANDLE_SIZE / viewTransform.scale;
@@ -94,7 +97,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, set
         return (
             <g 
                 style={{ pointerEvents: 'none' }}
-                aria-label="Точка прив'язки тексту"
+                aria-label={t('selection.anchorPoint')}
             >
                 <circle
                     cx={textShape.x}
@@ -127,7 +130,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, set
 
         // For display, we rotate these local points around the shape's center.
         let displayPoints: { x: number, y: number }[];
-        if (action?.type === 'point-editing') { // <-- ВИПРАВЛЕННЯ: Спрощена та надійніша умова
+        if (action?.type === 'point-editing') { 
             // During a point-edit drag, ALWAYS use the stable center from the action.
             displayPoints = localPoints.map(p => rotatePoint(p, action.center, rotation));
         } else {
@@ -167,7 +170,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, set
                  
                  const oldName = shape.name;
                  const isOldNameDefault = !oldName || isDefaultName(oldName);
-                 newPolyline.name = isOldNameDefault ? getDefaultNameForShape(newPolyline) : oldName;
+                 newPolyline.name = isOldNameDefault ? getDefaultNameForShape(newPolyline, t) : oldName;
 
                  updateShape(newPolyline);
                  shapeForAction = newPolyline;
@@ -215,11 +218,11 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, set
                  };
                  const oldName = shape.name;
                  const isOldNameDefault = !oldName || isDefaultName(oldName);
-                 newPolyline.name = isOldNameDefault ? getDefaultNameForShape(newPolyline) : oldName;
+                 newPolyline.name = isOldNameDefault ? getDefaultNameForShape(newPolyline, t) : oldName;
                  newShape = newPolyline;
             }
             
-            const originalCenter = getShapeCenter(shape); // <-- ВИПРАВЛЕННЯ: Отримуємо центр з ОРИГІНАЛЬНОЇ фігури
+            const originalCenter = getShapeCenter(shape); 
             if (!originalCenter) return;
 
             updateShape(newShape);
@@ -227,7 +230,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, set
             
             // The action needs the updated shape, but the ORIGINAL stable center
             setAction({ type: 'point-editing', initialShape: newShape, 
-            pointIndex: index2, center: originalCenter }); // <-- ВИПРАВЛЕННЯ: Передаємо стабільний центр
+            pointIndex: index2, center: originalCenter }); 
         };
 
         const isShapeClosed = (

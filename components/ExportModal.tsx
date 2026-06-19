@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { XIcon } from './icons';
 import { InputWrapper, Label, NumberInput } from './FormControls';
+import { useLanguage } from './LanguageContext';
 
 export interface ExportSettings {
   format: 'svg' | 'png' | 'jpeg';
@@ -15,6 +16,7 @@ interface ExportModalProps {
 }
 
 const ExportModal: React.FC<ExportModalProps> = ({ onClose, onExport }) => {
+    const { t } = useLanguage();
     const [format, setFormat] = useState<'svg' | 'png' | 'jpeg'>('png');
     const [scale, setScale] = useState(1);
     const [quality, setQuality] = useState(90);
@@ -42,7 +44,7 @@ const ExportModal: React.FC<ExportModalProps> = ({ onClose, onExport }) => {
                 onClick={e => e.stopPropagation()}
             >
                 <header className="flex justify-between items-center p-4 border-b border-[var(--border-primary)]">
-                    <h2 className="text-xl font-bold text-[var(--text-primary)]">Експортувати зображення</h2>
+                    <h2 className="text-xl font-bold text-[var(--text-primary)]">{t('export.title')}</h2>
                     <button onClick={onClose} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full">
                         <XIcon />
                     </button>
@@ -50,7 +52,7 @@ const ExportModal: React.FC<ExportModalProps> = ({ onClose, onExport }) => {
 
                 <div className="p-6 space-y-6">
                     <div>
-                        <Label htmlFor="format-group" title="Оберіть формат файлу для експорту.">Формат:</Label>
+                        <Label htmlFor="format-group" title={t('export.formatDesc')}>{t('export.format')}</Label>
                         <div id="format-group" className="flex items-center gap-2 mt-2 p-1 bg-[var(--bg-app)] rounded-lg">
                            <FormatButton value="svg" label="SVG" />
                            <FormatButton value="png" label="PNG" />
@@ -59,14 +61,14 @@ const ExportModal: React.FC<ExportModalProps> = ({ onClose, onExport }) => {
                     </div>
 
                     <InputWrapper>
-                        <Label htmlFor="export-scale" title="Множник розміру зображення. 2x зробить зображення вдвічі більшим.">Масштаб:</Label>
+                        <Label htmlFor="export-scale" title={t('export.scaleDesc')}>{t('export.scale')}</Label>
                         <NumberInput id="export-scale" value={scale} onChange={setScale} min={0.1} max={10} step={0.1} />
                     </InputWrapper>
 
                     {format === 'jpeg' && (
                          <div className="space-y-2">
                              <InputWrapper>
-                                <Label htmlFor="export-quality" title="Якість стиснення JPEG від 0 (низька) до 100 (висока).">Якість:</Label>
+                                <Label htmlFor="export-quality" title={t('export.qualityDesc')}>{t('export.quality')}</Label>
                                 <NumberInput id="export-quality" value={quality} onChange={setQuality} min={0} max={100} step={1} />
                             </InputWrapper>
                             <div className="flex items-center gap-2 ml-32">
@@ -88,7 +90,7 @@ const ExportModal: React.FC<ExportModalProps> = ({ onClose, onExport }) => {
                         onClick={handleExport}
                         className="px-6 py-2 rounded-lg font-semibold bg-[var(--accent-primary)] text-[var(--accent-text)] hover:bg-[var(--accent-primary-hover)] transition-colors"
                     >
-                        Експорт
+                        {t('export.action')}
                     </button>
                 </footer>
             </div>

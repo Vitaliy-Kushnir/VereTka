@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { XIcon, EyeIcon, EyeOffIcon } from './icons';
+import { useLanguage } from './LanguageContext';
 
 interface ApiKeyModalProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface ApiKeyModalProps {
 }
 
 const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onSave, currentApiKey }) => {
+    const { t } = useLanguage();
     const [key, setKey] = useState(currentApiKey || '');
     const [isKeyVisible, setIsKeyVisible] = useState(false);
     const [showInstructions, setShowInstructions] = useState(false);
@@ -45,8 +47,8 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onSave, curr
                 onClick={e => e.stopPropagation()}
             >
                 <header className="flex justify-between items-center p-4 border-b border-[var(--border-primary)] flex-shrink-0">
-                    <h2 className="text-xl font-bold text-[var(--text-primary)]">Керування ключем Gemini API</h2>
-                    <button onClick={onClose} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full" aria-label="Закрити">
+                    <h2 className="text-xl font-bold text-[var(--text-primary)]">{t('apikey.title')}</h2>
+                    <button onClick={onClose} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full" aria-label={t('apikey.close')}>
                         <XIcon />
                     </button>
                 </header>
@@ -55,8 +57,7 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onSave, curr
                     {!showInstructions ? (
                         <>
                             <div className="p-3 bg-[var(--bg-secondary)] rounded-lg">
-                                <p className="text-xs text-[var(--text-tertiary)]">
-                                    <strong>Важливо:</strong> Ваш ключ API зберігатиметься лише на час поточної сесії і буде видалений після оновлення або закриття сторінки. Він не зберігається назавжди для вашої безпеки.
+                                <p className="text-xs text-[var(--text-tertiary)]" dangerouslySetInnerHTML={{ __html: t('apikey.warning1') }}>
                                 </p>
                             </div>
                             <div className="relative">
@@ -64,13 +65,13 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onSave, curr
                                     type={isKeyVisible ? 'text' : 'password'}
                                     value={key}
                                     onChange={e => setKey(e.target.value)}
-                                    placeholder="Вставте ваш API ключ сюди"
+                                    placeholder={t('apikey.placeholder')}
                                     className="w-full bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-3 py-2 border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none pr-10"
                                 />
                                 <button
                                     onClick={() => setIsKeyVisible(p => !p)}
                                     className="absolute inset-y-0 right-0 px-3 flex items-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-                                    title={isKeyVisible ? "Приховати ключ" : "Показати ключ"}
+                                    title={isKeyVisible ? t('apikey.hide') : t('apikey.show')}
                                 >
                                     {isKeyVisible ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
                                 </button>
@@ -80,7 +81,7 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onSave, curr
                                     onClick={() => setShowInstructions(true)}
                                     className="text-sm text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)] underline"
                                 >
-                                    Де взяти API ключ?
+                                    {t('apikey.whereToGet')}
                                 </button>
                             </div>
                         </>
@@ -90,22 +91,21 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onSave, curr
                                 onClick={() => setShowInstructions(false)}
                                 className="text-sm text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)] underline mb-4"
                             >
-                                ← Повернутися до введення ключа
+                                {t('apikey.backToInput')}
                             </button>
-                            <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">Як отримати ключ Gemini API</h3>
+                            <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">{t('apikey.howToGetTitle')}</h3>
                             <div className="space-y-3 text-sm text-[var(--text-secondary)]">
-                                <p>Ви можете безкоштовно отримати ключ API для доступу до моделей Gemini у Google AI Studio.</p>
+                                <p>{t('apikey.howToGet1')}</p>
                                 <ol className="list-decimal list-inside space-y-2 pl-2">
-                                    <li>Перейдіть на сайт <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="underline text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)]">Google AI Studio</a>.</li>
-                                    <li>Увійдіть за допомогою вашого Google акаунту.</li>
-                                    <li>На сторінці, що відкриється, натисніть на кнопку <strong>"Create API key in new project"</strong>.</li>
-                                    <li>Через декілька секунд буде згенеровано ваш ключ. Він виглядатиме як довгий рядок з випадкових символів.</li>
-                                    <li>Натисніть на іконку копіювання поруч з ключем.</li>
-                                    <li>Поверніться сюди та вставте скопійований ключ у поле вище.</li>
+                                    <span dangerouslySetInnerHTML={{ __html: t('apikey.step1') }} />
+                                    <span dangerouslySetInnerHTML={{ __html: t('apikey.step2') }} />
+                                    <span dangerouslySetInnerHTML={{ __html: t('apikey.step3') }} />
+                                    <span dangerouslySetInnerHTML={{ __html: t('apikey.step4') }} />
+                                    <span dangerouslySetInnerHTML={{ __html: t('apikey.step5') }} />
+                                    <span dangerouslySetInnerHTML={{ __html: t('apikey.step6') }} />
                                 </ol>
                                 <div className="p-3 bg-[var(--bg-secondary)] rounded-lg">
-                                    <p className="text-xs text-[var(--text-tertiary)]">
-                                        <strong>Важливо:</strong> Зберігайте ваш ключ у безпечному місці та не діліться ним ні з ким. Редактор не зберігає ключ на постійній основі і не передає його нікуди, окрім як безпосередньо до Google API при генерації коду.
+                                    <p className="text-xs text-[var(--text-tertiary)]" dangerouslySetInnerHTML={{ __html: t('apikey.warning2') }}>
                                     </p>
                                 </div>
                             </div>
@@ -120,7 +120,7 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onSave, curr
                                 onClick={handleDelete}
                                 className="px-4 py-2 rounded-lg font-semibold text-sm bg-[var(--destructive-bg)] text-[var(--accent-text)] hover:bg-[var(--destructive-bg-hover)] transition-colors"
                             >
-                                Видалити ключ
+                                {t('apikey.delete')}
                             </button>
                         )}
                     </div>
@@ -129,13 +129,13 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onSave, curr
                             onClick={onClose}
                             className="px-6 py-2 rounded-lg font-semibold bg-[var(--bg-tertiary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
                         >
-                            Скасувати
+                            {t('action.cancel2')}
                         </button>
                         <button
                             onClick={handleSave}
                             className="px-6 py-2 rounded-lg font-semibold bg-[var(--accent-primary)] text-[var(--accent-text)] hover:bg-[var(--accent-primary-hover)] transition-colors"
                         >
-                            Зберегти
+                            {t('action.save')}
                         </button>
                     </div>
                 </footer>

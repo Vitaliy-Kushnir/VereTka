@@ -27,8 +27,8 @@ const formatOptions = (options: Record<string, any>): string => {
     return parts.length > 0 ? `, ${parts.join(', ')}` : '';
 };
 
-const generateLocalComment = (shape: Shape): string => {
-    const commentText = shape.name || getDefaultNameForShape(shape);
+const generateLocalComment = (shape: Shape, t: (key: string) => string): string => {
+    const commentText = shape.name || getDefaultNameForShape(shape, t);
     return commentText;
 };
 
@@ -259,7 +259,8 @@ export async function generateTkinterCodeLocally(
     projectName: string,
     canvasVarName: string,
     autoGenerateComments: boolean,
-    outlineWithFill: boolean
+    outlineWithFill: boolean,
+    t: (key: string) => string
 ): Promise<{ codeLines: CodeLine[] }> {
     
     const finalCanvasVarName = canvasVarName.trim() || 'c';
@@ -298,17 +299,17 @@ export async function generateTkinterCodeLocally(
     codeLines.push({ content: `${finalCanvasVarName} = Canvas(root, width=${canvasWidth}, height=${canvasHeight}, bg="${backgroundColor}")`, shapeId: null });
     codeLines.push({ content: `${finalCanvasVarName}.pack()`, shapeId: null });
     codeLines.push({ content: '', shapeId: null });
-    codeLines.push({ content: "# --- Фігури (Об'єкти) ---", shapeId: null });
+    codeLines.push({ content: t('code.comment.shapes'), shapeId: null });
 
     if (shapes.length === 0) {
-        codeLines.push({ content: "# Об'єкти для малювання відсутні", shapeId: null });
+        codeLines.push({ content: t('code.comment.noShapes'), shapeId: null });
     } else {
         shapes.forEach(shape => {
             const lineContent = shapeToTkinterString(shape, imageVarMap, finalCanvasVarName, outlineWithFill);
             if (lineContent) {
                 let commentToUse = shape.comment;
                 if (autoGenerateComments && !commentToUse) {
-                    commentToUse = generateLocalComment(shape);
+                    commentToUse = generateLocalComment(shape, t);
                 }
 
                 if (commentToUse) {
