@@ -4,6 +4,8 @@ import { XIcon } from './icons';
 import { useLanguage } from './LanguageContext';
 import { HelpContentUK } from './help/HelpContentUK';
 import { HelpContentEN } from './help/HelpContentEN';
+import { HelpContentIT } from './help/HelpContentIT';
+import { HelpContentES } from './help/HelpContentES';
 
 interface HelpModalProps {
   isOpen: boolean;
@@ -43,16 +45,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
 
     const [fontSize, setFontSize] = useState(BASE_FONT_SIZE);
 
-    const sections = language === 'en' ? [
-        { id: 'intro', title: '1. Introduction' },
-        { id: 'interface', title: '2. Interface Overview' },
-        { id: 'projects', title: '3. Projects' },
-        { id: 'templates', title: '4. Templates' },
-        { id: 'shapes', title: '5. Objects' },
-        { id: 'code-export', title: '6. Code & Export' },
-        { id: 'feedback', title: '7. Feedback' },
-        { id: 'hotkeys', title: '8. Hotkeys' },
-    ] : [
+    const sections = [
         { id: 'intro', title: t('help.intro') },
         { id: 'interface', title: t('help.interface') },
         { id: 'projects', title: t('help.projects') },
@@ -290,7 +283,14 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                         className="flex-grow p-6 text-[var(--text-secondary)] overflow-y-auto scroll-smooth allow-selection"
                         style={{ fontSize: `${fontSize}rem` }}
                     >
-                        { language === 'en' ? <HelpContentEN SectionTitle={SectionTitle} SubTitle={SubTitle} Para={Para} Key={Key} ListItem={ListItem} /> : <HelpContentUK SectionTitle={SectionTitle} SubTitle={SubTitle} Para={Para} Key={Key} ListItem={ListItem} /> }
+                        {(() => {
+                            switch (language) {
+                                case 'es': return <HelpContentES SectionTitle={SectionTitle} SubTitle={SubTitle} Para={Para} Key={Key} ListItem={ListItem} />;
+                                case 'it': return <HelpContentIT SectionTitle={SectionTitle} SubTitle={SubTitle} Para={Para} Key={Key} ListItem={ListItem} />;
+                                case 'uk': return <HelpContentUK SectionTitle={SectionTitle} SubTitle={SubTitle} Para={Para} Key={Key} ListItem={ListItem} />;
+                                default:   return <HelpContentEN SectionTitle={SectionTitle} SubTitle={SubTitle} Para={Para} Key={Key} ListItem={ListItem} />;
+                            }
+                        })()}
                     </div>
                 </div>
             </div>

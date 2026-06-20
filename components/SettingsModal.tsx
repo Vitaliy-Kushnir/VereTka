@@ -54,6 +54,7 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
     const [activeTab, setActiveTab] = useState<Tab>(props.initialTab || 'canvas');
     const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
     const [editingTemplateName, setEditingTemplateName] = useState('');
+    const [isLanguageOpen, setIsLanguageOpen] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const { t, language, setLanguage } = useLanguage();
 
@@ -137,7 +138,7 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                         <TabButton tab="templates" label={t('settings.tab.templates')} />
                     </nav>
 
-                    <div className="flex-grow p-6 space-y-4 overflow-y-auto">
+                    <div className="flex-grow p-6 space-y-4 overflow-y-auto" onClick={() => setIsLanguageOpen(false)}>
                         {activeTab === 'canvas' && (
                             <div className="space-y-4">
                                 <h3 className="text-lg font-semibold text-[var(--text-secondary)]">{t('settings.canvas.size')}</h3>
@@ -187,16 +188,89 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                 <h3 className="text-lg font-semibold text-[var(--text-secondary)]">{t('settings.appearance.interface')}</h3>
                                 <div className="flex items-center justify-between py-2 border-b border-[var(--border-secondary)] mb-2">
                                     <label className="text-sm font-medium text-[var(--text-secondary)]">{t('settings.appearance.language')}</label>
-                                    <div className="flex gap-2 flex-wrap justify-end">
-                                        {Object.keys(translations).map((langKey) => (
-                                            <button 
-                                                key={langKey}
-                                                onClick={() => setLanguage(langKey)}
-                                                className={`px-3 py-1 rounded text-sm font-medium transition ${language === langKey ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'}`}
-                                            >
-                                                {translations[langKey as keyof typeof translations]['_languageName'] || langKey.toUpperCase()}
-                                            </button>
-                                        ))}
+                                    <div className="relative" onClick={(e) => e.stopPropagation()}>
+                                        <button
+                                            onClick={() => setIsLanguageOpen(!isLanguageOpen)}
+                                            className="bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-[var(--text-primary)] rounded-md pl-3 pr-8 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center gap-2 cursor-pointer hover:bg-[var(--bg-hover)] transition-colors shadow-sm"
+                                        >
+                                            {language === 'uk' ? (
+                                                <svg viewBox="0 0 24 16" width="18" height="12" className="rounded-[1px] flex-shrink-0" preserveAspectRatio="none">
+                                                    <rect width="24" height="8" fill="#0057B7"/>
+                                                    <rect y="8" width="24" height="8" fill="#FFDD00"/>
+                                                </svg>
+                                            ) : language === 'es' ? (
+                                                <svg viewBox="0 0 3 2" width="18" height="12" className="rounded-[1px] flex-shrink-0" preserveAspectRatio="none">
+                                                    <rect width="3" height="2" fill="#AA151B"/>
+                                                    <rect y="0.5" width="3" height="1" fill="#F1BF00"/>
+                                                </svg>
+                                            ) : language === 'it' ? (
+                                                <svg viewBox="0 0 3 2" width="18" height="12" className="rounded-[1px] flex-shrink-0" preserveAspectRatio="none">
+                                                    <rect width="1" height="2" fill="#009246"/>
+                                                    <rect x="1" width="1" height="2" fill="#F1F2F1"/>
+                                                    <rect x="2" width="1" height="2" fill="#CE2B37"/>
+                                                </svg>
+                                            ) : (
+                                                <svg viewBox="0 0 60 30" width="18" height="12" className="rounded-[1px] flex-shrink-0 bg-[#012169]" preserveAspectRatio="none">
+                                                    <path d="M0,0 L60,30 M60,0 L0,30" stroke="#FFF" strokeWidth="6"/>
+                                                    <path d="M0,0 L60,30 M60,0 L0,30" stroke="#C8102E" strokeWidth="4"/>
+                                                    <path d="M30,0 L30,30 M0,15 L60,15" stroke="#FFF" strokeWidth="10"/>
+                                                    <path d="M30,0 L30,30 M0,15 L60,15" stroke="#C8102E" strokeWidth="6"/>
+                                                </svg>
+                                            )}
+                                            {language === 'uk' ? 'Українська' : language === 'it' ? 'Italiano' : language === 'es' ? 'Español' : 'English'}
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[var(--text-secondary)]">
+                                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </div>
+                                        </button>
+                                        {isLanguageOpen && (
+                                            <div className="absolute right-0 mt-1 w-36 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-md shadow-lg py-1 z-50">
+                                                <button
+                                                    onClick={() => { setLanguage('uk'); setIsLanguageOpen(false); }}
+                                                    className="w-full text-left px-3 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] flex items-center gap-2"
+                                                >
+                                                    <svg viewBox="0 0 24 16" width="18" height="12" className="rounded-[1px] flex-shrink-0" preserveAspectRatio="none">
+                                                        <rect width="24" height="8" fill="#0057B7"/>
+                                                        <rect y="8" width="24" height="8" fill="#FFDD00"/>
+                                                    </svg>
+                                                    Українська
+                                                </button>
+                                                <button
+                                                    onClick={() => { setLanguage('en'); setIsLanguageOpen(false); }}
+                                                    className="w-full text-left px-3 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] flex items-center gap-2"
+                                                >
+                                                    <svg viewBox="0 0 60 30" width="18" height="12" className="rounded-[1px] flex-shrink-0 bg-[#012169]" preserveAspectRatio="none">
+                                                        <path d="M0,0 L60,30 M60,0 L0,30" stroke="#FFF" strokeWidth="6"/>
+                                                        <path d="M0,0 L60,30 M60,0 L0,30" stroke="#C8102E" strokeWidth="4"/>
+                                                        <path d="M30,0 L30,30 M0,15 L60,15" stroke="#FFF" strokeWidth="10"/>
+                                                        <path d="M30,0 L30,30 M0,15 L60,15" stroke="#C8102E" strokeWidth="6"/>
+                                                    </svg>
+                                                    English
+                                                </button>
+                                                <button
+                                                    onClick={() => { setLanguage('it'); setIsLanguageOpen(false); }}
+                                                    className="w-full text-left px-3 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] flex items-center gap-2"
+                                                >
+                                                    <svg viewBox="0 0 3 2" width="18" height="12" className="rounded-[1px] flex-shrink-0" preserveAspectRatio="none">
+                                                        <rect width="1" height="2" fill="#009246"/>
+                                                        <rect x="1" width="1" height="2" fill="#F1F2F1"/>
+                                                        <rect x="2" width="1" height="2" fill="#CE2B37"/>
+                                                    </svg>
+                                                    Italiano
+                                                </button>
+                                                <button
+                                                    onClick={() => { setLanguage('es'); setIsLanguageOpen(false); }}
+                                                    className="w-full text-left px-3 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] flex items-center gap-2"
+                                                >
+                                                    <svg viewBox="0 0 3 2" width="18" height="12" className="rounded-[1px] flex-shrink-0" preserveAspectRatio="none">
+                                                        <rect width="3" height="2" fill="#AA151B"/>
+                                                        <rect y="0.5" width="3" height="1" fill="#F1BF00"/>
+                                                    </svg>
+                                                    Español
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 

@@ -2,25 +2,25 @@ const fs = require('fs');
 const https = require('https');
 
 function translateText(text) {
-  return new Promise((resolve, reject) => {
-    // Wait for 1 second between requests to avoid rate limit
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=it&dt=t&q=${encodeURIComponent(text)}`;
-    https.get(url, res => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try {
-          const json = JSON.parse(data);
-          let translated = '';
-          for (let i = 0; i < json[0].length; i++) {
-             translated += json[0][i][0];
-          }
-          resolve(translated);
-        } catch (e) {
-          resolve(text); // fallback
-        }
-      });
-    }).on('error', err => resolve(text));
+  return new Promise(async (resolve, reject) => {
+    try {
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=es&dt=t&q=${encodeURIComponent(text)}`;
+      const res = await fetch(url);
+      if (!res.ok) {
+        console.error("Fetch failed", res.status);
+        resolve(text);
+        return;
+      }
+      const data = await res.json();
+      let translated = '';
+      for (let i = 0; i < data[0].length; i++) {
+         translated += data[0][i][0];
+      }
+      resolve(translated);
+    } catch (e) {
+      console.error("Error formatting/running fetch", e);
+      resolve(text);
+    }
   });
 }
 
@@ -29,7 +29,7 @@ async function run() {
   let content = fs.readFileSync(translationsPath, 'utf8');
 
   // Extract the `en` block
-  const enMatch = content.match(/en: \{([\s\S]*?)\n  \}\n\};/);
+  const enMatch = content.match(/en: \{([\s\S]*?)\n  \},/);
   if (!enMatch) {
     console.error('Could not find en dictionary');
     return;
@@ -39,7 +39,7 @@ async function run() {
   
   // Parse lines
   const lines = enContent.split('\n');
-  const itLines = new Array(lines.length);
+  const esLines = new Array(lines.length);
 
   async function processChunk(startIndex, endIndex) {
     const promises = [];
@@ -48,7 +48,7 @@ async function run() {
         const line = lines[i];
         const match = line.match(/^(\s*'[^']+':\s*)('.*?'|".*?"),?(.*)$/);
         if (!match) {
-           itLines[i] = (line.replace("_languageName: 'English'", "_languageName: 'Italiano'"));
+           esLines[i] = (line.replace("_languageName: 'English'", "_languageName: 'Español'"));
            return;
         }
 
@@ -57,11 +57,14 @@ async function run() {
         let text = strValue.slice(1, -1);
         
         if (text.trim() === '') {
-           itLines[i] = line;
+           esLines[i] = line;
            return;
         }
         
         let translated = await translateText(text);
+        if (translated === text && text !== '' && /[a-zA-Z]/.test(text)) {
+            console.log(`Translation failed (idx=${i}): `, text);
+        }
         let escapedTranslated = translated;
         if (isDoubleQuote) {
             escapedTranslated = escapedTranslated.replace(/"/g, '\\"');
@@ -69,7 +72,7 @@ async function run() {
             escapedTranslated = escapedTranslated.replace(/'/g, "\\'");
         }
         
-        itLines[i] = (`${prefix}${isDoubleQuote ? '"' : "'"}${escapedTranslated}${isDoubleQuote ? '"' : "'"}${suffix ? ',' + suffix : ','}`);   
+        esLines[i] = (`${prefix}${isDoubleQuote ? '"' : "'"}${escapedTranslated}${isDoubleQuote ? '"' : "'"}${suffix ? ',' + suffix : ','}`);   
         })());
     }
     await Promise.all(promises);
@@ -79,8 +82,8 @@ async function run() {
       await processChunk(i, Math.min(i + 50, lines.length));
   }
 
-  const itBlock = `\n  it: {\n${itLines.join('\n')}\n  }\n};\n`;
-  content = content.replace(/\n  \}\n\};/, '\n  },' + itBlock);
+  const esBlock = `\n  es: {\n${esLines.join('\n')}\n  }\n};\n`;
+  content = content.replace(/\n  \}\n\};/, '\n  },' + esBlock);
 
   fs.writeFileSync(translationsPath, content, 'utf8');
   console.log('Done!');

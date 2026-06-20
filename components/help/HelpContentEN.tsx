@@ -7,7 +7,7 @@ export const HelpContentEN: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
             <section>
                 <SectionTitle id="intro">1. Introduction</SectionTitle>
                 <Para>
-                    <strong className="text-[var(--text-primary)]">Veretka</strong> is a simple web tool designed for visual creation of graphic elements and automatic generation of code for the Tkinter library in Python. The editor serves as a bridge between design and development, allowing you to quickly prototype, create complex scenes, and get clean, ready-to-use code.
+                    <strong className="text-[var(--text-primary)]">VereTka</strong> is a simple web tool designed for visual creation of graphic elements and automatic generation of code for the Tkinter library in Python. The editor serves as a bridge between design and development, allowing you to quickly prototype, create complex scenes, and get clean, ready-to-use code.
                 </Para>
                 <Para>
                     This guide will help you master all the features of the editor, from basic operations to advanced techniques.
@@ -186,7 +186,7 @@ export const HelpContentEN: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
             <section>
                 <SectionTitle id="feedback">7. Feedback</SectionTitle>
                 <Para>
-                    Help improve Veretka! If you encounter a bug or have ideas, use <Key>Help</Key> → <Key>Send Feedback</Key>. This opens an email dialogue to directly contact the author.
+                    Help improve VereTka! If you encounter a bug or have ideas, use <Key>Help</Key> → <Key>Send Feedback</Key>. This opens an email dialogue to directly contact the author.
                 </Para>
             </section>
 
