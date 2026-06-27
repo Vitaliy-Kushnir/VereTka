@@ -19,7 +19,7 @@ interface CodeDisplayProps {
   hasUnsyncedChanges: boolean;
   opacity: number;
   setOpacity: (opacity: number) => void;
-  selectedShapeId: string | null;
+  selectedShapeIds: string[];
   highlightCodeOnSelection: boolean;
   setHighlightCodeOnSelection: (show: boolean) => void;
   showLineNumbers: boolean;
@@ -48,7 +48,7 @@ const useClickOutside = (ref: React.RefObject<HTMLElement>, handler: (event: Mou
   }, [ref, handler]);
 };
 
-const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, onUpdate, onPreview, onSaveCode, onOpenOrRunCodeOnline, hasUnsyncedChanges, selectedShapeId, highlightCodeOnSelection, setHighlightCodeOnSelection, showLineNumbers, setShowLineNumbers, showComments, setShowComments, generatorType, onSwitchToLocalGenerator, onOpenSettingsToGenerator, codeStringForExport }) => {
+const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, onUpdate, onPreview, onSaveCode, onOpenOrRunCodeOnline, hasUnsyncedChanges, selectedShapeIds, highlightCodeOnSelection, setHighlightCodeOnSelection, showLineNumbers, setShowLineNumbers, showComments, setShowComments, generatorType, onSwitchToLocalGenerator, onOpenSettingsToGenerator, codeStringForExport }) => {
   const [isCopied, setIsCopied] = useState(false);
   const [isWordWrapEnabled, setIsWordWrapEnabled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -78,7 +78,7 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, 
             block: 'center',
         });
     }
-  }, [selectedShapeId, codeLines, highlightCodeOnSelection]);
+  }, [selectedShapeIds, codeLines, highlightCodeOnSelection]);
 
   const handleCopy = () => {
     if (codeStringForExport) {
@@ -139,7 +139,7 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, 
                 return null;
             }
 
-            const isHighlighted = highlightCodeOnSelection && selectedShapeId !== null && line.shapeId === selectedShapeId;
+            const isHighlighted = highlightCodeOnSelection && selectedShapeIds.length > 0 && !!line.shapeId && selectedShapeIds.includes(line.shapeId);
             const highlightClass = isHighlighted
                 ? (isComment ? 'code-line-comment-highlighted' : 'code-line-highlighted')
                 : '';

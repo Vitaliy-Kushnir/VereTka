@@ -2,14 +2,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Shape, Tool, PolylineShape } from '../types';
 import { ArrowUpIcon, ArrowDownIcon, TrashIcon, SquareIcon, CircleIcon, LineIcon, EllipseIcon, PencilIcon, TriangleIcon, PolygonIcon, StarIcon, SelectIcon, EditPointsIcon, PolylineIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, BezierIcon, RectangleIcon, ArcIcon, PiesliceIcon, ChordIcon, RightTriangleIcon, EyeIcon, EyeOffIcon, TextIcon, ImageIcon, BitmapIcon, LocateIcon } from './icons';
-import { getDefaultNameForShape, getTkinterType } from '../lib/constants';
+import { getDefaultNameForShape, getTkinterType, isDefaultName } from '../lib/constants';
 import { isPolylineAxisAlignedRectangle } from '../lib/geometry';
 import { useLanguage } from './LanguageContext';
 
 interface ShapeListProps {
   shapes: Shape[];
-  selectedShapeId: string | null;
-  onSelectShape: (id: string | null) => void;
+  selectedShapeIds: string[];
+  onSelectShape: (id: string | null, isShiftPressed?: boolean) => void;
   onDeleteShape: (id: string) => void;
   onMoveShape: (id: string, direction: 'up' | 'down') => void;
   onUpdateShape: (shape: Shape) => void;
@@ -17,7 +17,7 @@ interface ShapeListProps {
   showTkinterNames: boolean;
 }
 
-const toolToIcon: Record<Tool, React.ReactNode> = {
+const toolToIcon: Record<Tool | 'group', React.ReactNode> = {
     'select': <SelectIcon />,
     'edit-points': <EditPointsIcon />,
     'rectangle': <RectangleIcon />,
@@ -41,12 +41,13 @@ const toolToIcon: Record<Tool, React.ReactNode> = {
     'text': <TextIcon />,
     'image': <ImageIcon />,
     'bitmap': <BitmapIcon />,
+    'group': <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>,
 }
 
 // Helper moved outside the component for better performance
 const getIconForShape = (s: Shape): React.ReactNode => {
     if (s.type === 'arc') {
-        return toolToIcon[s.style];
+        return toolToIcon[s.style as Tool];
     }
     if (s.type === 'rectangle' && s.isAspectRatioLocked) {
         return toolToIcon['square'];
@@ -55,10 +56,43 @@ const getIconForShape = (s: Shape): React.ReactNode => {
     if ((s.type === 'polyline' || s.type === 'bezier') && s.isClosed) {
         return toolToIcon['polygon'];
     }
-    return toolToIcon[s.type];
+    return toolToIcon[s.type as Tool | 'group'];
 };
 
-const ShapeList: React.FC<ShapeListProps> = ({ shapes, selectedShapeId, onSelectShape, onDeleteShape, onMoveShape, onUpdateShape, onReorderShape, showTkinterNames }) => {
+const ShapeNameDisplay = ({ isSelected, shapeName, showTkinterNames, tkinterName, fullTitle }: any) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const textRef = useRef<HTMLDivElement>(null);
+    const [shouldScroll, setShouldScroll] = useState(false);
+
+    useEffect(() => {
+        if (containerRef.current && textRef.current) {
+            const containerWidth = containerRef.current.clientWidth;
+            const textWidth = textRef.current.scrollWidth;
+            setShouldScroll(textWidth > containerWidth);
+            if (textWidth > containerWidth) {
+                textRef.current.style.setProperty('--container-width', `${containerWidth}px`);
+            }
+        }
+    }, [isSelected, shapeName, tkinterName, showTkinterNames]);
+
+    return (
+        <div ref={containerRef} className="overflow-hidden whitespace-nowrap" title={fullTitle}>
+            <div 
+                ref={textRef} 
+                className={`inline-block font-medium ${isSelected && shouldScroll ? 'scroll-text-hover' : 'truncate'} w-full`}
+            >
+                {shapeName}
+                {showTkinterNames && (
+                    <span className="text-[10px] text-[var(--text-tertiary)] ml-1 font-mono">
+                        {tkinterName}
+                    </span>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const ShapeList: React.FC<ShapeListProps> = ({ shapes, selectedShapeIds, onSelectShape, onDeleteShape, onMoveShape, onUpdateShape, onReorderShape, showTkinterNames }) => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingValue, setEditingValue] = useState('');
     const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -71,15 +105,17 @@ const ShapeList: React.FC<ShapeListProps> = ({ shapes, selectedShapeId, onSelect
     const [isSelectedItemVisible, setIsSelectedItemVisible] = useState(true);
     const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(false);
 
+    const firstSelectedId = selectedShapeIds.length > 0 ? selectedShapeIds[0] : null;
+
     const scrollToSelected = () => {
-        if (selectedShapeId) {
-            const selectedItem = itemRefs.current[selectedShapeId];
+        if (firstSelectedId) {
+            const selectedItem = itemRefs.current[firstSelectedId];
             selectedItem?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     };
 
     useEffect(() => {
-        if (isAutoScrollEnabled && selectedShapeId) {
+        if (isAutoScrollEnabled && firstSelectedId) {
             // Adding a small timeout to allow the DOM to potentially update
             // if the selection change caused a re-render.
             const timer = setTimeout(() => {
@@ -87,19 +123,19 @@ const ShapeList: React.FC<ShapeListProps> = ({ shapes, selectedShapeId, onSelect
             }, 50);
             return () => clearTimeout(timer);
         }
-    }, [selectedShapeId, isAutoScrollEnabled]);
+    }, [firstSelectedId, isAutoScrollEnabled]);
 
     useEffect(() => {
         const container = listContainerRef.current;
         if (!container) return;
 
         const checkVisibility = () => {
-            if (!selectedShapeId) {
+            if ((selectedShapeIds.length === 0) || !firstSelectedId) {
                 setIsSelectedItemVisible(true);
                 return;
             }
             
-            const selectedItem = itemRefs.current[selectedShapeId];
+            const selectedItem = itemRefs.current[firstSelectedId];
             if (!selectedItem) {
                 setIsSelectedItemVisible(true);
                 return;
@@ -123,7 +159,7 @@ const ShapeList: React.FC<ShapeListProps> = ({ shapes, selectedShapeId, onSelect
             container.removeEventListener('scroll', checkVisibility);
             resizeObserver.disconnect();
         };
-    }, [selectedShapeId, shapes]);
+    }, [selectedShapeIds, shapes]);
 
     const handleStartEditing = (shape: Shape) => {
         setEditingId(shape.id);
@@ -203,6 +239,94 @@ const ShapeList: React.FC<ShapeListProps> = ({ shapes, selectedShapeId, onSelect
         setDropPosition(null);
     };
 
+    const renderShapeItem = (shape: Shape, index: number, originalIndex: number, level: number = 0) => {
+        if (!shape) return null;
+        const isSelected = selectedShapeIds.includes(shape.id);
+        const isEditing = editingId === shape.id;
+        const canMoveUp = originalIndex < shapes.length - 1;
+        const canMoveDown = originalIndex > 0;
+        const defaultName = getDefaultNameForShape(shape, t);
+        const isDragOverTop = dragOverId === shape.id && dropPosition === 'top';
+        const isDragOverBottom = dragOverId === shape.id && dropPosition === 'bottom';
+        const shapeName = !isDefaultName(shape.name || '') ? shape.name : defaultName;
+        const tkinterName = showTkinterNames ? `[${getTkinterType(shape).toLowerCase()}]` : '';
+        const fullTitle = `${shapeName} ${tkinterName}`.trim();
+        
+        return (
+            <li
+                ref={(el) => { itemRefs.current[shape.id] = el; }}
+                key={shape.id}
+                onClick={(e) => onSelectShape(shape.id, e.shiftKey)}
+                onDoubleClick={() => handleStartEditing(shape)}
+                draggable={!isEditing}
+                onDragStart={isEditing ? undefined : (e) => handleDragStart(e, shape.id)}
+                onDragOver={isEditing ? undefined : (e) => handleDragOver(e, shape.id)}
+                onDragLeave={isEditing ? undefined : handleDragLeave}
+                onDrop={isEditing ? undefined : (e) => handleDrop(e, shape.id)}
+                onDragEnd={isEditing ? undefined : handleDragEnd}
+                className={`group flex flex-col p-0 rounded-md transition-all duration-150 relative
+                    ${draggedId === shape.id ? 'opacity-30' : ''}
+                `}
+                style={{ marginLeft: `${level * 16}px` }}
+            >
+                <div className={`flex items-center justify-between py-0.5 px-1.5 rounded-md cursor-pointer ${isSelected ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]'}`}>
+                    {/* Drop Insertion Indicators */}
+                    {isDragOverTop && (
+                        <div className="absolute -top-[3px] left-0 right-0 h-[3px] bg-[var(--selection-stroke)] rounded-full shadow-[0_0_4px_var(--selection-stroke)] z-50 pointer-events-none animate-pulse"></div>
+                    )}
+                    {isDragOverBottom && (
+                        <div className="absolute -bottom-[3px] left-0 right-0 h-[3px] bg-[var(--selection-stroke)] rounded-full shadow-[0_0_4px_var(--selection-stroke)] z-50 pointer-events-none animate-pulse"></div>
+                    )}
+
+                    <div className="flex items-center gap-2 overflow-hidden flex-1">
+                        <button onClick={(e) => handleToggleVisibility(e, shape)} title={shape.state === 'hidden' ? t('list.visibility.show') : t('list.visibility.hide')} className="flex-shrink-0 p-0.5 rounded hover:bg-[var(--bg-hover)]">
+                            {shape.state === 'hidden' ? <EyeOffIcon size={12} /> : <EyeIcon size={12} />}
+                        </button>
+                        <div className="flex-shrink-0 w-3.5 h-3.5 flex items-center justify-center" style={{ opacity: shape.state === 'hidden' ? 0.5 : 1 }}>
+                            {getIconForShape(shape)}
+                        </div>
+                        <div className="overflow-hidden flex-1 text-sm" style={{ opacity: shape.state === 'hidden' ? 0.5 : 1 }}>
+                            {isEditing ? (
+                                <input
+                                    type="text"
+                                    value={editingValue}
+                                    onChange={e => setEditingValue(e.target.value)}
+                                    onBlur={handleFinishEditing}
+                                    onKeyDown={handleKeyDown}
+                                    onClick={e => e.stopPropagation()}
+                                    autoFocus
+                                    className="w-full bg-[var(--bg-secondary)] text-[var(--text-primary)] px-1 py-0.5 rounded outline-none focus:ring-1 focus:ring-[var(--accent-primary)] border border-[var(--border-primary)]"
+                                />
+                            ) : (
+                                <ShapeNameDisplay 
+                                    isSelected={isSelected}
+                                    shapeName={shapeName}
+                                    showTkinterNames={showTkinterNames}
+                                    tkinterName={tkinterName}
+                                    fullTitle={fullTitle}
+                                />
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity ml-1 flex-shrink-0">
+                        <div className="flex flex-col">
+                            <button onClick={(e) => { e.stopPropagation(); onMoveShape(shape.id, 'up'); }} disabled={!canMoveUp} className="p-[2px] hover:bg-[var(--bg-app)] rounded-t-sm disabled:opacity-30 disabled:cursor-not-allowed text-[var(--text-secondary)] hover:text-[var(--text-primary)]" title={t('list.moveUp')}>
+                                <ArrowUpIcon size={12} />
+                            </button>
+                            <button onClick={(e) => { e.stopPropagation(); onMoveShape(shape.id, 'down'); }} disabled={!canMoveDown} className="p-[2px] hover:bg-[var(--bg-app)] rounded-b-sm disabled:opacity-30 disabled:cursor-not-allowed text-[var(--text-secondary)] hover:text-[var(--text-primary)]" title={t('list.moveDown')}>
+                                <ArrowDownIcon size={12} />
+                            </button>
+                        </div>
+                        <button onClick={(e) => { e.stopPropagation(); onDeleteShape(shape.id); }} className="p-1 ml-1 text-red-500 hover:bg-red-500 hover:text-white rounded-md transition-colors opacity-70 hover:opacity-100" title={t('list.delete')}>
+                            <TrashIcon size={14} />
+                        </button>
+                    </div>
+                </div>
+            </li>
+        );
+    };
+
   return (
     <div className="shadow-lg h-full flex flex-col rounded-lg bg-[var(--bg-primary)]">
         <div className="flex justify-between items-center p-2 px-3 bg-[var(--bg-app)]/50 rounded-t-lg border-b border-[var(--border-primary)] flex-shrink-0">
@@ -210,11 +334,11 @@ const ShapeList: React.FC<ShapeListProps> = ({ shapes, selectedShapeId, onSelect
             <div className="flex items-center gap-3">
                 <button
                     onClick={scrollToSelected}
-                    disabled={!selectedShapeId || isSelectedItemVisible || isAutoScrollEnabled}
+                    disabled={(selectedShapeIds.length === 0) || isSelectedItemVisible || isAutoScrollEnabled}
                     title={
                         isAutoScrollEnabled 
                             ? t('list.autoscroll.on')
-                            : !selectedShapeId 
+                            : (selectedShapeIds.length === 0) 
                                 ? t('list.autoscroll.noSelection')
                                 : isSelectedItemVisible 
                                     ? t('list.autoscroll.visible')
@@ -241,95 +365,27 @@ const ShapeList: React.FC<ShapeListProps> = ({ shapes, selectedShapeId, onSelect
         <div className="flex-grow overflow-hidden relative">
             <div ref={listContainerRef} className="h-full overflow-y-auto">
                 {shapes.length > 0 ? (
-                    <ul className="p-1 space-y-1">
+                    <ul className="p-1 space-y-0.5">
                         {[...shapes].reverse().map((shape, index) => {
                             if (!shape) return null;
-                            const isSelected = shape.id === selectedShapeId;
-                            const isEditing = editingId === shape.id;
-                            const originalIndex = shapes.length - 1 - index;
-                            const canMoveUp = originalIndex < shapes.length - 1;
-                            const canMoveDown = originalIndex > 0;
-                            const defaultName = getDefaultNameForShape(shape, t);
-                            const isDragOverTop = dragOverId === shape.id && dropPosition === 'top';
-                            const isDragOverBottom = dragOverId === shape.id && dropPosition === 'bottom';
+                            if (shape.groupId) return null; // Skip children of groups
                             
-                            return (
-                                <li
-                                    ref={(el) => { itemRefs.current[shape.id] = el; }}
-                                    key={shape.id}
-                                    onClick={() => onSelectShape(shape.id)}
-                                    onDoubleClick={() => handleStartEditing(shape)}
-                                    draggable={!isEditing}
-                                    onDragStart={isEditing ? undefined : (e) => handleDragStart(e, shape.id)}
-                                    onDragOver={isEditing ? undefined : (e) => handleDragOver(e, shape.id)}
-                                    onDragLeave={isEditing ? undefined : handleDragLeave}
-                                    onDrop={isEditing ? undefined : (e) => handleDrop(e, shape.id)}
-                                    onDragEnd={isEditing ? undefined : handleDragEnd}
-                                    className={`group flex items-center justify-between p-2 rounded-md transition-all duration-150 cursor-pointer relative
-                                        ${isSelected ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]'}
-                                        ${draggedId === shape.id ? 'opacity-30' : ''}
-                                    `}
-                                >
-                                    {/* Drop Insertion Indicators */}
-                                    {isDragOverTop && (
-                                        <div className="absolute -top-[3px] left-0 right-0 h-[3px] bg-[var(--selection-stroke)] rounded-full shadow-[0_0_4px_var(--selection-stroke)] z-50 pointer-events-none animate-pulse"></div>
-                                    )}
-                                    {isDragOverBottom && (
-                                        <div className="absolute -bottom-[3px] left-0 right-0 h-[3px] bg-[var(--selection-stroke)] rounded-full shadow-[0_0_4px_var(--selection-stroke)] z-50 pointer-events-none animate-pulse"></div>
-                                    )}
+                            const originalIndex = shapes.length - 1 - index;
+                            const el = renderShapeItem(shape, index, originalIndex, 0);
 
-                                    <div className="flex items-center gap-3 truncate">
-                                        <button onClick={(e) => handleToggleVisibility(e, shape)} title={shape.state === 'hidden' ? t('list.visibility.show') : t('list.visibility.hide')} className="flex-shrink-0 p-1 rounded hover:bg-[var(--bg-hover)]">
-                                            {shape.state === 'hidden' ? <EyeOffIcon /> : <EyeIcon />}
-                                        </button>
-                                        <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center" style={{ opacity: shape.state === 'hidden' ? 0.5 : 1 }}>
-                                            {getIconForShape(shape)}
-                                        </div>
-                                        <div className="truncate text-sm" style={{ opacity: shape.state === 'hidden' ? 0.5 : 1 }}>
-                                            {isEditing ? (
-                                                <input
-                                                    type="text"
-                                                    value={editingValue}
-                                                    onChange={e => setEditingValue(e.target.value)}
-                                                    onBlur={handleFinishEditing}
-                                                    onKeyDown={handleKeyDown}
-                                                    onClick={e => e.stopPropagation()}
-                                                    autoFocus
-                                                    className="bg-[var(--bg-app)]/80 text-[var(--text-primary)] p-0.5 -m-0.5 rounded outline-none ring-2 ring-[var(--accent-primary)] w-full"
-                                                />
-                                            ) : (
-                                                <span className="truncate" title={shape.name || defaultName}>
-                                                    {shape.name || defaultName}
-                                                    {showTkinterNames && (
-                                                        <span className="ml-1 text-xs text-[var(--text-tertiary)]">
-                                                            [{getTkinterType(shape)}]
-                                                        </span>
-                                                    )}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className={`flex items-center gap-0.5 transition-opacity ${isSelected && !isEditing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); onMoveShape(shape.id, 'up'); }}
-                                            disabled={!canMoveUp}
-                                            title={t('list.moveUp')}
-                                            className="p-1 rounded hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed"
-                                        ><ArrowUpIcon /></button>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); onMoveShape(shape.id, 'down'); }}
-                                            disabled={!canMoveDown}
-                                            title={t('list.moveDown')}
-                                            className="p-1 rounded hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed"
-                                        ><ArrowDownIcon /></button>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); onDeleteShape(shape.id); }}
-                                            title={t('list.delete')}
-                                            className="p-1 rounded text-[var(--destructive-text)] hover:bg-[var(--destructive-bg)] hover:text-[var(--accent-text)]"
-                                        ><TrashIcon size={16} /></button>
-                                    </div>
-                                </li>
-                            );
+                            if (shape.type === 'group') {
+                                const children = shapes.filter(s => shape.shapeIds?.includes(s.id));
+                                return (
+                                    <React.Fragment key={shape.id}>
+                                        {el}
+                                        {children.map((child, cIdx) => {
+                                            const cOriginalIndex = shapes.indexOf(child);
+                                            return renderShapeItem(child, cIdx, cOriginalIndex, 1);
+                                        })}
+                                    </React.Fragment>
+                                );
+                            }
+                            return el;
                         })}
                     </ul>
                 ) : (

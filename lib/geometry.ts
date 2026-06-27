@@ -459,9 +459,26 @@ export const getTextBoundingBox = (shape: TextShape): { x: number, y: number, wi
     return { x, y, width: blockWidth, height: blockHeight };
 };
 
-export const getBoundingBox = (shape: Shape): { x: number, y: number, width: number, height: number } | null => {
+export const getBoundingBox = (shape: Shape, allShapes?: Shape[]): { x: number, y: number, width: number, height: number } | null => {
     let points: ({x:number, y:number} | null | undefined)[];
     
+    if (shape.type === 'group' && allShapes) {
+        const children = allShapes.filter(s => shape.shapeIds?.includes(s.id));
+        if (children.length === 0) return null;
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        children.forEach(child => {
+            const bbox = getVisualBoundingBox(child, allShapes);
+            if (bbox) {
+                minX = Math.min(minX, bbox.x);
+                minY = Math.min(minY, bbox.y);
+                maxX = Math.max(maxX, bbox.x + bbox.width);
+                maxY = Math.max(maxY, bbox.y + bbox.height);
+            }
+        });
+        if (minX === Infinity) return null;
+        return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+    }
+
     switch (shape.type) {
         case 'rectangle':
         case 'arc':
@@ -664,7 +681,26 @@ export function getFinalPoints(shape: Shape, overrideCenter?: { x: number; y: nu
     return points;
 }
 
-export const getVisualBoundingBox = (shape: Shape, overrideCenter?: { x: number; y: number }): { x: number, y: number, width: number, height: number } | null => {
+export const getVisualBoundingBox = (shape: Shape, overrideCenter?: { x: number; y: number }, allShapes?: Shape[]): { x: number, y: number, width: number, height: number } | null => {
+    if (shape.type === 'group') {
+        if (!allShapes) return null;
+        const children = allShapes.filter(s => shape.shapeIds?.includes(s.id));
+        if (children.length === 0) return null;
+        
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        children.forEach(child => {
+            const bbox = getVisualBoundingBox(child, undefined, allShapes);
+            if (bbox) {
+                minX = Math.min(minX, bbox.x);
+                minY = Math.min(minY, bbox.y);
+                maxX = Math.max(maxX, bbox.x + bbox.width);
+                maxY = Math.max(maxY, bbox.y + bbox.height);
+            }
+        });
+        if (minX === Infinity) return null;
+        return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+    }
+
     // Optimization for rotated ellipses and circles.
     if (shape.type === 'ellipse') {
         const { cx, cy, rx, ry, rotation = 0 } = shape;

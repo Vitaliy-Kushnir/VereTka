@@ -1,10 +1,10 @@
 
 import React, {useContext} from 'react';
 import { useLanguage } from './LanguageContext';
-import { useState, useRef, useMemo, useCallback } from 'react';
+import { useState, useRef, useMemo, useCallback, useEffect } from 'react';
 import { type Shape, type Tool, type CanvasAction, type RotatableShape, type RectangleShape, type EllipseShape, type PathShape, type LineShape, PolylineShape, PolygonShape, DrawMode, IsoscelesTriangleShape, RhombusShape, ParallelogramShape, TrapezoidShape, BezierCurveShape, ViewTransform, JoinStyle, ArcShape, RightTriangleShape, TransformHandle, TextShape, ImageShape, BitmapShape } from '../types';
 import { SelectionControls } from './SelectionControls';
-import { getShapeCenter, rotatePoint, getBoundingBox, getIsoscelesTrianglePoints, getPolylinePointsAsPath, getPolygonPointsAsArray, getRhombusPoints, getTrapezoidPoints, getParallelogramPoints, getSmoothedPathData, getFinalPoints, getArcPathData, getRightTrianglePoints, getTextBoundingBox, processTextLines } from '../lib/geometry';
+import { getShapeCenter, rotatePoint, getBoundingBox, getIsoscelesTrianglePoints, getPolylinePointsAsPath, getPolygonPointsAsArray, getRhombusPoints, getTrapezoidPoints, getParallelogramPoints, getSmoothedPathData, getFinalPoints, getArcPathData, getRightTrianglePoints, getTextBoundingBox, processTextLines, getVisualBoundingBox } from '../lib/geometry';
 import { CheckSquareIcon, ClosePathIcon, XSquareIcon } from './icons';
 import { TOOL_TYPE_TO_NAME, ROTATE_CURSOR_STYLE, ADJUST_CURSOR_STYLE, getDefaultNameForShape, getVisualFontFamily, isDefaultName, DUPLICATE_CURSOR_STYLE } from '../lib/constants';
 
@@ -15,6 +15,7 @@ interface CanvasProps {
   shapes: Shape[];
   addShape: (shape: Shape, isDuplication?: boolean) => void;
   updateShape: (shape: Shape) => void;
+  updateShapes?: (shapes: Shape[]) => void;
   activeTool: Tool;
   drawMode: DrawMode;
   fillColor: string;
@@ -24,8 +25,8 @@ interface CanvasProps {
   textFont: string;
   textFontSize: number;
   numberOfSides: number;
-  selectedShapeId: string | null;
-  onSelectShape: (id: string | null) => void;
+  selectedShapeIds: string[];
+  onSelectShape: (id: string | string[] | null, isShiftPressed?: boolean) => void;
   isDrawingPolyline: boolean;
   polylinePoints: {x: number, y: number}[];
   setPolylinePoints: React.Dispatch<React.SetStateAction<{x: number, y: number}[]>>;
@@ -52,6 +53,9 @@ interface CanvasProps {
   showNotification: (message: string, type?: 'info' | 'error') => void;
   onStartInlineEdit: (shapeId: string) => void;
   inlineEditingShapeId: string | null;
+  keyboardSnapLines?: {x: number | null, y: number | null};
+  showCenterGuides: boolean;
+  enableSnapping: boolean;
 }
 
 const DRAG_THRESHOLD = 3;
@@ -94,10 +98,10 @@ const formatPointsForSvg = (points: { x: number; y: number }[]): string => {
 const Canvas: React.FC<CanvasProps> = (props) => {
     const { t } = useLanguage();
     const { 
-        width, height, backgroundColor, shapes, addShape, updateShape, 
+        width, height, backgroundColor, shapes, addShape, updateShape, updateShapes,
         activeTool, drawMode, fillColor, strokeColor, strokeWidth, 
         textColor, textFont, textFontSize,
-        numberOfSides, selectedShapeId, onSelectShape,
+        numberOfSides, selectedShapeIds, onSelectShape,
         isDrawingPolyline, polylinePoints, setPolylinePoints, onCompletePolyline, onCancelPolyline,
         isDrawingBezier, bezierPoints, setBezierPoints, onCompleteBezier, onCancelBezier,
         showGrid, gridSize, snapStep,
@@ -110,17 +114,37 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         showNotification,
         onStartInlineEdit,
         inlineEditingShapeId,
+        keyboardSnapLines,
+        showCenterGuides,
+        enableSnapping,
     } = props;
     
   const [action, setAction] = useState<CanvasAction>(null);
-  const [activeTransformShape, setActiveTransformShape] = useState<Shape | null>(null);
+  const [activeTransformShape, _setActiveTransformShape] = useState<Shape | null>(null);
+  const activeTransformShapeRef = useRef<Shape | null>(null);
+  const setActiveTransformShape = useCallback((shape: Shape | null) => {
+    _setActiveTransformShape(shape);
+    activeTransformShapeRef.current = shape;
+  }, []);
+
+  const [auxiliaryTransformShapes, _setAuxiliaryTransformShapes] = useState<Shape[]>([]);
+  const auxiliaryTransformShapesRef = useRef<Shape[]>([]);
+  const setAuxiliaryTransformShapes = useCallback((shapes: Shape[]) => {
+    _setAuxiliaryTransformShapes(shapes);
+    auxiliaryTransformShapesRef.current = shapes;
+  }, []);
   const [previewMousePos, setPreviewMousePos] = useState<{x: number, y: number} | null>(null);
   const [rawMousePos, setRawMousePos] = useState<{x: number; y: number } | null>(null);
+  const [snapLines, setSnapLines] = useState<{x: number | null, y: number | null}>({x: null, y: null});
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const hasDraggedRef = useRef(false);
   const mouseDownPosRef = useRef<{x: number, y: number} | null>(null);
   const touchStateRef = useRef<{ initialDist: number, initialMidpoint: {x:number, y:number}, initialTransform: ViewTransform } | null>(null);
+
+  useEffect(() => {
+      if (!action) setSnapLines({ x: null, y: null });
+  }, [action]);
 
   const getPointerPosition = useCallback((event: MouseEvent | React.MouseEvent | React.Touch | Touch): { x: number; y: number } => {
     if (!containerRef.current) return {x: 0, y: 0};
@@ -160,7 +184,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
         if (shapeToDuplicate) {
              // If the right-clicked shape isn't the currently selected one, select it first.
-            if (clickedShapeId && selectedShapeId !== clickedShapeId) {
+            if (clickedShapeId && !selectedShapeIds.includes(clickedShapeId)) {
                 onSelectShape(clickedShapeId);
             }
             // Use a type-safe deep copy to prevent mutation issues
@@ -177,6 +201,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 default:
                     deepCopiedShape = {...shapeToDuplicate};
             }
+            deepCopiedShape.id = `${shapeToDuplicate.id}-preview`;
             setAction({ type: 'duplicating', initialShape: deepCopiedShape, startPos: pos });
         }
         return;
@@ -207,7 +232,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         if (!clickedShape) {
           onSelectShape(null);
         } else if (clickedShape && clickedShape.state === 'normal') {
-          if (selectedShapeId !== clickedShape.id) onSelectShape(clickedShape.id);
+          if (!selectedShapeIds.includes(clickedShape.id)) onSelectShape(clickedShape.id, e.shiftKey);
+          else if (e.shiftKey) onSelectShape(clickedShape.id, e.shiftKey);
         }
       return;
     }
@@ -215,7 +241,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     if (activeTool === 'select') {
         if (clickedShape && clickedShape.state !== 'disabled') {
             setAction({ type: 'dragging', initialShape: clickedShape, startPos: pos });
-            if (selectedShapeId !== clickedShape.id) onSelectShape(clickedShape.id);
+            if (!selectedShapeIds.includes(clickedShape.id)) onSelectShape(clickedShape.id, e.shiftKey);
+            else if (e.shiftKey) onSelectShape(clickedShape.id, e.shiftKey);
         } else {
             // Clicked on empty space, initiate pan. Deselection happens on mouseUp if it was just a click.
             setAction({ type: 'panning', initialPos: { x: e.clientX, y: e.clientY } });
@@ -342,12 +369,12 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     } else if (newShape) {
         addShape(newShape);
     }
-  }, [activeTool, shapes, onSelectShape, fillColor, strokeColor, strokeWidth, textColor, textFont, textFontSize, numberOfSides, isDrawingPolyline, setPolylinePoints, isDrawingBezier, setBezierPoints, getTransformedPointerPosition, getPointerPosition, selectedShapeId, pendingImage, setPendingImage, addShape, isImportingImage]);
+  }, [activeTool, shapes, onSelectShape, fillColor, strokeColor, strokeWidth, textColor, textFont, textFontSize, numberOfSides, isDrawingPolyline, setPolylinePoints, isDrawingBezier, setBezierPoints, getTransformedPointerPosition, getPointerPosition, selectedShapeIds, pendingImage, setPendingImage, addShape, isImportingImage]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rawPos = getPointerPosition(e);
     setRawMousePos(rawPos);
-    const pos = getTransformedPointerPosition(rawPos);
+    let pos = getTransformedPointerPosition(rawPos);
     setPreviewMousePos(pos);
     setCursorPos(pos);
     
@@ -359,6 +386,283 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     }
     
     if (!action) return;
+
+    let newSnapLines = { x: null as number | null, y: null as number | null };
+
+    if ((enableSnapping || showCenterGuides) && (action.type === 'dragging' || action.type === 'duplicating') && !e.altKey) {
+        let dx = pos.x - action.startPos.x;
+        let dy = pos.y - action.startPos.y;
+        if (e.shiftKey) {
+            if (Math.abs(dx) > Math.abs(dy)) dy = 0; else dx = 0;
+        }
+
+        const movingBboxOriginal = getVisualBoundingBox(action.initialShape, undefined, shapes);
+        
+        if (movingBboxOriginal) {
+            const movingBox = {
+               x: movingBboxOriginal.x + dx,
+               y: movingBboxOriginal.y + dy,
+               width: movingBboxOriginal.width,
+               height: movingBboxOriginal.height
+            };
+            const movingCenters = {
+               x: movingBox.x + movingBox.width / 2,
+               y: movingBox.y + movingBox.height / 2
+            };
+
+            const SNAP_DIST = 5 / viewTransform.scale;
+
+            let bestDx = dx;
+            let bestDy = dy;
+            let minSnapDistX = SNAP_DIST;
+            let minSnapDistY = SNAP_DIST;
+
+            if (enableSnapping) {
+                const otherShapes = shapes.filter(s => !selectedShapeIds.includes(s.id) && s.groupId === undefined);
+
+                for (const other of otherShapes) {
+                    const otherBox = getVisualBoundingBox(other, undefined, shapes);
+                    if (!otherBox) continue;
+
+                    const otherCenters = { x: otherBox.x + otherBox.width/2, y: otherBox.y + otherBox.height/2 };
+                    
+                    const xTargets = [
+                       { moving: movingBox.x, target: otherBox.x },
+                       { moving: movingBox.x, target: otherBox.x + otherBox.width },
+                       { moving: movingCenters.x, target: otherCenters.x },
+                       { moving: movingBox.x + movingBox.width, target: otherBox.x },
+                       { moving: movingBox.x + movingBox.width, target: otherBox.x + otherBox.width }
+                    ];
+                    for (const t of xTargets) {
+                        const diff = Math.abs(t.moving - t.target);
+                        if (diff < minSnapDistX) {
+                            minSnapDistX = diff;
+                            bestDx = dx - (t.moving - t.target);
+                            newSnapLines.x = t.target;
+                        }
+                    }
+
+                    const yTargets = [
+                       { moving: movingBox.y, target: otherBox.y },
+                       { moving: movingBox.y, target: otherBox.y + otherBox.height },
+                       { moving: movingCenters.y, target: otherCenters.y },
+                       { moving: movingBox.y + movingBox.height, target: otherBox.y },
+                       { moving: movingBox.y + movingBox.height, target: otherBox.y + otherBox.height }
+                    ];
+                    for (const t of yTargets) {
+                        const diff = Math.abs(t.moving - t.target);
+                        if (diff < minSnapDistY) {
+                            minSnapDistY = diff;
+                            bestDy = dy - (t.moving - t.target);
+                            newSnapLines.y = t.target;
+                        }
+                    }
+                }
+            }
+
+            if (showCenterGuides) {
+                const centerTargetsX = [
+                    { moving: movingCenters.x, target: width / 2 },
+                    { moving: movingBox.x, target: width / 2 },
+                    { moving: movingBox.x + movingBox.width, target: width / 2 }
+                ];
+                for (const t of centerTargetsX) {
+                    const diff = Math.abs(t.moving - t.target);
+                    if (diff < minSnapDistX) {
+                        minSnapDistX = diff;
+                        bestDx = dx - (t.moving - t.target);
+                        newSnapLines.x = t.target;
+                    }
+                }
+
+                const centerTargetsY = [
+                    { moving: movingCenters.y, target: height / 2 },
+                    { moving: movingBox.y, target: height / 2 },
+                    { moving: movingBox.y + movingBox.height, target: height / 2 }
+                ];
+                for (const t of centerTargetsY) {
+                    const diff = Math.abs(t.moving - t.target);
+                    if (diff < minSnapDistY) {
+                        minSnapDistY = diff;
+                        bestDy = dy - (t.moving - t.target);
+                        newSnapLines.y = t.target;
+                    }
+                }
+            }
+            
+            pos = { x: action.startPos.x + bestDx, y: action.startPos.y + bestDy };
+        }
+    }
+    
+    const modifyingActions = ['point-editing', 'arc-angle-editing', 'triangle-vertex-editing', 'star-inner-radius-editing', 'trapezoid-offset-editing', 'parallelogram-angle-editing'];
+    const isSnappableModifyingAction = modifyingActions.includes(action.type) && (action.type === 'point-editing' || !('rotation' in action.initialShape) || (action.initialShape as any).rotation === 0);
+
+    if ((enableSnapping || showCenterGuides) && (action.type === 'resizing' || action.type === 'drawing' || isSnappableModifyingAction) && !e.altKey && (action.type !== 'resizing' || !('rotation' in action.initialShape) || action.initialShape.rotation === 0)) {
+        const SNAP_DIST = 5 / viewTransform.scale;
+        
+        let bestX = pos.x;
+        let bestY = pos.y;
+        let minSnapDistX = SNAP_DIST;
+        let minSnapDistY = SNAP_DIST;
+        
+        let snapX = false;
+        let snapY = false;
+        
+        let movingXPoints: { current: number, getPos: (t: number) => number, min?: number, max?: number }[] = [];
+        let movingYPoints: { current: number, getPos: (t: number) => number, min?: number, max?: number }[] = [];
+
+        if (action.type === 'resizing') {
+            const isHorizontal = action.handle.includes('left') || action.handle.includes('right');
+            const isVertical = action.handle.includes('top') || action.handle.includes('bottom');
+            const isLineStart = action.handle === 'line-start';
+            const isLineEnd = action.handle === 'line-end';
+
+            snapX = isHorizontal || isLineStart || isLineEnd;
+            snapY = isVertical || isLineStart || isLineEnd;
+            
+            if (snapX) {
+                movingXPoints.push({ current: pos.x, getPos: t => t });
+                if (!isLineStart && !isLineEnd && 'x' in action.initialShape) {
+                    const fixedX = action.handle.includes('right') ? action.initialShape.x : action.initialShape.x + action.initialShape.width;
+                    movingXPoints.push({ current: (fixedX + pos.x) / 2, getPos: t => 2 * t - fixedX });
+                }
+            }
+            if (snapY) {
+                movingYPoints.push({ current: pos.y, getPos: t => t });
+                if (!isLineStart && !isLineEnd && 'y' in action.initialShape) {
+                    const fixedY = action.handle.includes('bottom') ? action.initialShape.y : action.initialShape.y + action.initialShape.height;
+                    movingYPoints.push({ current: (fixedY + pos.y) / 2, getPos: t => 2 * t - fixedY });
+                }
+            }
+        } else if (action.type === 'drawing') {
+            snapX = true;
+            snapY = true;
+            movingXPoints.push({ current: pos.x, getPos: t => t });
+            movingYPoints.push({ current: pos.y, getPos: t => t });
+            
+            if (drawMode === 'corner') {
+                movingXPoints.push({ current: (action.startPos.x + pos.x) / 2, getPos: t => 2 * t - action.startPos.x });
+                movingYPoints.push({ current: (action.startPos.y + pos.y) / 2, getPos: t => 2 * t - action.startPos.y });
+            }
+        } else if (isSnappableModifyingAction) {
+            snapX = true;
+            snapY = true;
+            
+            const shape = action.initialShape;
+            
+            let canSnapX = false;
+            let canSnapY = false;
+            
+            let minX = -Infinity;
+            let maxX = Infinity;
+            let minY = -Infinity;
+            let maxY = Infinity;
+            
+            let handlePos = { ...pos };
+
+            if (action.type === 'point-editing') {
+                canSnapX = true;
+                canSnapY = true;
+                handlePos = pos;
+            } else if (action.type === 'trapezoid-offset-editing' && shape.type === 'trapezoid') {
+                canSnapX = true;
+                canSnapY = false;
+                handlePos.y = shape.y;
+                if (action.handle === 'left') {
+                    minX = shape.x;
+                    maxX = shape.x + shape.width * 0.5;
+                    handlePos.x = Math.max(minX, Math.min(maxX, pos.x));
+                } else if (action.handle === 'right') {
+                    minX = shape.x + shape.width * 0.5;
+                    maxX = shape.x + shape.width;
+                    handlePos.x = Math.max(minX, Math.min(maxX, pos.x));
+                }
+            } else if (action.type === 'triangle-vertex-editing' && shape.type === 'triangle') {
+                canSnapX = true;
+                canSnapY = false;
+                handlePos.y = shape.y;
+                minX = shape.x;
+                maxX = shape.x + shape.width;
+                handlePos.x = Math.max(minX, Math.min(maxX, pos.x));
+            } else if (action.type === 'parallelogram-angle-editing' && shape.type === 'parallelogram') {
+                canSnapX = true;
+                canSnapY = false;
+                handlePos.y = shape.y;
+                minX = shape.x;
+                maxX = shape.x + shape.width;
+                handlePos.x = Math.max(minX, Math.min(maxX, pos.x));
+            }
+
+            if (canSnapX) {
+                movingXPoints.push({
+                    current: handlePos.x,
+                    getPos: (t) => t,
+                    min: minX,
+                    max: maxX
+                });
+            }
+            if (canSnapY) {
+                movingYPoints.push({
+                    current: handlePos.y,
+                    getPos: (t) => t,
+                    min: minY,
+                    max: maxY
+                });
+            }
+        }
+
+        if (snapX || snapY) {
+            let xTargets: number[] = [];
+            let yTargets: number[] = [];
+            
+            if (enableSnapping) {
+                const otherShapes = shapes.filter(s => !selectedShapeIds.includes(s.id) && s.groupId === undefined);
+                for (const other of otherShapes) {
+                    const otherBox = getVisualBoundingBox(other, undefined, shapes);
+                    if (!otherBox) continue;
+                    const otherCenters = { x: otherBox.x + otherBox.width/2, y: otherBox.y + otherBox.height/2 };
+                    if (snapX) xTargets.push(otherBox.x, otherBox.x + otherBox.width, otherCenters.x);
+                    if (snapY) yTargets.push(otherBox.y, otherBox.y + otherBox.height, otherCenters.y);
+                }
+            }
+            if (showCenterGuides) {
+                if (snapX) xTargets.push(width / 2);
+                if (snapY) yTargets.push(height / 2);
+            }
+
+            if (snapX) {
+                for (const t of xTargets) {
+                    for (const pt of movingXPoints) {
+                        if (pt.min !== undefined && t < pt.min - 0.01) continue;
+                        if (pt.max !== undefined && t > pt.max + 0.01) continue;
+                        const diff = Math.abs(pt.current - t);
+                        if (diff < minSnapDistX) {
+                            minSnapDistX = diff;
+                            bestX = pt.getPos(t);
+                            newSnapLines.x = t;
+                        }
+                    }
+                }
+            }
+            if (snapY) {
+                for (const t of yTargets) {
+                    for (const pt of movingYPoints) {
+                        if (pt.min !== undefined && t < pt.min - 0.01) continue;
+                        if (pt.max !== undefined && t > pt.max + 0.01) continue;
+                        const diff = Math.abs(pt.current - t);
+                        if (diff < minSnapDistY) {
+                            minSnapDistY = diff;
+                            bestY = pt.getPos(t);
+                            newSnapLines.y = t;
+                        }
+                    }
+                }
+            }
+            pos = { x: bestX, y: bestY };
+        }
+    }
+    
+    setSnapLines(newSnapLines);
 
     // Drawing action must be checked first
     if (action.type === 'drawing') {
@@ -983,8 +1287,140 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             break;
         }
     }
+    
+    // Simulate resizing, rotating, or translating for other selected shapes
+    let auxShapes: Shape[] = [];
+    if ((action.type === 'resizing' || action.type === 'rotating' || action.type === 'dragging' || action.type === 'duplicating') && selectedShapeIds.length > 1 && updatedShape) {
+        if (action.type === 'rotating') {
+            const rotShape = updatedShape as Shape & RotatableShape;
+            const initShape = action.initialShape as Shape & RotatableShape;
+            const deltaRot = (rotShape.rotation ?? 0) - (initShape.rotation ?? 0);
+            
+            auxShapes = selectedShapeIds
+                .filter(id => id !== action.initialShape.id)
+                .map(id => {
+                    const s = shapes.find(sh => sh.id === id);
+                    if (s && 'rotation' in s) return { ...s, rotation: (s.rotation || 0) + deltaRot };
+                    return s;
+                }).filter(Boolean) as Shape[];
+        } else if (action.type === 'resizing') {
+            if (action.handle === 'line-start' || action.handle === 'line-end') {
+                const initLine = action.initialShape as LineShape;
+                const newPoints = (updatedShape as LineShape).points;
+                const dx = newPoints[0].x - initLine.points[0].x;
+                const dy = newPoints[0].y - initLine.points[0].y;
+                const dxEnd = newPoints[1].x - initLine.points[1].x;
+                const dyEnd = newPoints[1].y - initLine.points[1].y;
+
+                auxShapes = selectedShapeIds
+                    .filter(id => id !== action.initialShape.id)
+                    .map(id => {
+                        const s = shapes.find(sh => sh.id === id);
+                        if (s && s.type === 'line') {
+                            const pl = s as LineShape;
+                            return { ...pl, points: [
+                                { x: pl.points[0].x + dx, y: pl.points[0].y + dy },
+                                { x: pl.points[1].x + dxEnd, y: pl.points[1].y + dyEnd }
+                            ]};
+                        }
+                        return s;
+                    }).filter(Boolean) as Shape[];
+            } else {
+                const oldBbox = action.initialShapeProps.bbox;
+                const newBbox = getBoundingBox({ ...updatedShape, rotation: 0 });
+                // We shouldn't strictly require oldBbox.width > 0 && oldBbox.height > 0
+                // For lines/rectangles it could be 0. But let's keep it safe.
+                if (oldBbox && newBbox) {
+                    const safeOldW = oldBbox.width === 0 ? 1 : oldBbox.width;
+                    const safeOldH = oldBbox.height === 0 ? 1 : oldBbox.height;
+                    const scaleX = newBbox.width / safeOldW;
+                    const scaleY = newBbox.height / safeOldH;
+                    
+                    auxShapes = selectedShapeIds
+                        .filter(id => id !== action.initialShape.id)
+                        .map(id => {
+                            const s = shapes.find(sh => sh.id === id);
+                            if (!s) return null;
+                            
+                            // Scale proportionally relative to corresponding anchor
+                            const sBbox = getBoundingBox({ ...s, rotation: 0 });
+                            if (!sBbox) return s;
+                            
+                            // We approximate scaling for simple cases
+                            const newW = sBbox.width * scaleX;
+                            const newH = sBbox.height * scaleY;
+                            
+                            let simulatedX = sBbox.x;
+                            if (action.handle.includes('left')) {
+                                simulatedX = sBbox.x + sBbox.width - newW;
+                            } else if (action.handle.includes('right')) {
+                                simulatedX = sBbox.x;
+                            } else {
+                                simulatedX = sBbox.x + sBbox.width / 2 - newW / 2;
+                            }
+
+                            let simulatedY = sBbox.y;
+                            if (action.handle.includes('top')) {
+                                simulatedY = sBbox.y + sBbox.height - newH;
+                            } else if (action.handle.includes('bottom')) {
+                                simulatedY = sBbox.y;
+                            } else {
+                                simulatedY = sBbox.y + sBbox.height / 2 - newH / 2;
+                            }
+                            
+                            if (s.type === 'rectangle' || s.type === 'ellipse' || s.type === 'image' || s.type === 'bitmap' || s.type === 'arc') {
+                                 if (s.type === 'ellipse') {
+                                     const eShape = s as EllipseShape;
+                                     return { ...eShape, cx: simulatedX + newW / 2, cy: simulatedY + newH / 2, rx: eShape.rx * scaleX, ry: eShape.ry * scaleY };
+                                 } else {
+                                     return { ...s, x: simulatedX, y: simulatedY, width: newW, height: newH } as Shape;
+                                 }
+                            }
+                            
+                             if (['line', 'bezier', 'pencil', 'polyline'].includes(s.type)) {
+                                const pl = s as PolylineShape;
+                                return { ...pl, points: pl.points.map(p => ({ x: simulatedX + (p.x - sBbox.x) * scaleX, y: simulatedY + (p.y - sBbox.y) * scaleY })) };
+                            }
+                            
+                            // For other shapes we just scale their radii or width/height
+                            return s;
+                        }).filter(Boolean) as Shape[];
+                }
+            }
+        } else if (action.type === 'dragging' || action.type === 'duplicating') {
+            const dx = pos.x - action.startPos.x;
+            let finalDx = dx;
+            let finalDy = pos.y - action.startPos.y;
+            if (e.shiftKey) {
+                if (Math.abs(finalDx) > Math.abs(finalDy)) {
+                    finalDy = 0;
+                } else {
+                    finalDx = 0;
+                }
+            }
+            
+            auxShapes = selectedShapeIds
+                .filter(id => id !== action.initialShape.id)
+                .map(id => {
+                    const s = shapes.find(sh => sh.id === id);
+                    if (!s) return null;
+                    switch (s.type) {
+                        case 'rectangle': case 'triangle': case 'right-triangle': case 'rhombus': case 'trapezoid': case 'parallelogram': case 'arc': case 'text': case 'image': case 'bitmap':
+                            return { ...s, x: s.x + finalDx, y: s.y + finalDy };
+                        case 'ellipse': case 'polygon': case 'star':
+                            return { ...s, cx: s.cx + finalDx, cy: s.cy + finalDy };
+                        case 'line': case 'bezier': case 'pencil': case 'polyline':
+                            return { ...s, points: (s as any).points.map((p: any) => ({ x: p.x + finalDx, y: p.y + finalDy })) };
+                        default:
+                            return s;
+                    }
+                }).filter(Boolean) as Shape[];
+        }
+    }
+    
     setActiveTransformShape(updatedShape);
-  }, [action, drawMode, activeTransformShape, getTransformedPointerPosition, setViewTransform, getPointerPosition, setCursorPos]);
+    setAuxiliaryTransformShapes(auxShapes);
+  }, [action, drawMode, activeTransformShape, getTransformedPointerPosition, setViewTransform, getPointerPosition, setCursorPos, shapes, selectedShapeIds]);
 
   const handleMouseUp = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     // If a pan was started with the left mouse but not dragged, it's a click on empty space -> deselect.
@@ -1006,21 +1442,36 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         } else {
             addShape(shape);
         }
-    } else if (action?.type === 'duplicating' && activeTransformShape) {
+    } else if (action?.type === 'duplicating' && activeTransformShapeRef.current) {
         if (hasDraggedRef.current) {
             // activeTransformShape contains the final geometry after dragging.
             // It was created from a deep copy of the original shape, so it has all the original properties (name, color, etc.).
             // We just need to assign a new unique ID before adding it to the canvas.
+            const newIds: string[] = [];
+            const timeStr = new Date().getTime();
+            
             const newShape = { 
-                ...activeTransformShape, 
-                id: new Date().toISOString() 
+                ...activeTransformShapeRef.current, 
+                id: `dup-${timeStr}-0` 
             };
             addShape(newShape, true);
+            newIds.push(newShape.id);
+            
+            auxiliaryTransformShapesRef.current.forEach((shape, index) => {
+                const newAux = {
+                    ...shape,
+                    id: `dup-${timeStr}-${index + 1}`
+                };
+                addShape(newAux, true);
+                newIds.push(newAux.id);
+            });
+            
+            onSelectShape(newIds);
             showNotification(t('canvas.shapeDuplicated'));
         }
-    } else if (action?.type === 'point-editing' && activeTransformShape) {
+    } else if (action?.type === 'point-editing' && activeTransformShapeRef.current) {
         const { initialShape, center } = action;
-        let shapeToUpdate = activeTransformShape;
+        let shapeToUpdate = activeTransformShapeRef.current;
 
         const originalName = initialShape.name;
         const isOriginalNameCustom = originalName && !isDefaultName(originalName);
@@ -1030,11 +1481,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             
             if (isSmoothCurve) {
                 // For smooth curves, bake rotation into control points without spline approximation.
-                const controlPoints = (activeTransformShape as PolylineShape | BezierCurveShape).points;
+                const controlPoints = (activeTransformShapeRef.current as PolylineShape | BezierCurveShape).points;
                 const finalPoints = controlPoints.map(p => rotatePoint(p, center, initialShape.rotation));
                 
                 const bakedShape = {
-                    ...activeTransformShape,
+                    ...activeTransformShapeRef.current,
                     points: finalPoints,
                     rotation: 0,
                     name: undefined as string | undefined
@@ -1044,10 +1495,10 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             } else {
                 // For primitives converted to polylines, lines, etc., use getFinalPoints.
                 // This correctly returns transformed vertices without creating extra points for non-smooth shapes.
-                const finalPoints = getFinalPoints(activeTransformShape, center);
+                const finalPoints = getFinalPoints(activeTransformShapeRef.current, center);
                 if (finalPoints) {
                     const bakedShape: PolylineShape = {
-                        ...(activeTransformShape as PolylineShape),
+                        ...(activeTransformShapeRef.current as PolylineShape),
                         points: finalPoints,
                         rotation: 0,
                         name: undefined
@@ -1058,22 +1509,28 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             }
         } else {
              // For unrotated shapes, just update the name if it has changed due to deformation.
-            const finalShape = activeTransformShape;
+            const finalShape = activeTransformShapeRef.current;
             const newName = isOriginalNameCustom ? originalName : getDefaultNameForShape(finalShape, t);
             if (finalShape.name !== newName) {
                 shapeToUpdate = { ...finalShape, name: newName };
             }
         }
         updateShape(shapeToUpdate);
-    } else if (activeTransformShape) { 
-        updateShape(activeTransformShape);
+    } else if (activeTransformShapeRef.current) { 
+        if (typeof updateShapes === 'function' && auxiliaryTransformShapesRef.current.length > 0) {
+            updateShapes([activeTransformShapeRef.current, ...auxiliaryTransformShapesRef.current]);
+        } else {
+            updateShape(activeTransformShapeRef.current);
+            auxiliaryTransformShapesRef.current.forEach(shape => updateShape(shape));
+        }
     }
     
     setAction(null);
     setActiveTransformShape(null);
+    setAuxiliaryTransformShapes([]);
     hasDraggedRef.current = false;
     mouseDownPosRef.current = null;
-  }, [action, addShape, updateShape, onSelectShape, activeTransformShape, showNotification]);
+  }, [action, addShape, updateShape, updateShapes, onSelectShape, activeTransformShape, auxiliaryTransformShapes, showNotification]);
   
   const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isDrawingPolyline) {
@@ -1218,6 +1675,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 items[index] = activeTransformShape;
             }
         }
+        
+        auxiliaryTransformShapes.forEach(auxShape => {
+            const index = items.findIndex(s => s?.id === auxShape.id);
+            if (index !== -1) items[index] = auxShape;
+        });
     
     if (isDrawingPolyline && polylinePoints.length > 0 && previewMousePos) {
       const cleanPoints = polylinePoints.filter(Boolean);
@@ -1276,13 +1738,49 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     }
     
     return items;
-  }, [shapes, action, hasDraggedRef, activeTransformShape, isDrawingPolyline, polylinePoints, previewMousePos, strokeColor, strokeWidth, isDrawingBezier, bezierPoints]);
+  }, [shapes, action, hasDraggedRef, activeTransformShape, auxiliaryTransformShapes, isDrawingPolyline, polylinePoints, previewMousePos, strokeColor, strokeWidth, isDrawingBezier, bezierPoints]);
   
-  const selectedShape = useMemo(() => {
-    const s = shapes.find(s => s?.id === selectedShapeId);
-    if (s?.id === activeTransformShape?.id) { return activeTransformShape; }
-    return s ?? null;
-  }, [shapes, selectedShapeId, activeTransformShape]);
+  const selectedShapes = useMemo(() => {
+    return selectedShapeIds.map(id => {
+       const aux = auxiliaryTransformShapes.find(a => a.id === id);
+       if (aux) return aux;
+       const s = shapes.find(s => s?.id === id);
+       if (s?.id === activeTransformShape?.id) { return activeTransformShape; }
+       return s;
+    }).filter(s => s != null) as Shape[];
+  }, [shapes, selectedShapeIds, activeTransformShape, auxiliaryTransformShapes]);
+
+  const selectedShape = selectedShapes.length === 1 ? selectedShapes[0] : null;
+
+  const shapesByGroup = useMemo(() => {
+        const groups: Record<string, Shape[]> = {};
+        const looseShapes: Shape[] = [];
+        
+        selectedShapes.forEach(shape => {
+            if (shape.groupId) {
+                if (!groups[shape.groupId]) groups[shape.groupId] = [];
+                groups[shape.groupId].push(shape);
+            } else {
+                looseShapes.push(shape);
+            }
+        });
+        return { groups, looseShapes };
+  }, [selectedShapes]);
+
+  const computeGroupBounds = (shapesArray: Shape[]) => {
+       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+       shapesArray.forEach(shape => {
+           const b = getVisualBoundingBox(shape, undefined, shapes);
+           if (!b) return;
+           minX = Math.min(minX, b.x);
+           minY = Math.min(minY, b.y);
+           maxX = Math.max(maxX, b.x + b.width);
+           maxY = Math.max(maxY, b.y + b.height);
+       });
+       if (minX === Infinity) return null;
+       return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  };
+
 
     const getCursorStyle = () => {
         if (!action) {
@@ -1576,7 +2074,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 {arrowMarkers.map(({ color, shapeParams }) => {
                     const [d1, d2, d3] = shapeParams; // tip_dist, wing_dist, width
                     if (d2 === 0 || d3 === 0) return null;
-                    const key = `${color.replace(/[^a-zA-Z0-9]/g, '')}-${d1}-${d2}-${d3}`;
+                    const key = `${encodeURIComponent(color).replace(/%/g, '_')}-${d1}-${d2}-${d3}`;
 
                     // Path with tip at (0,0) pointing left (into negative X).
                     const arrowPath = `M 0,0 L ${-d2},${d3} L ${-d1},0 L ${-d2},${-d3} Z`;
@@ -1674,7 +2172,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         const d1 = d1m * w;
                         const d2 = d2m * w;
                         const d3 = d3m * w;
-                        const key = `${s.stroke.replace(/[^a-zA-Z0-9]/g, '')}-${d1}-${d2}-${d3}`;
+                        const key = `${encodeURIComponent(s.stroke).replace(/%/g, '_')}-${d1}-${d2}-${d3}`;
                         if (s.arrow === 'first' || s.arrow === 'both') markerStart = `url(#arrow-start-${key})`;
                         if (s.arrow === 'last' || s.arrow === 'both') markerEnd = `url(#arrow-end-${key})`;
                     }
@@ -1931,19 +2429,82 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     default: return null;
                 }
             })}
-             {selectedShape && (
-                <SelectionControls
-                    shape={selectedShape}
-                    setAction={setAction}
-                    svgRef={svgRef}
-                    activeTool={activeTool}
-                    getSnappedMousePosition={getTransformedPointerPosition}
-                    viewTransform={viewTransform}
-                    getPointerPosition={getPointerPosition}
-                    activePointIndex={activePointIndex}
-                    setActivePointIndex={setActivePointIndex}
-                    updateShape={updateShape}
-                    action={action}
+             {selectedShapes.map((shape) => (
+                 <SelectionControls
+                     key={`selection-controls-${shape.id}`}
+                     shape={shape}
+                     allShapes={shapes}
+                     setAction={setAction}
+                     svgRef={svgRef}
+                     activeTool={activeTool}
+                     getSnappedMousePosition={getTransformedPointerPosition}
+                     viewTransform={viewTransform}
+                     getPointerPosition={getPointerPosition}
+                     activePointIndex={activePointIndex}
+                     setActivePointIndex={setActivePointIndex}
+                     updateShape={updateShape}
+                     action={action}
+                 />
+             ))}
+             {selectedShapes.length > 1 && (
+                <g style={{ pointerEvents: 'none' }}>
+                    {Object.entries(shapesByGroup.groups).map(([groupId, shapesInGroup]) => {
+                        const groupBounds = computeGroupBounds(shapesInGroup);
+                        if (!groupBounds) return null;
+                        return (
+                            <rect 
+                                key={`group-bounds-${groupId}`}
+                                x={groupBounds.x}
+                                y={groupBounds.y}
+                                width={groupBounds.width}
+                                height={groupBounds.height}
+                                fill="none"
+                                stroke="var(--text-tertiary)"
+                                strokeWidth={1 / viewTransform.scale}
+                                strokeDasharray={`${3 / viewTransform.scale} ${3 / viewTransform.scale}`}
+                            />
+                        );
+                    })}
+                </g>
+            )}
+            
+            {/* Center Guides */}
+            {showCenterGuides && (
+                <>
+                    <line 
+                        x1={width / 2} y1={-100000} x2={width / 2} y2={100000} 
+                        stroke="var(--text-tertiary)"
+                        strokeOpacity="0.4"
+                        strokeWidth={1 / viewTransform.scale} 
+                        pointerEvents="none"
+                    />
+                    <line 
+                        x1={-100000} y1={height / 2} x2={100000} y2={height / 2} 
+                        stroke="var(--text-tertiary)"
+                        strokeOpacity="0.4"
+                        strokeWidth={1 / viewTransform.scale} 
+                        pointerEvents="none"
+                    />
+                </>
+            )}
+
+            {/* Snap Lines */}
+            {(snapLines.x !== null || (keyboardSnapLines && keyboardSnapLines.x !== null)) && (
+                <line 
+                    x1={snapLines.x !== null ? snapLines.x : keyboardSnapLines?.x} y1={-100000} x2={snapLines.x !== null ? snapLines.x : keyboardSnapLines?.x} y2={100000} 
+                    stroke="var(--accent-primary)" 
+                    strokeWidth={1 / viewTransform.scale} 
+                    strokeDasharray={`${5 / viewTransform.scale},${5 / viewTransform.scale}`} 
+                    pointerEvents="none"
+                />
+            )}
+            {(snapLines.y !== null || (keyboardSnapLines && keyboardSnapLines.y !== null)) && (
+                <line 
+                    x1={-100000} y1={snapLines.y !== null ? snapLines.y : keyboardSnapLines?.y} x2={100000} y2={snapLines.y !== null ? snapLines.y : keyboardSnapLines?.y} 
+                    stroke="var(--accent-primary)" 
+                    strokeWidth={1 / viewTransform.scale} 
+                    strokeDasharray={`${5 / viewTransform.scale},${5 / viewTransform.scale}`} 
+                    pointerEvents="none"
                 />
             )}
             </g>

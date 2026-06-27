@@ -13,8 +13,8 @@ export const Label: React.FC<{ htmlFor: string; children?: React.ReactNode; titl
     <label htmlFor={htmlFor} className="text-sm font-medium text-[var(--text-secondary)] w-28 flex-shrink-0" title={title}>{children}</label>
 );
 
-export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: number; onChange: (value: number) => void, disabled?: boolean; step?: number; min?: number; max?: number; onFocus?: React.FocusEventHandler<HTMLInputElement>; title?: string, className?: string, smartRound?: boolean, unit?: string; onBlur?: React.FocusEventHandler<HTMLInputElement>; onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>; autoFocus?: boolean, stepLogic?: 'grid' }> (
-    ({ id, value, onChange, disabled, step = 1, min, max, onFocus, title, className, smartRound = true, unit, onBlur, onKeyDown, autoFocus, stepLogic }, forwardedRef) => {
+export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: number; onChange: (value: number) => void, disabled?: boolean; step?: number; min?: number; max?: number; onFocus?: React.FocusEventHandler<HTMLInputElement>; title?: string, className?: string, smartRound?: boolean, unit?: string; onBlur?: React.FocusEventHandler<HTMLInputElement>; onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>; autoFocus?: boolean, stepLogic?: 'grid'; placeholder?: string }> (
+    ({ id, value, onChange, disabled, step = 1, min, max, onFocus, title, className, smartRound = true, unit, onBlur, onKeyDown, autoFocus, stepLogic, placeholder }, forwardedRef) => {
     
     const [displayValue, setDisplayValue] = useState(String(value));
     const internalRef = useRef<HTMLInputElement>(null);
@@ -138,6 +138,7 @@ export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: num
                 disabled={disabled}
                 onFocus={onFocus}
                 title={title}
+                placeholder={placeholder}
                 className={`bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2 py-1 w-full h-8 border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none disabled:cursor-not-allowed ${unit ? 'pr-12' : 'pr-6'} ${className ?? ''}`}
                 onKeyDown={handleLocalKeyDown}
                 autoFocus={autoFocus}
@@ -1160,15 +1161,16 @@ const AllColorsModal: React.FC<AllColorsModalProps> = ({ isOpen, onClose, onSele
 
 
 export const ColorInput: React.FC<{
-    id: string;
+    id?: string;
     value: string;
     onChange: (value: string) => void;
-    onPreview: (value: string | null) => void;
-    onCancel: () => void;
+    onPreview?: (value: string | null) => void;
+    onCancel?: () => void;
     disabled?: boolean;
     title?: string;
+    placeholder?: string;
     showNotification?: (message: string, type?: 'info' | 'error', duration?: number) => void;
-}> = ({ id, value, onChange, onPreview, onCancel, disabled, title, showNotification }) => {
+}> = ({ id, value, onChange, onPreview, onCancel, disabled, title, placeholder, showNotification }) => {
     const { t } = useLanguage();
     const [inputValue, setInputValue] = useState(value);
     const [isEditing, setIsEditing] = useState(false);
@@ -1279,7 +1281,7 @@ export const ColorInput: React.FC<{
         }
 
         setInputValue(sanitizedValue);
-        onPreview(toHex(sanitizedValue));
+        onPreview?.(toHex(sanitizedValue));
         if (!isDropdownOpen) {
             setIsDropdownOpen(true);
         }
@@ -1289,7 +1291,7 @@ export const ColorInput: React.FC<{
         const newColor = (e.target as HTMLInputElement).value;
         startEditing();
         setInputValue(newColor);
-        onPreview(newColor);
+        onPreview?.(newColor);
     };
     
     const handlePickerClick = () => {
@@ -1300,7 +1302,7 @@ export const ColorInput: React.FC<{
     const handleItemClick = (colorName: string) => {
         startEditing();
         setInputValue(colorName);
-        onPreview(toHex(colorName));
+        onPreview?.(toHex(colorName));
         setIsDropdownOpen(false);
         inputRef.current?.focus();
     };
@@ -1309,7 +1311,7 @@ export const ColorInput: React.FC<{
         if (conversionTarget) {
             startEditing();
             setInputValue(conversionTarget);
-            onPreview(toHex(conversionTarget));
+            onPreview?.(toHex(conversionTarget));
         }
     };
 
@@ -1317,7 +1319,7 @@ export const ColorInput: React.FC<{
         if (!isEditing) return;
 
         setInputValue(originalValue);
-        onCancel();
+        onCancel?.();
         setIsEditing(false);
         setIsDropdownOpen(false);
         inputRef.current?.blur();
@@ -1337,7 +1339,7 @@ export const ColorInput: React.FC<{
 
         if (!finalHex) {
             setInputValue(originalValue);
-            onCancel();
+            onCancel?.();
         } else {
              if (trimmedInput.startsWith('#')) {
                 onChange(finalHex);
@@ -1349,7 +1351,7 @@ export const ColorInput: React.FC<{
                     return; 
                 } else {
                      setInputValue(originalValue);
-                     onCancel();
+                     onCancel?.();
                 }
             }
         }
@@ -1411,7 +1413,7 @@ export const ColorInput: React.FC<{
                     onFocus={handleFocus}
                     onKeyDown={handleKeyDown}
                     disabled={disabled}
-                    placeholder="#rrggbb or name"
+                    placeholder={placeholder || "#rrggbb or name"}
                     className={`bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2 py-1 w-full border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none text-sm disabled:opacity-50 ${convertibleTo ? 'pr-8' : ''}`}
                     title={inputTitle}
                     autoComplete="off"

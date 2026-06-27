@@ -100,7 +100,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
                             {arrowMarkers.map(({ color, shapeParams }) => {
                                 const [d1, d2, d3] = shapeParams;
                                 if (d2 === 0 || d3 === 0) return null;
-                                const key = `${color.replace(/[^a-zA-Z0-9]/g, '')}-${d1}-${d2}-${d3}`;
+                                const key = `${encodeURIComponent(color).replace(/%/g, '_')}-${d1}-${d2}-${d3}`;
                                 
                                 const arrowPath = `M 0,0 L ${-d2},${d3} L ${-d1},0 L ${-d2},${-d3} Z`;
                                 
@@ -174,7 +174,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
                                     const d1 = d1m * w;
                                     const d2 = d2m * w;
                                     const d3 = d3m * w;
-                                    const key = `${s.stroke.replace(/[^a-zA-Z0-9]/g, '')}-${d1}-${d2}-${d3}`;
+                                    const key = `${encodeURIComponent(s.stroke).replace(/%/g, '_')}-${d1}-${d2}-${d3}`;
                                     if (s.arrow === 'first' || s.arrow === 'both') markerStart = `url(#arrow-start-${key})`;
                                     if (s.arrow === 'last' || s.arrow === 'both') markerEnd = `url(#arrow-end-${key})`;
                                 }

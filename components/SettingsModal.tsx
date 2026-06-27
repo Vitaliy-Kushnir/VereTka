@@ -29,6 +29,10 @@ interface SettingsModalProps {
   setShowTkinterNames: (show: boolean) => void;
   showAxes: boolean;
   setShowAxes: (show: boolean) => void;
+  showCenterGuides: boolean;
+  setShowCenterGuides: (show: boolean) => void;
+  enableSnapping: boolean;
+  setEnableSnapping: (show: boolean) => void;
   showCursorCoords: boolean;
   setShowCursorCoords: (show: boolean) => void;
   showRotationAngle: boolean;
@@ -298,6 +302,32 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                     <label htmlFor="showAxes" className="ml-3 text-sm font-medium text-[var(--text-secondary)]">
                                         {t('settings.appearance.showAxes')}
                                         <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.appearance.showAxesDesc')}</p>
+                                    </label>
+                                </div>
+                                <div className="flex items-start pt-2">
+                                    <input
+                                        id="showCenterGuides"
+                                        type="checkbox"
+                                        checked={props.showCenterGuides}
+                                        onChange={e => props.setShowCenterGuides(e.target.checked)}
+                                        className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]"
+                                    />
+                                    <label htmlFor="showCenterGuides" className="ml-3 text-sm font-medium text-[var(--text-secondary)]">
+                                        {t('settings.appearance.showCenterGuides')}
+                                        <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.appearance.showCenterGuidesDesc')}</p>
+                                    </label>
+                                </div>
+                                <div className="flex items-start pt-2">
+                                    <input
+                                        id="enableSnapping"
+                                        type="checkbox"
+                                        checked={props.enableSnapping}
+                                        onChange={e => props.setEnableSnapping(e.target.checked)}
+                                        className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]"
+                                    />
+                                    <label htmlFor="enableSnapping" className="ml-3 text-sm font-medium text-[var(--text-secondary)]">
+                                        {t('settings.appearance.enableSnapping')}
+                                        <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.appearance.enableSnappingDesc')}</p>
                                     </label>
                                 </div>
                                 <div className="flex items-start pt-2">

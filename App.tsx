@@ -20,7 +20,7 @@ import ApiKeyModal from './components/ApiKeyModal';
 import FeedbackModal from './components/FeedbackModal';
 import CheatCodeModal from './components/CheatCodeModal';
 import { saveFile, generateSvg, exportToRaster, openProjectFile, saveToHandle } from './lib/exportUtils';
-import { SquareIcon, CodeIcon, XIcon, AxesIcon, FitToScreenIcon, SelectIcon, EditPointsIcon, RectangleIcon, EllipseIcon, CircleIcon, LineIcon, PolylineIcon, BezierIcon, PolygonIcon, PencilIcon, TriangleIcon, RightTriangleIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, PiesliceIcon, ChordIcon, ArcIcon, StarIcon, TextIcon, ImageIcon, BitmapIcon, UndoIcon, RedoIcon, DuplicateIcon, TrashIcon, GridIcon, SettingsIcon, DrawFromCornerIcon, DrawFromCenterIcon, CheckIcon, MenuIcon, SunIcon, MoonIcon, HomeIcon, BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, SadMonitorIcon, FullscreenIcon, ExitFullscreenIcon } from './components/icons';
+import { SquareIcon, CodeIcon, XIcon, AxesIcon, FitToScreenIcon, SelectIcon, EditPointsIcon, RectangleIcon, EllipseIcon, CircleIcon, LineIcon, PolylineIcon, BezierIcon, PolygonIcon, PencilIcon, TriangleIcon, RightTriangleIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, PiesliceIcon, ChordIcon, ArcIcon, StarIcon, TextIcon, ImageIcon, BitmapIcon, UndoIcon, RedoIcon, DuplicateIcon, GroupIcon, UngroupIcon, ToolsIcon, TrashIcon, GridIcon, SettingsIcon, DrawFromCornerIcon, DrawFromCenterIcon, CheckIcon, MenuIcon, SunIcon, MoonIcon, HomeIcon, BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, SadMonitorIcon, FullscreenIcon, ExitFullscreenIcon } from './components/icons';
 import { getFinalPoints, getVisualBoundingBox, getBoundingBox, getEditablePoints, getShapeCenter } from './lib/geometry';
 import { getDefaultNameForShape, isDefaultName } from './lib/constants';
 import Ruler from './components/Ruler';
@@ -37,7 +37,7 @@ type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
 type SettingsTab = 'canvas' | 'grid' | 'appearance' | 'code' | 'templates';
 
-const APP_VERSION = '1.2.15';
+const APP_VERSION = '1.3.1';
 const RULER_THICKNESS = 24;
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 30;
@@ -107,6 +107,10 @@ const MenuBar: React.FC<{
     setSnapToGrid: (snap: boolean) => void;
     showAxes: boolean;
     setShowAxes: (show: boolean) => void;
+    showCenterGuides: boolean;
+    setShowCenterGuides: (show: boolean) => void;
+    enableSnapping: boolean;
+    setEnableSnapping: (show: boolean) => void;
     onOpenSettings: () => void;
     theme: Theme;
     setTheme: (theme: Theme) => void;
@@ -216,6 +220,8 @@ const MenuBar: React.FC<{
                             <MenuCheckbox checked={props.showGrid} onChange={props.setShowGrid}>{t('menu.view.grid')}</MenuCheckbox>
                             <MenuCheckbox checked={props.snapToGrid} onChange={props.setSnapToGrid}>{t('menu.view.snap')}</MenuCheckbox>
                             <MenuCheckbox checked={props.showAxes} onChange={props.setShowAxes}>{t('menu.view.rulers')}</MenuCheckbox>
+                            <MenuCheckbox checked={props.showCenterGuides} onChange={props.setShowCenterGuides}>{t('settings.appearance.showCenterGuides')}</MenuCheckbox>
+                            <MenuCheckbox checked={props.enableSnapping} onChange={props.setEnableSnapping}>{t('settings.appearance.enableSnapping')}</MenuCheckbox>
                             <hr className="border-[var(--border-secondary)] my-1"/>
                             <div className="px-3 py-1.5 text-xs text-[var(--text-tertiary)]">{t('menu.view.theme')}</div>
                             <MenuItem onClick={() => {props.setTheme('dark'); closeView()}} selected={props.theme === 'dark'}>{t('menu.view.theme.dark')}</MenuItem>
@@ -433,27 +439,36 @@ const ToolControls: React.FC<ToolControlsProps> = ({
 };
 
 type ContextualControlsProps = {
-  selectedShape: Shape;
+  selectedShapes: Shape[];
   updateShape: (s: Shape) => void;
+  updateShapes: (shapes: Shape[]) => void;
   setShapePreview: (shapeId: string, overrides: Partial<Shape>) => void;
   cancelShapePreview: () => void;
   fillColor: string;
   strokeColor: string;
 };
 
-const ContextualControls: React.FC<ContextualControlsProps> = ({ selectedShape, updateShape, setShapePreview, cancelShapePreview, fillColor, strokeColor }) => {
+const ContextualControls: React.FC<ContextualControlsProps> = ({ selectedShapes, updateShape, updateShapes, setShapePreview, cancelShapePreview, fillColor, strokeColor }) => {
   const { t } = useLanguage();
   const standardWebFonts = { "Sans-Serif": ["Arial", "Calibri", "Helvetica", "Segoe UI", "Tahoma", "Trebuchet MS", "Verdana"], "Serif": ["Times New Roman", "Georgia", "Garamond"], "Monospace": ["Courier New", "Consolas", "Lucida Console", "Monaco"], };
   const tkFonts = ["TkDefaultFont", "TkTextFont", "TkFixedFont", "TkMenuFont", "TkHeadingFont", "TkCaptionFont", "TkSmallCaptionFont", "TkIconFont", "TkTooltipFont"];
 
+  const selectedShape = selectedShapes[0];
+  const isMultiSelection = selectedShapes.length > 1;
+
   const shape = selectedShape as TextShape;
 
   const handleUpdate = (propsToUpdate: Partial<Shape>) => {
-      updateShape({ ...selectedShape, ...propsToUpdate } as Shape);
+      if (!selectedShape) return;
+      const updatedShapes = selectedShapes.map(s => ({ ...s, ...propsToUpdate } as Shape));
+      if (typeof updateShapes === 'function') {
+          updateShapes(updatedShapes);
+      } else {
+          updatedShapes.forEach(s => updateShape(s));
+      }
   }
   const handleFillToggle = (checked: boolean) => {
-    // Fix: Add type guard to ensure selectedShape has fill properties before using them
-    if ('fill' in selectedShape) {
+    if (selectedShape && 'fill' in selectedShape) {
       if (checked) {
         const colorToRestore = selectedShape._previousFill || fillColor;
         handleUpdate({ fill: colorToRestore });
@@ -463,6 +478,7 @@ const ContextualControls: React.FC<ContextualControlsProps> = ({ selectedShape, 
     }
   };
   const handleStrokeToggle = (checked: boolean) => {
+      if (!selectedShape) return;
       if (checked) {
         const colorToRestore = selectedShape._previousStroke || strokeColor;
         handleUpdate({ stroke: colorToRestore });
@@ -471,55 +487,59 @@ const ContextualControls: React.FC<ContextualControlsProps> = ({ selectedShape, 
     }
   };
 
-  const hasFill = 'fill' in selectedShape && selectedShape.type !== 'text';
+  const hasFill = selectedShapes.some(s => 'fill' in s && s.type !== 'text');
   const isFillDisabledForShape = useMemo(() => {
     if (!selectedShape) return true;
-    if (selectedShape.type === 'arc' && selectedShape.style === 'arc') {
-        return true;
-    }
-    if ((selectedShape.type === 'polyline' || selectedShape.type === 'bezier') && !selectedShape.isClosed) {
-        return true;
-    }
-    return false;
-  }, [selectedShape]);
-  const hasStroke = 'stroke' in selectedShape && 'strokeWidth' in selectedShape && !['image', 'bitmap', 'text'].includes(selectedShape.type);
-  const hasSides = selectedShape.type === 'polygon' || selectedShape.type === 'star';
-  const isText = selectedShape.type === 'text';
+    return selectedShapes.every(s => {
+        if (s.type === 'arc' && s.style === 'arc') return true;
+        if ((s.type === 'polyline' || s.type === 'bezier') && !s.isClosed) return true;
+        return false;
+    });
+  }, [selectedShapes, selectedShape]);
+  const hasStroke = selectedShapes.some(s => 'stroke' in s && 'strokeWidth' in s && !['image', 'bitmap', 'text'].includes(s.type));
+  const hasSides = selectedShapes.some(s => s.type === 'polygon' || s.type === 'star');
+  const isText = selectedShapes.some(s => s.type === 'text');
+
+  // Compute common properties for multi selection
+  const commonFill = hasFill && selectedShapes.every(s => 'fill' in s && s.fill === (selectedShape as any).fill) ? (selectedShape as any).fill : '';
+  const commonStroke = hasStroke && selectedShapes.every(s => 'stroke' in s && s.stroke === selectedShape.stroke) ? selectedShape.stroke : '';
+  const commonStrokeWidth = hasStroke && selectedShapes.every(s => 'strokeWidth' in s && s.strokeWidth === selectedShape.strokeWidth) ? selectedShape.strokeWidth : '';
+  const commonSides = hasSides && selectedShapes.every(s => 'sides' in s && (s as PolygonShape).sides === (selectedShape as PolygonShape).sides) ? (selectedShape as PolygonShape).sides : '';
 
   const round = (num: number) => Math.round(num * 100) / 100;
 
   return (
       <>
           {hasFill && (
-              <PropertyControl label={t('prop.fill')} htmlFor={`${selectedShape.id}-ctx-fill`}>
-                   <input type="checkbox" checked={selectedShape.fill !== 'none' && !isFillDisabledForShape} onChange={e => handleFillToggle(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" disabled={isFillDisabledForShape} />
-                  <ColorInput id={`${selectedShape.id}-ctx-fill`} value={selectedShape.fill === 'none' ? '#000000' : selectedShape.fill} onChange={v => handleUpdate({ fill: v })} onPreview={v => setShapePreview(selectedShape.id, { fill: v })} onCancel={cancelShapePreview} disabled={selectedShape.fill === 'none' || isFillDisabledForShape} />
+              <PropertyControl label={t('prop.fill')} htmlFor={`ctx-fill`}>
+                   <input type="checkbox" checked={commonFill !== 'none' && !isFillDisabledForShape} onChange={e => handleFillToggle(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" disabled={isFillDisabledForShape} />
+                  <ColorInput id={`ctx-fill`} value={commonFill === 'none' ? '#000000' : commonFill} onChange={v => handleUpdate({ fill: v })} onPreview={v => selectedShapes.forEach(s => setShapePreview(s.id, { fill: v ?? undefined }))} onCancel={cancelShapePreview} disabled={commonFill === 'none' || isFillDisabledForShape} placeholder={commonFill === '' ? (t('props.mixed') || 'Різні') : undefined} />
               </PropertyControl>
           )}
           {hasStroke && (
               <>
-                  <PropertyControl label={t('prop.stroke')} htmlFor={`${selectedShape.id}-ctx-stroke`}>
-                       <input type="checkbox" checked={selectedShape.stroke !== 'none'} onChange={e => handleStrokeToggle(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" />
-                      <ColorInput id={`${selectedShape.id}-ctx-stroke`} value={selectedShape.stroke === 'none' ? '#ffffff' : selectedShape.stroke} onChange={v => handleUpdate({ stroke: v })} onPreview={v => setShapePreview(selectedShape.id, { stroke: v })} onCancel={cancelShapePreview} disabled={selectedShape.stroke === 'none'} />
+                  <PropertyControl label={t('prop.stroke')} htmlFor={`ctx-stroke`}>
+                       <input type="checkbox" checked={commonStroke !== 'none'} onChange={e => handleStrokeToggle(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" />
+                      <ColorInput id={`ctx-stroke`} value={commonStroke === 'none' ? '#ffffff' : commonStroke} onChange={v => handleUpdate({ stroke: v })} onPreview={v => selectedShapes.forEach(s => setShapePreview(s.id, { stroke: v ?? undefined }))} onCancel={cancelShapePreview} disabled={commonStroke === 'none'} placeholder={commonStroke === '' ? (t('props.mixed') || 'Різні') : undefined} />
                   </PropertyControl>
-                  <PropertyControl label={t('prop.width')} htmlFor={`${selectedShape.id}-ctx-strokeWidth`}>
-                    <div className="w-16">
-                      <NumberInput id={`${selectedShape.id}-ctx-strokeWidth`} min={0} value={selectedShape.strokeWidth} onChange={v => handleUpdate({ strokeWidth: v })} disabled={selectedShape.stroke === 'none'} />
+                  <PropertyControl label={t('prop.width')} htmlFor={`ctx-strokeWidth`}>
+                    <div className="w-20">
+                      <NumberInput id={`ctx-strokeWidth`} min={0} value={commonStrokeWidth as any} onChange={v => handleUpdate({ strokeWidth: v })} disabled={commonStroke === 'none'} placeholder={commonStrokeWidth === '' ? (t('props.mixed') || 'Різні') : undefined} />
                     </div>
                   </PropertyControl>
               </>
           )}
           {hasSides && (
-               <PropertyControl label={t('prop.sides')} htmlFor={`${selectedShape.id}-ctx-sides`}>
+               <PropertyControl label={t('prop.sides')} htmlFor={`ctx-sides`}>
                     <div className="w-20">
-                        <NumberInput id={`${selectedShape.id}-ctx-sides`} min={3} max={50} value={(selectedShape as PolygonShape).sides} onChange={v => handleUpdate({ sides: v })} />
+                        <NumberInput id={`ctx-sides`} min={3} max={50} value={commonSides as any} onChange={v => handleUpdate({ sides: v })} placeholder={commonSides === '' ? (t('props.mixed') || 'Різні') : undefined} />
                     </div>
               </PropertyControl>
           )}
           {isText && (
               <>
                   <PropertyControl label={t('prop.color')} htmlFor={`${shape.id}-ctx-fill`}>
-                      <ColorInput id={`${shape.id}-ctx-fill`} value={shape.fill} onChange={v => handleUpdate({ fill: v })} onPreview={v => setShapePreview(shape.id, { fill: v })} onCancel={cancelShapePreview} />
+                      <ColorInput id={`${shape.id}-ctx-fill`} value={shape.fill} onChange={v => handleUpdate({ fill: v })} onPreview={v => setShapePreview(shape.id, { fill: v ?? undefined })} onCancel={cancelShapePreview} />
                   </PropertyControl>
                   <PropertyControl label={t('prop.font')} htmlFor={`${shape.id}-ctx-font`}>
                      <Select id={`${shape.id}-ctx-font`} value={shape.font} onChange={v => handleUpdate({ font: v })} className="w-32 py-0.5">
@@ -563,10 +583,12 @@ const TopToolbar: React.FC<{
     onClear: () => void; isGenerating: boolean; hasShapes: boolean;
     onUndo: () => void; onRedo: () => void; canUndo: boolean; canRedo: boolean;
     onDuplicate: () => void; isShapeSelected: boolean;
+    onGroup: () => void; onUngroup: () => void;
     activeTool: Tool; setActiveTool: (tool: Tool) => void;
     onOpenMobileLeft: () => void; onOpenMobileRight: () => void;
-    selectedShape: Shape | null;
+    selectedShapes: Shape[];
     updateShape: (s: Shape) => void;
+    updateShapes: (shapes: Shape[]) => void;
     setShapePreview: (shapeId: string, overrides: Partial<Shape>) => void;
     cancelShapePreview: () => void;
     textColor: string; setTextColor: (c: string) => void;
@@ -575,10 +597,24 @@ const TopToolbar: React.FC<{
     textFontSize: number; setTextFontSize: (s: number) => void;
 }> = React.memo((props) => {
     const { 
-        isGenerating, hasShapes, onUndo, onRedo, canUndo, canRedo, onDuplicate, isShapeSelected, onOpenMobileLeft, onOpenMobileRight,
-        selectedShape, activeTool, setActiveTool, onGenerate, showGenerateButton, onClear
+        isGenerating, hasShapes, onUndo, onRedo, canUndo, canRedo, onDuplicate, onGroup, onUngroup, isShapeSelected, onOpenMobileLeft, onOpenMobileRight,
+        selectedShapes, activeTool, setActiveTool, onGenerate, showGenerateButton, onClear
     } = props;
     const { t } = useLanguage();
+    const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
+    const toolsMenuRef = useRef<HTMLDivElement>(null);
+    
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (toolsMenuRef.current && !toolsMenuRef.current.contains(event.target as Node)) {
+                setIsToolsMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const hasSelectedShapes = selectedShapes.length > 0;
     
     return (
     <div className="bg-[var(--bg-primary)] p-2 flex-shrink-0 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 select-none">
@@ -590,6 +626,34 @@ const TopToolbar: React.FC<{
             <button title={`${t('tool.select')} (V)`} onClick={() => setActiveTool('select')} className={`p-2 rounded-md ${activeTool === 'select' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}><SelectIcon /></button>
             <button title={`${t('tool.editPoints')} (A)`} onClick={() => setActiveTool('edit-points')} className={`p-2 rounded-md ${activeTool === 'edit-points' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}><EditPointsIcon /></button>
             <button title={`${t('menu.edit.duplicate')} (Ctrl+D)`} onClick={onDuplicate} disabled={!isShapeSelected} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent"><DuplicateIcon /></button>
+            <div className="relative" ref={toolsMenuRef}>
+                <button 
+                  title={t('menu.tools')} 
+                  onClick={() => setIsToolsMenuOpen(!isToolsMenuOpen)} 
+                  disabled={!isShapeSelected} 
+                  className={`p-2 rounded-md transition-colors ${isToolsMenuOpen ? 'bg-[var(--bg-secondary)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent'}`}
+                >
+                    <ToolsIcon />
+                </button>
+                {isToolsMenuOpen && (
+                    <div className="absolute top-full left-0 mt-1 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-md shadow-lg z-50 min-w-[150px] py-1 text-sm">
+                        <button 
+                          onClick={() => { onGroup(); setIsToolsMenuOpen(false); }} 
+                          disabled={!isShapeSelected}
+                          className="flex items-center gap-2 w-full text-left px-3 py-2 hover:bg-[var(--bg-secondary)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-primary)]"
+                        >
+                          <GroupIcon size={16} /> {t('menu.edit.group')}
+                        </button>
+                        <button 
+                          onClick={() => { onUngroup(); setIsToolsMenuOpen(false); }} 
+                          disabled={!isShapeSelected}
+                          className="flex items-center gap-2 w-full text-left px-3 py-2 hover:bg-[var(--bg-secondary)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-primary)]"
+                        >
+                          <UngroupIcon size={16} /> {t('menu.edit.ungroup')}
+                        </button>
+                    </div>
+                )}
+            </div>
             <div className="w-px h-6 bg-[var(--border-secondary)] mx-1"></div>
             {/* Mobile Toggles */}
             <div className="md:hidden flex items-center gap-2">
@@ -599,7 +663,7 @@ const TopToolbar: React.FC<{
 
         {/* Center properties */}
         <div className="flex items-center gap-x-2 gap-y-2 flex-wrap">
-            {selectedShape ? <ContextualControls {...props} /> : <ToolControls {...props} />}
+            {hasSelectedShapes ? <ContextualControls {...props} /> : <ToolControls {...props} />}
         </div>
 
         {/* Right side actions */}
@@ -627,8 +691,10 @@ export default function App(): React.ReactNode {
   
   const [projectName, setProjectName] = useState<string>(t('app.1069'));
   const [activeTool, setActiveTool] = useState<Tool>('select');
-  const [selectedShapeId, setSelectedShapeId] = useState<string | null>(null);
+  const [selectedShapeIds, setSelectedShapeIds] = useState<string[]>([]);
   const [inlineEditingShapeId, setInlineEditingShapeId] = useState<string | null>(null);
+  const [keyboardSnapLines, setKeyboardSnapLines] = useState<{x: number | null, y: number | null}>({x: null, y: null});
+  const keyboardSnapLinesTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const [isDrawingPolyline, setIsDrawingPolyline] = useState<boolean>(false);
   const [polylinePoints, setPolylinePoints] = useState<{ x: number, y: number }[]>([]);
@@ -678,6 +744,8 @@ export default function App(): React.ReactNode {
   const [gridSnapStep, setGridSnapStep] = useState<number>(1);
   const [showTkinterNames, setShowTkinterNames] = useState<boolean>(true);
   const [showAxes, setShowAxes] = useState<boolean>(true); 
+  const [showCenterGuides, setShowCenterGuides] = useState<boolean>(false);
+  const [enableSnapping, setEnableSnapping] = useState<boolean>(true);
   const [showCursorCoords, setShowCursorCoords] = useState<boolean>(true);
   const [showRotationAngle, setShowRotationAngle] = useState<boolean>(true);
   const [showLineNumbers, setShowLineNumbers] = useState<boolean>(true);
@@ -835,9 +903,9 @@ export default function App(): React.ReactNode {
         projectName: pName,
         shapes: s,
         canvasSettings: { width: canvasWidth, height: canvasHeight, bgColor: canvasBgColor, varName: canvasVarName },
-        uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill }
+        uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill }
     });
-  }, [canvasWidth, canvasHeight, canvasBgColor, canvasVarName, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill]);
+  }, [canvasWidth, canvasHeight, canvasBgColor, canvasVarName, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill]);
 
   const lastSavedSignatureRef = useRef('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -881,7 +949,7 @@ export default function App(): React.ReactNode {
 
   useEffect(() => {
       cancelShapePreview();
-  }, [selectedShapeId, cancelShapePreview]);
+  }, [selectedShapeIds, cancelShapePreview]);
 
 
     const fitCanvasToView = useCallback(() => {
@@ -941,33 +1009,78 @@ export default function App(): React.ReactNode {
     }
     setShapes(prevShapes => [...prevShapes, shape]);
     if (isDuplication || (shape.type !== 'polyline' && shape.type !== 'bezier')) {
-        setSelectedShapeId(shape.id);
+        setSelectedShapeIds([shape.id]);
         setActiveTool('select');
     }
   }, [setShapes, isImportingImage]);
 
   const updateShape = useCallback((updatedShape: Shape) => {
     cancelShapePreview();
-    setShapes(prevShapes =>
-      prevShapes.map(shape => (shape.id === updatedShape.id ? updatedShape : shape))
-    );
-    if (updatedShape.id === selectedShapeId && updatedShape.state !== 'normal') {
-        setSelectedShapeId(null);
+    setShapes(prevShapes => {
+      const oldShape = prevShapes.find(s => s.id === updatedShape.id);
+      
+      let nextShapes = prevShapes.map(shape => (shape.id === updatedShape.id ? updatedShape : shape));
+      
+      // If a group was updated, check if any generic styling properties changed,
+      // and if so, apply them to its children.
+      if (updatedShape.type === 'group' && oldShape && oldShape.type === 'group') {
+          const changedProps: Partial<Shape> = {};
+          if (updatedShape.stroke !== oldShape.stroke) changedProps.stroke = updatedShape.stroke;
+          if (updatedShape.strokeWidth !== oldShape.strokeWidth) changedProps.strokeWidth = updatedShape.strokeWidth;
+          if (updatedShape.state !== oldShape.state) changedProps.state = updatedShape.state;
+          
+          if (Object.keys(changedProps).length > 0) {
+              nextShapes = nextShapes.map(shape => {
+                  if (updatedShape.shapeIds.includes(shape.id)) {
+                      return { ...shape, ...changedProps } as Shape;
+                  }
+                  return shape;
+              });
+          }
+      }
+      
+      return nextShapes;
+    });
+    if (selectedShapeIds.length === 1 && updatedShape.id === selectedShapeIds[0] && updatedShape.state !== 'normal') {
+        setSelectedShapeIds([]);
         setActivePointIndex(null);
     }
-  }, [setShapes, selectedShapeId, cancelShapePreview]);
+  }, [setShapes, selectedShapeIds, cancelShapePreview]);
+
+  const updateShapes = useCallback((updatedShapes: Shape[]) => {
+    cancelShapePreview();
+    setShapes(prevShapes => {
+      const updatesMap = new Map(updatedShapes.map(s => [s.id, s]));
+      return prevShapes.map(s => updatesMap.get(s.id) || s);
+    });
+    const idsToDeselect = updatedShapes.filter(s => s.state !== 'normal').map(s => s.id);
+    if (idsToDeselect.some(id => selectedShapeIds.includes(id))) {
+        setSelectedShapeIds(prev => prev.filter(p => !idsToDeselect.includes(p)));
+        setActivePointIndex(null);
+    }
+  }, [setShapes, selectedShapeIds, cancelShapePreview]);
   
   const setShapePreview = useCallback((shapeId: string, overrides: Partial<Shape>) => {
-    setPreviewOverrides({ [shapeId]: overrides });
+    setPreviewOverrides(prev => ({ ...prev, [shapeId]: overrides }));
   }, []);
 
   const deleteShape = useCallback((id: string) => {
-    setShapes(prevShapes => prevShapes.filter(shape => shape.id !== id));
-    if (selectedShapeId === id) {
-      setSelectedShapeId(null);
-      setActivePointIndex(null);
-    }
-  }, [selectedShapeId, setShapes]);
+    setShapes(prevShapes => {
+        const shapeToDelete = prevShapes.find(s => s.id === id);
+        let idsToDelete = [id];
+        if (shapeToDelete?.type === 'group') {
+            idsToDelete = [...idsToDelete, ...shapeToDelete.shapeIds];
+        }
+        return prevShapes.filter(shape => !idsToDelete.includes(shape.id));
+    });
+    setSelectedShapeIds(prev => {
+        if (prev.includes(id)) {
+            setActivePointIndex(null);
+            return prev.filter(p => p !== id);
+        }
+        return prev;
+    });
+  }, [setShapes]);
 
   const deletePoint = useCallback((shapeId: string, pointIndex: number) => {
       setShapes(prevShapes => prevShapes.map(shape => {
@@ -1028,39 +1141,63 @@ export default function App(): React.ReactNode {
   const duplicateShape = useCallback((id: string) => {
     const shapeToDuplicate = shapes.find(s => s.id === id);
     if (!shapeToDuplicate) return;
-    let newShape: Shape;
-    switch (shapeToDuplicate.type) {
-        case 'line':
-            newShape = {...shapeToDuplicate, points: [{...shapeToDuplicate.points[0]}, {...shapeToDuplicate.points[1]}]};
-            break;
-        case 'pencil':
-        case 'polyline':
-        case 'bezier':
-            newShape = {...shapeToDuplicate, points: shapeToDuplicate.points.map(p => ({...p}))};
-            break;
-        default:
-            newShape = {...shapeToDuplicate};
-    }
 
-    newShape.id = new Date().toISOString();
+    const shapesToAdd: Shape[] = [];
     const offset = 10;
-    
-    switch (newShape.type) {
-        case 'rectangle': case 'triangle': case 'right-triangle': case 'rhombus': case 'trapezoid': case 'parallelogram': case 'arc': case 'text': case 'image': case 'bitmap': newShape.x += offset; newShape.y += offset; break;
-        case 'ellipse': case 'polygon': case 'star': newShape.cx += offset; newShape.cy += offset; break;
-        case 'line':
-            newShape.points[0].x += offset; newShape.points[0].y += offset;
-            newShape.points[1].x += offset; newShape.points[1].y += offset;
-            break;
-        case 'pencil': case 'polyline': case 'bezier': 
-            newShape.points = newShape.points.map((p: {x: number, y: number}) => ({ x: p.x + offset, y: p.y + offset })); 
-            break;
+
+    const duplicateSingleShape = (original: Shape, newGroupId?: string): Shape => {
+        let newShape: Shape;
+        switch (original.type) {
+            case 'line':
+                newShape = {...original, points: [{...original.points[0]}, {...original.points[1]}]};
+                break;
+            case 'pencil':
+            case 'polyline':
+            case 'bezier':
+                newShape = {...original, points: original.points.map((p: any) => ({...p}))};
+                break;
+            case 'group':
+                newShape = {...original, shapeIds: [...original.shapeIds]};
+                break;
+            default:
+                newShape = {...original};
+        }
+
+        newShape.id = `copy-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+        if (newGroupId) newShape.groupId = newGroupId;
+        
+        switch (newShape.type) {
+            case 'rectangle': case 'triangle': case 'right-triangle': case 'rhombus': case 'trapezoid': case 'parallelogram': case 'arc': case 'text': case 'image': case 'bitmap': newShape.x += offset; newShape.y += offset; break;
+            case 'ellipse': case 'polygon': case 'star': newShape.cx += offset; newShape.cy += offset; break;
+            case 'line':
+                newShape.points[0].x += offset; newShape.points[0].y += offset;
+                newShape.points[1].x += offset; newShape.points[1].y += offset;
+                break;
+            case 'pencil': case 'polyline': case 'bezier': 
+                newShape.points = newShape.points.map((p: {x: number, y: number}) => ({ x: p.x + offset, y: p.y + offset })); 
+                break;
+        }
+        return newShape;
+    };
+
+    const rootCopy = duplicateSingleShape(shapeToDuplicate);
+    shapesToAdd.push(rootCopy);
+
+    if (rootCopy.type === 'group') {
+        const children = shapes.filter(s => shapeToDuplicate.shapeIds?.includes(s.id));
+        const newChildIds: string[] = [];
+        children.forEach(child => {
+            const childCopy = duplicateSingleShape(child, rootCopy.id);
+            shapesToAdd.push(childCopy);
+            newChildIds.push(childCopy.id);
+        });
+        rootCopy.shapeIds = newChildIds;
     }
 
-    setShapes(prevShapes => [...prevShapes, newShape]);
-    setSelectedShapeId(newShape.id);
+    setShapes(prevShapes => [...prevShapes, ...shapesToAdd]);
     showNotification(t('app.1102'));
-  }, [shapes, setShapes, showNotification]);
+    return rootCopy;
+  }, [shapes, setShapes, showNotification, t]);
   
   const moveShape = useCallback((id: string, direction: 'up' | 'down') => {
     setShapes(prevShapes => {
@@ -1120,16 +1257,40 @@ export default function App(): React.ReactNode {
   }, [shapes, updateShape, showNotification]);
 
 
-  const handleSelectShape = useCallback((id: string | null) => {
-    setSelectedShapeId(id);
+  const handleSelectShape = useCallback((id: string | string[] | null, isShiftPressed: boolean = false) => {
+    if (Array.isArray(id)) {
+        setSelectedShapeIds(id);
+        return;
+    }
+
+    setSelectedShapeIds((prev) => {
+      if (!id) return [];
+      
+      const targetShape = shapes.find(s => s.id === id);
+      const targetGroupId = targetShape?.groupId;
+      
+      // Get all shapes that should be selected together (if grouped)
+      const idsToToggle = targetGroupId 
+        ? shapes.filter(s => s.groupId === targetGroupId).map(s => s.id)
+        : [id];
+
+      if (isShiftPressed) {
+        const isAlreadySelected = prev.includes(id);
+        if (isAlreadySelected) {
+            // Remove group
+            return prev.filter(p => !idsToToggle.includes(p));
+        } else {
+            // Add group
+            return [...prev, ...idsToToggle];
+        }
+      }
+      return idsToToggle;
+    });
     setIsDrawingPolyline(false);
     setPolylinePoints([]);
     setIsDrawingBezier(false);
     setBezierPoints([]);
-    setActivePointIndex(null);
-    if (id === null && activeTool === 'edit-points') setActiveTool('select');
-    else if (id && activeTool !== 'edit-points') setActiveTool('select');
-  }, [activeTool]);
+  }, [shapes]);
 
   const handleCompletePolyline = useCallback((isClosed: boolean) => {
     const cleanPoints = polylinePoints.filter(p => p);
@@ -1158,7 +1319,7 @@ export default function App(): React.ReactNode {
     setIsDrawingPolyline(false);
     setPolylinePoints([]);
     setActiveTool('select');
-    setSelectedShapeId(newShape.id);
+    setSelectedShapeIds([newShape.id]);
   }, [polylinePoints, addShape, isFillEnabled, fillColor, isStrokeEnabled, strokeColor, strokeWidth, previewFillColor, previewStrokeColor]);
   
     const handleCancelPolyline = useCallback(() => {
@@ -1185,7 +1346,7 @@ export default function App(): React.ReactNode {
         setIsDrawingBezier(false);
         setBezierPoints([]);
         setActiveTool('select');
-        setSelectedShapeId(newShape.id);
+        setSelectedShapeIds([newShape.id]);
     }, [bezierPoints, addShape, isStrokeEnabled, strokeColor, strokeWidth, isFillEnabled, fillColor, previewFillColor, previewStrokeColor]);
     
     const handleCancelBezier = useCallback(() => { setIsDrawingBezier(false); setBezierPoints([]); setActiveTool('select'); }, []);
@@ -1212,7 +1373,7 @@ export default function App(): React.ReactNode {
 
     const handleSetActiveTool = useCallback((tool: Tool) => {
         if (tool === 'edit-points') {
-            const shape = shapes.find(s => s.id === selectedShapeId);
+            const shape = selectedShapeIds.length === 1 ? shapes.find(s => s.id === selectedShapeIds[0]) : undefined;
             if (shape?.type === 'text') {
                 showNotification(t('app.1107'), 'info');
                 return;
@@ -1223,19 +1384,20 @@ export default function App(): React.ReactNode {
         if (isDrawingBezier) handleCancelBezier();
         setActivePointIndex(null);
         const isSelectionPreservingTool = tool === 'select' || tool === 'edit-points';
-        if (!isSelectionPreservingTool) setSelectedShapeId(null);
+        if (!isSelectionPreservingTool) setSelectedShapeIds([]);
         if (tool === 'polyline') { setIsDrawingPolyline(true); setPolylinePoints([]);
         } else { setIsDrawingPolyline(false); }
         if (tool === 'bezier') { setIsDrawingBezier(true); setBezierPoints([]);
         } else { setIsDrawingBezier(false); }
         if (tool === 'image') fileInputRef.current?.click();
         else { setPendingImage(null); setActiveTool(tool); }
-    }, [isDrawingPolyline, isDrawingBezier, handleCompletePolyline, handleCancelBezier, shapes, selectedShapeId, showNotification]);
+    }, [isDrawingPolyline, isDrawingBezier, handleCompletePolyline, handleCancelBezier, shapes, selectedShapeIds, showNotification]);
 
-  const selectedShape = useMemo(() => {
-    const foundShape = shapes.find((s) => s?.id === selectedShapeId) ?? null;
-    return foundShape ? { ...foundShape } as Shape : null;
-  }, [shapes, selectedShapeId]);
+  const selectedShapes = useMemo(() => {
+    return shapes.filter(s => selectedShapeIds.includes(s.id));
+  }, [shapes, selectedShapeIds]);
+
+  const selectedShape = selectedShapes.length === 1 ? selectedShapes[0] : null;
   
   const inlineEditingShape = useMemo(() => {
     if (!inlineEditingShapeId) return null;
@@ -1313,7 +1475,7 @@ export default function App(): React.ReactNode {
     resetHistory([]);
     setGeneratedCodeLines([]);
     setError(null);
-    setSelectedShapeId(null);
+    setSelectedShapeIds([]);
     setActivePointIndex(null);
     setIsDrawingPolyline(false);
     setPolylinePoints([]);
@@ -1412,9 +1574,9 @@ export default function App(): React.ReactNode {
         thumbnail: generateProjectThumbnail(shapesToSave, canvasWidth, canvasHeight, canvasBgColor),
         canvasSettings: { width: canvasWidth, height: canvasHeight, bgColor: canvasBgColor, varName: canvasVarName },
         viewTransform,
-        uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill }
+        uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill }
     };
-  }, [shapes, canvasWidth, canvasHeight, canvasBgColor, canvasVarName, viewTransform, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateProjectThumbnail]);
+  }, [shapes, canvasWidth, canvasHeight, canvasBgColor, canvasVarName, viewTransform, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateProjectThumbnail]);
 
     const handleSaveProject = useCallback(async () => {
         if (!hasUnsavedChanges && fileHandle) {
@@ -1583,6 +1745,8 @@ export default function App(): React.ReactNode {
             setSnapToGrid(ui.snapToGrid ?? true);
             setGridSnapStep(ui.gridSnapStep || 1);
             setShowAxes(ui.showAxes ?? true);
+            setShowCenterGuides(ui.showCenterGuides ?? false);
+            setEnableSnapping(ui.enableSnapping ?? true);
             setShowCursorCoords(ui.showCursorCoords ?? true);
             setShowRotationAngle(ui.showRotationAngle ?? true);
             setShowLineNumbers(ui.showLineNumbers ?? true);
@@ -1870,8 +2034,94 @@ export default function App(): React.ReactNode {
     }, [codeStringForExport, showNotification, confirmAction]);
 
 
-  const handleDuplicate = useCallback(() => { if (selectedShapeId) duplicateShape(selectedShapeId); }, [selectedShapeId, duplicateShape]);
-  const handleDelete = useCallback(() => { if (selectedShapeId) deleteShape(selectedShapeId); }, [selectedShapeId, deleteShape]);
+  const handleDuplicate = useCallback(() => { 
+    if (selectedShapeIds.length > 0) {
+        // Need to duplicate each selected shape
+        const newSelectedIds: string[] = [];
+        selectedShapeIds.forEach(id => {
+            const newShape = duplicateShape(id);
+            if (newShape) newSelectedIds.push(newShape.id);
+        });
+        setSelectedShapeIds(newSelectedIds);
+    }
+  }, [selectedShapeIds, duplicateShape]);
+
+  const handleDelete = useCallback(() => { 
+    if (selectedShapeIds.length > 0) {
+        setConfirmationAction({
+            title: t('app.1125'),
+            message: t('app.1126'),
+            onConfirm: () => {
+                selectedShapeIds.forEach(id => deleteShape(id));
+                setSelectedShapeIds([]);
+                setConfirmationAction(null);
+            },
+            confirmText: t('app.1127'),
+            cancelText: t('app.1121'),
+            variant: 'danger'
+        });
+    }
+  }, [selectedShapeIds, deleteShape, t]);
+
+  const confirmDeleteShape = useCallback((id: string) => {
+    setConfirmationAction({
+        title: t('app.1125'),
+        message: t('app.1126'),
+        onConfirm: () => {
+            deleteShape(id);
+            setConfirmationAction(null);
+        },
+        confirmText: t('app.1127'),
+        cancelText: t('app.1121'),
+        variant: 'danger'
+    });
+  }, [deleteShape, t]);
+
+  const handleGroup = useCallback(() => {
+    if (selectedShapeIds.length < 2) return;
+    const newGroupId = `group-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    setShapes(prev => {
+        const newShapes = prev.map(s => selectedShapeIds.includes(s.id) ? { ...s, groupId: newGroupId } : s);
+        const groupShape: Shape = {
+            type: 'group',
+            id: newGroupId,
+            name: `Group`,
+            state: 'normal',
+            stroke: 'none',
+            strokeWidth: 0,
+            shapeIds: [...selectedShapeIds],
+        };
+        return [...newShapes, groupShape];
+    });
+    setSelectedShapeIds([newGroupId]);
+    showNotification(t('menu.edit.group') || 'Об\'єкти згруповано');
+  }, [selectedShapeIds, setShapes, showNotification, t]);
+
+  const handleUngroup = useCallback(() => {
+    if (selectedShapeIds.length === 0) return;
+    
+    // Find groups to unpack. A group could be selected directly, or via its children
+    const groupIdsToClear = new Set<string>();
+    shapes.forEach(s => {
+        if (selectedShapeIds.includes(s.id)) {
+            if (s.type === 'group') groupIdsToClear.add(s.id);
+            else if (s.groupId) groupIdsToClear.add(s.groupId);
+        }
+    });
+
+    if (groupIdsToClear.size === 0) return;
+
+    setShapes(prev => {
+        const remainingShapes = prev.filter(s => !groupIdsToClear.has(s.id)); // Remove GroupShapes
+        return remainingShapes.map(s => (s.groupId && groupIdsToClear.has(s.groupId)) ? { ...s, groupId: undefined } : s);
+    });
+
+    // Select the newly ungrouped children
+    const newlyUngroupedIds = shapes.filter(s => s.groupId && groupIdsToClear.has(s.groupId)).map(s => s.id);
+    setSelectedShapeIds(newlyUngroupedIds);
+
+    showNotification(t('menu.edit.ungroup') || 'Групу розформовано');
+  }, [shapes, selectedShapeIds, setShapes, showNotification, t]);
 
   const canConvertToPath = useMemo(() => {
     if (!selectedShape) return false;
@@ -1891,11 +2141,11 @@ export default function App(): React.ReactNode {
   }, [showNotification]);
 
     const handleLocateSelectedShape = useCallback(() => {
-        if (!selectedShapeId || !viewportRef.current) return;
-        const shape = shapes.find(s => s.id === selectedShapeId);
+        if ((selectedShapeIds.length === 0) || !viewportRef.current) return;
+        const shape = selectedShapeIds.length === 1 ? shapes.find(s => s.id === selectedShapeIds[0]) : undefined;
         if (!shape) return;
 
-        const shapeBbox = getVisualBoundingBox(shape);
+        const shapeBbox = getVisualBoundingBox(shape, undefined, shapes);
         if (!shapeBbox || shapeBbox.width === 0 || shapeBbox.height === 0) return;
 
         const rulerOffset = showAxes ? RULER_THICKNESS : 0;
@@ -1921,7 +2171,7 @@ export default function App(): React.ReactNode {
         const newY = viewportCenterY - (shapeCenterY * newScale);
 
         setViewTransform({ scale: newScale, x: newX, y: newY });
-    }, [selectedShapeId, shapes, showAxes, viewportSize, setViewTransform]);
+    }, [selectedShapeIds, shapes, showAxes, viewportSize, setViewTransform]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -1952,9 +2202,9 @@ export default function App(): React.ReactNode {
         if (e.ctrlKey || e.metaKey) {
             switch (e.code) {
                 case 'KeyD':
-                    if (selectedShapeId) {
+                    if (selectedShapeIds.length > 0) {
                         e.preventDefault();
-                        duplicateShape(selectedShapeId);
+                        selectedShapeIds.forEach(id => duplicateShape(id));
                     }
                     return;
                 case 'KeyZ':
@@ -1977,9 +2227,9 @@ export default function App(): React.ReactNode {
         }
         
         // Arrow key movement
-        if (selectedShapeId && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+        if (selectedShapeIds.length > 0 && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
             e.preventDefault();
-            const shapeToMove = shapes.find(s => s.id === selectedShapeId);
+            const shapeToMove = selectedShapeIds.length === 1 ? shapes.find(s => s.id === selectedShapeIds[0]) : undefined;
             if (!shapeToMove) return;
 
             const delta = e.shiftKey ? 10 : 1;
@@ -1994,6 +2244,105 @@ export default function App(): React.ReactNode {
             }
 
             if (dx === 0 && dy === 0) return;
+
+            let bestDx = dx;
+            let bestDy = dy;
+            let newSnapLines = { x: null as number | null, y: null as number | null };
+
+            if ((enableSnapping || showCenterGuides) && !e.altKey) {
+                const movingBboxOriginal = getVisualBoundingBox(shapeToMove, undefined, shapes);
+                if (movingBboxOriginal) {
+                    const movingBox = {
+                        x: movingBboxOriginal.x + dx,
+                        y: movingBboxOriginal.y + dy,
+                        width: movingBboxOriginal.width,
+                        height: movingBboxOriginal.height
+                    };
+                    const movingCenters = {
+                        x: movingBox.x + movingBox.width / 2,
+                        y: movingBox.y + movingBox.height / 2
+                    };
+
+                    const SNAP_DIST = 5 / viewTransform.scale;
+                    let minSnapDistX = SNAP_DIST;
+                    let minSnapDistY = SNAP_DIST;
+
+                    if (enableSnapping) {
+                        const otherShapes = shapes.filter(s => !selectedShapeIds.includes(s.id) && s.groupId === undefined);
+
+                        for (const other of otherShapes) {
+                            const otherBox = getVisualBoundingBox(other, undefined, shapes);
+                            if (!otherBox) continue;
+
+                            const otherCenters = { x: otherBox.x + otherBox.width/2, y: otherBox.y + otherBox.height/2 };
+                            
+                            if (dx !== 0) {
+                                const xTargets = [
+                                    { moving: movingBox.x, target: otherBox.x },
+                                    { moving: movingBox.x, target: otherBox.x + otherBox.width },
+                                    { moving: movingCenters.x, target: otherCenters.x },
+                                    { moving: movingBox.x + movingBox.width, target: otherBox.x },
+                                    { moving: movingBox.x + movingBox.width, target: otherBox.x + otherBox.width }
+                                ];
+                                for (const t of xTargets) {
+                                    const diff = Math.abs(t.moving - t.target);
+                                    if (diff < minSnapDistX) {
+                                        minSnapDistX = diff;
+                                        bestDx = dx - (t.moving - t.target);
+                                        newSnapLines.x = t.target;
+                                    }
+                                }
+                            }
+
+                            if (dy !== 0) {
+                                const yTargets = [
+                                    { moving: movingBox.y, target: otherBox.y },
+                                    { moving: movingBox.y, target: otherBox.y + otherBox.height },
+                                    { moving: movingCenters.y, target: otherCenters.y },
+                                    { moving: movingBox.y + movingBox.height, target: otherBox.y },
+                                    { moving: movingBox.y + movingBox.height, target: otherBox.y + otherBox.height }
+                                ];
+                                for (const t of yTargets) {
+                                    const diff = Math.abs(t.moving - t.target);
+                                    if (diff < minSnapDistY) {
+                                        minSnapDistY = diff;
+                                        bestDy = dy - (t.moving - t.target);
+                                        newSnapLines.y = t.target;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (showCenterGuides) {
+                        if (dx !== 0) {
+                            const diff = Math.abs(movingCenters.x - canvasWidth / 2);
+                            if (diff < minSnapDistX) {
+                                minSnapDistX = diff;
+                                bestDx = dx - (movingCenters.x - canvasWidth / 2);
+                                newSnapLines.x = canvasWidth / 2;
+                            }
+                        }
+                        if (dy !== 0) {
+                            const diff = Math.abs(movingCenters.y - canvasHeight / 2);
+                            if (diff < minSnapDistY) {
+                                minSnapDistY = diff;
+                                bestDy = dy - (movingCenters.y - canvasHeight / 2);
+                                newSnapLines.y = canvasHeight / 2;
+                            }
+                        }
+                    }
+                }
+            }
+
+            dx = bestDx;
+            dy = bestDy;
+
+            setKeyboardSnapLines(newSnapLines);
+            if (keyboardSnapLinesTimeout.current) clearTimeout(keyboardSnapLinesTimeout.current);
+            keyboardSnapLinesTimeout.current = setTimeout(() => {
+                setKeyboardSnapLines({ x: null, y: null });
+            }, 1000);
 
             let newShape: Shape;
             switch (shapeToMove.type) {
@@ -2045,10 +2394,10 @@ export default function App(): React.ReactNode {
             case 'Delete':
             case 'Backspace':
                 e.preventDefault();
-                if (activeTool === 'edit-points' && selectedShapeId && activePointIndex !== null) {
-                    deletePoint(selectedShapeId, activePointIndex);
-                } else if (selectedShapeId) {
-                    deleteShape(selectedShapeId);
+                if (activeTool === 'edit-points' && selectedShapeIds.length === 1 && activePointIndex !== null) {
+                    deletePoint(selectedShapeIds[0], activePointIndex);
+                } else if (selectedShapeIds.length > 0) {
+                    selectedShapeIds.forEach(id => deleteShape(id));
                 }
                 return;
         }
@@ -2058,7 +2407,7 @@ export default function App(): React.ReactNode {
     return () => {
         window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedShapeId, activeTool, activePointIndex, deletePoint, deleteShape, duplicateShape, undo, redo, canUndo, canRedo, handleSaveProject, handleSetActiveTool, shapes, updateShape, inlineEditingShapeId, handleToggleFullscreen, isFullscreen]);
+  }, [selectedShapeIds, activeTool, activePointIndex, deletePoint, deleteShape, duplicateShape, undo, redo, canUndo, canRedo, handleSaveProject, handleSetActiveTool, shapes, updateShape, inlineEditingShapeId, handleToggleFullscreen, isFullscreen]);
 
     const handleZoomChange = useCallback((newScale: number) => {
         if (!viewportRef.current) return;
@@ -2083,10 +2432,10 @@ export default function App(): React.ReactNode {
     }, [handleZoomChange]);
 
     const handleConvertToPath = useCallback(() => {
-        if (selectedShapeId) {
-            convertToPath(selectedShapeId);
+        if (selectedShapeIds.length > 0) {
+            selectedShapeIds.forEach(id => convertToPath(id));
         }
-    }, [selectedShapeId, convertToPath]);
+    }, [selectedShapeIds, convertToPath]);
 
     const handleOpenSettings = useCallback(() => {
         setSettingsInitialTab('canvas');
@@ -2114,7 +2463,7 @@ export default function App(): React.ReactNode {
     
     const handleStartInlineEdit = useCallback((shapeId: string) => {
         setInlineEditingShapeId(shapeId);
-        setSelectedShapeId(shapeId);
+        setSelectedShapeIds([shapeId]);
     }, []);
 
     const handleStopInlineEdit = useCallback(() => {
@@ -2270,7 +2619,7 @@ export default function App(): React.ReactNode {
             canUndo={canUndo}
             canRedo={canRedo}
             onDuplicate={handleDuplicate}
-            isShapeSelected={!!selectedShapeId}
+            isShapeSelected={!(selectedShapeIds.length === 0)}
             onDelete={handleDelete}
             onConvertToPath={handleConvertToPath}
             canConvertToPath={canConvertToPath}
@@ -2283,6 +2632,10 @@ export default function App(): React.ReactNode {
             setSnapToGrid={setSnapToGrid}
             showAxes={showAxes}
             setShowAxes={setShowAxes}
+            showCenterGuides={showCenterGuides}
+            setShowCenterGuides={setShowCenterGuides}
+            enableSnapping={enableSnapping}
+            setEnableSnapping={setEnableSnapping}
             onOpenSettings={handleOpenSettings}
             theme={theme}
             setTheme={setTheme}
@@ -2323,11 +2676,14 @@ export default function App(): React.ReactNode {
               canUndo={canUndo}
               canRedo={canRedo}
               onDuplicate={handleDuplicate}
-              isShapeSelected={!!selectedShapeId}
+              onGroup={handleGroup}
+              onUngroup={handleUngroup}
+              isShapeSelected={selectedShapeIds.length > 0}
               onOpenMobileLeft={handleOpenMobileLeft}
               onOpenMobileRight={handleOpenMobileRight}
-              selectedShape={selectedShape}
+              selectedShapes={selectedShapes}
               updateShape={updateShape}
+              updateShapes={updateShapes}
               setShapePreview={setShapePreview}
               cancelShapePreview={cancelShapePreview}
               textColor={textColor}
@@ -2356,7 +2712,7 @@ export default function App(): React.ReactNode {
                         codeLines={generatedCodeLines} isLoading={isLoading} error={error} onUpdate={handleGenerateCode}
                         onPreview={() => setIsPreviewOpen(true)} hasUnsyncedChanges={hasUnsyncedChangesWithCode}
                         opacity={1} setOpacity={() => {}}
-                        selectedShapeId={selectedShapeId}
+                        selectedShapeIds={selectedShapeIds}
                         highlightCodeOnSelection={highlightCodeOnSelection}
                         setHighlightCodeOnSelection={setHighlightCodeOnSelection}
                         showLineNumbers={showLineNumbers}
@@ -2399,12 +2755,12 @@ export default function App(): React.ReactNode {
                                     />
                                 )}
                                 <Canvas
-                                    width={canvasWidth} height={canvasHeight} backgroundColor={previewCanvasBgColor ?? canvasBgColor} shapes={displayedShapes} addShape={addShape} updateShape={updateShape} activeTool={activeTool} drawMode={drawMode}
+                                    width={canvasWidth} height={canvasHeight} backgroundColor={previewCanvasBgColor ?? canvasBgColor} shapes={displayedShapes} addShape={addShape} updateShape={updateShape} updateShapes={updateShapes} activeTool={activeTool} drawMode={drawMode}
                                     fillColor={isFillEnabled ? (previewFillColor ?? fillColor) : 'none'} strokeColor={isStrokeEnabled ? (previewStrokeColor ?? strokeColor) : 'none'} strokeWidth={isStrokeEnabled ? strokeWidth : 0}
                                     textColor={previewTextColor ?? textColor}
                                     textFont={textFont}
                                     textFontSize={textFontSize}
-                                    numberOfSides={numberOfSides} selectedShapeId={selectedShapeId} onSelectShape={handleSelectShape} isDrawingPolyline={isDrawingPolyline} polylinePoints={polylinePoints} setPolylinePoints={setPolylinePoints}
+                                    numberOfSides={numberOfSides} selectedShapeIds={selectedShapeIds} onSelectShape={handleSelectShape} isDrawingPolyline={isDrawingPolyline} polylinePoints={polylinePoints} setPolylinePoints={setPolylinePoints}
                                     onCompletePolyline={handleCompletePolyline} onCancelPolyline={handleCancelPolyline} isDrawingBezier={isDrawingBezier} bezierPoints={bezierPoints} setBezierPoints={setBezierPoints}
                                     onCompleteBezier={handleCompleteBezier} onCancelBezier={handleCancelBezier} showGrid={showGrid} gridSize={gridSize} snapStep={snapToGrid ? gridSnapStep : 1} viewTransform={viewTransform}
                                     setViewTransform={setViewTransform} activePointIndex={activePointIndex} setActivePointIndex={setActivePointIndex} showCursorCoords={showCursorCoords} showRotationAngle={showRotationAngle}
@@ -2413,6 +2769,9 @@ export default function App(): React.ReactNode {
                                     showNotification={showNotification}
                                     onStartInlineEdit={handleStartInlineEdit}
                                     inlineEditingShapeId={inlineEditingShapeId}
+                                    keyboardSnapLines={keyboardSnapLines}
+                                    showCenterGuides={showCenterGuides}
+                                    enableSnapping={enableSnapping}
                                 />
                             </div>
                             <button onClick={fitCanvasToView} title={t('menu.view.fit')} className="absolute bottom-4 right-4 z-10 p-2 bg-[var(--bg-primary)] text-[var(--text-secondary)] rounded-full shadow-lg hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
@@ -2425,7 +2784,7 @@ export default function App(): React.ReactNode {
                             onZoomChange={handleZoomChange}
                             onResetZoom={handleResetZoom}
                             onLocateSelectedShape={handleLocateSelectedShape}
-                            selectedShapeId={selectedShapeId}
+                            selectedShapeIds={selectedShapeIds}
                             showCursorCoords={showCursorCoords}
                             setShowCursorCoords={setShowCursorCoords}
                         />
@@ -2455,9 +2814,9 @@ export default function App(): React.ReactNode {
                  <div className="flex-1 min-h-0">
                     <ShapeList
                         shapes={shapes}
-                        selectedShapeId={selectedShapeId}
+                        selectedShapeIds={selectedShapeIds}
                         onSelectShape={handleSelectShape}
-                        onDeleteShape={deleteShape}
+                        onDeleteShape={confirmDeleteShape}
                         onMoveShape={moveShape}
                         onUpdateShape={updateShape}
                         onReorderShape={reorderShape}
@@ -2466,7 +2825,7 @@ export default function App(): React.ReactNode {
                 </div>
                 <div className="flex-[2_2_0%] min-h-0">
                     <PropertyEditor 
-                        selectedShape={selectedShape} updateShape={updateShape} deleteShape={deleteShape} duplicateShape={duplicateShape}
+                        selectedShapes={selectedShapes} allShapes={shapes} updateShape={updateShape} updateShapes={updateShapes} deleteShape={deleteShape} duplicateShape={duplicateShape}
                         activeTool={activeTool} activePointIndex={activePointIndex} setActivePointIndex={setActivePointIndex}
                         deletePoint={deletePoint} addPoint={addPoint} convertToPath={convertToPath} showNotification={showNotification}
                         setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview}
@@ -2500,7 +2859,10 @@ export default function App(): React.ReactNode {
               canvasVarName={canvasVarName}
               setCanvasVarName={setCanvasVarName}
               gridSize={gridSize} setGridSize={setGridSize} gridSnapStep={gridSnapStep} setGridSnapStep={setGridSnapStep} showTkinterNames={showTkinterNames} setShowTkinterNames={setShowTkinterNames}
-              showAxes={showAxes} setShowAxes={setShowAxes} showCursorCoords={showCursorCoords} setShowCursorCoords={setShowCursorCoords}
+              showAxes={showAxes} setShowAxes={setShowAxes} 
+              showCenterGuides={showCenterGuides} setShowCenterGuides={setShowCenterGuides}
+              enableSnapping={enableSnapping} setEnableSnapping={setEnableSnapping}
+              showCursorCoords={showCursorCoords} setShowCursorCoords={setShowCursorCoords}
               showRotationAngle={showRotationAngle} setShowRotationAngle={setShowRotationAngle}
               showLineNumbers={showLineNumbers} setShowLineNumbers={setShowLineNumbers}
               generatorType={generatorType} setGeneratorType={setGeneratorType}

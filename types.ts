@@ -46,6 +46,7 @@ interface BaseShape {
     strokeWidth: number;
     isAspectRatioLocked?: boolean;
     comment?: string;
+    groupId?: string;
     // Fix: Add _previousStroke to store stroke color when stroke is toggled off.
     _previousStroke?: string;
 }
@@ -245,6 +246,11 @@ export interface BitmapShape extends BaseShape, RotatableShape {
     background: string;
 }
 
+export interface GroupShape extends BaseShape {
+    type: 'group';
+    shapeIds: string[];
+}
+
 export type Shape = 
     | RectangleShape 
     | EllipseShape 
@@ -261,7 +267,8 @@ export type Shape =
     | ArcShape
     | TextShape
     | ImageShape
-    | BitmapShape;
+    | BitmapShape
+    | GroupShape;
 
 export type CanvasAction = 
     | { type: 'drawing', shape: Shape, startPos: { x: number, y: number } }

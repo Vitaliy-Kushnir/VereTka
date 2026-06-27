@@ -8,8 +8,10 @@ import { getDefaultNameForShape, TOOL_TYPE_TO_NAME, DASH_STYLES } from '../lib/c
 import { useLanguage } from './LanguageContext';
 
 interface PropertyEditorProps {
-  selectedShape: Shape | null;
+  selectedShapes: Shape[];
+  allShapes: Shape[];
   updateShape: (shape: Shape) => void;
+  updateShapes?: (shapes: Shape[]) => void;
   deleteShape: (id: string) => void;
   duplicateShape: (id: string) => void;
   activeTool: Tool;
@@ -219,7 +221,7 @@ const FillControls: React.FC<{
                 id={`${shape.id}-fill`} 
                 value={isFillNone ? '#000000' : shape.fill} 
                 onChange={v => updateShape({ ...shape, fill: v })} 
-                onPreview={v => setShapePreview(shape.id, { fill: v })}
+                onPreview={v => setShapePreview(shape.id, { fill: v ?? undefined })}
                 onCancel={cancelShapePreview}
                 disabled={isFillNone || isFillDisabled} 
                 title={t('prop.title.fillColor')}
@@ -266,7 +268,7 @@ const StrokeControls: React.FC<{
                     id={`${shape.id}-stroke`} 
                     value={isStrokeNone ? '#ffffff' : shape.stroke} 
                     onChange={v => updateShape({ ...shape, stroke: v })}
-                    onPreview={v => setShapePreview(shape.id, { stroke: v })}
+                    onPreview={v => setShapePreview(shape.id, { stroke: v ?? undefined })}
                     onCancel={cancelShapePreview}
                     disabled={isStrokeNone} 
                     title={t('prop.title.strokeColor')}
@@ -517,7 +519,9 @@ const isCollapsible = (shape: Shape | null): boolean => {
     return ['line', 'pencil', 'polyline', 'bezier'].includes(shape.type);
 };
 
-const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateShape, deleteShape, duplicateShape, activeTool, activePointIndex, setActivePointIndex, deletePoint, addPoint, convertToPath, showNotification, setShapePreview, cancelShapePreview, fillColor, strokeColor }) => {
+const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShapes, updateShape, updateShapes, deleteShape, duplicateShape, activeTool, activePointIndex, setActivePointIndex, deletePoint, addPoint, convertToPath, showNotification, setShapePreview, cancelShapePreview, fillColor, strokeColor }) => {
+  const selectedShape = selectedShapes.length === 1 ? selectedShapes[0] : null;
+  const isMultiSelection = selectedShapes.length > 1;
   const [systemFonts, setSystemFonts] = useState<string[] | null>(null);
   const [isLoadingFonts, setIsLoadingFonts] = useState(false);
   const [editingName, setEditingName] = useState<string | null>(null);
@@ -536,8 +540,8 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
 
   const visualBounds = React.useMemo(() => {
     if (!selectedShape) return null;
-    return getVisualBoundingBox(selectedShape);
-  }, [selectedShape]);
+    return getVisualBoundingBox(selectedShape, undefined, allShapes);
+  }, [selectedShape, allShapes]);
   
   const geometricBounds = React.useMemo(() => {
     if (!selectedShape) return null;
@@ -1013,7 +1017,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
                             id={`${line.id}-stroke`} 
                             value={line.stroke} 
                             onChange={v => updateShape({ ...line, stroke: v })} 
-                            onPreview={v => setShapePreview(line.id, { stroke: v })} 
+                            onPreview={v => setShapePreview(line.id, { stroke: v ?? undefined })} 
                             onCancel={cancelShapePreview} 
                             showNotification={showNotification}
                         />
@@ -1035,7 +1039,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
                             id={`${path.id}-stroke`} 
                             value={path.stroke} 
                             onChange={v => updateShape({ ...path, stroke: v })} 
-                            onPreview={v => setShapePreview(path.id, { stroke: v })} 
+                            onPreview={v => setShapePreview(path.id, { stroke: v ?? undefined })} 
                             onCancel={cancelShapePreview} 
                             showNotification={showNotification}
                         />
@@ -1197,7 +1201,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
                             id={`${text.id}-fill`} 
                             value={text.fill} 
                             onChange={v => updateShape({ ...text, fill: v })} 
-                            onPreview={v => setShapePreview(text.id, { fill: v })}
+                            onPreview={v => setShapePreview(text.id, { fill: v ?? undefined })}
                             onCancel={cancelShapePreview}
                             showNotification={showNotification}
                         />
@@ -1265,7 +1269,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
                             id={`${bitmap.id}-fg`} 
                             value={bitmap.foreground} 
                             onChange={v => updateShape({ ...bitmap, foreground: v })} 
-                            onPreview={v => setShapePreview(bitmap.id, { foreground: v })}
+                            onPreview={v => setShapePreview(bitmap.id, { foreground: v ?? undefined })}
                             onCancel={cancelShapePreview}
                             showNotification={showNotification}
                         />
@@ -1278,7 +1282,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
                             id={`${bitmap.id}-bg`} 
                             value={bitmap.background} 
                             onChange={v => updateShape({ ...bitmap, background: v })}
-                            onPreview={v => setShapePreview(bitmap.id, { background: v })}
+                            onPreview={v => setShapePreview(bitmap.id, { background: v ?? undefined })}
                             onCancel={cancelShapePreview}
                             showNotification={showNotification}
                         />
@@ -1293,7 +1297,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
     }
   }
 
-  if (!selectedShape) {
+  if (!selectedShape && !isMultiSelection) {
     return (
       <div className="shadow-lg h-full flex flex-col rounded-lg bg-[var(--bg-primary)] p-4">
         <div className="flex justify-between items-center pb-2 border-b border-[var(--border-primary)]">
@@ -1305,6 +1309,159 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShape, updateSh
       </div>
     );
   }
+
+  if (isMultiSelection) {
+    const handleMultiUpdate = (updates: Partial<Shape>) => {
+        if (typeof updateShapes === 'function') {
+            const updatedShapes = selectedShapes.map(shape => ({ ...shape, ...updates } as Shape));
+            updateShapes(updatedShapes);
+        } else {
+            selectedShapes.forEach(shape => {
+                if (shape) updateShape({ ...shape, ...updates } as Shape);
+            });
+        }
+    };
+
+    const validShapes = selectedShapes.filter(Boolean);
+    if (validShapes.length === 0) return null;
+
+    const commonStroke = validShapes.every(s => s.stroke === validShapes[0].stroke) ? validShapes[0].stroke : '';
+    const commonStrokeWidth = validShapes.every(s => s.strokeWidth === validShapes[0].strokeWidth) ? validShapes[0].strokeWidth : '';
+    const commonState = validShapes.every(s => s.state === validShapes[0].state) ? validShapes[0].state : '';
+    
+    const hasRotationShapes = validShapes.filter(s => 'rotation' in s);
+    const showRotation = hasRotationShapes.length > 0 && hasRotationShapes.length === validShapes.length;
+    const commonRotation = showRotation && hasRotationShapes.every(s => (s as any).rotation === (hasRotationShapes[0] as any).rotation) ? (hasRotationShapes[0] as any).rotation : '';
+
+    const hasJoinstyleShapes = validShapes.filter(s => 'joinstyle' in s);
+    const showJoinstyle = hasJoinstyleShapes.length > 0 && hasJoinstyleShapes.length === validShapes.length;
+    const commonJoinstyle = showJoinstyle && hasJoinstyleShapes.every(s => (s as any).joinstyle === (hasJoinstyleShapes[0] as any).joinstyle) ? (hasJoinstyleShapes[0] as any).joinstyle : '';
+
+    
+    // Check if all selected shapes support fill
+    const fillableShapes = validShapes.filter(s => s && 'fill' in s) as FillableShape[];
+    const showFill = fillableShapes.length > 0 && fillableShapes.length === validShapes.length;
+    const commonFill = showFill && fillableShapes.every(s => s.fill === fillableShapes[0].fill) ? fillableShapes[0].fill : '';
+
+    return (
+      <div className="shadow-lg h-full flex flex-col rounded-lg bg-[var(--bg-primary)]">
+          <div className="flex justify-between items-center p-2 px-3 bg-[var(--bg-app)]/50 rounded-t-lg border-b border-[var(--border-primary)] flex-shrink-0">
+              <h2 className="font-semibold text-[var(--text-primary)] text-sm">{t('props.title')} ({selectedShapes.length})</h2>
+              <div className="flex items-center gap-1">
+                 {/* Tooling for multi-selection can go here */}
+              </div>
+          </div>
+          
+          <div className="flex-grow overflow-y-auto px-3 py-2 space-y-3 p-scrollbar">
+            <h3 className="font-semibold text-[var(--text-secondary)] text-sm pt-2">{t('props.commonTitle') || 'Спільні властивості'}</h3>
+            <div className="space-y-2">
+                <InputWrapper>
+                    <Label htmlFor="multi-stroke">{t('props.stroke') || 'Контур'}</Label>
+                    <ColorInput 
+                        id="multi-stroke"
+                        value={commonStroke ?? ''} 
+                        onChange={(val) => handleMultiUpdate({ stroke: val, _previousStroke: undefined })}
+                        onPreview={(val) => selectedShapes.forEach(s => setShapePreview?.(s.id, { stroke: val ?? undefined }))}
+                        onCancel={() => cancelShapePreview?.()}
+                        placeholder={t('props.mixed') || 'Різні'}
+                    />
+                </InputWrapper>
+                <div className="pl-6 mt-1 flex items-center gap-2">
+                    <button 
+                        onClick={() => handleMultiUpdate({ stroke: 'none' })}
+                        className={`text-xs px-2 py-0.5 rounded ${commonStroke === 'none' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
+                    >
+                        {t('props.none') || 'Немає'}
+                    </button>
+                    {commonStroke !== 'none' && commonStroke !== '' && (
+                        <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: commonStroke }}></div>
+                    )}
+                </div>
+
+                <InputWrapper>
+                    <Label htmlFor="multi-stroke-width">{t('props.strokeWidth') || 'Товщина'}</Label>
+                    <div className="relative">
+                       <NumberInput 
+                           id="multi-stroke-width"
+                           value={commonStrokeWidth as any} 
+                           onChange={(val) => handleMultiUpdate({ strokeWidth: val })}
+                           min={0}
+                           placeholder={commonStrokeWidth === '' ? (t('props.mixed') || 'Різні') : undefined}
+                       />
+                       {commonStrokeWidth === '' && <span className="absolute left-2 top-1.5 text-xs text-gray-400 pointer-events-none">{t('props.mixed') || 'Різні'}</span>}
+                    </div>
+                </InputWrapper>
+
+                {showFill && (
+                    <InputWrapper>
+                        <Label htmlFor="multi-fill">{t('props.fill') || 'Заливка'}</Label>
+                        <ColorInput 
+                            id="multi-fill"
+                            value={commonFill ?? ''} 
+                            onChange={(val) => handleMultiUpdate({ fill: val })}
+                            onPreview={(val) => selectedShapes.forEach(s => setShapePreview?.(s.id, { fill: val ?? undefined }))}
+                            onCancel={() => cancelShapePreview?.()}
+                            placeholder={t('props.mixed') || 'Різні'}
+                        />
+                    </InputWrapper>
+                )}
+                {showFill && (
+                    <div className="pl-6 mt-1 flex items-center gap-2">
+                        <button 
+                            onClick={() => handleMultiUpdate({ fill: 'none' })}
+                            className={`text-xs px-2 py-0.5 rounded ${commonFill === 'none' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
+                        >
+                            {t('props.none') || 'Немає'}
+                        </button>
+                        {commonFill !== 'none' && commonFill !== '' && (
+                            <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: commonFill }}></div>
+                        )}
+                    </div>
+                )}
+                
+                <InputWrapper>
+                    <Label htmlFor="multi-state">{t('props.state') || 'Стан'}</Label>
+                    <Select id="multi-state" value={commonState} onChange={(val) => handleMultiUpdate({ state: val as any })}>
+                        <option value="" disabled hidden>Mixed</option>
+                        <option value="normal">{t('props.state.normal') || 'Normal'}</option>
+                        <option value="hidden">{t('props.state.hidden') || 'Hidden'}</option>
+                        <option value="disabled">{t('props.state.disabled') || 'Disabled'}</option>
+                    </Select>
+                </InputWrapper>
+
+                {showRotation && (
+                     <InputWrapper>
+                        <Label htmlFor="multi-rotation">{t('props.rotation')}</Label>
+                        <div className="relative">
+                            <NumberInput 
+                                id="multi-rotation"
+                                value={commonRotation as any} 
+                                onChange={(val) => handleMultiUpdate({ rotation: val })}
+                                placeholder={commonRotation === '' ? 'Mixed' : undefined}
+                            />
+                            {commonRotation === '' && <span className="absolute left-2 top-1.5 text-xs text-gray-400 pointer-events-none">Mixed</span>}
+                        </div>
+                    </InputWrapper>
+                )}
+                
+                {showJoinstyle && (
+                    <InputWrapper>
+                        <Label htmlFor="multi-joinstyle" title={t('prop.title.joinstyleDesc')}>{t('props.joinstyle')}</Label>
+                        <Select id="multi-joinstyle" value={commonJoinstyle} onChange={v => handleMultiUpdate({ joinstyle: v as JoinStyle })}>
+                            <option value="" disabled hidden>Mixed</option>
+                            <option value="miter">{t('props.joinstyle.miter') || 'Miter'}</option>
+                            <option value="round">{t('props.joinstyle.round') || 'Round'}</option>
+                            <option value="bevel">{t('props.joinstyle.bevel') || 'Bevel'}</option>
+                        </Select>
+                    </InputWrapper>
+                )}
+            </div>
+          </div>
+      </div>
+    );
+  }
+
+  if (!selectedShape) return null;
 
   const isEditing = activeTool === 'edit-points';
   const editablePoints = getEditablePoints(selectedShape);

@@ -7,6 +7,7 @@ import { getDefaultNameForShape, ROTATE_CURSOR_STYLE, ADJUST_CURSOR_STYLE, isDef
 
 interface SelectionControlsProps {
     shape: Shape;
+    allShapes: Shape[];
     setAction: React.Dispatch<React.SetStateAction<CanvasAction>>;
     svgRef: React.RefObject<SVGSVGElement>;
     activeTool: Tool;
@@ -42,7 +43,7 @@ const getCursorForHandle = (handle: TransformHandle): string => {
     }
 };
 
-export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, setAction, svgRef, activeTool, getSnappedMousePosition, viewTransform, getPointerPosition, activePointIndex, setActivePointIndex, updateShape, action }) => {
+export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, allShapes, setAction, svgRef, activeTool, getSnappedMousePosition, viewTransform, getPointerPosition, activePointIndex, setActivePointIndex, updateShape, action }) => {
     const { t } = useLanguage();
     if (!shape) return null;
 
@@ -62,10 +63,10 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, set
         // If we are point-editing a rotated shape, use the stable center from the action
         // to prevent the bounding box from jumping around.
         if (action?.type === 'point-editing' && 'rotation' in action.initialShape && action.initialShape.rotation !== 0) {
-            return getVisualBoundingBox(shape, action.center);
+            return getVisualBoundingBox(shape, action.center, allShapes);
         }
-        return getVisualBoundingBox(shape);
-    }, [shape, action]);
+        return getVisualBoundingBox(shape, undefined, allShapes);
+    }, [shape, action, allShapes]);
     
     const VisualBoundsRect = visualBounds && (
         <g style={{ pointerEvents: 'none' }}>

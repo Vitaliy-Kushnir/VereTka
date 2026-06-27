@@ -154,23 +154,19 @@
       .animate-fade-in-up {
         animation: fadeInUp 0.3s ease-out forwards;
       }
+      
+      @keyframes scrollText {
+        0%, 20% { transform: translateX(0); }
+        80%, 100% { transform: translateX(calc(-100% + var(--container-width, 100px))); }
+      }
+      .scroll-text-hover {
+        display: inline-block;
+        white-space: nowrap;
+        animation: scrollText 4s linear infinite alternate;
+      }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.1.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
-    "react/": "https://aistudiocdn.com/react@^19.1.1/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0",
-    "vite": "https://aistudiocdn.com/vite@^7.1.6",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.3",
-    "vite-plugin-pwa": "https://esm.sh/vite-plugin-pwa@^1.2.0",
-    "virtual:pwa-register": "https://esm.sh/vite-plugin-pwa@^1.2.0/register"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
-</head>
+    <link rel="stylesheet" href="/index.css">
+  </head>
   <body class="dark-theme bg-[var(--bg-app)] text-[var(--text-primary)] font-sans">
     <div id="root"></div>
     <script type="module" src="/pwa.ts"></script>

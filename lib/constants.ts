@@ -103,9 +103,7 @@ export const getDefaultNameForShape = (s: Shape, t: (key: string) => string): st
         // a polygon or star, its default name should be "Багатокутник".
         // This handles rotated rectangles, ellipses, converted primitives, etc.
         // The arc case is already handled above, so this is now safe.
-        if (s.type !== 'polygon' && s.type !== 'star') {
-            return t('tool.polygon');
-        }
+        // Removed as per user request to keep original shape name (e.g., Triangle instead of Polygon)
     }
 
     // A polyline that becomes an axis-aligned rectangle

@@ -10,7 +10,7 @@ interface StatusBarProps {
   onZoomChange: (newScale: number) => void;
   onResetZoom: () => void;
   onLocateSelectedShape: () => void;
-  selectedShapeId: string | null;
+  selectedShapeIds: string[];
   showCursorCoords: boolean;
   setShowCursorCoords: (show: boolean) => void;
 }
@@ -24,7 +24,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
   onZoomChange, 
   onResetZoom, 
   onLocateSelectedShape, 
-  selectedShapeId,
+  selectedShapeIds,
   showCursorCoords,
   setShowCursorCoords
 }) => {
@@ -110,7 +110,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
         )}
         <button
             onClick={onLocateSelectedShape}
-            disabled={!selectedShapeId}
+            disabled={(selectedShapeIds.length === 0)}
             className="p-1 rounded-md text-[var(--text-tertiary)] hover:text-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-[var(--text-tertiary)]"
             title={t('status.showSelected')}
         >
