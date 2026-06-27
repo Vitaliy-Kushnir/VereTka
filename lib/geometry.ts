@@ -467,7 +467,7 @@ export const getBoundingBox = (shape: Shape, allShapes?: Shape[]): { x: number, 
         if (children.length === 0) return null;
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         children.forEach(child => {
-            const bbox = getVisualBoundingBox(child, allShapes);
+            const bbox = getVisualBoundingBox(child, undefined, allShapes);
             if (bbox) {
                 minX = Math.min(minX, bbox.x);
                 minY = Math.min(minY, bbox.y);

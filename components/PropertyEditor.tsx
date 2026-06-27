@@ -545,8 +545,8 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
   
   const geometricBounds = React.useMemo(() => {
     if (!selectedShape) return null;
-    return getBoundingBox({ ...selectedShape, rotation: 0 });
-  }, [selectedShape]);
+    return getBoundingBox('rotation' in selectedShape ? { ...selectedShape, rotation: 0 } as Shape : selectedShape, allShapes);
+  }, [selectedShape, allShapes]);
   
     const handleVisualPosChange = (axis: 'x' | 'y', value: number) => {
         if (!selectedShape || !visualBounds) return;
@@ -584,6 +584,25 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
             case 'polyline':
                 (newShape as any).points = newShape.points.map((p: {x:number,y:number}) => ({ x: p.x + deltaX, y: p.y + deltaY }));
                 break;
+            case 'group':
+                if (updateShapes) {
+                    const children = allShapes.filter(s => newShape.shapeIds.includes(s.id));
+                    const movedChildren = children.map(child => {
+                        let c = { ...child };
+                        if ('x' in c && 'y' in c) {
+                            (c as any).x += deltaX;
+                            (c as any).y += deltaY;
+                        } else if ('cx' in c && 'cy' in c) {
+                            (c as any).cx += deltaX;
+                            (c as any).cy += deltaY;
+                        } else if ('points' in c && Array.isArray((c as any).points)) {
+                            (c as any).points = (c as any).points.map((p: any) => ({ x: p.x + deltaX, y: p.y + deltaY }));
+                        }
+                        return c;
+                    });
+                    updateShapes(movedChildren);
+                }
+                return; // Group itself doesn't need to be updated in state for position
         }
         updateShape(newShape);
     };
@@ -1419,10 +1438,13 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                     </div>
                 )}
                 
+                <hr className="border-[var(--border-secondary)] my-2" />
+                <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">{t('props.geometry')}</h3>
+                
                 <InputWrapper>
                     <Label htmlFor="multi-state">{t('props.state') || 'Стан'}</Label>
                     <Select id="multi-state" value={commonState} onChange={(val) => handleMultiUpdate({ state: val as any })}>
-                        <option value="" disabled hidden>Mixed</option>
+                        <option value="" disabled hidden>{t('props.mixed') || 'Різні'}</option>
                         <option value="normal">{t('props.state.normal') || 'Normal'}</option>
                         <option value="hidden">{t('props.state.hidden') || 'Hidden'}</option>
                         <option value="disabled">{t('props.state.disabled') || 'Disabled'}</option>
@@ -1437,9 +1459,9 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                                 id="multi-rotation"
                                 value={commonRotation as any} 
                                 onChange={(val) => handleMultiUpdate({ rotation: val })}
-                                placeholder={commonRotation === '' ? 'Mixed' : undefined}
+                                placeholder={commonRotation === '' ? (t('props.mixed') || 'Різні') : undefined}
                             />
-                            {commonRotation === '' && <span className="absolute left-2 top-1.5 text-xs text-gray-400 pointer-events-none">Mixed</span>}
+                            {commonRotation === '' && <span className="absolute left-2 top-1.5 text-xs text-gray-400 pointer-events-none">{t('props.mixed') || 'Різні'}</span>}
                         </div>
                     </InputWrapper>
                 )}
@@ -1448,7 +1470,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                     <InputWrapper>
                         <Label htmlFor="multi-joinstyle" title={t('prop.title.joinstyleDesc')}>{t('props.joinstyle')}</Label>
                         <Select id="multi-joinstyle" value={commonJoinstyle} onChange={v => handleMultiUpdate({ joinstyle: v as JoinStyle })}>
-                            <option value="" disabled hidden>Mixed</option>
+                            <option value="" disabled hidden>{t('props.mixed') || 'Різні'}</option>
                             <option value="miter">{t('props.joinstyle.miter') || 'Miter'}</option>
                             <option value="round">{t('props.joinstyle.round') || 'Round'}</option>
                             <option value="bevel">{t('props.joinstyle.bevel') || 'Bevel'}</option>
@@ -1469,7 +1491,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
   
   const canLockAspectRatio = 'isAspectRatioLocked' in selectedShape;
 
-  const isTkinterBboxEditable = selectedShape.rotation === 0 && (selectedShape.type === 'rectangle' || selectedShape.type === 'ellipse' || selectedShape.type === 'arc');
+  const isTkinterBboxEditable = ('rotation' in selectedShape && selectedShape.rotation === 0) && (selectedShape.type === 'rectangle' || selectedShape.type === 'ellipse' || selectedShape.type === 'arc');
 
   const isShapeClosed = selectedShape ? (
       (selectedShape.type === 'polyline' || selectedShape.type === 'bezier') ? selectedShape.isClosed :

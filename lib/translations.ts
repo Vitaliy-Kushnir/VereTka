@@ -476,6 +476,13 @@ export const translations = {
 
     // Property Editor
     'props.title': 'Властивості',
+    'props.commonTitle': 'Спільні властивості',
+    'props.stroke': 'Контур:',
+    'props.strokeWidth': 'Товщина контуру:',
+    'props.fill': 'Заливка:',
+    'props.mixed': 'Різні',
+    'props.none': 'Немає',
+
     'props.empty': "Виберіть об\'єкт, щоб побачити його властивості.",
     'props.name': 'Назва:',
     'props.nameDesc': "Назва об\'єкта для ідентифікації.",
@@ -1118,6 +1125,13 @@ export const translations = {
 
     // Property Editor
     'props.title': 'Properties',
+    'props.commonTitle': 'Common Properties',
+    'props.stroke': 'Stroke:',
+    'props.strokeWidth': 'Stroke Width:',
+    'props.fill': 'Fill:',
+    'props.mixed': 'Mixed',
+    'props.none': 'None',
+
     'props.empty': "Select an object to see its properties.",
     'props.name': 'Name:',
     'props.nameDesc': "Object name for identification.",
@@ -1761,6 +1775,13 @@ export const translations = {
 
     // Property Editor
     'props.title': 'Proprietà',
+    'props.commonTitle': 'Proprietà Comuni',
+    'props.stroke': 'Tratto:',
+    'props.strokeWidth': 'Spessore:',
+    'props.fill': 'Riempimento:',
+    'props.mixed': 'Misto',
+    'props.none': 'Nessuno',
+
     'props.empty': "Seleziona un oggetto per visualizzarne le proprietà.",
     'props.name': 'Nome:',
     'props.nameDesc': "Nome dell'oggetto per l'identificazione.",
@@ -2405,6 +2426,13 @@ export const translations = {
 
     // Property Editor
     'props.title': 'Propiedades',
+    'props.commonTitle': 'Propiedades Comunes',
+    'props.stroke': 'Trazo:',
+    'props.strokeWidth': 'Grosor:',
+    'props.fill': 'Relleno:',
+    'props.mixed': 'Mixto',
+    'props.none': 'Ninguno',
+
     'props.empty': "Selecciona un objeto para ver sus propiedades.",
     'props.name': 'Nombre:',
     'props.nameDesc': "Variable usada en Tkinter.",
