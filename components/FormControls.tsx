@@ -50,8 +50,8 @@ export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: num
 
         // If input is invalid or empty, revert to the last valid value from props.
         if (isNaN(num) || displayValue.trim() === '') {
-            setDisplayValue(String(value));
-            if(value !== Number(displayValue)) {
+            setDisplayValue((value as any) === '' ? '' : String(value));
+            if((value as any) !== '' && value !== Number(displayValue)) {
                 onChange(value);
             }
             return;
@@ -1558,15 +1558,16 @@ export const DashSelect: React.FC<{
     value: number[] | undefined;
     onChange: (value: number[] | undefined) => void;
     disabled?: boolean;
-    isCustom: boolean;
-}> = ({ id, value, onChange, disabled, isCustom }) => {
+    isCustom?: boolean;
+    isMixed?: boolean;
+}> = ({ id, value, onChange, disabled, isCustom, isMixed }) => {
     const { t } = useLanguage();
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     useClickOutside(dropdownRef, () => setIsOpen(false));
     
     const selectedStyle = isCustom 
-        ? { nameKey: "Custom", pattern: value ?? [], descKey: "Custom dash style." } 
+        ? { nameKey: "prop.dash.custom", pattern: value ?? [], descKey: "Custom dash style." } 
         : (DASH_STYLES.find(style => JSON.stringify(style.pattern) === JSON.stringify(value ?? [])) ?? DASH_STYLES[0]);
 
     const handleSelect = (pattern: number[]) => {
@@ -1584,7 +1585,7 @@ export const DashSelect: React.FC<{
                 className="bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2 py-1 w-full border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
                 title="Select preset dash style or configure custom"
             >
-                <span className="truncate">{isCustom ? "Custom" : t(selectedStyle.nameKey)}</span>
+                <span className="truncate">{isMixed ? (t('props.mixed') || 'Різні') : (isCustom ? (t('prop.dash.custom') || 'Свій...') : t(selectedStyle.nameKey))}</span>
                 <ChevronDownIcon size={16} className={`transform transition-transform text-[var(--text-tertiary)] ${isOpen ? 'rotate-180' : 'rotate-0'}`} />
             </button>
             {isOpen && (

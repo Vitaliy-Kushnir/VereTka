@@ -1368,21 +1368,18 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                 simulatedY = sBbox.y + sBbox.height / 2 - newH / 2;
                             }
                             
-                            if (s.type === 'rectangle' || s.type === 'ellipse' || s.type === 'image' || s.type === 'bitmap' || s.type === 'arc') {
-                                 if (s.type === 'ellipse') {
-                                     const eShape = s as EllipseShape;
-                                     return { ...eShape, cx: simulatedX + newW / 2, cy: simulatedY + newH / 2, rx: eShape.rx * scaleX, ry: eShape.ry * scaleY };
-                                 } else {
-                                     return { ...s, x: simulatedX, y: simulatedY, width: newW, height: newH } as Shape;
-                                 }
-                            }
-                            
-                             if (['line', 'bezier', 'pencil', 'polyline'].includes(s.type)) {
+                            if (['rectangle', 'image', 'bitmap', 'arc', 'triangle', 'right-triangle', 'rhombus', 'trapezoid', 'parallelogram', 'text'].includes(s.type)) {
+                                 return { ...s, x: simulatedX, y: simulatedY, width: newW, height: newH } as Shape;
+                            } else if (s.type === 'ellipse') {
+                                 const eShape = s as EllipseShape;
+                                 return { ...eShape, cx: simulatedX + newW / 2, cy: simulatedY + newH / 2, rx: eShape.rx * scaleX, ry: eShape.ry * scaleY };
+                            } else if (s.type === 'polygon' || s.type === 'star') {
+                                 return { ...s, cx: simulatedX + newW / 2, cy: simulatedY + newH / 2, radius: (s as any).radius * Math.max(scaleX, scaleY) } as Shape;
+                            } else if (['line', 'bezier', 'pencil', 'polyline'].includes(s.type)) {
                                 const pl = s as PolylineShape;
                                 return { ...pl, points: pl.points.map(p => ({ x: simulatedX + (p.x - sBbox.x) * scaleX, y: simulatedY + (p.y - sBbox.y) * scaleY })) };
                             }
                             
-                            // For other shapes we just scale their radii or width/height
                             return s;
                         }).filter(Boolean) as Shape[];
                 }

@@ -37,7 +37,7 @@ type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
 type SettingsTab = 'canvas' | 'grid' | 'appearance' | 'code' | 'templates';
 
-const APP_VERSION = '1.3.1';
+const APP_VERSION = '1.3.2';
 const RULER_THICKNESS = 24;
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 30;
@@ -624,7 +624,7 @@ const TopToolbar: React.FC<{
             <button title={`${t('menu.edit.redo')} (Ctrl+Y)`} onClick={onRedo} disabled={!canRedo} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent"><RedoIcon/></button>
             <div className="w-px h-6 bg-[var(--border-secondary)] mx-1"></div>
             <button title={`${t('tool.select')} (V)`} onClick={() => setActiveTool('select')} className={`p-2 rounded-md ${activeTool === 'select' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}><SelectIcon /></button>
-            <button title={`${t('tool.editPoints')} (A)`} onClick={() => setActiveTool('edit-points')} className={`p-2 rounded-md ${activeTool === 'edit-points' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}><EditPointsIcon /></button>
+            <button title={`${t('tool.editPoints')} (A)`} onClick={() => setActiveTool('edit-points')} disabled={selectedShapes.length > 1} className={`p-2 rounded-md ${activeTool === 'edit-points' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent'}`}><EditPointsIcon /></button>
             <button title={`${t('menu.edit.duplicate')} (Ctrl+D)`} onClick={onDuplicate} disabled={!isShapeSelected} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent"><DuplicateIcon /></button>
             <div className="relative" ref={toolsMenuRef}>
                 <button 
@@ -1138,12 +1138,12 @@ export default function App(): React.ReactNode {
         setActivePointIndex(pointIndex);
     }, [setShapes]);
 
-  const duplicateShape = useCallback((id: string) => {
-    const shapeToDuplicate = shapes.find(s => s.id === id);
-    if (!shapeToDuplicate) return;
-
+  const duplicateShape = useCallback((idOrIds: string | string[]) => {
+    const ids = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
+    
     const shapesToAdd: Shape[] = [];
     const offset = 10;
+    const newRootIds: string[] = [];
 
     const duplicateSingleShape = (original: Shape, newGroupId?: string): Shape => {
         let newShape: Shape;
@@ -1180,23 +1180,32 @@ export default function App(): React.ReactNode {
         return newShape;
     };
 
-    const rootCopy = duplicateSingleShape(shapeToDuplicate);
-    shapesToAdd.push(rootCopy);
+    ids.forEach(id => {
+        const shapeToDuplicate = shapes.find(s => s.id === id);
+        if (!shapeToDuplicate) return;
 
-    if (rootCopy.type === 'group') {
-        const children = shapes.filter(s => shapeToDuplicate.shapeIds?.includes(s.id));
-        const newChildIds: string[] = [];
-        children.forEach(child => {
-            const childCopy = duplicateSingleShape(child, rootCopy.id);
-            shapesToAdd.push(childCopy);
-            newChildIds.push(childCopy.id);
-        });
-        rootCopy.shapeIds = newChildIds;
+        const rootCopy = duplicateSingleShape(shapeToDuplicate);
+        shapesToAdd.push(rootCopy);
+        newRootIds.push(rootCopy.id);
+
+        if (rootCopy.type === 'group') {
+            const children = shapes.filter(s => shapeToDuplicate.shapeIds?.includes(s.id));
+            const newChildIds: string[] = [];
+            children.forEach(child => {
+                const childCopy = duplicateSingleShape(child, rootCopy.id);
+                shapesToAdd.push(childCopy);
+                newChildIds.push(childCopy.id);
+            });
+            rootCopy.shapeIds = newChildIds;
+        }
+    });
+
+    if (shapesToAdd.length > 0) {
+        setShapes(prevShapes => [...prevShapes, ...shapesToAdd]);
+        showNotification(t('app.1102'));
     }
-
-    setShapes(prevShapes => [...prevShapes, ...shapesToAdd]);
-    showNotification(t('app.1102'));
-    return rootCopy;
+    
+    return Array.isArray(idOrIds) ? newRootIds : newRootIds[0];
   }, [shapes, setShapes, showNotification, t]);
   
   const moveShape = useCallback((id: string, direction: 'up' | 'down') => {
@@ -1373,6 +1382,10 @@ export default function App(): React.ReactNode {
 
     const handleSetActiveTool = useCallback((tool: Tool) => {
         if (tool === 'edit-points') {
+            if (selectedShapeIds.length > 1) {
+                showNotification(t('app.1107') || 'Cannot edit points for multiple shapes', 'info');
+                return;
+            }
             const shape = selectedShapeIds.length === 1 ? shapes.find(s => s.id === selectedShapeIds[0]) : undefined;
             if (shape?.type === 'text') {
                 showNotification(t('app.1107'), 'info');
@@ -2036,12 +2049,7 @@ export default function App(): React.ReactNode {
 
   const handleDuplicate = useCallback(() => { 
     if (selectedShapeIds.length > 0) {
-        // Need to duplicate each selected shape
-        const newSelectedIds: string[] = [];
-        selectedShapeIds.forEach(id => {
-            const newShape = duplicateShape(id);
-            if (newShape) newSelectedIds.push(newShape.id);
-        });
+        const newSelectedIds = duplicateShape(selectedShapeIds) as string[];
         setSelectedShapeIds(newSelectedIds);
     }
   }, [selectedShapeIds, duplicateShape]);
@@ -2142,11 +2150,28 @@ export default function App(): React.ReactNode {
 
     const handleLocateSelectedShape = useCallback(() => {
         if ((selectedShapeIds.length === 0) || !viewportRef.current) return;
-        const shape = selectedShapeIds.length === 1 ? shapes.find(s => s.id === selectedShapeIds[0]) : undefined;
-        if (!shape) return;
+        const selectedShapes = shapes.filter(s => selectedShapeIds.includes(s.id));
+        if (selectedShapes.length === 0) return;
 
-        const shapeBbox = getVisualBoundingBox(shape, undefined, shapes);
-        if (!shapeBbox || shapeBbox.width === 0 || shapeBbox.height === 0) return;
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const shape of selectedShapes) {
+            const bbox = getVisualBoundingBox(shape, undefined, shapes);
+            if (bbox) {
+                minX = Math.min(minX, bbox.x);
+                minY = Math.min(minY, bbox.y);
+                maxX = Math.max(maxX, bbox.x + bbox.width);
+                maxY = Math.max(maxY, bbox.y + bbox.height);
+            }
+        }
+
+        if (minX === Infinity || maxX <= minX || maxY <= minY) return;
+
+        const shapeBbox = {
+            x: minX,
+            y: minY,
+            width: maxX - minX,
+            height: maxY - minY
+        };
 
         const rulerOffset = showAxes ? RULER_THICKNESS : 0;
         const canvasViewportWidth = viewportSize.width - rulerOffset;
@@ -2172,6 +2197,12 @@ export default function App(): React.ReactNode {
 
         setViewTransform({ scale: newScale, x: newX, y: newY });
     }, [selectedShapeIds, shapes, showAxes, viewportSize, setViewTransform]);
+
+    useEffect(() => {
+        if (selectedShapeIds.length > 1 && activeTool === 'edit-points') {
+            setActiveTool('select');
+        }
+    }, [selectedShapeIds, activeTool, setActiveTool]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -2204,7 +2235,8 @@ export default function App(): React.ReactNode {
                 case 'KeyD':
                     if (selectedShapeIds.length > 0) {
                         e.preventDefault();
-                        selectedShapeIds.forEach(id => duplicateShape(id));
+                        const newIds = duplicateShape(selectedShapeIds) as string[];
+                        setSelectedShapeIds(newIds);
                     }
                     return;
                 case 'KeyZ':
@@ -2225,12 +2257,10 @@ export default function App(): React.ReactNode {
                     return;
             }
         }
-        
+
         // Arrow key movement
         if (selectedShapeIds.length > 0 && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
             e.preventDefault();
-            const shapeToMove = selectedShapeIds.length === 1 ? shapes.find(s => s.id === selectedShapeIds[0]) : undefined;
-            if (!shapeToMove) return;
 
             const delta = e.shiftKey ? 10 : 1;
             let dx = 0;
@@ -2245,138 +2275,170 @@ export default function App(): React.ReactNode {
 
             if (dx === 0 && dy === 0) return;
 
-            let bestDx = dx;
-            let bestDy = dy;
-            let newSnapLines = { x: null as number | null, y: null as number | null };
+            if (selectedShapeIds.length === 1) {
+                const shapeToMove = shapes.find(s => s.id === selectedShapeIds[0]);
+                if (!shapeToMove) return;
 
-            if ((enableSnapping || showCenterGuides) && !e.altKey) {
-                const movingBboxOriginal = getVisualBoundingBox(shapeToMove, undefined, shapes);
-                if (movingBboxOriginal) {
-                    const movingBox = {
-                        x: movingBboxOriginal.x + dx,
-                        y: movingBboxOriginal.y + dy,
-                        width: movingBboxOriginal.width,
-                        height: movingBboxOriginal.height
-                    };
-                    const movingCenters = {
-                        x: movingBox.x + movingBox.width / 2,
-                        y: movingBox.y + movingBox.height / 2
-                    };
+                let bestDx = dx;
+                let bestDy = dy;
+                let newSnapLines = { x: null as number | null, y: null as number | null };
 
-                    const SNAP_DIST = 5 / viewTransform.scale;
-                    let minSnapDistX = SNAP_DIST;
-                    let minSnapDistY = SNAP_DIST;
+                if ((enableSnapping || showCenterGuides) && !e.altKey) {
+                    const movingBboxOriginal = getVisualBoundingBox(shapeToMove, undefined, shapes);
+                    if (movingBboxOriginal) {
+                        const movingBox = {
+                            x: movingBboxOriginal.x + dx,
+                            y: movingBboxOriginal.y + dy,
+                            width: movingBboxOriginal.width,
+                            height: movingBboxOriginal.height
+                        };
+                        const movingCenters = {
+                            x: movingBox.x + movingBox.width / 2,
+                            y: movingBox.y + movingBox.height / 2
+                        };
 
-                    if (enableSnapping) {
-                        const otherShapes = shapes.filter(s => !selectedShapeIds.includes(s.id) && s.groupId === undefined);
+                        const SNAP_DIST = 5 / viewTransform.scale;
+                        let minSnapDistX = SNAP_DIST;
+                        let minSnapDistY = SNAP_DIST;
 
-                        for (const other of otherShapes) {
-                            const otherBox = getVisualBoundingBox(other, undefined, shapes);
-                            if (!otherBox) continue;
+                        if (enableSnapping) {
+                            const otherShapes = shapes.filter(s => !selectedShapeIds.includes(s.id) && s.groupId === undefined);
 
-                            const otherCenters = { x: otherBox.x + otherBox.width/2, y: otherBox.y + otherBox.height/2 };
-                            
+                            for (const other of otherShapes) {
+                                const otherBox = getVisualBoundingBox(other, undefined, shapes);
+                                if (!otherBox) continue;
+
+                                const otherCenters = { x: otherBox.x + otherBox.width/2, y: otherBox.y + otherBox.height/2 };
+                                
+                                if (dx !== 0) {
+                                    const xTargets = [
+                                        { moving: movingBox.x, target: otherBox.x },
+                                        { moving: movingBox.x, target: otherBox.x + otherBox.width },
+                                        { moving: movingCenters.x, target: otherCenters.x },
+                                        { moving: movingBox.x + movingBox.width, target: otherBox.x },
+                                        { moving: movingBox.x + movingBox.width, target: otherBox.x + otherBox.width }
+                                    ];
+                                    for (const t of xTargets) {
+                                        const diff = Math.abs(t.moving - t.target);
+                                        if (diff < minSnapDistX) {
+                                            minSnapDistX = diff;
+                                            bestDx = dx - (t.moving - t.target);
+                                            newSnapLines.x = t.target;
+                                        }
+                                    }
+                                }
+
+                                if (dy !== 0) {
+                                    const yTargets = [
+                                        { moving: movingBox.y, target: otherBox.y },
+                                        { moving: movingBox.y, target: otherBox.y + otherBox.height },
+                                        { moving: movingCenters.y, target: otherCenters.y },
+                                        { moving: movingBox.y + movingBox.height, target: otherBox.y },
+                                        { moving: movingBox.y + movingBox.height, target: otherBox.y + otherBox.height }
+                                    ];
+                                    for (const t of yTargets) {
+                                        const diff = Math.abs(t.moving - t.target);
+                                        if (diff < minSnapDistY) {
+                                            minSnapDistY = diff;
+                                            bestDy = dy - (t.moving - t.target);
+                                            newSnapLines.y = t.target;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (showCenterGuides) {
                             if (dx !== 0) {
-                                const xTargets = [
-                                    { moving: movingBox.x, target: otherBox.x },
-                                    { moving: movingBox.x, target: otherBox.x + otherBox.width },
-                                    { moving: movingCenters.x, target: otherCenters.x },
-                                    { moving: movingBox.x + movingBox.width, target: otherBox.x },
-                                    { moving: movingBox.x + movingBox.width, target: otherBox.x + otherBox.width }
-                                ];
-                                for (const t of xTargets) {
-                                    const diff = Math.abs(t.moving - t.target);
-                                    if (diff < minSnapDistX) {
-                                        minSnapDistX = diff;
-                                        bestDx = dx - (t.moving - t.target);
-                                        newSnapLines.x = t.target;
-                                    }
+                                const diff = Math.abs(movingCenters.x - canvasWidth / 2);
+                                if (diff < minSnapDistX) {
+                                    minSnapDistX = diff;
+                                    bestDx = dx - (movingCenters.x - canvasWidth / 2);
+                                    newSnapLines.x = canvasWidth / 2;
                                 }
                             }
-
                             if (dy !== 0) {
-                                const yTargets = [
-                                    { moving: movingBox.y, target: otherBox.y },
-                                    { moving: movingBox.y, target: otherBox.y + otherBox.height },
-                                    { moving: movingCenters.y, target: otherCenters.y },
-                                    { moving: movingBox.y + movingBox.height, target: otherBox.y },
-                                    { moving: movingBox.y + movingBox.height, target: otherBox.y + otherBox.height }
-                                ];
-                                for (const t of yTargets) {
-                                    const diff = Math.abs(t.moving - t.target);
-                                    if (diff < minSnapDistY) {
-                                        minSnapDistY = diff;
-                                        bestDy = dy - (t.moving - t.target);
-                                        newSnapLines.y = t.target;
-                                    }
+                                const diff = Math.abs(movingCenters.y - canvasHeight / 2);
+                                if (diff < minSnapDistY) {
+                                    minSnapDistY = diff;
+                                    bestDy = dy - (movingCenters.y - canvasHeight / 2);
+                                    newSnapLines.y = canvasHeight / 2;
                                 }
-                            }
-                        }
-                    }
-
-                    if (showCenterGuides) {
-                        if (dx !== 0) {
-                            const diff = Math.abs(movingCenters.x - canvasWidth / 2);
-                            if (diff < minSnapDistX) {
-                                minSnapDistX = diff;
-                                bestDx = dx - (movingCenters.x - canvasWidth / 2);
-                                newSnapLines.x = canvasWidth / 2;
-                            }
-                        }
-                        if (dy !== 0) {
-                            const diff = Math.abs(movingCenters.y - canvasHeight / 2);
-                            if (diff < minSnapDistY) {
-                                minSnapDistY = diff;
-                                bestDy = dy - (movingCenters.y - canvasHeight / 2);
-                                newSnapLines.y = canvasHeight / 2;
                             }
                         }
                     }
                 }
+
+                dx = bestDx;
+                dy = bestDy;
+
+                setKeyboardSnapLines(newSnapLines);
+                if (keyboardSnapLinesTimeout.current) clearTimeout(keyboardSnapLinesTimeout.current);
+                keyboardSnapLinesTimeout.current = setTimeout(() => {
+                    setKeyboardSnapLines({ x: null, y: null });
+                }, 1000);
             }
 
-            dx = bestDx;
-            dy = bestDy;
+            const moveSingleShape = (shape: Shape, dx: number, dy: number): Shape => {
+                let newShape: Shape;
+                switch (shape.type) {
+                    case 'line':
+                        newShape = {...shape, points: [{...shape.points[0]}, {...shape.points[1]}]};
+                        break;
+                    case 'pencil':
+                    case 'polyline':
+                    case 'bezier':
+                        newShape = {...shape, points: shape.points.map(p => ({...p}))};
+                        break;
+                    case 'group':
+                        newShape = {...shape};
+                        break;
+                    default:
+                        newShape = {...shape};
+                }
+                
+                // Apply transformation
+                switch (newShape.type) {
+                    case 'rectangle': case 'triangle': case 'right-triangle': case 'rhombus': case 'trapezoid': case 'parallelogram': case 'arc': case 'text': case 'image': case 'bitmap':
+                        newShape.x += dx;
+                        newShape.y += dy;
+                        break;
+                    case 'ellipse': case 'polygon': case 'star':
+                        newShape.cx += dx;
+                        newShape.cy += dy;
+                        break;
+                    case 'line':
+                    case 'pencil': 
+                    case 'polyline':
+                    case 'bezier': 
+                        newShape.points = newShape.points.map((p: {x: number, y: number}) => ({ x: p.x + dx, y: p.y + dy })); 
+                        break;
+                    case 'group':
+                        // Do not move group directly, move children
+                        break;
+                }
+                return newShape;
+            };
 
-            setKeyboardSnapLines(newSnapLines);
-            if (keyboardSnapLinesTimeout.current) clearTimeout(keyboardSnapLinesTimeout.current);
-            keyboardSnapLinesTimeout.current = setTimeout(() => {
-                setKeyboardSnapLines({ x: null, y: null });
-            }, 1000);
+            const updatedShapes = shapes.map(s => {
+                if (selectedShapeIds.includes(s.id) && s.type !== 'group') {
+                    return moveSingleShape(s, dx, dy);
+                }
+                // also move children of selected groups
+                const parentGroup = shapes.find(g => g.type === 'group' && selectedShapeIds.includes(g.id) && g.shapeIds.includes(s.id));
+                if (parentGroup) {
+                    return moveSingleShape(s, dx, dy);
+                }
+                return s;
+            });
 
-            let newShape: Shape;
-            switch (shapeToMove.type) {
-                case 'line':
-                    newShape = {...shapeToMove, points: [{...shapeToMove.points[0]}, {...shapeToMove.points[1]}]};
-                    break;
-                case 'pencil':
-                case 'polyline':
-                case 'bezier':
-                    newShape = {...shapeToMove, points: shapeToMove.points.map(p => ({...p}))};
-                    break;
-                default:
-                    newShape = {...shapeToMove};
-            }
-            
-            // Apply transformation
-            switch (newShape.type) {
-                case 'rectangle': case 'triangle': case 'right-triangle': case 'rhombus': case 'trapezoid': case 'parallelogram': case 'arc': case 'text': case 'image': case 'bitmap':
-                    newShape.x += dx;
-                    newShape.y += dy;
-                    break;
-                case 'ellipse': case 'polygon': case 'star':
-                    newShape.cx += dx;
-                    newShape.cy += dy;
-                    break;
-                case 'line':
-                case 'pencil': 
-                case 'polyline':
-                case 'bezier': 
-                    newShape.points = newShape.points.map((p: {x: number, y: number}) => ({ x: p.x + dx, y: p.y + dy })); 
-                    break;
-            }
-
-            updateShape(newShape);
+            const shapesToUpdate = updatedShapes.filter(s => {
+                if (selectedShapeIds.includes(s.id)) return true;
+                const parentGroup = shapes.find(g => g.type === 'group' && selectedShapeIds.includes(g.id));
+                if (parentGroup && parentGroup.type === 'group' && parentGroup.shapeIds.includes(s.id)) return true;
+                return false;
+            });
+            updateShapes(shapesToUpdate);
             return;
         }
 

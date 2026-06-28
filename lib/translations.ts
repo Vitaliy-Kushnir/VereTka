@@ -649,6 +649,7 @@ export const translations = {
     'prop.dash.gapLenTitle': 'Довжина пропуску в пікселях',
     'prop.dash.removeSegment': 'Видалити останній сегмент (штрих і пропуск)',
     'prop.dash.addSegment': 'Додати сегмент (штрих і пропуск)',
+    'prop.dash.custom': 'Користувацьке',
 
   },
   en: {
@@ -1298,6 +1299,7 @@ export const translations = {
     'prop.dash.gapLenTitle': 'Gap length in pixels',
     'prop.dash.removeSegment': 'Delete the last segment (stroke and gap)',
     'prop.dash.addSegment': 'Add a segment (stroke and gap)',
+    'prop.dash.custom': 'Custom',
 
   },
   it: {
@@ -1948,6 +1950,7 @@ export const translations = {
     'prop.dash.gapLenTitle': 'Lunghezza dello spazio in pixel',
     'prop.dash.removeSegment': 'Elimina l\'ultimo segmento (tratto e spazio)',
     'prop.dash.addSegment': 'Aggiungi un segmento (tratto e spazio)',
+    'prop.dash.custom': 'Personalizzato',
 
   },
   es: {
@@ -2599,6 +2602,7 @@ export const translations = {
     'prop.dash.gapLenTitle': 'Espacio',
     'prop.dash.removeSegment': 'Quitar sección',
     'prop.dash.addSegment': 'Añadir sección adicional',
+    'prop.dash.custom': 'Personalizado',
 
   }
 };

@@ -1348,6 +1348,12 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
     const commonStrokeWidth = validShapes.every(s => s.strokeWidth === validShapes[0].strokeWidth) ? validShapes[0].strokeWidth : '';
     const commonState = validShapes.every(s => s.state === validShapes[0].state) ? validShapes[0].state : '';
     
+    const commonStipple = validShapes.every(s => (s as any).stipple === (validShapes[0] as any).stipple) ? (validShapes[0] as any).stipple : '';
+    const commonDashOffset = validShapes.every(s => (s as any).dashoffset === (validShapes[0] as any).dashoffset) ? (validShapes[0] as any).dashoffset : '';
+    const isDashMixed = !validShapes.every(s => JSON.stringify((s as any).dash) === JSON.stringify((validShapes[0] as any).dash));
+    const commonDashArray = isDashMixed ? undefined : (validShapes[0] as any).dash;
+    const isCustomDashMulti = isDashMixed ? false : (commonDashArray && commonDashArray.length > 0 ? !DASH_STYLES.some(style => JSON.stringify(style.pattern) === JSON.stringify(commonDashArray)) : false);
+    
     const hasRotationShapes = validShapes.filter(s => 'rotation' in s);
     const showRotation = hasRotationShapes.length > 0 && hasRotationShapes.length === validShapes.length;
     const commonRotation = showRotation && hasRotationShapes.every(s => (s as any).rotation === (hasRotationShapes[0] as any).rotation) ? (hasRotationShapes[0] as any).rotation : '';
@@ -1355,6 +1361,81 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
     const hasJoinstyleShapes = validShapes.filter(s => 'joinstyle' in s);
     const showJoinstyle = hasJoinstyleShapes.length > 0 && hasJoinstyleShapes.length === validShapes.length;
     const commonJoinstyle = showJoinstyle && hasJoinstyleShapes.every(s => (s as any).joinstyle === (hasJoinstyleShapes[0] as any).joinstyle) ? (hasJoinstyleShapes[0] as any).joinstyle : '';
+    
+    const hasCapstyleShapes = validShapes.filter(s => 'capstyle' in s);
+    const showCapstyle = hasCapstyleShapes.length > 0 && hasCapstyleShapes.length === validShapes.length;
+    const commonCapstyle = showCapstyle && hasCapstyleShapes.every(s => (s as any).capstyle === (hasCapstyleShapes[0] as any).capstyle) ? (hasCapstyleShapes[0] as any).capstyle : '';
+
+    const hasArrowShapes = validShapes.filter(s => ['line', 'polyline', 'bezier', 'pencil'].includes(s.type));
+    const showArrow = hasArrowShapes.length > 0 && hasArrowShapes.length === validShapes.length && !validShapes.some(s => ('isClosed' in s && (s as any).isClosed));
+    const commonArrow = showArrow && hasArrowShapes.every(s => ((s as any).arrow || 'none') === ((hasArrowShapes[0] as any).arrow || 'none')) ? ((hasArrowShapes[0] as any).arrow || 'none') : '';
+    const commonArrowshape = showArrow && hasArrowShapes.every(s => JSON.stringify((s as any).arrowshape || [8, 10, 3]) === JSON.stringify((hasArrowShapes[0] as any).arrowshape || [8, 10, 3])) ? ((hasArrowShapes[0] as any).arrowshape || [8, 10, 3]) : null;
+
+    const hasLockRatioShapes = validShapes.filter(s => 'isAspectRatioLocked' in s);
+    const showLockRatio = hasLockRatioShapes.length > 0 && hasLockRatioShapes.length === validShapes.length;
+    const commonLockRatio = showLockRatio && hasLockRatioShapes.every(s => (s as any).isAspectRatioLocked === (hasLockRatioShapes[0] as any).isAspectRatioLocked) ? (hasLockRatioShapes[0] as any).isAspectRatioLocked : null;
+
+    const allVisualBboxes = validShapes.map(s => getVisualBoundingBox(s, undefined, allShapes)).filter(Boolean) as {x:number, y:number, width:number, height:number}[];
+    const hasCommonX = allVisualBboxes.length > 0 && allVisualBboxes.every(b => Math.abs(b.x - allVisualBboxes[0].x) < 0.1);
+    const hasCommonY = allVisualBboxes.length > 0 && allVisualBboxes.every(b => Math.abs(b.y - allVisualBboxes[0].y) < 0.1);
+    const hasCommonW = allVisualBboxes.length > 0 && allVisualBboxes.every(b => Math.abs(b.width - allVisualBboxes[0].width) < 0.1);
+    const hasCommonH = allVisualBboxes.length > 0 && allVisualBboxes.every(b => Math.abs(b.height - allVisualBboxes[0].height) < 0.1);
+    
+    const commonX = hasCommonX ? roundToHundredths(allVisualBboxes[0].x) : '';
+    const commonY = hasCommonY ? roundToHundredths(allVisualBboxes[0].y) : '';
+    const commonW = hasCommonW ? roundToHundredths(allVisualBboxes[0].width) : '';
+    const commonH = hasCommonH ? roundToHundredths(allVisualBboxes[0].height) : '';
+
+    const handleMultiVisualChange = (property: 'x'|'y'|'width'|'height', value: number) => {
+        if (typeof updateShapes !== 'function') return;
+        const updatedShapes = selectedShapes.map(shape => {
+            const bbox = getVisualBoundingBox(shape, undefined, allShapes);
+            if (!bbox) return shape;
+            
+            let newShape = { ...shape };
+            let dx = 0;
+            let dy = 0;
+            let scaleX = 1;
+            let scaleY = 1;
+
+            if (property === 'x') dx = value - bbox.x;
+            if (property === 'y') dy = value - bbox.y;
+            if (property === 'width' && bbox.width > 0) {
+                scaleX = value / bbox.width;
+                if (shape.isAspectRatioLocked) scaleY = scaleX;
+            }
+            if (property === 'height' && bbox.height > 0) {
+                scaleY = value / bbox.height;
+                if (shape.isAspectRatioLocked) scaleX = scaleY;
+            }
+
+            if (dx !== 0 || dy !== 0) {
+                switch (newShape.type) {
+                    case 'rectangle': case 'triangle': case 'right-triangle': case 'rhombus': case 'trapezoid': case 'parallelogram': case 'arc': case 'text': case 'image': case 'bitmap':
+                        (newShape as any).x += dx; (newShape as any).y += dy; break;
+                    case 'ellipse': case 'polygon': case 'star':
+                        (newShape as any).cx += dx; (newShape as any).cy += dy; break;
+                    case 'line': case 'bezier': case 'pencil': case 'polyline':
+                        (newShape as any).points = (newShape as any).points.map((p: any) => ({ x: p.x + dx, y: p.y + dy })); break;
+                }
+            }
+
+            if (scaleX !== 1 || scaleY !== 1) {
+                switch (newShape.type) {
+                    case 'rectangle': case 'image': case 'bitmap': case 'arc': case 'triangle': case 'right-triangle': case 'rhombus': case 'trapezoid': case 'parallelogram': case 'text':
+                        (newShape as any).width *= scaleX; (newShape as any).height *= scaleY; break;
+                    case 'ellipse':
+                        (newShape as any).rx *= scaleX; (newShape as any).ry *= scaleY; break;
+                    case 'polygon': case 'star':
+                        (newShape as any).radius *= Math.max(scaleX, scaleY); break;
+                    case 'line': case 'bezier': case 'pencil': case 'polyline':
+                        (newShape as any).points = (newShape as any).points.map((p: any) => ({ x: bbox.x + (p.x - bbox.x) * scaleX, y: bbox.y + (p.y - bbox.y) * scaleY })); break;
+                }
+            }
+            return newShape;
+        });
+        updateShapes(updatedShapes);
+    };
 
     
     // Check if all selected shapes support fill
@@ -1373,74 +1454,28 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
           
           <div className="flex-grow overflow-y-auto px-3 py-2 space-y-3 p-scrollbar">
             <h3 className="font-semibold text-[var(--text-secondary)] text-sm pt-2">{t('props.commonTitle') || 'Спільні властивості'}</h3>
+            
+            <hr className="border-[var(--border-secondary)] my-2" />
+            <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">{t('props.geometry')}</h3>
+            
             <div className="space-y-2">
                 <InputWrapper>
-                    <Label htmlFor="multi-stroke">{t('props.stroke') || 'Контур'}</Label>
-                    <ColorInput 
-                        id="multi-stroke"
-                        value={commonStroke ?? ''} 
-                        onChange={(val) => handleMultiUpdate({ stroke: val, _previousStroke: undefined })}
-                        onPreview={(val) => selectedShapes.forEach(s => setShapePreview?.(s.id, { stroke: val ?? undefined }))}
-                        onCancel={() => cancelShapePreview?.()}
-                        placeholder={t('props.mixed') || 'Різні'}
-                    />
+                    <Label htmlFor="multi-pos-x">{t('props.x')}</Label>
+                    <NumberInput id="multi-pos-x" value={commonX as any} onChange={v => handleMultiVisualChange('x', v)} placeholder={commonX === '' ? (t('props.mixed') || 'Різні') : undefined} />
                 </InputWrapper>
-                <div className="pl-6 mt-1 flex items-center gap-2">
-                    <button 
-                        onClick={() => handleMultiUpdate({ stroke: 'none' })}
-                        className={`text-xs px-2 py-0.5 rounded ${commonStroke === 'none' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
-                    >
-                        {t('props.none') || 'Немає'}
-                    </button>
-                    {commonStroke !== 'none' && commonStroke !== '' && (
-                        <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: commonStroke }}></div>
-                    )}
-                </div>
-
                 <InputWrapper>
-                    <Label htmlFor="multi-stroke-width">{t('props.strokeWidth') || 'Товщина'}</Label>
-                    <div className="relative">
-                       <NumberInput 
-                           id="multi-stroke-width"
-                           value={commonStrokeWidth as any} 
-                           onChange={(val) => handleMultiUpdate({ strokeWidth: val })}
-                           min={0}
-                           placeholder={commonStrokeWidth === '' ? (t('props.mixed') || 'Різні') : undefined}
-                       />
-                       {commonStrokeWidth === '' && <span className="absolute left-2 top-1.5 text-xs text-gray-400 pointer-events-none">{t('props.mixed') || 'Різні'}</span>}
-                    </div>
+                    <Label htmlFor="multi-pos-y">{t('props.y')}</Label>
+                    <NumberInput id="multi-pos-y" value={commonY as any} onChange={v => handleMultiVisualChange('y', v)} placeholder={commonY === '' ? (t('props.mixed') || 'Різні') : undefined} />
+                </InputWrapper>
+                <InputWrapper>
+                    <Label htmlFor="multi-width">{t('props.width')}</Label>
+                    <NumberInput id="multi-width" value={commonW as any} onChange={v => handleMultiVisualChange('width', v)} min={1} placeholder={commonW === '' ? (t('props.mixed') || 'Різні') : undefined} />
+                </InputWrapper>
+                <InputWrapper>
+                    <Label htmlFor="multi-height">{t('props.height')}</Label>
+                    <NumberInput id="multi-height" value={commonH as any} onChange={v => handleMultiVisualChange('height', v)} min={1} placeholder={commonH === '' ? (t('props.mixed') || 'Різні') : undefined} />
                 </InputWrapper>
 
-                {showFill && (
-                    <InputWrapper>
-                        <Label htmlFor="multi-fill">{t('props.fill') || 'Заливка'}</Label>
-                        <ColorInput 
-                            id="multi-fill"
-                            value={commonFill ?? ''} 
-                            onChange={(val) => handleMultiUpdate({ fill: val })}
-                            onPreview={(val) => selectedShapes.forEach(s => setShapePreview?.(s.id, { fill: val ?? undefined }))}
-                            onCancel={() => cancelShapePreview?.()}
-                            placeholder={t('props.mixed') || 'Різні'}
-                        />
-                    </InputWrapper>
-                )}
-                {showFill && (
-                    <div className="pl-6 mt-1 flex items-center gap-2">
-                        <button 
-                            onClick={() => handleMultiUpdate({ fill: 'none' })}
-                            className={`text-xs px-2 py-0.5 rounded ${commonFill === 'none' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
-                        >
-                            {t('props.none') || 'Немає'}
-                        </button>
-                        {commonFill !== 'none' && commonFill !== '' && (
-                            <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: commonFill }}></div>
-                        )}
-                    </div>
-                )}
-                
-                <hr className="border-[var(--border-secondary)] my-2" />
-                <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">{t('props.geometry')}</h3>
-                
                 <InputWrapper>
                     <Label htmlFor="multi-state">{t('props.state') || 'Стан'}</Label>
                     <Select id="multi-state" value={commonState} onChange={(val) => handleMultiUpdate({ state: val as any })}>
@@ -1454,18 +1489,187 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                 {showRotation && (
                      <InputWrapper>
                         <Label htmlFor="multi-rotation">{t('props.rotation')}</Label>
-                        <div className="relative">
-                            <NumberInput 
-                                id="multi-rotation"
-                                value={commonRotation as any} 
-                                onChange={(val) => handleMultiUpdate({ rotation: val })}
-                                placeholder={commonRotation === '' ? (t('props.mixed') || 'Різні') : undefined}
-                            />
-                            {commonRotation === '' && <span className="absolute left-2 top-1.5 text-xs text-gray-400 pointer-events-none">{t('props.mixed') || 'Різні'}</span>}
-                        </div>
+                        <NumberInput 
+                            id="multi-rotation"
+                            value={commonRotation as any} 
+                            onChange={(val) => handleMultiUpdate({ rotation: val })}
+                            placeholder={commonRotation === '' ? (t('props.mixed') || 'Різні') : undefined}
+                        />
                     </InputWrapper>
                 )}
                 
+                {showLockRatio && (
+                    <InputWrapper>
+                        <Label htmlFor="multi-lock-aspect-ratio-toggle" />
+                        <button onClick={() => {
+                            const newValue = commonLockRatio === null ? true : !commonLockRatio;
+                            handleMultiUpdate({ isAspectRatioLocked: newValue } as any);
+                        }} className="flex items-center gap-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]" title={t('props.lockRatioDesc')}>
+                            {commonLockRatio === true ? <LockIcon size={16}/> : <UnlockIcon size={16}/>}
+                            <span className="text-sm">
+                                {commonLockRatio === null ? (t('props.mixed') || 'Різні') : (commonLockRatio ? t('props.ratioLocked') : t('props.ratioUnlocked'))}
+                            </span>
+                        </button>
+                    </InputWrapper>
+                )}
+            </div>
+
+            {showFill && (
+                <>
+                    <hr className="border-[var(--border-secondary)] my-2" />
+                    <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">{t('prop.fill') || t('props.fill') || 'Заливка'}</h3>
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                            <input
+                                id="multi-fill-toggle"
+                                type="checkbox"
+                                checked={commonFill !== 'none'}
+                                ref={(el) => {
+                                    if (el) el.indeterminate = commonFill === '';
+                                }}
+                                onChange={e => {
+                                    if (e.target.checked) {
+                                        handleMultiUpdate({ fill: '#000000' }); // Fallback color
+                                    } else {
+                                        handleMultiUpdate({ fill: 'none' });
+                                    }
+                                }}
+                                title={t('prop.title.enableFill')}
+                                className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]"
+                            />
+                            <ColorInput 
+                                id="multi-fill"
+                                value={commonFill === 'none' ? '#000000' : (commonFill ?? '')} 
+                                onChange={(val) => handleMultiUpdate({ fill: val })}
+                                onPreview={(val) => selectedShapes.forEach(s => setShapePreview?.(s.id, { fill: val ?? undefined }))}
+                                onCancel={() => cancelShapePreview?.()}
+                                disabled={commonFill === 'none'}
+                                placeholder={t('props.mixed') || 'Різні'}
+                                title={t('prop.title.fillColor')}
+                            />
+                        </div>
+                        <InputWrapper>
+                            <Label htmlFor="multi-stipple" title={t('prop.title.stipple')}>{t('props.stipple')}</Label>
+                            <Select id="multi-stipple" value={commonStipple} onChange={(val) => handleMultiUpdate({ stipple: val } as any)}>
+                                <option value="" disabled hidden>{t('props.mixed') || 'Різні'}</option>
+                                <option value="none">{t('props.none') || 'Немає'}</option>
+                                <option value="gray12">Gray 12%</option>
+                                <option value="gray25">Gray 25%</option>
+                                <option value="gray50">Gray 50%</option>
+                                <option value="gray75">Gray 75%</option>
+                            </Select>
+                        </InputWrapper>
+                    </div>
+                </>
+            )}
+
+            <hr className="border-[var(--border-secondary)] my-2" />
+            <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">{t('prop.stroke') || t('props.stroke') || 'Контур'}</h3>
+            <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                    <input
+                        id="multi-stroke-toggle"
+                        type="checkbox"
+                        checked={commonStroke !== 'none'}
+                        ref={(el) => {
+                            if (el) el.indeterminate = commonStroke === '';
+                        }}
+                        onChange={e => {
+                            if (e.target.checked) {
+                                handleMultiUpdate({ stroke: '#000000', _previousStroke: undefined }); // Fallback color
+                            } else {
+                                handleMultiUpdate({ stroke: 'none', _previousStroke: undefined });
+                            }
+                        }}
+                        className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]"
+                    />
+                    <ColorInput 
+                        id="multi-stroke"
+                        value={commonStroke === 'none' ? '#000000' : (commonStroke ?? '')} 
+                        onChange={(val) => handleMultiUpdate({ stroke: val, _previousStroke: undefined })}
+                        onPreview={(val) => selectedShapes.forEach(s => setShapePreview?.(s.id, { stroke: val ?? undefined }))}
+                        onCancel={() => cancelShapePreview?.()}
+                        disabled={commonStroke === 'none'}
+                        placeholder={t('props.mixed') || 'Різні'}
+                    />
+                </div>
+
+                <InputWrapper>
+                    <Label htmlFor="multi-stroke-width">{t('props.strokeWidth') || 'Товщина'}</Label>
+                    <NumberInput 
+                        id="multi-stroke-width"
+                        value={commonStrokeWidth as any} 
+                        onChange={(val) => handleMultiUpdate({ strokeWidth: val })}
+                        min={0}
+                        placeholder={commonStrokeWidth === '' ? (t('props.mixed') || 'Різні') : undefined}
+                    />
+                </InputWrapper>
+
+                <InputWrapper>
+                    <Label htmlFor="multi-dash-style" title={t('prop.title.dashArray')}>{t('prop.dash') || 'Штрихування'}</Label>
+                    <DashSelect id="multi-dash-style" value={commonDashArray as any} onChange={(val) => handleMultiUpdate({ dash: val, dashoffset: val ? 0 : undefined } as any)} isCustom={isCustomDashMulti} isMixed={isDashMixed} />
+                </InputWrapper>
+
+                {(commonDashArray && commonDashArray.length > 0) && (
+                    <div className="space-y-2 pl-4 border-l-2 border-[var(--border-secondary)] ml-2 mt-2 pt-2">
+                        <div className="space-y-2">
+                            {commonDashArray.map((val: number, index: number) => {
+                                const activeStrokeWidth = typeof commonStrokeWidth === 'number' && commonStrokeWidth > 0 ? commonStrokeWidth : 1;
+                                return (
+                                    <InputWrapper key={index}>
+                                        <Label htmlFor={`multi-dash-${index}`} title={index % 2 === 0 ? t('prop.dash.strokeLen', {i: index/2 + 1}) : t('prop.dash.gapLen', {i: Math.ceil(index/2)})}>
+                                            {index % 2 === 0 ? t('prop.dash.stroke', {i: index/2+1}) : t('prop.dash.gap', {i: Math.ceil(index/2)})}
+                                        </Label>
+                                        <NumberInput 
+                                            id={`multi-dash-${index}`} 
+                                            value={roundToHundredths(val * activeStrokeWidth)} 
+                                            onChange={v => {
+                                                const newDash = [...commonDashArray];
+                                                newDash[index] = v >= 0 ? v / activeStrokeWidth : 0;
+                                                handleMultiUpdate({ dash: newDash } as any);
+                                            }} 
+                                            min={0}
+                                            disabled={commonStroke === 'none'}
+                                        />
+                                    </InputWrapper>
+                                );
+                            })}
+                        </div>
+                        <div className="flex items-center justify-end gap-2 pt-1">
+                            <button 
+                                onClick={() => {
+                                    if (commonDashArray.length < 2) return;
+                                    const newDash = commonDashArray.slice(0, -2);
+                                    handleMultiUpdate({ dash: newDash.length > 0 ? newDash : undefined } as any);
+                                }} 
+                                disabled={commonDashArray.length < 2} 
+                                className="px-2 py-1 text-sm bg-[var(--bg-tertiary)] hover:bg-[var(--destructive-bg)] rounded-md disabled:opacity-50"
+                                title={t('prop.dash.removeSegment')}
+                            >
+                                -
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    handleMultiUpdate({ dash: [...commonDashArray, 5, 3] } as any);
+                                }} 
+                                className="px-2 py-1 text-sm bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] rounded-md"
+                                title={t('prop.dash.addSegment')}
+                            >
+                                +
+                            </button>
+                        </div>
+                        <InputWrapper>
+                            <Label htmlFor="multi-dash-offset" title={t('prop.title.dashOffset')}>{t('props.dashOffset')}</Label>
+                            <NumberInput 
+                                id="multi-dash-offset" 
+                                value={commonDashOffset as any} 
+                                onChange={v => handleMultiUpdate({ dashoffset: v } as any)} 
+                                placeholder={commonDashOffset === '' ? (t('props.mixed') || 'Різні') : undefined}
+                            />
+                        </InputWrapper>
+                    </div>
+                )}
+
                 {showJoinstyle && (
                     <InputWrapper>
                         <Label htmlFor="multi-joinstyle" title={t('prop.title.joinstyleDesc')}>{t('props.joinstyle')}</Label>
@@ -1476,6 +1680,64 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                             <option value="bevel">{t('props.joinstyle.bevel') || 'Bevel'}</option>
                         </Select>
                     </InputWrapper>
+                )}
+
+                {showCapstyle && (
+                    <InputWrapper>
+                        <Label htmlFor="multi-capstyle" title={t('prop.title.capstyleDesc')}>{t('props.capstyle')}</Label>
+                        <Select id="multi-capstyle" value={commonCapstyle} onChange={v => handleMultiUpdate({ capstyle: v } as any)}>
+                            <option value="" disabled hidden>{t('props.mixed') || 'Різні'}</option>
+                            <option value="butt">{t('props.capstyle.butt') || 'Butt'}</option>
+                            <option value="round">{t('props.capstyle.round') || 'Round'}</option>
+                            <option value="projecting">{t('props.capstyle.projecting') || 'Projecting'}</option>
+                        </Select>
+                    </InputWrapper>
+                )}
+
+                {showArrow && (
+                    <>
+                        <InputWrapper>
+                            <Label htmlFor="multi-arrow" title={t('prop.title.addArrows')}>{t('props.arrow')}:</Label>
+                            <Select id="multi-arrow" value={commonArrow} onChange={v => {
+                                const newMultiUpdate: any = { arrow: v };
+                                if (v !== 'none') {
+                                    newMultiUpdate.arrowshape = commonArrowshape || [8, 10, 3];
+                                }
+                                handleMultiUpdate(newMultiUpdate);
+                            }} title={t('prop.title.arrowDesc')}>
+                                <option value="" disabled hidden>{t('props.mixed') || 'Різні'}</option>
+                                <option value="none">{t('props.arrow.none')}</option>
+                                <option value="first">{t('props.arrow.first')}</option>
+                                <option value="last">{t('props.arrow.last')}</option>
+                                <option value="both">{t('props.arrow.both')}</option>
+                            </Select>
+                        </InputWrapper>
+                        {(commonArrow && commonArrow !== 'none' && commonArrowshape) && (
+                            <div className="space-y-2 pl-4 border-l-2 border-[var(--border-secondary)] ml-2 mt-2 pt-2">
+                                <InputWrapper>
+                                    <Label htmlFor="multi-arrow-d1" title={t('prop.title.arrowTipOffset')}>"{t('props.arrowTipOffset')}"</Label>
+                                    <NumberInput id="multi-arrow-d1" value={roundToHundredths(commonArrowshape[0] * (typeof commonStrokeWidth === 'number' && commonStrokeWidth > 0 ? commonStrokeWidth : 1))} onChange={v => {
+                                        const strokeWidth = typeof commonStrokeWidth === 'number' && commonStrokeWidth > 0 ? commonStrokeWidth : 1;
+                                        handleMultiUpdate({ arrowshape: [v >= 0 ? parseFloat((v / strokeWidth).toFixed(2)) : 0, commonArrowshape[1], commonArrowshape[2]] } as any);
+                                    }} min={0} smartRound={false} />
+                                </InputWrapper>
+                                <InputWrapper>
+                                    <Label htmlFor="multi-arrow-d2" title={t('prop.title.arrowWingsOffset')}>"{t('props.arrowWingsOffset')}"</Label>
+                                    <NumberInput id="multi-arrow-d2" value={roundToHundredths(commonArrowshape[1] * (typeof commonStrokeWidth === 'number' && commonStrokeWidth > 0 ? commonStrokeWidth : 1))} onChange={v => {
+                                        const strokeWidth = typeof commonStrokeWidth === 'number' && commonStrokeWidth > 0 ? commonStrokeWidth : 1;
+                                        handleMultiUpdate({ arrowshape: [commonArrowshape[0], v >= 0 ? parseFloat((v / strokeWidth).toFixed(2)) : 0, commonArrowshape[2]] } as any);
+                                    }} min={0} smartRound={false} />
+                                </InputWrapper>
+                                <InputWrapper>
+                                    <Label htmlFor="multi-arrow-d3" title={t('prop.title.arrowWingWidth')}>"{t('props.arrowWingWidth')}"</Label>
+                                    <NumberInput id="multi-arrow-d3" value={roundToHundredths(commonArrowshape[2] * (typeof commonStrokeWidth === 'number' && commonStrokeWidth > 0 ? commonStrokeWidth : 1))} onChange={v => {
+                                        const strokeWidth = typeof commonStrokeWidth === 'number' && commonStrokeWidth > 0 ? commonStrokeWidth : 1;
+                                        handleMultiUpdate({ arrowshape: [commonArrowshape[0], commonArrowshape[1], v >= 0 ? parseFloat((v / strokeWidth).toFixed(2)) : 0] } as any);
+                                    }} min={0} smartRound={false} />
+                                </InputWrapper>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
           </div>
