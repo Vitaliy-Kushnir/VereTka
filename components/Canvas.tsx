@@ -56,6 +56,8 @@ interface CanvasProps {
   keyboardSnapLines?: {x: number | null, y: number | null};
   showCenterGuides: boolean;
   enableSnapping: boolean;
+  distributePathState?: import('../types').DistributePathState | null;
+  onDistributePathChange?: (state: import('../types').DistributePathState) => void;
 }
 
 const DRAG_THRESHOLD = 3;
@@ -386,6 +388,28 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     }
     
     if (!action) return;
+
+    if (action.type === 'edit-distribute-path') {
+        const dx = pos.x - action.startPoint.x;
+        const dy = pos.y - action.startPoint.y;
+        
+        let newPathState = { ...action.initialDistributePath };
+        if (newPathState.type === 'circle') {
+            if (action.handle === 'center') {
+                newPathState.circleParams = { ...newPathState.circleParams, cx: newPathState.circleParams.cx + dx, cy: newPathState.circleParams.cy + dy };
+            } else if (action.handle === 'radius') {
+                newPathState.circleParams = { ...newPathState.circleParams, radius: Math.max(10, newPathState.circleParams.radius + dx) };
+            }
+        } else if (newPathState.type === 'line') {
+            if (action.handle === 'start') {
+                newPathState.lineParams = { ...newPathState.lineParams, x1: newPathState.lineParams.x1 + dx, y1: newPathState.lineParams.y1 + dy };
+            } else if (action.handle === 'end') {
+                newPathState.lineParams = { ...newPathState.lineParams, x2: newPathState.lineParams.x2 + dx, y2: newPathState.lineParams.y2 + dy };
+            }
+        }
+        props.onDistributePathChange?.(newPathState);
+        return;
+    }
 
     let newSnapLines = { x: null as number | null, y: null as number | null };
 
@@ -2462,6 +2486,46 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                             />
                         );
                     })}
+                </g>
+            )}
+
+            {/* Distribute Path Handles */}
+            {props.distributePathState && (
+                <g className="distribute-path-controls">
+                    {props.distributePathState.type === 'circle' && (
+                        <>
+                            <circle cx={props.distributePathState.circleParams.cx} cy={props.distributePathState.circleParams.cy} r={props.distributePathState.circleParams.radius} fill="none" stroke="var(--accent-primary)" strokeWidth={2 / viewTransform.scale} strokeDasharray={`${5 / viewTransform.scale},${5 / viewTransform.scale}`} style={{ pointerEvents: 'none' }} />
+                            {/* Center Handle */}
+                            <circle cx={props.distributePathState.circleParams.cx} cy={props.distributePathState.circleParams.cy} r={6 / viewTransform.scale} fill="var(--bg-primary)" stroke="var(--accent-primary)" strokeWidth={2 / viewTransform.scale} style={{ cursor: 'move', pointerEvents: 'all' }} onPointerDown={(e) => {
+                                e.stopPropagation();
+                                const pt = getPointerPosition(e);
+                                setAction({ type: 'edit-distribute-path', handle: 'center', startPoint: pt, initialDistributePath: props.distributePathState! });
+                            }} />
+                            {/* Radius Handle */}
+                            <circle cx={props.distributePathState.circleParams.cx + props.distributePathState.circleParams.radius} cy={props.distributePathState.circleParams.cy} r={6 / viewTransform.scale} fill="var(--bg-primary)" stroke="var(--accent-primary)" strokeWidth={2 / viewTransform.scale} style={{ cursor: 'ew-resize', pointerEvents: 'all' }} onPointerDown={(e) => {
+                                e.stopPropagation();
+                                const pt = getPointerPosition(e);
+                                setAction({ type: 'edit-distribute-path', handle: 'radius', startPoint: pt, initialDistributePath: props.distributePathState! });
+                            }} />
+                        </>
+                    )}
+                    {props.distributePathState.type === 'line' && (
+                        <>
+                            <line x1={props.distributePathState.lineParams.x1} y1={props.distributePathState.lineParams.y1} x2={props.distributePathState.lineParams.x2} y2={props.distributePathState.lineParams.y2} stroke="var(--accent-primary)" strokeWidth={2 / viewTransform.scale} strokeDasharray={`${5 / viewTransform.scale},${5 / viewTransform.scale}`} style={{ pointerEvents: 'none' }} />
+                            {/* Start Handle */}
+                            <circle cx={props.distributePathState.lineParams.x1} cy={props.distributePathState.lineParams.y1} r={6 / viewTransform.scale} fill="var(--bg-primary)" stroke="var(--accent-primary)" strokeWidth={2 / viewTransform.scale} style={{ cursor: 'move', pointerEvents: 'all' }} onPointerDown={(e) => {
+                                e.stopPropagation();
+                                const pt = getPointerPosition(e);
+                                setAction({ type: 'edit-distribute-path', handle: 'start', startPoint: pt, initialDistributePath: props.distributePathState! });
+                            }} />
+                            {/* End Handle */}
+                            <circle cx={props.distributePathState.lineParams.x2} cy={props.distributePathState.lineParams.y2} r={6 / viewTransform.scale} fill="var(--bg-primary)" stroke="var(--accent-primary)" strokeWidth={2 / viewTransform.scale} style={{ cursor: 'move', pointerEvents: 'all' }} onPointerDown={(e) => {
+                                e.stopPropagation();
+                                const pt = getPointerPosition(e);
+                                setAction({ type: 'edit-distribute-path', handle: 'end', startPoint: pt, initialDistributePath: props.distributePathState! });
+                            }} />
+                        </>
+                    )}
                 </g>
             )}
             

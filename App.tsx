@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { type Shape, type Tool, type DrawMode, PolylineShape, BezierCurveShape, ViewTransform, RectangleShape, ImageShape, IsoscelesTriangleShape, TrapezoidShape, ParallelogramShape, PathShape, CanvasAction, LineShape, PolygonShape, ArcShape, RightTriangleShape, TextShape, BitmapShape, RotatableShape, EllipseShape, type ProjectTemplate, type NewProjectSettings, FillableShape } from './types';
+import { type Shape, type Tool, type DrawMode, PolylineShape, BezierCurveShape, ViewTransform, RectangleShape, ImageShape, IsoscelesTriangleShape, TrapezoidShape, ParallelogramShape, PathShape, CanvasAction, LineShape, PolygonShape, ArcShape, RightTriangleShape, TextShape, BitmapShape, RotatableShape, EllipseShape, type ProjectTemplate, type NewProjectSettings, FillableShape, DistributePathState, DistributeEntity } from './types';
 import Canvas from './components/Canvas';
 import CodeDisplay, { type CodeLine } from './components/CodeDisplay';
 import PropertyEditor from './components/PropertyEditor';
@@ -20,7 +20,7 @@ import ApiKeyModal from './components/ApiKeyModal';
 import FeedbackModal from './components/FeedbackModal';
 import CheatCodeModal from './components/CheatCodeModal';
 import { saveFile, generateSvg, exportToRaster, openProjectFile, saveToHandle } from './lib/exportUtils';
-import { SquareIcon, CodeIcon, XIcon, AxesIcon, FitToScreenIcon, SelectIcon, EditPointsIcon, RectangleIcon, EllipseIcon, CircleIcon, LineIcon, PolylineIcon, BezierIcon, PolygonIcon, PencilIcon, TriangleIcon, RightTriangleIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, PiesliceIcon, ChordIcon, ArcIcon, StarIcon, TextIcon, ImageIcon, BitmapIcon, UndoIcon, RedoIcon, DuplicateIcon, GroupIcon, UngroupIcon, ToolsIcon, TrashIcon, GridIcon, SettingsIcon, DrawFromCornerIcon, DrawFromCenterIcon, CheckIcon, MenuIcon, SunIcon, MoonIcon, HomeIcon, BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, SadMonitorIcon, FullscreenIcon, ExitFullscreenIcon } from './components/icons';
+import { SquareIcon, CodeIcon, XIcon, AxesIcon, FitToScreenIcon, SelectIcon, EditPointsIcon, RectangleIcon, EllipseIcon, CircleIcon, LineIcon, PolylineIcon, BezierIcon, PolygonIcon, PencilIcon, TriangleIcon, RightTriangleIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, PiesliceIcon, ChordIcon, ArcIcon, StarIcon, TextIcon, ImageIcon, BitmapIcon, UndoIcon, RedoIcon, DuplicateIcon, GroupIcon, UngroupIcon, ToolsIcon, TrashIcon, GridIcon, SettingsIcon, DrawFromCornerIcon, DrawFromCenterIcon, CheckIcon, MenuIcon, SunIcon, MoonIcon, HomeIcon, BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, SadMonitorIcon, FullscreenIcon, ExitFullscreenIcon, AlignShapesLeftIcon, AlignShapesCenterHIcon, AlignShapesRightIcon, AlignShapesTopIcon, AlignShapesCenterVIcon, AlignShapesBottomIcon, DistributeHorizontalIcon, DistributeVerticalIcon, ChevronDownIcon, ChevronRightIcon } from './components/icons';
 import { getFinalPoints, getVisualBoundingBox, getBoundingBox, getEditablePoints, getShapeCenter } from './lib/geometry';
 import { getDefaultNameForShape, isDefaultName } from './lib/constants';
 import Ruler from './components/Ruler';
@@ -37,7 +37,7 @@ type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
 type SettingsTab = 'canvas' | 'grid' | 'appearance' | 'code' | 'templates';
 
-const APP_VERSION = '1.3.2';
+const APP_VERSION = '1.3.3';
 const RULER_THICKNESS = 24;
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 30;
@@ -584,6 +584,7 @@ const TopToolbar: React.FC<{
     onUndo: () => void; onRedo: () => void; canUndo: boolean; canRedo: boolean;
     onDuplicate: () => void; isShapeSelected: boolean;
     onGroup: () => void; onUngroup: () => void;
+    onAlignShapes: (alignment: 'left' | 'center-h' | 'right' | 'top' | 'center-v' | 'bottom' | 'distribute-h' | 'distribute-v' | 'distribute-path', relativeTo: 'selection' | 'canvas', rotateToCenter?: boolean) => void;
     activeTool: Tool; setActiveTool: (tool: Tool) => void;
     onOpenMobileLeft: () => void; onOpenMobileRight: () => void;
     selectedShapes: Shape[];
@@ -597,17 +598,21 @@ const TopToolbar: React.FC<{
     textFontSize: number; setTextFontSize: (s: number) => void;
 }> = React.memo((props) => {
     const { 
-        isGenerating, hasShapes, onUndo, onRedo, canUndo, canRedo, onDuplicate, onGroup, onUngroup, isShapeSelected, onOpenMobileLeft, onOpenMobileRight,
+        isGenerating, hasShapes, onUndo, onRedo, canUndo, canRedo, onDuplicate, onGroup, onUngroup, onAlignShapes, isShapeSelected, onOpenMobileLeft, onOpenMobileRight,
         selectedShapes, activeTool, setActiveTool, onGenerate, showGenerateButton, onClear
     } = props;
     const { t } = useLanguage();
     const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
+    const [isAlignMenuOpen, setIsAlignMenuOpen] = useState(false);
+    const [alignRelativeTo, setAlignRelativeTo] = useState<'selection' | 'canvas'>('selection');
+    const [rotateToCenter, setRotateToCenter] = useState(false);
     const toolsMenuRef = useRef<HTMLDivElement>(null);
     
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (toolsMenuRef.current && !toolsMenuRef.current.contains(event.target as Node)) {
                 setIsToolsMenuOpen(false);
+                setIsAlignMenuOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -626,6 +631,7 @@ const TopToolbar: React.FC<{
             <button title={`${t('tool.select')} (V)`} onClick={() => setActiveTool('select')} className={`p-2 rounded-md ${activeTool === 'select' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}><SelectIcon /></button>
             <button title={`${t('tool.editPoints')} (A)`} onClick={() => setActiveTool('edit-points')} disabled={selectedShapes.length > 1} className={`p-2 rounded-md ${activeTool === 'edit-points' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent'}`}><EditPointsIcon /></button>
             <button title={`${t('menu.edit.duplicate')} (Ctrl+D)`} onClick={onDuplicate} disabled={!isShapeSelected} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent"><DuplicateIcon /></button>
+
             <div className="relative" ref={toolsMenuRef}>
                 <button 
                   title={t('menu.tools')} 
@@ -636,7 +642,7 @@ const TopToolbar: React.FC<{
                     <ToolsIcon />
                 </button>
                 {isToolsMenuOpen && (
-                    <div className="absolute top-full left-0 mt-1 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-md shadow-lg z-50 min-w-[150px] py-1 text-sm">
+                    <div className="absolute top-full left-0 mt-1 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-md shadow-lg z-50 min-w-[200px] py-1 text-sm">
                         <button 
                           onClick={() => { onGroup(); setIsToolsMenuOpen(false); }} 
                           disabled={!isShapeSelected}
@@ -651,6 +657,56 @@ const TopToolbar: React.FC<{
                         >
                           <UngroupIcon size={16} /> {t('menu.edit.ungroup')}
                         </button>
+                        
+                        <div className="w-full h-px bg-[var(--border-secondary)] my-1"></div>
+                        <div className="relative">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setIsAlignMenuOpen(!isAlignMenuOpen); }}
+                                className="flex items-center justify-between w-full text-left px-3 py-2 hover:bg-[var(--bg-secondary)] text-[var(--text-primary)]"
+                            >
+                                <div className="flex items-center gap-2"><AlignShapesCenterHIcon size={16} /> {t('menu.tools.align') || 'Вирівняти'}</div>
+                                <ChevronRightIcon size={16} />
+                            </button>
+                            {isAlignMenuOpen && (
+                                <div className="absolute left-full top-0 ml-1 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-md shadow-lg z-50 min-w-[200px] py-1 text-sm" onClick={(e) => e.stopPropagation()}>
+                                    <div className="px-3 py-1 flex items-center justify-between border-b border-[var(--border-secondary)] pb-2 mb-2">
+                                        <label className="flex items-center gap-2 text-xs text-[var(--text-secondary)] cursor-pointer hover:text-[var(--text-primary)]">
+                                            <input type="radio" name="alignRelativeTo" checked={alignRelativeTo === 'selection'} onChange={() => setAlignRelativeTo('selection')} />
+                                            {t('tool.align.selection') || 'Відносно виділення'}
+                                        </label>
+                                        <label className="flex items-center gap-2 text-xs text-[var(--text-secondary)] cursor-pointer hover:text-[var(--text-primary)]">
+                                            <input type="radio" name="alignRelativeTo" checked={alignRelativeTo === 'canvas'} onChange={() => setAlignRelativeTo('canvas')} />
+                                            {t('tool.align.canvas') || 'Відносно полотна'}
+                                        </label>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-1 px-2">
+                                       <button title={t('tool.align.left') || 'Align Left'} onClick={() => onAlignShapes('left', alignRelativeTo)} disabled={alignRelativeTo === 'selection' && selectedShapes.length < 2} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"><AlignShapesLeftIcon /></button>
+                                       <button title={t('tool.align.centerH') || 'Align Horizontal Center'} onClick={() => onAlignShapes('center-h', alignRelativeTo)} disabled={alignRelativeTo === 'selection' && selectedShapes.length < 2} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"><AlignShapesCenterHIcon /></button>
+                                       <button title={t('tool.align.right') || 'Align Right'} onClick={() => onAlignShapes('right', alignRelativeTo)} disabled={alignRelativeTo === 'selection' && selectedShapes.length < 2} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"><AlignShapesRightIcon /></button>
+                                       <button title={t('tool.align.top') || 'Align Top'} onClick={() => onAlignShapes('top', alignRelativeTo)} disabled={alignRelativeTo === 'selection' && selectedShapes.length < 2} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"><AlignShapesTopIcon /></button>
+                                       <button title={t('tool.align.centerV') || 'Align Vertical Center'} onClick={() => onAlignShapes('center-v', alignRelativeTo)} disabled={alignRelativeTo === 'selection' && selectedShapes.length < 2} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"><AlignShapesCenterVIcon /></button>
+                                       <button title={t('tool.align.bottom') || 'Align Bottom'} onClick={() => onAlignShapes('bottom', alignRelativeTo)} disabled={alignRelativeTo === 'selection' && selectedShapes.length < 2} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"><AlignShapesBottomIcon /></button>
+                                    </div>
+                                    <div className="w-full h-px bg-[var(--border-secondary)] my-2"></div>
+                                    <div className="grid grid-cols-2 gap-1 px-2 pb-1">
+                                        <button title={t('tool.distribute.h') || 'Розподілити горизонтально'} onClick={() => onAlignShapes('distribute-h', alignRelativeTo)} disabled={(alignRelativeTo === 'selection' && selectedShapes.length < 3) || (alignRelativeTo === 'canvas' && selectedShapes.length < 2)} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50 flex justify-center"><DistributeHorizontalIcon /></button>
+                                        <button title={t('tool.distribute.v') || 'Розподілити вертикально'} onClick={() => onAlignShapes('distribute-v', alignRelativeTo)} disabled={(alignRelativeTo === 'selection' && selectedShapes.length < 3) || (alignRelativeTo === 'canvas' && selectedShapes.length < 2)} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50 flex justify-center"><DistributeVerticalIcon /></button>
+                                    </div>
+                                    <div className="w-full h-px bg-[var(--border-secondary)] my-2"></div>
+                                    <div className="px-3 py-1 flex items-center justify-between">
+                                        <label className="flex items-center gap-2 text-xs text-[var(--text-secondary)] cursor-pointer hover:text-[var(--text-primary)]">
+                                            <input type="checkbox" checked={rotateToCenter} onChange={(e) => setRotateToCenter(e.target.checked)} />
+                                            {t('tool.distribute.circle.rotate') || 'Обертати до центру'}
+                                        </label>
+                                    </div>
+                                    <div className="grid grid-cols-1 gap-1 px-2 pb-1">
+                                        <button title={t('tool.distribute.path') || 'Розподілити за шляхом'} onClick={() => onAlignShapes('distribute-path', alignRelativeTo, rotateToCenter)} disabled={selectedShapes.length < 2} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50 flex justify-center items-center gap-2">
+                                            <CircleIcon /> {t('tool.distribute.path') || 'Розподілити за шляхом'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>
@@ -685,6 +741,69 @@ const TopToolbar: React.FC<{
     );
 });
 
+const applyDistributePathToShapes = (currentShapes: Shape[], pathState: DistributePathState): Shape[] => {
+    let newShapes = [...currentShapes];
+    
+    pathState.entities.forEach((entity, idx) => {
+        const fraction = pathState.entities.length > 1 ? idx / (pathState.type === 'circle' ? pathState.entities.length : Math.max(1, pathState.entities.length - 1)) : 0;
+        
+        let targetCX = 0;
+        let targetCY = 0;
+        let pathAngle = 0;
+        
+        if (pathState.type === 'circle') {
+            const angle = fraction * Math.PI * 2 - Math.PI / 2; 
+            targetCX = pathState.circleParams.cx + Math.cos(angle) * pathState.circleParams.radius;
+            targetCY = pathState.circleParams.cy + Math.sin(angle) * pathState.circleParams.radius;
+            pathAngle = angle + Math.PI / 2;
+        } else if (pathState.type === 'line') {
+            targetCX = pathState.lineParams.x1 + (pathState.lineParams.x2 - pathState.lineParams.x1) * fraction;
+            targetCY = pathState.lineParams.y1 + (pathState.lineParams.y2 - pathState.lineParams.y1) * fraction;
+            pathAngle = Math.atan2(pathState.lineParams.y2 - pathState.lineParams.y1, pathState.lineParams.x2 - pathState.lineParams.x1);
+        }
+        
+        const currentCX = entity.originalBbox.x + entity.originalBbox.width / 2;
+        const currentCY = entity.originalBbox.y + entity.originalBbox.height / 2;
+        const dx = targetCX - currentCX;
+        const dy = targetCY - currentCY;
+        
+        entity.ids.forEach(id => {
+            const sIndex = newShapes.findIndex(s => s.id === id);
+            if (sIndex === -1) return;
+            
+            const originalS = pathState.originalShapes.find(os => os.id === id);
+            if (!originalS) return;
+            
+            let updatedS = { ...originalS };
+            
+            if (dx !== 0 || dy !== 0) {
+                switch (updatedS.type) {
+                    case 'rectangle': case 'triangle': case 'right-triangle': case 'rhombus': case 'trapezoid': case 'parallelogram': case 'arc': case 'text': case 'image': case 'bitmap':
+                        updatedS = { ...updatedS, x: (updatedS as any).x + dx, y: (updatedS as any).y + dy };
+                        break;
+                    case 'ellipse': case 'polygon': case 'star':
+                        updatedS = { ...updatedS, cx: (updatedS as any).cx + dx, cy: (updatedS as any).cy + dy };
+                        break;
+                    case 'line': case 'bezier': case 'pencil': case 'polyline':
+                        updatedS = { ...updatedS, points: (updatedS as any).points.map((p: any) => ({ x: p.x + dx, y: p.y + dy })) };
+                        break;
+                }
+            }
+            
+            if (pathState.rotateToCenter) {
+                const rotationAngleDeg = -(pathAngle) * (180 / Math.PI);
+                updatedS = { ...updatedS, rotation: rotationAngleDeg };
+            } else {
+                updatedS = { ...updatedS, rotation: originalS.rotation || 0 };
+            }
+            
+            newShapes[sIndex] = updatedS as Shape;
+        });
+    });
+    
+    return newShapes;
+};
+
 export default function App(): React.ReactNode {
   const { t } = useLanguage();
   const { state: shapes, setState: setShapes, undo, redo, canUndo, canRedo, reset: resetHistory } = useHistoryState<Shape[]>([]);
@@ -692,6 +811,7 @@ export default function App(): React.ReactNode {
   const [projectName, setProjectName] = useState<string>(t('app.1069'));
   const [activeTool, setActiveTool] = useState<Tool>('select');
   const [selectedShapeIds, setSelectedShapeIds] = useState<string[]>([]);
+  const [distributePathState, setDistributePathState] = useState<DistributePathState | null>(null);
   const [inlineEditingShapeId, setInlineEditingShapeId] = useState<string | null>(null);
   const [keyboardSnapLines, setKeyboardSnapLines] = useState<{x: number | null, y: number | null}>({x: null, y: null});
   const keyboardSnapLinesTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -934,14 +1054,18 @@ export default function App(): React.ReactNode {
 
 
   const displayedShapes = useMemo(() => {
-    if (Object.keys(previewOverrides).length === 0) {
-        return shapes;
+    let currentShapes = shapes;
+    if (distributePathState) {
+        currentShapes = applyDistributePathToShapes(shapes, distributePathState);
     }
-    return shapes.map(s => {
+    if (Object.keys(previewOverrides).length === 0) {
+        return currentShapes;
+    }
+    return currentShapes.map(s => {
         const override = previewOverrides[s.id];
         return override ? { ...s, ...override } as Shape : s;
     });
-  }, [shapes, previewOverrides]);
+  }, [shapes, previewOverrides, distributePathState]);
 
   const cancelShapePreview = useCallback(() => {
       setPreviewOverrides({});
@@ -2085,6 +2209,197 @@ export default function App(): React.ReactNode {
     });
   }, [deleteShape, t]);
 
+  const handleAlignShapes = useCallback((alignment: 'left' | 'center-h' | 'right' | 'top' | 'center-v' | 'bottom' | 'distribute-h' | 'distribute-v' | 'distribute-path', relativeTo: 'selection' | 'canvas', rotateToCenter?: boolean) => {
+      const topLevelEntities: { ids: string[], bbox: { x: number, y: number, width: number, height: number } }[] = [];
+      const processedIds = new Set<string>();
+      
+      for (const id of selectedShapeIds) {
+          if (processedIds.has(id)) continue;
+          const shape = shapes.find(s => s.id === id);
+          if (!shape) continue;
+          
+          if (shape.type === 'group') {
+              const bbox = getVisualBoundingBox(shape, undefined, shapes);
+              if (bbox) topLevelEntities.push({ ids: [id, ...(shape.shapeIds || [])], bbox });
+              processedIds.add(id);
+              (shape.shapeIds || []).forEach((cid: string) => processedIds.add(cid));
+          } else if (shape.groupId) {
+              const group = shapes.find(s => s.id === shape.groupId && s.type === 'group');
+              if (group) {
+                  const bbox = getVisualBoundingBox(group, undefined, shapes);
+                  if (bbox) topLevelEntities.push({ ids: [group.id, ...(group.shapeIds || [])], bbox });
+                  processedIds.add(group.id);
+                  (group.shapeIds || []).forEach((cid: string) => processedIds.add(cid));
+              } else {
+                  const bbox = getVisualBoundingBox(shape, undefined, shapes);
+                  if (bbox) topLevelEntities.push({ ids: [id], bbox });
+                  processedIds.add(id);
+              }
+          } else {
+              const bbox = getVisualBoundingBox(shape, undefined, shapes);
+              if (bbox) topLevelEntities.push({ ids: [id], bbox });
+              processedIds.add(id);
+          }
+      }
+
+      if (alignment === 'distribute-path') {
+          if (topLevelEntities.length < 2) return;
+          
+          const minX = Math.min(...topLevelEntities.map(e => e.bbox.x));
+          const maxX = Math.max(...topLevelEntities.map(e => e.bbox.x + e.bbox.width));
+          const minY = Math.min(...topLevelEntities.map(e => e.bbox.y));
+          const maxY = Math.max(...topLevelEntities.map(e => e.bbox.y + e.bbox.height));
+          
+          const cx = relativeTo === 'canvas' ? canvasWidth / 2 : minX + (maxX - minX) / 2;
+          const cy = relativeTo === 'canvas' ? canvasHeight / 2 : minY + (maxY - minY) / 2;
+          const radius = relativeTo === 'canvas' ? Math.min(canvasWidth, canvasHeight) * 0.4 : Math.max(maxX - minX, maxY - minY) / 2;
+          
+          const originalShapes = shapes.map(s => ({...s}));
+          const newPathState: DistributePathState = {
+              type: 'circle',
+              circleParams: { cx, cy, radius: radius || 100 },
+              lineParams: { x1: minX, y1: cy, x2: maxX, y2: cy },
+              rotateToCenter: !!rotateToCenter,
+              originalShapes,
+              entities: topLevelEntities.map(e => ({ ids: e.ids, originalBbox: { ...e.bbox } }))
+          };
+          
+          setDistributePathState(newPathState);
+          return;
+      }
+
+      if (relativeTo === 'selection' && topLevelEntities.length < 2) return;
+      if (relativeTo === 'canvas' && topLevelEntities.length < 1) return;
+
+      let targetX = 0;
+      let targetY = 0;
+
+      if (relativeTo === 'canvas') {
+          if (alignment === 'left') targetX = 0;
+          else if (alignment === 'right') targetX = canvasWidth;
+          else if (alignment === 'center-h') targetX = canvasWidth / 2;
+          else if (alignment === 'top') targetY = 0;
+          else if (alignment === 'bottom') targetY = canvasHeight;
+          else if (alignment === 'center-v') targetY = canvasHeight / 2;
+      } else {
+          if (alignment === 'left') targetX = Math.min(...topLevelEntities.map(e => e.bbox.x));
+          else if (alignment === 'right') targetX = Math.max(...topLevelEntities.map(e => e.bbox.x + e.bbox.width));
+          else if (alignment === 'center-h') {
+              const minX = Math.min(...topLevelEntities.map(e => e.bbox.x));
+              const maxX = Math.max(...topLevelEntities.map(e => e.bbox.x + e.bbox.width));
+              targetX = minX + (maxX - minX) / 2;
+          } else if (alignment === 'top') targetY = Math.min(...topLevelEntities.map(e => e.bbox.y));
+          else if (alignment === 'bottom') targetY = Math.max(...topLevelEntities.map(e => e.bbox.y + e.bbox.height));
+          else if (alignment === 'center-v') {
+              const minY = Math.min(...topLevelEntities.map(e => e.bbox.y));
+              const maxY = Math.max(...topLevelEntities.map(e => e.bbox.y + e.bbox.height));
+              targetY = minY + (maxY - minY) / 2;
+          }
+      }
+
+      setShapes(prev => {
+          if (alignment === 'distribute-h' || alignment === 'distribute-v') {
+              if (topLevelEntities.length < 2 || (relativeTo === 'selection' && topLevelEntities.length < 3)) return prev;
+              
+              if (alignment === 'distribute-h') {
+                  const sorted = [...topLevelEntities].sort((a, b) => a.bbox.x - b.bbox.x);
+                  const minX = relativeTo === 'canvas' ? 0 : sorted[0].bbox.x;
+                  const maxX = relativeTo === 'canvas' ? canvasWidth : sorted[sorted.length - 1].bbox.x + sorted[sorted.length - 1].bbox.width;
+                  
+                  let totalWidth = 0;
+                  sorted.forEach(e => totalWidth += e.bbox.width);
+                  
+                  const spacing = (maxX - minX - totalWidth) / (relativeTo === 'canvas' ? sorted.length + 1 : sorted.length - 1);
+                  
+                  return prev.map(s => {
+                      const idx = sorted.findIndex(e => e.ids.includes(s.id));
+                      if (idx === -1) return s;
+                      if (relativeTo === 'selection' && (idx === 0 || idx === sorted.length - 1)) return s;
+                      
+                      let targetXForElement = minX + (relativeTo === 'canvas' ? spacing : 0);
+                      for(let i=0; i<idx; i++) {
+                         targetXForElement += sorted[i].bbox.width + spacing;
+                      }
+                      const dx = targetXForElement - sorted[idx].bbox.x;
+                      
+                      if (dx === 0) return s;
+                      switch (s.type) {
+                          case 'rectangle': case 'triangle': case 'right-triangle': case 'rhombus': case 'trapezoid': case 'parallelogram': case 'arc': case 'text': case 'image': case 'bitmap':
+                              return { ...s, x: s.x + dx };
+                          case 'ellipse': case 'polygon': case 'star':
+                              return { ...s, cx: s.cx + dx };
+                          case 'line': case 'bezier': case 'pencil': case 'polyline':
+                              return { ...s, points: (s as any).points.map((p: any) => ({ ...p, x: p.x + dx })) };
+                          default:
+                              return s;
+                      }
+                  });
+              } else {
+                  const sorted = [...topLevelEntities].sort((a, b) => a.bbox.y - b.bbox.y);
+                  const minY = relativeTo === 'canvas' ? 0 : sorted[0].bbox.y;
+                  const maxY = relativeTo === 'canvas' ? canvasHeight : sorted[sorted.length - 1].bbox.y + sorted[sorted.length - 1].bbox.height;
+                  
+                  let totalHeight = 0;
+                  sorted.forEach(e => totalHeight += e.bbox.height);
+                  
+                  const spacing = (maxY - minY - totalHeight) / (relativeTo === 'canvas' ? sorted.length + 1 : sorted.length - 1);
+                  
+                  return prev.map(s => {
+                      const idx = sorted.findIndex(e => e.ids.includes(s.id));
+                      if (idx === -1) return s;
+                      if (relativeTo === 'selection' && (idx === 0 || idx === sorted.length - 1)) return s;
+                      
+                      let targetYForElement = minY + (relativeTo === 'canvas' ? spacing : 0);
+                      for(let i=0; i<idx; i++) {
+                         targetYForElement += sorted[i].bbox.height + spacing;
+                      }
+                      const dy = targetYForElement - sorted[idx].bbox.y;
+                      
+                      if (dy === 0) return s;
+                      switch (s.type) {
+                          case 'rectangle': case 'triangle': case 'right-triangle': case 'rhombus': case 'trapezoid': case 'parallelogram': case 'arc': case 'text': case 'image': case 'bitmap':
+                              return { ...s, y: s.y + dy };
+                          case 'ellipse': case 'polygon': case 'star':
+                              return { ...s, cy: s.cy + dy };
+                          case 'line': case 'bezier': case 'pencil': case 'polyline':
+                              return { ...s, points: (s as any).points.map((p: any) => ({ ...p, y: p.y + dy })) };
+                          default:
+                              return s;
+                      }
+                  });
+              }
+          }
+
+          return prev.map(s => {
+              const entity = topLevelEntities.find(e => e.ids.includes(s.id));
+              if (!entity) return s;
+
+              let dx = 0;
+              let dy = 0;
+
+              if (alignment === 'left') dx = targetX - entity.bbox.x;
+              else if (alignment === 'right') dx = targetX - (entity.bbox.x + entity.bbox.width);
+              else if (alignment === 'center-h') dx = targetX - (entity.bbox.x + entity.bbox.width / 2);
+              else if (alignment === 'top') dy = targetY - entity.bbox.y;
+              else if (alignment === 'bottom') dy = targetY - (entity.bbox.y + entity.bbox.height);
+              else if (alignment === 'center-v') dy = targetY - (entity.bbox.y + entity.bbox.height / 2);
+
+              if (dx === 0 && dy === 0) return s;
+
+              switch (s.type) {
+                  case 'rectangle': case 'triangle': case 'right-triangle': case 'rhombus': case 'trapezoid': case 'parallelogram': case 'arc': case 'text': case 'image': case 'bitmap':
+                      return { ...s, x: s.x + dx, y: s.y + dy };
+                  case 'ellipse': case 'polygon': case 'star':
+                      return { ...s, cx: s.cx + dx, cy: s.cy + dy };
+                  case 'line': case 'bezier': case 'pencil': case 'polyline':
+                      return { ...s, points: (s as any).points.map((p: any) => ({ x: p.x + dx, y: p.y + dy })) };
+                  default:
+                      return s;
+              }
+          });
+      });
+  }, [selectedShapeIds, shapes, setShapes, canvasWidth, canvasHeight]);
+
   const handleGroup = useCallback(() => {
     if (selectedShapeIds.length < 2) return;
     const newGroupId = `group-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
@@ -2740,6 +3055,7 @@ export default function App(): React.ReactNode {
               onDuplicate={handleDuplicate}
               onGroup={handleGroup}
               onUngroup={handleUngroup}
+              onAlignShapes={handleAlignShapes}
               isShapeSelected={selectedShapeIds.length > 0}
               onOpenMobileLeft={handleOpenMobileLeft}
               onOpenMobileRight={handleOpenMobileRight}
@@ -2816,7 +3132,60 @@ export default function App(): React.ReactNode {
                                         }}
                                     />
                                 )}
+                                {distributePathState && (
+                                    <div className="absolute top-16 left-1/2 transform -translate-x-1/2 bg-[var(--bg-primary)] border border-[var(--border-primary)] shadow-lg rounded-lg p-3 z-50 flex items-center gap-3">
+                                        <span className="text-sm font-medium text-[var(--text-primary)]">{t('tool.distributePath.title') || 'Розподіл за шляхом'}</span>
+                                        
+                                        <select 
+                                            value={distributePathState.type}
+                                            onChange={(e) => {
+                                                const newType = e.target.value as 'circle' | 'line';
+                                                const newState = { ...distributePathState, type: newType };
+                                                setDistributePathState(newState);
+                                            }}
+                                            className="bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border-secondary)] rounded-md px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
+                                        >
+                                            <option value="circle">{t('tool.circle') || 'Коло'}</option>
+                                            <option value="line">{t('tool.line') || 'Лінія'}</option>
+                                        </select>
+                                        
+                                        <label className="flex items-center gap-2 text-sm text-[var(--text-primary)] cursor-pointer">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={distributePathState.rotateToCenter}
+                                                onChange={(e) => {
+                                                    const newState = { ...distributePathState, rotateToCenter: e.target.checked };
+                                                    setDistributePathState(newState);
+                                                }}
+                                                className="rounded border-[var(--border-primary)] text-[var(--accent-primary)] focus:ring-[var(--accent-primary)] bg-[var(--bg-primary)]"
+                                            />
+                                            {t('tool.distribute.circle.rotate') || 'Обертати вздовж шляху'}
+                                        </label>
+                                        
+                                        <div className="w-px h-6 bg-[var(--border-secondary)] mx-1"></div>
+                                        
+                                        <button 
+                                            onClick={() => {
+                                                setShapes(applyDistributePathToShapes(shapes, distributePathState));
+                                                setDistributePathState(null);
+                                            }}
+                                            className="px-3 py-1.5 bg-[var(--accent-primary)] text-[var(--accent-text)] font-medium rounded-md hover:opacity-90 text-sm transition-opacity"
+                                        >
+                                            {t('app.1127') || 'Confirm'}
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                setDistributePathState(null);
+                                            }}
+                                            className="px-3 py-1.5 bg-[var(--bg-secondary)] text-[var(--text-primary)] font-medium border border-[var(--border-secondary)] rounded-md hover:bg-[var(--bg-secondary-hover)] text-sm transition-colors"
+                                        >
+                                            {t('app.1121') || 'Cancel'}
+                                        </button>
+                                    </div>
+                                )}
                                 <Canvas
+                                    distributePathState={distributePathState}
+                                    onDistributePathChange={setDistributePathState}
                                     width={canvasWidth} height={canvasHeight} backgroundColor={previewCanvasBgColor ?? canvasBgColor} shapes={displayedShapes} addShape={addShape} updateShape={updateShape} updateShapes={updateShapes} activeTool={activeTool} drawMode={drawMode}
                                     fillColor={isFillEnabled ? (previewFillColor ?? fillColor) : 'none'} strokeColor={isStrokeEnabled ? (previewStrokeColor ?? strokeColor) : 'none'} strokeWidth={isStrokeEnabled ? strokeWidth : 0}
                                     textColor={previewTextColor ?? textColor}

@@ -270,6 +270,20 @@ export type Shape =
     | BitmapShape
     | GroupShape;
 
+export interface DistributeEntity {
+    ids: string[];
+    originalBbox: { x: number, y: number, width: number, height: number };
+}
+
+export interface DistributePathState {
+    type: 'circle' | 'line';
+    circleParams: { cx: number, cy: number, radius: number };
+    lineParams: { x1: number, y1: number, x2: number, y2: number };
+    rotateToCenter: boolean;
+    originalShapes: Shape[]; 
+    entities: DistributeEntity[];
+}
+
 export type CanvasAction = 
     | { type: 'drawing', shape: Shape, startPos: { x: number, y: number } }
     | { type: 'dragging', initialShape: Shape, startPos: { x: number, y: number } }
@@ -283,6 +297,7 @@ export type CanvasAction =
     | { type: 'star-inner-radius-editing', initialShape: PolygonShape, center: {x: number, y: number} }
     | { type: 'trapezoid-offset-editing', handle: 'left' | 'right', initialShape: TrapezoidShape }
     | { type: 'parallelogram-angle-editing', initialShape: ParallelogramShape }
+    | { type: 'edit-distribute-path', handle: 'center' | 'radius' | 'start' | 'end', startPoint: { x: number, y: number }, initialDistributePath: DistributePathState }
     | null;
 
 export interface NewProjectSettings {

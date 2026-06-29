@@ -323,6 +323,12 @@ export const ChevronDownIcon: React.FC<IconProps> = ({ size = 16, className }) =
     </svg>
 );
 
+export const ChevronRightIcon: React.FC<IconProps> = ({ size = 16, className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <polyline points="9 18 15 12 9 6" />
+    </svg>
+);
+
 export const ClosePathIcon: React.FC<IconProps> = ({ size = 20 }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M3 12l5-7 7 11 5-4" />
@@ -574,6 +580,72 @@ export const AlignRightIcon: React.FC<IconProps> = ({ size = 20 }) => (
         <line x1="21" y1="6" x2="3" y2="6"/>
         <line x1="21" y1="14" x2="3" y2="14"/>
         <line x1="21" y1="18" x2="7" y2="18"/>
+    </svg>
+);
+
+export const AlignShapesLeftIcon: React.FC<IconProps> = ({ size = 20 }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="4" y1="22" x2="4" y2="2" />
+        <rect x="8" y="6" width="12" height="4" rx="1" />
+        <rect x="8" y="14" width="8" height="4" rx="1" />
+    </svg>
+);
+
+export const AlignShapesCenterHIcon: React.FC<IconProps> = ({ size = 20 }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="12" y1="22" x2="12" y2="2" />
+        <rect x="6" y="6" width="12" height="4" rx="1" />
+        <rect x="8" y="14" width="8" height="4" rx="1" />
+    </svg>
+);
+
+export const AlignShapesRightIcon: React.FC<IconProps> = ({ size = 20 }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="20" y1="22" x2="20" y2="2" />
+        <rect x="4" y="6" width="12" height="4" rx="1" />
+        <rect x="8" y="14" width="8" height="4" rx="1" />
+    </svg>
+);
+
+export const AlignShapesTopIcon: React.FC<IconProps> = ({ size = 20 }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="22" y1="4" x2="2" y2="4" />
+        <rect x="6" y="8" width="4" height="12" rx="1" />
+        <rect x="14" y="8" width="4" height="8" rx="1" />
+    </svg>
+);
+
+export const AlignShapesCenterVIcon: React.FC<IconProps> = ({ size = 20 }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="22" y1="12" x2="2" y2="12" />
+        <rect x="6" y="6" width="4" height="12" rx="1" />
+        <rect x="14" y="8" width="4" height="8" rx="1" />
+    </svg>
+);
+
+export const AlignShapesBottomIcon: React.FC<IconProps> = ({ size = 20 }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="22" y1="20" x2="2" y2="20" />
+        <rect x="6" y="4" width="4" height="12" rx="1" />
+        <rect x="14" y="8" width="4" height="8" rx="1" />
+    </svg>
+);
+
+export const DistributeHorizontalIcon: React.FC<IconProps> = ({ size = 20 }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="4" y1="22" x2="4" y2="2" />
+        <line x1="20" y1="22" x2="20" y2="2" />
+        <rect x="8" y="6" width="8" height="4" rx="1" />
+        <rect x="10" y="14" width="4" height="4" rx="1" />
+    </svg>
+);
+
+export const DistributeVerticalIcon: React.FC<IconProps> = ({ size = 20 }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="22" y1="4" x2="2" y2="4" />
+        <line x1="22" y1="20" x2="2" y2="20" />
+        <rect x="6" y="8" width="4" height="8" rx="1" />
+        <rect x="14" y="10" width="4" height="4" rx="1" />
     </svg>
 );
 

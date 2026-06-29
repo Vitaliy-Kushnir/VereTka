@@ -105,7 +105,7 @@ function shapeToSvgString(shape: Shape): string {
     const getTransform = (s: Shape): string => {
         if ('rotation' in s && s.rotation && s.rotation !== 0) {
             const center = s.type === 'text' ? {x: s.x, y: s.y} : getShapeCenter(s);
-            if (center) return `transform="rotate(${s.rotation} ${center.x} ${center.y})"`;
+            if (center) return `transform="rotate(${-s.rotation} ${center.x} ${center.y})"`;
         }
         return '';
     };
