@@ -52,11 +52,14 @@ const InlineTextEditor: React.FC<InlineTextEditorProps> = ({ shape, viewTransfor
   if (!bbox) return null;
 
   const { scale, x: viewX, y: viewY } = viewTransform;
-  
-  // 2. Calculate the vector from the anchor point (shape.x, shape.y) to the visual top-left (bbox.x, bbox.y).
+
+  // 1.5 Calculate geometric center of the unrotated shape
+  const center = { x: bbox.x + bbox.width / 2, y: bbox.y + bbox.height / 2 };
+
+  // 2. Calculate the vector from the anchor point (center) to the visual top-left (bbox.x, bbox.y).
   const vecAnchorToTopLeft = {
-      x: bbox.x - shape.x,
-      y: bbox.y - shape.y,
+      x: bbox.x - center.x,
+      y: bbox.y - center.y,
   };
 
   // 3. Rotate this vector by the shape's rotation angle. This tells us where the
@@ -72,8 +75,8 @@ const InlineTextEditor: React.FC<InlineTextEditorProps> = ({ shape, viewTransfor
 
   // 4. Calculate the final on-screen position of the anchor point.
   const anchorScreen = {
-      x: shape.x * scale + viewX,
-      y: shape.y * scale + viewY,
+      x: center.x * scale + viewX,
+      y: center.y * scale + viewY,
   };
   
   // 5. The final top-left of the textarea is the anchor's screen position plus the rotated vector.

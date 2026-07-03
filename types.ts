@@ -279,7 +279,12 @@ export interface DistributePathState {
     type: 'circle' | 'line';
     circleParams: { cx: number, cy: number, radius: number };
     lineParams: { x1: number, y1: number, x2: number, y2: number };
-    rotateToCenter: boolean;
+    angleOffset: number;
+    orientAlongPath: boolean;
+    orientationType: 'radial' | 'tangent' | 'parallel' | 'perpendicular' | 'custom';
+    orientationAngle: number;
+    rotateAlongPath: boolean;
+    alignment: 'center' | 'top' | 'bottom';
     originalShapes: Shape[]; 
     entities: DistributeEntity[];
 }

@@ -1,15 +1,16 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Shape, Tool, PolylineShape } from '../types';
+import { Shape, Tool, PolylineShape, DistributePathState } from '../types';
 import { ArrowUpIcon, ArrowDownIcon, TrashIcon, SquareIcon, CircleIcon, LineIcon, EllipseIcon, PencilIcon, TriangleIcon, PolygonIcon, StarIcon, SelectIcon, EditPointsIcon, PolylineIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, BezierIcon, RectangleIcon, ArcIcon, PiesliceIcon, ChordIcon, RightTriangleIcon, EyeIcon, EyeOffIcon, TextIcon, ImageIcon, BitmapIcon, LocateIcon } from './icons';
 import { getDefaultNameForShape, getTkinterType, isDefaultName } from '../lib/constants';
 import { isPolylineAxisAlignedRectangle } from '../lib/geometry';
 import { useLanguage } from './LanguageContext';
 
 interface ShapeListProps {
+  distributePathState?: DistributePathState | null;
   shapes: Shape[];
   selectedShapeIds: string[];
-  onSelectShape: (id: string | null, isShiftPressed?: boolean) => void;
+  onSelectShape: (id: string | null, isCtrlPressed?: boolean, isShiftPressed?: boolean) => void;
   onDeleteShape: (id: string) => void;
   onMoveShape: (id: string, direction: 'up' | 'down') => void;
   onUpdateShape: (shape: Shape) => void;
@@ -92,7 +93,7 @@ const ShapeNameDisplay = ({ isSelected, shapeName, showTkinterNames, tkinterName
     );
 };
 
-const ShapeList: React.FC<ShapeListProps> = ({ shapes, selectedShapeIds, onSelectShape, onDeleteShape, onMoveShape, onUpdateShape, onReorderShape, showTkinterNames }) => {
+const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, selectedShapeIds, onSelectShape, onDeleteShape, onMoveShape, onUpdateShape, onReorderShape, showTkinterNames }) => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingValue, setEditingValue] = useState('');
     const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -241,6 +242,7 @@ const ShapeList: React.FC<ShapeListProps> = ({ shapes, selectedShapeIds, onSelec
 
     const renderShapeItem = (shape: Shape, index: number, originalIndex: number, level: number = 0) => {
         if (!shape) return null;
+        const isDistributing = distributePathState?.entities.some(e => e.ids.includes(shape.id)) ?? false;
         const isSelected = selectedShapeIds.includes(shape.id);
         const isEditing = editingId === shape.id;
         const canMoveUp = originalIndex < shapes.length - 1;
@@ -256,7 +258,7 @@ const ShapeList: React.FC<ShapeListProps> = ({ shapes, selectedShapeIds, onSelec
             <li
                 ref={(el) => { itemRefs.current[shape.id] = el; }}
                 key={shape.id}
-                onClick={(e) => onSelectShape(shape.id, e.shiftKey)}
+                onClick={(e) => onSelectShape(shape.id, e.ctrlKey || e.metaKey, e.shiftKey)}
                 onDoubleClick={() => handleStartEditing(shape)}
                 draggable={!isEditing}
                 onDragStart={isEditing ? undefined : (e) => handleDragStart(e, shape.id)}
@@ -269,7 +271,7 @@ const ShapeList: React.FC<ShapeListProps> = ({ shapes, selectedShapeIds, onSelec
                 `}
                 style={{ marginLeft: `${level * 16}px` }}
             >
-                <div className={`flex items-center justify-between py-0.5 px-1.5 rounded-md cursor-pointer ${isSelected ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]'}`}>
+                <div className={`flex items-center justify-between py-0.5 px-1.5 rounded-md cursor-pointer ${isDistributing ? 'bg-amber-500/80 text-white outline outline-1 outline-amber-600' : isSelected ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]'}`}>
                     {/* Drop Insertion Indicators */}
                     {isDragOverTop && (
                         <div className="absolute -top-[3px] left-0 right-0 h-[3px] bg-[var(--selection-stroke)] rounded-full shadow-[0_0_4px_var(--selection-stroke)] z-50 pointer-events-none animate-pulse"></div>
@@ -318,7 +320,7 @@ const ShapeList: React.FC<ShapeListProps> = ({ shapes, selectedShapeIds, onSelec
                                 <ArrowDownIcon size={12} />
                             </button>
                         </div>
-                        <button onClick={(e) => { e.stopPropagation(); onDeleteShape(shape.id); }} className="p-1 ml-1 text-red-500 hover:bg-red-500 hover:text-white rounded-md transition-colors opacity-70 hover:opacity-100" title={t('list.delete')}>
+                        <button onClick={(e) => { e.stopPropagation(); onDeleteShape(shape.id); }} disabled={!!distributePathState} className="p-1 ml-1 text-red-500 hover:bg-red-500 hover:text-white rounded-md transition-colors opacity-70 hover:opacity-100 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-red-500" title={t('list.delete')}>
                             <TrashIcon size={14} />
                         </button>
                     </div>

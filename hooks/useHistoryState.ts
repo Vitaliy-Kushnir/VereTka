@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 interface HistoryState<T> {
   state: T;
   setState: (newState: T | ((prevState: T) => T)) => void;
+  updateCurrentState: (newState: T | ((prevState: T) => T)) => void;
   undo: () => void;
   redo: () => void;
   canUndo: boolean;
@@ -26,6 +27,17 @@ export function useHistoryState<T>(initialState: T): HistoryState<T> {
     setHistory(newHistory);
     setCurrentIndex(newHistory.length - 1);
   }, [currentIndex, history]);
+
+  const updateCurrentState = useCallback((newStateOrFn: T | ((prevState: T) => T)) => {
+    setHistory(prev => {
+        const newHistory = [...prev];
+        const newState = typeof newStateOrFn === 'function' 
+            ? (newStateOrFn as (prevState: T) => T)(newHistory[currentIndex]) 
+            : newStateOrFn;
+        newHistory[currentIndex] = newState;
+        return newHistory;
+    });
+  }, [currentIndex]);
 
   const undo = useCallback(() => {
     if (currentIndex > 0) {
@@ -50,6 +62,7 @@ export function useHistoryState<T>(initialState: T): HistoryState<T> {
   return {
     state: history[currentIndex],
     setState,
+    updateCurrentState,
     undo,
     redo,
     canUndo,

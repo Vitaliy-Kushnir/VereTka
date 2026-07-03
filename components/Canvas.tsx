@@ -26,7 +26,7 @@ interface CanvasProps {
   textFontSize: number;
   numberOfSides: number;
   selectedShapeIds: string[];
-  onSelectShape: (id: string | string[] | null, isShiftPressed?: boolean) => void;
+  onSelectShape: (id: string | string[] | null, isCtrlPressed?: boolean, isShiftPressed?: boolean) => void;
   isDrawingPolyline: boolean;
   polylinePoints: {x: number, y: number}[];
   setPolylinePoints: React.Dispatch<React.SetStateAction<{x: number, y: number}[]>>;
@@ -58,6 +58,7 @@ interface CanvasProps {
   enableSnapping: boolean;
   distributePathState?: import('../types').DistributePathState | null;
   onDistributePathChange?: (state: import('../types').DistributePathState) => void;
+  onDistributePathChangeEnd?: () => void;
 }
 
 const DRAG_THRESHOLD = 3;
@@ -181,6 +182,10 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     mouseDownPosRef.current = pos;
 
     if (e.button === 2) { // Right mouse button for duplicating
+        if (props.distributePathState) {
+            e.preventDefault();
+            return;
+        }
         const clickedShapeId = (e.target as SVGElement).dataset.id;
         const shapeToDuplicate = clickedShapeId ? shapes.find(s => s.id === clickedShapeId) : null;
 
@@ -234,17 +239,25 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         if (!clickedShape) {
           onSelectShape(null);
         } else if (clickedShape && clickedShape.state === 'normal') {
-          if (!selectedShapeIds.includes(clickedShape.id)) onSelectShape(clickedShape.id, e.shiftKey);
-          else if (e.shiftKey) onSelectShape(clickedShape.id, e.shiftKey);
+          if (!selectedShapeIds.includes(clickedShape.id)) onSelectShape(clickedShape.id, e.ctrlKey || e.metaKey, e.shiftKey);
+          else if (e.ctrlKey || e.metaKey || e.shiftKey) onSelectShape(clickedShape.id, e.ctrlKey || e.metaKey, e.shiftKey);
         }
       return;
     }
 
     if (activeTool === 'select') {
         if (clickedShape && clickedShape.state !== 'disabled') {
+            if (props.distributePathState) {
+                const clickedEntity = props.distributePathState.entities.find(e => e.ids.includes(clickedShape.id));
+                if (clickedEntity) {
+                    setAction({ type: 'edit-distribute-path', handle: 'move-all', startPoint: pos, initialDistributePath: props.distributePathState });
+                    return;
+                }
+            }
+            
             setAction({ type: 'dragging', initialShape: clickedShape, startPos: pos });
-            if (!selectedShapeIds.includes(clickedShape.id)) onSelectShape(clickedShape.id, e.shiftKey);
-            else if (e.shiftKey) onSelectShape(clickedShape.id, e.shiftKey);
+            if (!selectedShapeIds.includes(clickedShape.id)) onSelectShape(clickedShape.id, e.ctrlKey || e.metaKey, e.shiftKey);
+            else if (e.ctrlKey || e.metaKey || e.shiftKey) onSelectShape(clickedShape.id, e.ctrlKey || e.metaKey, e.shiftKey);
         } else {
             // Clicked on empty space, initiate pan. Deselection happens on mouseUp if it was just a click.
             setAction({ type: 'panning', initialPos: { x: e.clientX, y: e.clientY } });
@@ -389,38 +402,46 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     
     if (!action) return;
 
-    if (action.type === 'edit-distribute-path') {
-        const dx = pos.x - action.startPoint.x;
-        const dy = pos.y - action.startPoint.y;
-        
-        let newPathState = { ...action.initialDistributePath };
-        if (newPathState.type === 'circle') {
-            if (action.handle === 'center') {
-                newPathState.circleParams = { ...newPathState.circleParams, cx: newPathState.circleParams.cx + dx, cy: newPathState.circleParams.cy + dy };
-            } else if (action.handle === 'radius') {
-                newPathState.circleParams = { ...newPathState.circleParams, radius: Math.max(10, newPathState.circleParams.radius + dx) };
-            }
-        } else if (newPathState.type === 'line') {
-            if (action.handle === 'start') {
-                newPathState.lineParams = { ...newPathState.lineParams, x1: newPathState.lineParams.x1 + dx, y1: newPathState.lineParams.y1 + dy };
-            } else if (action.handle === 'end') {
-                newPathState.lineParams = { ...newPathState.lineParams, x2: newPathState.lineParams.x2 + dx, y2: newPathState.lineParams.y2 + dy };
-            }
-        }
-        props.onDistributePathChange?.(newPathState);
-        return;
-    }
-
     let newSnapLines = { x: null as number | null, y: null as number | null };
 
-    if ((enableSnapping || showCenterGuides) && (action.type === 'dragging' || action.type === 'duplicating') && !e.altKey) {
-        let dx = pos.x - action.startPos.x;
-        let dy = pos.y - action.startPos.y;
+    if ((enableSnapping || showCenterGuides) && (action.type === 'dragging' || action.type === 'duplicating' || (action.type === 'edit-distribute-path' && ['move-all', 'center', 'start', 'end'].includes(action.handle))) && !e.altKey) {
+        let dx = 0;
+        let dy = 0;
+        if (action.type === 'edit-distribute-path') {
+            dx = pos.x - action.startPoint.x;
+            dy = pos.y - action.startPoint.y;
+        } else {
+            dx = pos.x - action.startPos.x;
+            dy = pos.y - action.startPos.y;
+        }
+        
         if (e.shiftKey) {
             if (Math.abs(dx) > Math.abs(dy)) dy = 0; else dx = 0;
         }
 
-        const movingBboxOriginal = getVisualBoundingBox(action.initialShape, undefined, shapes);
+        let movingBboxOriginal: { x: number, y: number, width: number, height: number } | null = null;
+        
+        if (action.type === 'edit-distribute-path') {
+            const p = action.initialDistributePath;
+            if (action.handle === 'center') {
+                movingBboxOriginal = { x: p.circleParams.cx, y: p.circleParams.cy, width: 0, height: 0 };
+            } else if (action.handle === 'start') {
+                movingBboxOriginal = { x: p.lineParams.x1, y: p.lineParams.y1, width: 0, height: 0 };
+            } else if (action.handle === 'end') {
+                movingBboxOriginal = { x: p.lineParams.x2, y: p.lineParams.y2, width: 0, height: 0 };
+            } else {
+                if (p.type === 'circle') {
+                    movingBboxOriginal = { x: p.circleParams.cx - p.circleParams.radius, y: p.circleParams.cy - p.circleParams.radius, width: p.circleParams.radius * 2, height: p.circleParams.radius * 2 };
+                } else {
+                    const minX = Math.min(p.lineParams.x1, p.lineParams.x2);
+                    const minY = Math.min(p.lineParams.y1, p.lineParams.y2);
+                    movingBboxOriginal = { x: minX, y: minY, width: Math.abs(p.lineParams.x2 - p.lineParams.x1), height: Math.abs(p.lineParams.y2 - p.lineParams.y1) };
+                }
+            }
+        } else {
+            const box = getVisualBoundingBox(action.initialShape, undefined, shapes);
+            if (box) movingBboxOriginal = box;
+        }
         
         if (movingBboxOriginal) {
             const movingBox = {
@@ -442,7 +463,12 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             let minSnapDistY = SNAP_DIST;
 
             if (enableSnapping) {
-                const otherShapes = shapes.filter(s => !selectedShapeIds.includes(s.id) && s.groupId === undefined);
+                let excludedIds = selectedShapeIds;
+                if (action.type === 'edit-distribute-path') {
+                    const distributedIds = new Set(action.initialDistributePath.entities.flatMap(e => e.ids));
+                    excludedIds = shapes.filter(s => distributedIds.has(s.id)).map(s => s.id);
+                }
+                const otherShapes = shapes.filter(s => !excludedIds.includes(s.id) && s.groupId === undefined);
 
                 for (const other of otherShapes) {
                     const otherBox = getVisualBoundingBox(other, undefined, shapes);
@@ -514,12 +540,71 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 }
             }
             
-            pos = { x: action.startPos.x + bestDx, y: action.startPos.y + bestDy };
+            if (action.type === 'edit-distribute-path') {
+                pos = { x: action.startPoint.x + bestDx, y: action.startPoint.y + bestDy };
+            } else {
+                pos = { x: action.startPos.x + bestDx, y: action.startPos.y + bestDy };
+            }
         }
     }
+
+    if (action.type === 'edit-distribute-path') {
+        const dx = pos.x - action.startPoint.x;
+        const dy = pos.y - action.startPoint.y;
+        
+        let newPathState = { ...action.initialDistributePath };
+        if (newPathState.type === 'circle') {
+            if (action.handle === 'center' || action.handle === 'move-all') {
+                newPathState.circleParams = { ...newPathState.circleParams, cx: newPathState.circleParams.cx + dx, cy: newPathState.circleParams.cy + dy };
+            } else if (action.handle === 'radius') {
+                const dist = Math.hypot(pos.x - newPathState.circleParams.cx, pos.y - newPathState.circleParams.cy);
+                newPathState.circleParams = { ...newPathState.circleParams, radius: Math.max(10, dist) };
+            } else if (action.handle === 'rotate') {
+                const angle = Math.atan2(pos.y - newPathState.circleParams.cy, pos.x - newPathState.circleParams.cx);
+                newPathState.angleOffset = (angle + Math.PI / 2) * (180 / Math.PI);
+            }
+        } else if (newPathState.type === 'line') {
+            // Bake rotation into the start and end coordinates if angleOffset is not 0
+            let startX = newPathState.lineParams.x1;
+            let startY = newPathState.lineParams.y1;
+            let endX = newPathState.lineParams.x2;
+            let endY = newPathState.lineParams.y2;
+            
+            if (newPathState.angleOffset !== 0) {
+                const mx = (startX + endX) / 2;
+                const my = (startY + endY) / 2;
+                const len = Math.hypot(endX - startX, endY - startY);
+                const baseAngle = Math.atan2(endY - startY, endX - startX);
+                const finalAngle = baseAngle + newPathState.angleOffset * Math.PI / 180;
+                startX = mx - Math.cos(finalAngle) * (len / 2);
+                startY = my - Math.sin(finalAngle) * (len / 2);
+                endX = mx + Math.cos(finalAngle) * (len / 2);
+                endY = my + Math.sin(finalAngle) * (len / 2);
+                newPathState.angleOffset = 0;
+                newPathState.lineParams = { ...newPathState.lineParams, x1: startX, y1: startY, x2: endX, y2: endY };
+            }
+            
+            if (action.handle === 'start') {
+                newPathState.lineParams = { ...newPathState.lineParams, x1: startX + dx, y1: startY + dy, x2: endX, y2: endY };
+            } else if (action.handle === 'end') {
+                newPathState.lineParams = { ...newPathState.lineParams, x1: startX, y1: startY, x2: endX + dx, y2: endY + dy };
+            } else if (action.handle === 'move-all') {
+                newPathState.lineParams = { ...newPathState.lineParams, x1: startX + dx, y1: startY + dy, x2: endX + dx, y2: endY + dy };
+            } else if (action.handle === 'rotate') {
+                const mx = (startX + endX) / 2;
+                const my = (startY + endY) / 2;
+                const angle = Math.atan2(pos.y - my, pos.x - mx);
+                const baseAngle = Math.atan2(endY - startY, endX - startX);
+                newPathState.angleOffset = (angle + Math.PI / 2 - baseAngle) * (180 / Math.PI);
+            }
+        }
+        props.onDistributePathChange?.(newPathState);
+        setSnapLines(newSnapLines);
+        return;
+    }
     
-    const modifyingActions = ['point-editing', 'arc-angle-editing', 'triangle-vertex-editing', 'star-inner-radius-editing', 'trapezoid-offset-editing', 'parallelogram-angle-editing'];
-    const isSnappableModifyingAction = modifyingActions.includes(action.type) && (action.type === 'point-editing' || !('rotation' in action.initialShape) || (action.initialShape as any).rotation === 0);
+    const modifyingActions = ['point-editing', 'arc-angle-editing', 'triangle-vertex-editing', 'star-inner-radius-editing', 'trapezoid-offset-editing', 'parallelogram-angle-editing', 'edit-distribute-path'];
+    const isSnappableModifyingAction = modifyingActions.includes(action.type) && (action.type === 'point-editing' || action.type === 'edit-distribute-path' || !('rotation' in action.initialShape) || (action.initialShape as any).rotation === 0);
 
     if ((enableSnapping || showCenterGuides) && (action.type === 'resizing' || action.type === 'drawing' || isSnappableModifyingAction) && !e.altKey && (action.type !== 'resizing' || !('rotation' in action.initialShape) || action.initialShape.rotation === 0)) {
         const SNAP_DIST = 5 / viewTransform.scale;
@@ -1305,7 +1390,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             let newRotationDeg = newRotationRad * 180 / Math.PI;
 
             // Round the rotation to the nearest integer for mouse rotation
+            newRotationDeg = ((newRotationDeg % 360) + 360) % 360;
             newRotationDeg = Math.round(newRotationDeg);
+            if (newRotationDeg === 360) newRotationDeg = 0;
 
             updatedShape = { ...initialShape, rotation: newRotationDeg };
             break;
@@ -1544,6 +1631,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             updateShape(activeTransformShapeRef.current);
             auxiliaryTransformShapesRef.current.forEach(shape => updateShape(shape));
         }
+    } else if (action?.type === 'edit-distribute-path') {
+        props.onDistributePathChangeEnd?.();
     }
     
     setAction(null);
@@ -1551,7 +1640,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     setAuxiliaryTransformShapes([]);
     hasDraggedRef.current = false;
     mouseDownPosRef.current = null;
-  }, [action, addShape, updateShape, updateShapes, onSelectShape, activeTransformShape, auxiliaryTransformShapes, showNotification]);
+  }, [action, addShape, updateShape, updateShapes, onSelectShape, activeTransformShape, auxiliaryTransformShapes, showNotification, props.onDistributePathChangeEnd]);
   
   const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isDrawingPolyline) {
@@ -1844,7 +1933,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
   const getTransform = (shape: Shape) => {
     if ('rotation' in shape && shape.rotation && shape.rotation !== 0) {
-        const center = shape.type === 'text' ? {x: shape.x, y: shape.y} : getShapeCenter(shape);
+        const center = getShapeCenter(shape);
         if(center) return `rotate(${-shape.rotation} ${center.x} ${center.y})`;
     }
     return undefined;
@@ -1961,11 +2050,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     
   const formatNumber = (num: number) => Math.round(num * 100) / 100;
   
-  const isEngagedInRotation = action?.type === 'rotating';
+  const isEngagedInRotation = action?.type === 'rotating' || (action?.type === 'edit-distribute-path' && action.handle === 'rotate');
   const isDuplicating = action?.type === 'duplicating';
 
   const rotationInfo = useMemo(() => {
-    if (isEngagedInRotation && action.initialShape && 'rotation' in action.initialShape) {
+    if (action?.type === 'rotating' && action.initialShape && 'rotation' in action.initialShape) {
         let currentRotation: number | null = null;
         if (activeTransformShape && 'rotation' in activeTransformShape) {
             currentRotation = (activeTransformShape as RotatableShape).rotation;
@@ -1985,9 +2074,18 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 delta: delta
             };
         }
+    } else if (action?.type === 'edit-distribute-path' && action.handle === 'rotate' && props.distributePathState) {
+        let delta = props.distributePathState.angleOffset - action.initialDistributePath.angleOffset;
+        if (delta > 180) delta -= 360;
+        if (delta < -180) delta += 360;
+        
+        return {
+            absolute: props.distributePathState.angleOffset,
+            delta: delta
+        };
     }
     return null;
-  }, [action, activeTransformShape, isEngagedInRotation]);
+  }, [action, activeTransformShape, props.distributePathState]);
   
   const showInfoBox = (showCursorCoords || (showRotationAngle && isEngagedInRotation) || isDuplicating) && rawMousePos && previewMousePos;
 
@@ -2450,7 +2548,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     default: return null;
                 }
             })}
-             {selectedShapes.map((shape) => (
+             {!props.distributePathState && selectedShapes.map((shape) => (
                  <SelectionControls
                      key={`selection-controls-${shape.id}`}
                      shape={shape}
@@ -2467,7 +2565,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                      action={action}
                  />
              ))}
-             {selectedShapes.length > 1 && (
+             {!props.distributePathState && selectedShapes.length > 1 && (
                 <g style={{ pointerEvents: 'none' }}>
                     {Object.entries(shapesByGroup.groups).map(([groupId, shapesInGroup]) => {
                         const groupBounds = computeGroupBounds(shapesInGroup);
@@ -2494,38 +2592,111 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 <g className="distribute-path-controls">
                     {props.distributePathState.type === 'circle' && (
                         <>
-                            <circle cx={props.distributePathState.circleParams.cx} cy={props.distributePathState.circleParams.cy} r={props.distributePathState.circleParams.radius} fill="none" stroke="var(--accent-primary)" strokeWidth={2 / viewTransform.scale} strokeDasharray={`${5 / viewTransform.scale},${5 / viewTransform.scale}`} style={{ pointerEvents: 'none' }} />
+                            <circle cx={props.distributePathState.circleParams.cx} cy={props.distributePathState.circleParams.cy} r={props.distributePathState.circleParams.radius} fill="none" stroke="#00d2ff" strokeWidth={2 / viewTransform.scale} strokeDasharray={`${5 / viewTransform.scale},${5 / viewTransform.scale}`} style={{ pointerEvents: 'none' }} />
                             {/* Center Handle */}
-                            <circle cx={props.distributePathState.circleParams.cx} cy={props.distributePathState.circleParams.cy} r={6 / viewTransform.scale} fill="var(--bg-primary)" stroke="var(--accent-primary)" strokeWidth={2 / viewTransform.scale} style={{ cursor: 'move', pointerEvents: 'all' }} onPointerDown={(e) => {
+                            <circle cx={props.distributePathState.circleParams.cx} cy={props.distributePathState.circleParams.cy} r={6 / viewTransform.scale} fill="var(--bg-primary)" stroke="#00d2ff" strokeWidth={2 / viewTransform.scale} style={{ cursor: 'move', pointerEvents: 'all' }} onMouseDown={(e) => {
                                 e.stopPropagation();
-                                const pt = getPointerPosition(e);
+                                const pt = getTransformedPointerPosition(getPointerPosition(e));
+                                setAction({ type: 'edit-distribute-path', handle: 'center', startPoint: pt, initialDistributePath: props.distributePathState! });
+                            }} onTouchStart={(e) => {
+                                e.stopPropagation();
+                                const pt = getTransformedPointerPosition(getPointerPosition(e));
                                 setAction({ type: 'edit-distribute-path', handle: 'center', startPoint: pt, initialDistributePath: props.distributePathState! });
                             }} />
                             {/* Radius Handle */}
-                            <circle cx={props.distributePathState.circleParams.cx + props.distributePathState.circleParams.radius} cy={props.distributePathState.circleParams.cy} r={6 / viewTransform.scale} fill="var(--bg-primary)" stroke="var(--accent-primary)" strokeWidth={2 / viewTransform.scale} style={{ cursor: 'ew-resize', pointerEvents: 'all' }} onPointerDown={(e) => {
+                            <circle cx={props.distributePathState.circleParams.cx + props.distributePathState.circleParams.radius} cy={props.distributePathState.circleParams.cy} r={6 / viewTransform.scale} fill="var(--bg-primary)" stroke="#00d2ff" strokeWidth={2 / viewTransform.scale} style={{ cursor: 'ew-resize', pointerEvents: 'all' }} onMouseDown={(e) => {
                                 e.stopPropagation();
-                                const pt = getPointerPosition(e);
+                                const pt = getTransformedPointerPosition(getPointerPosition(e));
+                                setAction({ type: 'edit-distribute-path', handle: 'radius', startPoint: pt, initialDistributePath: props.distributePathState! });
+                            }} onTouchStart={(e) => {
+                                e.stopPropagation();
+                                const pt = getTransformedPointerPosition(getPointerPosition(e));
                                 setAction({ type: 'edit-distribute-path', handle: 'radius', startPoint: pt, initialDistributePath: props.distributePathState! });
                             }} />
+                            {/* Rotation Handle */}
+                            <g>
+                                <line 
+                                    x1={props.distributePathState.circleParams.cx} 
+                                    y1={props.distributePathState.circleParams.cy} 
+                                    x2={props.distributePathState.circleParams.cx + Math.cos(props.distributePathState.angleOffset * Math.PI / 180 - Math.PI / 2) * (props.distributePathState.circleParams.radius + 30 / viewTransform.scale)} 
+                                    y2={props.distributePathState.circleParams.cy + Math.sin(props.distributePathState.angleOffset * Math.PI / 180 - Math.PI / 2) * (props.distributePathState.circleParams.radius + 30 / viewTransform.scale)} 
+                                    stroke="#00d2ff" strokeWidth={1 / viewTransform.scale} strokeDasharray={`${3 / viewTransform.scale},${3 / viewTransform.scale}`} style={{ pointerEvents: 'none' }} />
+                                <circle 
+                                    cx={props.distributePathState.circleParams.cx + Math.cos(props.distributePathState.angleOffset * Math.PI / 180 - Math.PI / 2) * (props.distributePathState.circleParams.radius + 30 / viewTransform.scale)} 
+                                    cy={props.distributePathState.circleParams.cy + Math.sin(props.distributePathState.angleOffset * Math.PI / 180 - Math.PI / 2) * (props.distributePathState.circleParams.radius + 30 / viewTransform.scale)} 
+                                    r={6 / viewTransform.scale} fill="#00d2ff" stroke="var(--bg-primary)" strokeWidth={2 / viewTransform.scale} style={{ cursor: ROTATE_CURSOR_STYLE, pointerEvents: 'all' }} 
+                                    onMouseDown={(e) => {
+                                        e.stopPropagation();
+                                        const pt = getTransformedPointerPosition(getPointerPosition(e));
+                                        setAction({ type: 'edit-distribute-path', handle: 'rotate', startPoint: pt, initialDistributePath: props.distributePathState! });
+                                    }} onTouchStart={(e) => {
+                                        e.stopPropagation();
+                                        const pt = getTransformedPointerPosition(getPointerPosition(e));
+                                        setAction({ type: 'edit-distribute-path', handle: 'rotate', startPoint: pt, initialDistributePath: props.distributePathState! });
+                                    }} />
+                            </g>
                         </>
                     )}
-                    {props.distributePathState.type === 'line' && (
+                    {props.distributePathState.type === 'line' && (() => {
+                        const mx = (props.distributePathState.lineParams.x1 + props.distributePathState.lineParams.x2) / 2;
+                        const my = (props.distributePathState.lineParams.y1 + props.distributePathState.lineParams.y2) / 2;
+                        const len = Math.hypot(props.distributePathState.lineParams.x2 - props.distributePathState.lineParams.x1, props.distributePathState.lineParams.y2 - props.distributePathState.lineParams.y1);
+                        const baseAngle = Math.atan2(props.distributePathState.lineParams.y2 - props.distributePathState.lineParams.y1, props.distributePathState.lineParams.x2 - props.distributePathState.lineParams.x1);
+                        const finalAngle = baseAngle + props.distributePathState.angleOffset * Math.PI / 180;
+                        const startX = mx - Math.cos(finalAngle) * (len / 2);
+                        const startY = my - Math.sin(finalAngle) * (len / 2);
+                        const endX = mx + Math.cos(finalAngle) * (len / 2);
+                        const endY = my + Math.sin(finalAngle) * (len / 2);
+                        const rotX = mx + Math.cos(finalAngle - Math.PI / 2) * (30 / viewTransform.scale);
+                        const rotY = my + Math.sin(finalAngle - Math.PI / 2) * (30 / viewTransform.scale);
+                        return (
                         <>
-                            <line x1={props.distributePathState.lineParams.x1} y1={props.distributePathState.lineParams.y1} x2={props.distributePathState.lineParams.x2} y2={props.distributePathState.lineParams.y2} stroke="var(--accent-primary)" strokeWidth={2 / viewTransform.scale} strokeDasharray={`${5 / viewTransform.scale},${5 / viewTransform.scale}`} style={{ pointerEvents: 'none' }} />
+                            <line x1={startX} y1={startY} x2={endX} y2={endY} stroke="#00d2ff" strokeWidth={2 / viewTransform.scale} strokeDasharray={`${5 / viewTransform.scale},${5 / viewTransform.scale}`} style={{ pointerEvents: 'none' }} />
                             {/* Start Handle */}
-                            <circle cx={props.distributePathState.lineParams.x1} cy={props.distributePathState.lineParams.y1} r={6 / viewTransform.scale} fill="var(--bg-primary)" stroke="var(--accent-primary)" strokeWidth={2 / viewTransform.scale} style={{ cursor: 'move', pointerEvents: 'all' }} onPointerDown={(e) => {
+                            <circle cx={startX} cy={startY} r={6 / viewTransform.scale} fill="var(--bg-primary)" stroke="#00d2ff" strokeWidth={2 / viewTransform.scale} style={{ cursor: 'move', pointerEvents: 'all' }} onMouseDown={(e) => {
                                 e.stopPropagation();
-                                const pt = getPointerPosition(e);
+                                const pt = getTransformedPointerPosition(getPointerPosition(e));
+                                setAction({ type: 'edit-distribute-path', handle: 'start', startPoint: pt, initialDistributePath: props.distributePathState! });
+                            }} onTouchStart={(e) => {
+                                e.stopPropagation();
+                                const pt = getTransformedPointerPosition(getPointerPosition(e));
                                 setAction({ type: 'edit-distribute-path', handle: 'start', startPoint: pt, initialDistributePath: props.distributePathState! });
                             }} />
                             {/* End Handle */}
-                            <circle cx={props.distributePathState.lineParams.x2} cy={props.distributePathState.lineParams.y2} r={6 / viewTransform.scale} fill="var(--bg-primary)" stroke="var(--accent-primary)" strokeWidth={2 / viewTransform.scale} style={{ cursor: 'move', pointerEvents: 'all' }} onPointerDown={(e) => {
+                            <circle cx={endX} cy={endY} r={6 / viewTransform.scale} fill="var(--bg-primary)" stroke="#00d2ff" strokeWidth={2 / viewTransform.scale} style={{ cursor: 'move', pointerEvents: 'all' }} onMouseDown={(e) => {
                                 e.stopPropagation();
-                                const pt = getPointerPosition(e);
+                                const pt = getTransformedPointerPosition(getPointerPosition(e));
+                                setAction({ type: 'edit-distribute-path', handle: 'end', startPoint: pt, initialDistributePath: props.distributePathState! });
+                            }} onTouchStart={(e) => {
+                                e.stopPropagation();
+                                const pt = getTransformedPointerPosition(getPointerPosition(e));
                                 setAction({ type: 'edit-distribute-path', handle: 'end', startPoint: pt, initialDistributePath: props.distributePathState! });
                             }} />
+                            {/* Rotation Handle */}
+                            <g>
+                                <line 
+                                    x1={mx} 
+                                    y1={my} 
+                                    x2={rotX} 
+                                    y2={rotY} 
+                                    stroke="#00d2ff" strokeWidth={1 / viewTransform.scale} strokeDasharray={`${3 / viewTransform.scale},${3 / viewTransform.scale}`} style={{ pointerEvents: 'none' }} />
+                                <circle 
+                                    cx={rotX} 
+                                    cy={rotY} 
+                                    r={6 / viewTransform.scale} fill="#00d2ff" stroke="var(--bg-primary)" strokeWidth={2 / viewTransform.scale} style={{ cursor: ROTATE_CURSOR_STYLE, pointerEvents: 'all' }} 
+                                    onMouseDown={(e) => {
+                                        e.stopPropagation();
+                                        const pt = getTransformedPointerPosition(getPointerPosition(e));
+                                        setAction({ type: 'edit-distribute-path', handle: 'rotate', startPoint: pt, initialDistributePath: props.distributePathState! });
+                                    }} onTouchStart={(e) => {
+                                        e.stopPropagation();
+                                        const pt = getTransformedPointerPosition(getPointerPosition(e));
+                                        setAction({ type: 'edit-distribute-path', handle: 'rotate', startPoint: pt, initialDistributePath: props.distributePathState! });
+                                    }} />
+                            </g>
                         </>
-                    )}
+                        );
+                    })()}
                 </g>
             )}
             

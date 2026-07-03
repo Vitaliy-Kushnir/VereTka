@@ -740,3 +740,11 @@ export const LocateIcon: React.FC<IconProps> = ({ size = 20, className }) => (
         <line x1="18" y1="12" x2="22" y2="12" />
     </svg>
 );
+export const DistributePathIcon: React.FC<IconProps> = ({ size = 20 }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 20c1.5-6 6-9 16-9" />
+        <circle cx="4" cy="20" r="2" fill="currentColor" />
+        <circle cx="12" cy="14" r="2" fill="currentColor" />
+        <circle cx="20" cy="11" r="2" fill="currentColor" />
+    </svg>
+);

@@ -25,6 +25,10 @@ interface PropertyEditorProps {
   cancelShapePreview: () => void;
   fillColor: string;
   strokeColor: string;
+  distributePathState?: import('../types').DistributePathState | null;
+  onDistributePathChange?: (state: import('../types').DistributePathState) => void;
+  onConfirmDistributePath?: () => void;
+  onCancelDistributePath?: () => void;
 }
 
 // Type declaration for the experimental Local Font Access API
@@ -519,7 +523,7 @@ const isCollapsible = (shape: Shape | null): boolean => {
     return ['line', 'pencil', 'polyline', 'bezier'].includes(shape.type);
 };
 
-const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShapes, updateShape, updateShapes, deleteShape, duplicateShape, activeTool, activePointIndex, setActivePointIndex, deletePoint, addPoint, convertToPath, showNotification, setShapePreview, cancelShapePreview, fillColor, strokeColor }) => {
+const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShapes, updateShape, updateShapes, deleteShape, duplicateShape, activeTool, activePointIndex, setActivePointIndex, deletePoint, addPoint, convertToPath, showNotification, setShapePreview, cancelShapePreview, fillColor, strokeColor, distributePathState, onDistributePathChange, onConfirmDistributePath, onCancelDistributePath }) => {
   const selectedShape = selectedShapes.length === 1 ? selectedShapes[0] : null;
   const isMultiSelection = selectedShapes.length > 1;
   const [systemFonts, setSystemFonts] = useState<string[] | null>(null);
@@ -1075,7 +1079,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
             return <>
                 {commonProperties}
                 <InputWrapper>
-                    <Checkbox id={`${polyline.id}-isClosed`} checked={polyline.isClosed} onChange={c => updateShape({ ...polyline, isClosed: c, name: getDefaultNameForShape({ ...polyline, isClosed: c }, t) })} label={t('props.closed')} title={t('prop.title.connectEnds')}/>
+                    <Checkbox id={`${polyline.id}-isClosed`} checked={!!polyline.isClosed} onChange={c => updateShape({ ...polyline, isClosed: c, name: getDefaultNameForShape({ ...polyline, isClosed: c }, t) })} label={t('props.closed')} title={t('prop.title.connectEnds')}/>
                 </InputWrapper>
                 <InputWrapper>
                     <Checkbox id={`${polyline.id}-smooth`} checked={!!polyline.smooth} onChange={c => updateShape({ ...polyline, smooth: c })} label={t('props.smooth')} title={t('prop.title.smooth')}/>
@@ -1105,7 +1109,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
             return <>
                 {commonProperties}
                 <InputWrapper>
-                    <Checkbox id={`${bezier.id}-isClosed`} checked={bezier.isClosed} onChange={c => updateShape({ ...bezier, isClosed: c, name: getDefaultNameForShape({ ...bezier, isClosed: c }, t) })} label={t('props.closed')} title={t('prop.title.connectEnds')}/>
+                    <Checkbox id={`${bezier.id}-isClosed`} checked={!!bezier.isClosed} onChange={c => updateShape({ ...bezier, isClosed: c, name: getDefaultNameForShape({ ...bezier, isClosed: c }, t) })} label={t('props.closed')} title={t('prop.title.connectEnds')}/>
                 </InputWrapper>
                 <InputWrapper>
                     <Checkbox id={`${bezier.id}-smooth`} checked={!!bezier.smooth} onChange={c => updateShape({ ...bezier, smooth: c })} label={t('props.smooth')} title={t('prop.title.smooth')}/>
@@ -1233,8 +1237,8 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                     <div className="flex-1 flex flex-col gap-2">
                         <Checkbox id={`${text.id}-bold`} checked={text.weight === 'bold'} onChange={c => updateShape({ ...text, weight: c ? 'bold' : 'normal' })} label={t('style.bold')} />
                         <Checkbox id={`${text.id}-italic`} checked={text.slant === 'italic'} onChange={c => updateShape({ ...text, slant: c ? 'italic' : 'roman' })} label={t('style.italic')} />
-                        <Checkbox id={`${text.id}-underline`} checked={text.underline} onChange={c => updateShape({ ...text, underline: c })} label={t('style.underline')} />
-                        <Checkbox id={`${text.id}-overstrike`} checked={text.overstrike} onChange={c => updateShape({ ...text, overstrike: c })} label={t('style.strikethrough')} />
+                        <Checkbox id={`${text.id}-underline`} checked={!!text.underline} onChange={c => updateShape({ ...text, underline: c })} label={t('style.underline')} />
+                        <Checkbox id={`${text.id}-overstrike`} checked={!!text.overstrike} onChange={c => updateShape({ ...text, overstrike: c })} label={t('style.strikethrough')} />
                     </div>
                 </InputWrapper>
                  <hr className="border-[var(--border-secondary)] my-2" />
@@ -1314,6 +1318,150 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                 {commonProperties}
             </>
     }
+  }
+
+  if (distributePathState && onDistributePathChange && onConfirmDistributePath && onCancelDistributePath) {
+    return (
+      <div className="shadow-lg h-full flex flex-col rounded-lg bg-[var(--bg-primary)] p-4">
+          <div className="flex justify-between items-center pb-2 border-b border-[var(--border-primary)]">
+            <h2 className="font-semibold text-[var(--text-primary)] text-sm">{t('tool.distributePath.title') || 'Розподіл за шляхом'}</h2>
+          </div>
+          <div className="flex-grow overflow-y-auto pt-4 space-y-4">
+              <InputWrapper>
+                  <Label title={t('tool.distributePath.type') || 'Тип шляху'}>{t('tool.distributePath.type') || 'Тип шляху'}</Label>
+                  <Select 
+                      value={distributePathState.type}
+                      onChange={(e) => {
+                          const newType = e as 'circle' | 'line';
+                          let newOrientationType = distributePathState.orientationType;
+                          if (newType === 'circle' && (newOrientationType === 'parallel' || newOrientationType === 'perpendicular')) {
+                              newOrientationType = newOrientationType === 'parallel' ? 'tangent' : 'radial';
+                          } else if (newType === 'line' && (newOrientationType === 'radial' || newOrientationType === 'tangent')) {
+                              newOrientationType = newOrientationType === 'radial' ? 'perpendicular' : 'parallel';
+                          }
+                          onDistributePathChange({ ...distributePathState, type: newType, orientationType: newOrientationType });
+                      }}
+                  >
+                      <option value="circle">{t('tool.circle') || 'Коло'}</option>
+                      <option value="line">{t('tool.line') || 'Лінія'}</option>
+                  </Select>
+              </InputWrapper>
+              
+              <InputWrapper>
+                  <Label>{t('prop.rotation') || 'Кут обертання'}</Label>
+                  <NumberInput value={Math.round(distributePathState.angleOffset || 0)} onChange={v => onDistributePathChange({ ...distributePathState, angleOffset: v })} />
+              </InputWrapper>
+              
+              <div className="flex flex-col gap-2 pt-2">
+                  <div className="flex items-center gap-2">
+                      <input 
+                          id="dist-orient-check"
+                          type="checkbox" 
+                          checked={!!distributePathState.orientAlongPath}
+                          onChange={(e) => onDistributePathChange({ ...distributePathState, orientAlongPath: e.target.checked })}
+                          className="rounded border-[var(--border-primary)] text-[var(--accent-primary)] focus:ring-[var(--accent-primary)] bg-[var(--bg-primary)]"
+                      />
+                      <Label htmlFor="dist-orient-check" className="cursor-pointer mb-0">
+                          {t('tool.distribute.path.orient') || 'Орієнтувати вздовж шляху'}
+                      </Label>
+                  </div>
+                  {distributePathState.orientAlongPath && (
+                      <div className="flex flex-col gap-1 pl-6">
+                          <Select 
+                              value={distributePathState.orientationType}
+                              onChange={(v) => onDistributePathChange({ ...distributePathState, orientationType: v as any })}
+                          >
+                              {distributePathState.type === 'circle' ? (
+                                  <>
+                                      <option value="radial">{t('tool.distribute.path.radial') || 'Радіально'}</option>
+                                      <option value="tangent">{t('tool.distribute.path.tangent') || 'Тангенційно'}</option>
+                                  </>
+                              ) : (
+                                  <>
+                                      <option value="parallel">{t('tool.distribute.path.parallel') || 'Паралельно'}</option>
+                                      <option value="perpendicular">{t('tool.distribute.path.perpendicular') || 'Перпендикулярно'}</option>
+                                  </>
+                              )}
+                              <option value="custom">{t('tool.distribute.path.custom') || 'Заданий кут'}</option>
+                          </Select>
+                          {distributePathState.orientationType === 'custom' && (
+                              <NumberInput 
+                                  value={Number.isNaN(distributePathState.orientationAngle) ? '' : distributePathState.orientationAngle} 
+                                  onChange={v => onDistributePathChange({ ...distributePathState, orientationAngle: v })} 
+                                  min={-360} max={360} 
+                              />
+                          )}
+                      </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                      <input 
+                          id="dist-rotate-check"
+                          type="checkbox" 
+                          checked={!!distributePathState.rotateAlongPath}
+                          disabled={!!distributePathState.orientAlongPath}
+                          onChange={(e) => onDistributePathChange({ ...distributePathState, rotateAlongPath: e.target.checked })}
+                          className={`rounded border-[var(--border-primary)] text-[var(--accent-primary)] focus:ring-[var(--accent-primary)] bg-[var(--bg-primary)] ${distributePathState.orientAlongPath ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      />
+                      <Label htmlFor="dist-rotate-check" className={`mb-0 ${distributePathState.orientAlongPath ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                          {t('tool.distribute.path.rotate') || 'Обертати вздовж шляху'}
+                      </Label>
+                  </div>
+              </div>
+
+              {distributePathState.type === 'circle' && (
+                  <div className="space-y-2 pt-4 border-t border-[var(--border-secondary)]">
+                      <InputWrapper>
+                          <Label>{t('prop.cx')}</Label>
+                          <NumberInput value={Math.round(distributePathState.circleParams.cx)} onChange={v => onDistributePathChange({ ...distributePathState, circleParams: { ...distributePathState.circleParams, cx: v } })} />
+                      </InputWrapper>
+                      <InputWrapper>
+                          <Label>{t('prop.cy')}</Label>
+                          <NumberInput value={Math.round(distributePathState.circleParams.cy)} onChange={v => onDistributePathChange({ ...distributePathState, circleParams: { ...distributePathState.circleParams, cy: v } })} />
+                      </InputWrapper>
+                      <InputWrapper>
+                          <Label>{t('prop.r')}</Label>
+                          <NumberInput value={Math.round(distributePathState.circleParams.radius)} onChange={v => onDistributePathChange({ ...distributePathState, circleParams: { ...distributePathState.circleParams, radius: Math.max(10, v) } })} />
+                      </InputWrapper>
+                  </div>
+              )}
+              {distributePathState.type === 'line' && (
+                  <div className="space-y-2 pt-4 border-t border-[var(--border-secondary)]">
+                      <InputWrapper>
+                          <Label>X1</Label>
+                          <NumberInput value={Math.round(distributePathState.lineParams.x1)} onChange={v => onDistributePathChange({ ...distributePathState, lineParams: { ...distributePathState.lineParams, x1: v } })} />
+                      </InputWrapper>
+                      <InputWrapper>
+                          <Label>Y1</Label>
+                          <NumberInput value={Math.round(distributePathState.lineParams.y1)} onChange={v => onDistributePathChange({ ...distributePathState, lineParams: { ...distributePathState.lineParams, y1: v } })} />
+                      </InputWrapper>
+                      <InputWrapper>
+                          <Label>X2</Label>
+                          <NumberInput value={Math.round(distributePathState.lineParams.x2)} onChange={v => onDistributePathChange({ ...distributePathState, lineParams: { ...distributePathState.lineParams, x2: v } })} />
+                      </InputWrapper>
+                      <InputWrapper>
+                          <Label>Y2</Label>
+                          <NumberInput value={Math.round(distributePathState.lineParams.y2)} onChange={v => onDistributePathChange({ ...distributePathState, lineParams: { ...distributePathState.lineParams, y2: v } })} />
+                      </InputWrapper>
+                  </div>
+              )}
+          </div>
+          
+          <div className="flex gap-2 pt-4 border-t border-[var(--border-primary)] mt-auto">
+              <button 
+                  onClick={onCancelDistributePath}
+                  className="flex-1 px-3 py-2 bg-[var(--bg-secondary)] text-[var(--text-primary)] font-medium border border-[var(--border-secondary)] rounded-md hover:bg-[var(--bg-secondary-hover)] text-sm transition-colors"
+              >
+                  {t('action.cancel') || 'Cancel'}
+              </button>
+              <button 
+                  onClick={onConfirmDistributePath}
+                  className="flex-1 px-3 py-2 bg-[var(--accent-primary)] text-[var(--accent-text)] font-medium rounded-md hover:opacity-90 text-sm transition-opacity"
+              >
+                  {t('action.confirm') || 'Confirm'}
+              </button>
+          </div>
+      </div>
+    );
   }
 
   if (!selectedShape && !isMultiSelection) {
