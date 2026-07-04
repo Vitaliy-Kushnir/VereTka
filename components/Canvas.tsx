@@ -144,6 +144,32 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   const hasDraggedRef = useRef(false);
   const mouseDownPosRef = useRef<{x: number, y: number} | null>(null);
   const touchStateRef = useRef<{ initialDist: number, initialMidpoint: {x:number, y:number}, initialTransform: ViewTransform } | null>(null);
+  const isSpacePressedRef = useRef(false);
+  const [isSpacePressed, setIsSpacePressed] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.code === 'Space') {
+            isSpacePressedRef.current = true;
+            if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+                setIsSpacePressed(true);
+                e.preventDefault();
+            }
+        }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+        if (e.code === 'Space') {
+            isSpacePressedRef.current = false;
+            setIsSpacePressed(false);
+        }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
 
   useEffect(() => {
       if (!action) setSnapLines({ x: null, y: null });
@@ -172,7 +198,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   }, [viewTransform, snapStep]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.button === 1) { // Middle mouse button for panning
+    if (e.button === 1 || (e.button === 0 && isSpacePressedRef.current)) { // Middle mouse button or Space+Left for panning
         setAction({ type: 'panning', initialPos: { x: e.clientX, y: e.clientY } });
         return;
     }
@@ -259,8 +285,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             if (!selectedShapeIds.includes(clickedShape.id)) onSelectShape(clickedShape.id, e.ctrlKey || e.metaKey, e.shiftKey);
             else if (e.ctrlKey || e.metaKey || e.shiftKey) onSelectShape(clickedShape.id, e.ctrlKey || e.metaKey, e.shiftKey);
         } else {
-            // Clicked on empty space, initiate pan. Deselection happens on mouseUp if it was just a click.
-            setAction({ type: 'panning', initialPos: { x: e.clientX, y: e.clientY } });
+            // Clicked on empty space, initiate selection box.
+            setAction({ type: 'selecting', startPos: pos, currentPos: pos });
         }
         return;
     }
@@ -880,6 +906,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         const dy = e.clientY - action.initialPos.y;
         setViewTransform(prev => ({ ...prev, x: prev.x + dx, y: prev.y + dy }));
         setAction({ type: 'panning', initialPos: { x: e.clientX, y: e.clientY } });
+        return;
+    }
+    
+    if (action.type === 'selecting') {
+        setAction({ ...action, currentPos: pos });
         return;
     }
         
@@ -1537,6 +1568,57 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         onSelectShape(null);
     }
     
+    if (action?.type === 'selecting') {
+        if (hasDraggedRef.current) {
+            const minX = Math.min(action.startPos.x, action.currentPos.x);
+            const minY = Math.min(action.startPos.y, action.currentPos.y);
+            const maxX = Math.max(action.startPos.x, action.currentPos.x);
+            const maxY = Math.max(action.startPos.y, action.currentPos.y);
+            
+            const selectedIds = [];
+            shapes.forEach(shape => {
+                if (shape.state === 'disabled' || shape.state === 'hidden') return;
+                // Simple fast rect intersection:
+                let x = 0, y = 0, w = 0, h = 0;
+                
+                if (shape.type === 'rectangle' || shape.type === 'triangle' || shape.type === 'right-triangle' || shape.type === 'rhombus' || shape.type === 'trapezoid' || shape.type === 'parallelogram' || shape.type === 'star' || shape.type === 'polygon' || shape.type === 'image' || shape.type === 'bitmap') {
+                    const sx = 'x' in shape ? shape.x : 0;
+                    const sy = 'y' in shape ? shape.y : 0;
+                    const sw = 'width' in shape ? shape.width : 0;
+                    const sh = 'height' in shape ? shape.height : 0;
+                    if (sx < maxX && sx + sw > minX && sy < maxY && sy + sh > minY) {
+                        selectedIds.push(shape.id);
+                    }
+                } else if (shape.type === 'ellipse') {
+                    const cx = shape.cx, cy = shape.cy, rx = shape.rx, ry = shape.ry;
+                    if (cx - rx < maxX && cx + rx > minX && cy - ry < maxY && cy + ry > minY) {
+                        selectedIds.push(shape.id);
+                    }
+                } else if (shape.type === 'line' || shape.type === 'pencil' || shape.type === 'polyline' || shape.type === 'bezier') {
+                    const pts = shape.points;
+                    let mx = Infinity, my = Infinity, mxx = -Infinity, myy = -Infinity;
+                    for (const p of pts) {
+                        if (p.x < mx) mx = p.x;
+                        if (p.x > mxx) mxx = p.x;
+                        if (p.y < my) my = p.y;
+                        if (p.y > myy) myy = p.y;
+                    }
+                    if (mx < maxX && mxx > minX && my < maxY && myy > minY) {
+                        selectedIds.push(shape.id);
+                    }
+                } else if (shape.type === 'text') {
+                    const sx = shape.x, sy = shape.y, sw = (shape.text.length * shape.fontSize * 0.6), sh = shape.fontSize;
+                    if (sx < maxX && sx + sw > minX && sy - sh < maxY && sy > minY) {
+                        selectedIds.push(shape.id);
+                    }
+                }
+            });
+            onSelectShape(selectedIds.length > 0 ? selectedIds : null);
+        } else {
+            onSelectShape(null);
+        }
+    }
+    
     if (action?.type === 'drawing' && hasDraggedRef.current) {
         const { shape } = action;
         if (('width' in shape && 'height' in shape && (shape.width <= DRAG_THRESHOLD || shape.height <= DRAG_THRESHOLD)) ||
@@ -1894,7 +1976,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
     const getCursorStyle = () => {
         if (!action) {
-          if (activeTool === 'select') return 'grab';
+          if (isSpacePressed) return 'grab';
+          if (activeTool === 'select') return 'default'; // In select mode, empty space is default until hover (or box select)
+
           if (activeTool === 'edit-points') return 'default';
           if (activeTool === 'image' && pendingImage) return 'copy';
           if (['text', 'image', 'bitmap'].includes(activeTool) && activeTool !== 'image') return 'crosshair';
@@ -1921,6 +2005,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             case 'star-inner-radius-editing':
                 return ADJUST_CURSOR_STYLE;
             case 'drawing':
+            case 'selecting':
                 return 'crosshair';
             default:
                 // Fallback, should ideally not be reached if action is not null
@@ -2548,6 +2633,18 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     default: return null;
                 }
             })}
+             {action?.type === 'selecting' && (
+                 <rect 
+                     x={Math.min(action.startPos.x, action.currentPos.x)}
+                     y={Math.min(action.startPos.y, action.currentPos.y)}
+                     width={Math.abs(action.currentPos.x - action.startPos.x)}
+                     height={Math.abs(action.currentPos.y - action.startPos.y)}
+                     fill="rgba(59, 130, 246, 0.1)"
+                     stroke="rgba(59, 130, 246, 0.8)"
+                     strokeWidth={1 / viewTransform.scale}
+                     style={{ pointerEvents: 'none' }}
+                 />
+             )}
              {!props.distributePathState && selectedShapes.map((shape) => (
                  <SelectionControls
                      key={`selection-controls-${shape.id}`}
