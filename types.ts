@@ -246,7 +246,7 @@ export interface BitmapShape extends BaseShape, RotatableShape {
     background: string;
 }
 
-export interface GroupShape extends BaseShape {
+export interface GroupShape extends BaseShape, RotatableShape {
     type: 'group';
     shapeIds: string[];
 }
@@ -319,4 +319,16 @@ export interface ProjectTemplate {
   name: string;
   settings: NewProjectSettings;
   shapes: Shape[];
+}
+export interface Layer {
+    id: string;
+    name: string;
+    visible: boolean;
+    locked: boolean;
+    shapeIds: string[]; // references to shapes inside this layer
+}
+
+export interface LayerState {
+    layers: Layer[];
+    activeLayerId: string | null;
 }

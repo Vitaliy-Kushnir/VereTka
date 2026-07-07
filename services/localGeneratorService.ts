@@ -33,7 +33,7 @@ const generateLocalComment = (shape: Shape, t: (key: string) => string): string 
 };
 
 
-function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, canvasVarName: string, outlineWithFill: boolean): string | null {
+function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, canvasVarName: string, outlineWithFill: boolean, generateTkinterTags: boolean): string | null {
     if (shape.state === 'hidden') return null;
     
     const options: Record<string, any> = {};
@@ -77,6 +77,14 @@ function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, ca
         options.dash = shape.dash.map(v => round(v * strokeWidth));
         if ('dashoffset' in shape && shape.dashoffset !== undefined) {
             options.dashoffset = round(shape.dashoffset);
+        }
+    }
+    
+    if (generateTkinterTags) {
+        if (shape.groupId) {
+            options.tags = [`"${shape.id}"`, `"${shape.groupId}"`];
+        } else {
+            options.tags = shape.id;
         }
     }
 
@@ -260,6 +268,7 @@ export async function generateTkinterCodeLocally(
     canvasVarName: string,
     autoGenerateComments: boolean,
     outlineWithFill: boolean,
+    generateTkinterTags: boolean,
     t: (key: string) => string
 ): Promise<{ codeLines: CodeLine[] }> {
     
@@ -305,7 +314,7 @@ export async function generateTkinterCodeLocally(
         codeLines.push({ content: t('code.comment.noShapes'), shapeId: null });
     } else {
         shapes.forEach(shape => {
-            const lineContent = shapeToTkinterString(shape, imageVarMap, finalCanvasVarName, outlineWithFill);
+            const lineContent = shapeToTkinterString(shape, imageVarMap, finalCanvasVarName, outlineWithFill, generateTkinterTags);
             if (lineContent) {
                 let commentToUse = shape.comment;
                 if (autoGenerateComments && !commentToUse) {

@@ -52,7 +52,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
     const scaledStrokeWidth = 1 / viewTransform.scale;
     const scaledRotateOffset = ROTATE_HANDLE_OFFSET / viewTransform.scale;
 
-    const center = shape.type === 'text' ? { x: shape.x, y: shape.y } : getShapeCenter(shape);
+    const center = shape.type === 'text' ? { x: shape.x, y: shape.y } : getShapeCenter(shape, allShapes);
     if (!center) return null;
 
     const rotation = 'rotation' in shape ? shape.rotation ?? 0 : 0;
@@ -142,7 +142,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
         const handleNodeDown = (e: React.MouseEvent | React.TouchEvent, pointIndex: number) => {
             e.stopPropagation();
             setActivePointIndex(pointIndex);
-            const stableCenter = getShapeCenter(shape);
+            const stableCenter = getShapeCenter(shape, allShapes);
             if (!stableCenter) return;
 
             let shapeForAction = shape;
@@ -223,7 +223,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
                  newShape = newPolyline;
             }
             
-            const originalCenter = getShapeCenter(shape); 
+            const originalCenter = getShapeCenter(shape, allShapes); 
             if (!originalCenter) return;
 
             updateShape(newShape);
@@ -287,7 +287,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
         );
     }
     
-    const bbox = getBoundingBox(shape);
+    const bbox = getBoundingBox(shape, allShapes);
     if (!bbox || (bbox.width <= 0 && bbox.height <= 0)) return null;
 
 
@@ -296,7 +296,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
         const rotatedStart = rotatePoint(start, center, rotation);
         const rotatedEnd = rotatePoint(end, center, rotation);
 
-        const lineBbox = getBoundingBox(shape)!;
+        const lineBbox = getBoundingBox(shape, allShapes)!;
     
         const handlePosition = (shape as RotatableShape).rotationHandlePosition;
         const unrotatedRotationHandlePos = {
@@ -310,7 +310,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
 
         const handleLineResizeDown = (e: React.MouseEvent | React.TouchEvent, handle: 'line-start' | 'line-end') => {
             e.stopPropagation();
-            const geometricCenter = getShapeCenter(shape)!;
+            const geometricCenter = getShapeCenter(shape, allShapes)!;
             setAction({
                 type: 'resizing',
                 handle,
@@ -323,7 +323,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
         const handleRotateDown = (e: React.MouseEvent | React.TouchEvent) => {
             e.stopPropagation();
             if (!svgRef.current) return;
-            const handleCenter = getShapeCenter(shape);
+            const handleCenter = getShapeCenter(shape, allShapes);
             if (!handleCenter) return;
             const eventForPosition = 'touches' in e ? e.touches[0] : e;
             if (!eventForPosition) return;
@@ -384,7 +384,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
 
     const handleResizeDown = (e: React.MouseEvent | React.TouchEvent, handle: TransformHandle) => {
         e.stopPropagation();
-        const geometricCenter = getShapeCenter(shape)!;
+        const geometricCenter = getShapeCenter(shape, allShapes)!;
         
         const oppositeHandleMap: { [key in TransformHandle]?: TransformHandle } = {
             'top-left': 'bottom-right', 'top-center': 'bottom-center', 'top-right': 'bottom-left',
@@ -422,7 +422,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
     const handleRotateDown = (e: React.MouseEvent | React.TouchEvent) => {
         e.stopPropagation();
         if (!svgRef.current) return;
-        const handleCenter = getShapeCenter(shape);
+        const handleCenter = getShapeCenter(shape, allShapes);
         if (!handleCenter) return;
         
         const eventForPosition = 'touches' in e ? e.touches[0] : e;
@@ -455,7 +455,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
         switch (type) {
             case 'arc-angle':
                 if (shape.type !== 'arc') return;
-                const arcCenter = getShapeCenter(shape)!;
+                const arcCenter = getShapeCenter(shape, allShapes)!;
                 const initialMouseAngle = Math.atan2(-(initialMousePos.y - arcCenter.y), initialMousePos.x - arcCenter.x) * 180 / Math.PI;
                 setAction({
                     type: 'arc-angle-editing',
@@ -492,7 +492,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
                 setAction({
                     type: 'star-inner-radius-editing',
                     initialShape: shape,
-                    center: getShapeCenter(shape)!,
+                    center: getShapeCenter(shape, allShapes)!,
                 });
                 break;
         }

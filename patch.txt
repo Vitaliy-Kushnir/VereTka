@@ -1,0 +1,26 @@
+
+  const reorderShape = useCallback((draggedId: string, targetId: string, position: 'top' | 'bottom') => {
+    setShapes(prevShapes => {
+        const draggedIndex = prevShapes.findIndex(s => s.id === draggedId);
+        const targetIndex = prevShapes.findIndex(s => s.id === targetId);
+
+        if (draggedIndex === -1 || targetIndex === -1 || draggedIndex === targetIndex) {
+            return prevShapes;
+        }
+
+        const newShapes = [...prevShapes];
+        const [draggedItem] = newShapes.splice(draggedIndex, 1);
+        
+        const newTargetIndex = newShapes.findIndex(s => s.id === targetId);
+
+        const insertionIndex = position === 'top' ? newTargetIndex + 1 : newTargetIndex;
+        
+        newShapes.splice(insertionIndex, 0, draggedItem);
+
+        return newShapes;
+    });
+  }, [setShapes]);
+
+  const convertToPath = useCallback((shapeId: string) => {
+    const shape = shapes.find(s => s.id === shapeId);
+    if (!shape) return;

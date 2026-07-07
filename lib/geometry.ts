@@ -533,14 +533,14 @@ export const getBoundingBox = (shape: Shape, allShapes?: Shape[]): { x: number, 
     };
 };
 
-export const getShapeCenter = (shape: Shape): { x: number; y: number } | null => {
+export const getShapeCenter = (shape: Shape, allShapes?: Shape[]): { x: number; y: number } | null => {
     // Prioritize explicit center properties for accuracy, as they are the geometric center.
     if ('cx' in shape && 'cy' in shape) {
         return { x: shape.cx, y: shape.cy };
     }
 
     const unrotatedShape = 'rotation' in shape && shape.rotation !== 0 ? { ...shape, rotation: 0 } : shape;
-    const box = getBoundingBox(unrotatedShape);
+    const box = getBoundingBox(unrotatedShape, allShapes);
 
     if (!box) {
         // Fallback for shapes without a calculable bounding box (e.g., zero-size)

@@ -13,7 +13,9 @@ interface CanvasProps {
   height: number;
   backgroundColor: string;
   shapes: Shape[];
+  lockedShapeIds: Set<string>;
   addShape: (shape: Shape, isDuplication?: boolean) => void;
+  addShapes?: (shapes: Shape[], isDuplication?: boolean) => void;
   updateShape: (shape: Shape) => void;
   updateShapes?: (shapes: Shape[]) => void;
   activeTool: Tool;
@@ -26,7 +28,7 @@ interface CanvasProps {
   textFontSize: number;
   numberOfSides: number;
   selectedShapeIds: string[];
-  onSelectShape: (id: string | string[] | null, isCtrlPressed?: boolean, isShiftPressed?: boolean) => void;
+  onSelectShape: (id: string | string[] | null, isCtrlPressed?: boolean, isShiftPressed?: boolean, ignoreGroup?: boolean) => void;
   isDrawingPolyline: boolean;
   polylinePoints: {x: number, y: number}[];
   setPolylinePoints: React.Dispatch<React.SetStateAction<{x: number, y: number}[]>>;
@@ -101,7 +103,7 @@ const formatPointsForSvg = (points: { x: number; y: number }[]): string => {
 const Canvas: React.FC<CanvasProps> = (props) => {
     const { t } = useLanguage();
     const { 
-        width, height, backgroundColor, shapes, addShape, updateShape, updateShapes,
+        width, height, backgroundColor, shapes, lockedShapeIds, addShape, addShapes, updateShape, updateShapes,
         activeTool, drawMode, fillColor, strokeColor, strokeWidth, 
         textColor, textFont, textFontSize,
         numberOfSides, selectedShapeIds, onSelectShape,
@@ -213,16 +215,29 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             return;
         }
         const clickedShapeId = (e.target as SVGElement).dataset.id;
-        const shapeToDuplicate = clickedShapeId ? shapes.find(s => s.id === clickedShapeId) : null;
+        
+        let rootShapeId = clickedShapeId;
+        if (clickedShapeId) {
+            const getRootId = (id: string): string => {
+                const parent = shapes.find(g => g.type === 'group' && g.shapeIds?.includes(id));
+                return parent ? getRootId(parent.id) : id;
+            };
+            rootShapeId = getRootId(clickedShapeId);
+        }
+
+        const shapeToDuplicate = rootShapeId ? shapes.find(s => s.id === rootShapeId) : null;
 
         if (shapeToDuplicate) {
              // If the right-clicked shape isn't the currently selected one, select it first.
-            if (clickedShapeId && !selectedShapeIds.includes(clickedShapeId)) {
-                onSelectShape(clickedShapeId);
+            if (rootShapeId && !selectedShapeIds.includes(rootShapeId)) {
+                onSelectShape(rootShapeId);
             }
             // Use a type-safe deep copy to prevent mutation issues
             let deepCopiedShape: Shape;
             switch (shapeToDuplicate.type) {
+                case 'group':
+                    deepCopiedShape = {...shapeToDuplicate, shapeIds: [...(shapeToDuplicate.shapeIds || [])]};
+                    break;
                 case 'line':
                     deepCopiedShape = {...shapeToDuplicate, points: [{...shapeToDuplicate.points[0]}, {...shapeToDuplicate.points[1]}]};
                     break;
@@ -1409,6 +1424,10 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     updatedShape = { ...initialShape, points: finalPoints as any };
                     break;
                 }
+                case 'group': {
+                    updatedShape = { ...initialShape, _newBbox: { x: newGlobalCenter.x - newWidth / 2, y: newGlobalCenter.y - newHeight / 2, width: newWidth, height: newHeight } } as any;
+                    break;
+                }
             }
             break;
         }
@@ -1432,18 +1451,66 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     
     // Simulate resizing, rotating, or translating for other selected shapes
     let auxShapes: Shape[] = [];
-    if ((action.type === 'resizing' || action.type === 'rotating' || action.type === 'dragging' || action.type === 'duplicating') && selectedShapeIds.length > 1 && updatedShape) {
+    
+    // Calculate affected shapes including children of groups
+    const affectedShapeIds: string[] = [];
+    const getAffectedIds = (id: string) => {
+        const realId = id.replace('-preview', '');
+        if (!affectedShapeIds.includes(realId)) affectedShapeIds.push(realId);
+        const s = shapes.find(sh => sh.id === realId);
+        if (s?.type === 'group' && s.shapeIds) {
+            s.shapeIds.forEach(getAffectedIds);
+        }
+    };
+    selectedShapeIds.forEach(getAffectedIds);
+    if (action.initialShape) getAffectedIds(action.initialShape.id);
+
+    const getRootSelectedId = (id: string): string => {
+        const realId = id.replace('-preview', '');
+        if (selectedShapeIds.includes(realId)) return realId;
+        const parent = shapes.find(g => g.type === 'group' && g.shapeIds?.includes(id));
+        if (parent) return getRootSelectedId(parent.id);
+        return id;
+    };
+
+    if ((action.type === 'resizing' || action.type === 'rotating' || action.type === 'dragging' || action.type === 'duplicating') && affectedShapeIds.length > 1 && updatedShape) {
         if (action.type === 'rotating') {
             const rotShape = updatedShape as Shape & RotatableShape;
             const initShape = action.initialShape as Shape & RotatableShape;
             const deltaRot = (rotShape.rotation ?? 0) - (initShape.rotation ?? 0);
             
-            auxShapes = selectedShapeIds
-                .filter(id => id !== action.initialShape.id)
+            auxShapes = affectedShapeIds
+                .filter(id => id !== action.initialShape.id.replace('-preview', ''))
                 .map(id => {
                     const s = shapes.find(sh => sh.id === id);
-                    if (s && 'rotation' in s) return { ...s, rotation: (s.rotation || 0) + deltaRot };
-                    return s;
+                    if (!s) return null;
+                    const c = getShapeCenter(s, shapes);
+                    if (!c) return s;
+                    
+                    const rootId = getRootSelectedId(s.id);
+                    let rotCenter = action.center;
+                    if (rootId !== action.initialShape.id) {
+                        const rootShape = shapes.find(sh => sh.id === rootId);
+                        rotCenter = rootShape ? (getShapeCenter(rootShape, shapes) || c) : c;
+                    }
+                    
+                    const rotatedC = rotatePoint(c, rotCenter, deltaRot);
+                    const dx = rotatedC.x - c.x;
+                    const dy = rotatedC.y - c.y;
+                    
+                    let newS = { ...s };
+                    if ('rotation' in newS) {
+                        newS.rotation = ((newS.rotation || 0) + deltaRot) % 360;
+                    }
+                    switch (newS.type) {
+                        case 'rectangle': case 'triangle': case 'right-triangle': case 'rhombus': case 'trapezoid': case 'parallelogram': case 'arc': case 'text': case 'image': case 'bitmap':
+                            newS.x += dx; newS.y += dy; break;
+                        case 'ellipse': case 'polygon': case 'star':
+                            (newS as any).cx += dx; (newS as any).cy += dy; break;
+                        case 'line': case 'bezier': case 'pencil': case 'polyline':
+                            (newS as any).points = (newS as any).points.map((p: any) => ({ x: p.x + dx, y: p.y + dy })); break;
+                    }
+                    return newS;
                 }).filter(Boolean) as Shape[];
         } else if (action.type === 'resizing') {
             if (action.handle === 'line-start' || action.handle === 'line-end') {
@@ -1454,8 +1521,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 const dxEnd = newPoints[1].x - initLine.points[1].x;
                 const dyEnd = newPoints[1].y - initLine.points[1].y;
 
-                auxShapes = selectedShapeIds
-                    .filter(id => id !== action.initialShape.id)
+                auxShapes = affectedShapeIds
+                    .filter(id => id !== action.initialShape.id.replace('-preview', ''))
                     .map(id => {
                         const s = shapes.find(sh => sh.id === id);
                         if (s && s.type === 'line') {
@@ -1469,7 +1536,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     }).filter(Boolean) as Shape[];
             } else {
                 const oldBbox = action.initialShapeProps.bbox;
-                const newBbox = getBoundingBox({ ...updatedShape, rotation: 0 });
+                const newBbox = (updatedShape as any)._newBbox || getBoundingBox({ ...updatedShape, rotation: 0 }, shapes);
                 // We shouldn't strictly require oldBbox.width > 0 && oldBbox.height > 0
                 // For lines/rectangles it could be 0. But let's keep it safe.
                 if (oldBbox && newBbox) {
@@ -1478,36 +1545,44 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     const scaleX = newBbox.width / safeOldW;
                     const scaleY = newBbox.height / safeOldH;
                     
-                    auxShapes = selectedShapeIds
-                        .filter(id => id !== action.initialShape.id)
+                    auxShapes = affectedShapeIds
+                        .filter(id => id !== action.initialShape.id.replace('-preview', ''))
                         .map(id => {
                             const s = shapes.find(sh => sh.id === id);
                             if (!s) return null;
                             
                             // Scale proportionally relative to corresponding anchor
-                            const sBbox = getBoundingBox({ ...s, rotation: 0 });
+                            const sBbox = getBoundingBox({ ...s, rotation: 0 }, shapes);
                             if (!sBbox) return s;
                             
                             // We approximate scaling for simple cases
                             const newW = sBbox.width * scaleX;
                             const newH = sBbox.height * scaleY;
                             
-                            let simulatedX = sBbox.x;
-                            if (action.handle.includes('left')) {
-                                simulatedX = sBbox.x + sBbox.width - newW;
-                            } else if (action.handle.includes('right')) {
+                            const rootId = getRootSelectedId(s.id);
+                            let simulatedX, simulatedY;
+                            
+                            if (rootId === action.initialShape.id) {
+                                simulatedX = newBbox.x + (sBbox.x - oldBbox.x) * scaleX;
+                                simulatedY = newBbox.y + (sBbox.y - oldBbox.y) * scaleY;
+                            } else {
                                 simulatedX = sBbox.x;
-                            } else {
-                                simulatedX = sBbox.x + sBbox.width / 2 - newW / 2;
-                            }
-
-                            let simulatedY = sBbox.y;
-                            if (action.handle.includes('top')) {
-                                simulatedY = sBbox.y + sBbox.height - newH;
-                            } else if (action.handle.includes('bottom')) {
+                                if (action.handle.includes('left')) {
+                                    simulatedX = sBbox.x + sBbox.width - newW;
+                                } else if (action.handle.includes('right')) {
+                                    simulatedX = sBbox.x;
+                                } else {
+                                    simulatedX = sBbox.x + sBbox.width / 2 - newW / 2;
+                                }
+    
                                 simulatedY = sBbox.y;
-                            } else {
-                                simulatedY = sBbox.y + sBbox.height / 2 - newH / 2;
+                                if (action.handle.includes('top')) {
+                                    simulatedY = sBbox.y + sBbox.height - newH;
+                                } else if (action.handle.includes('bottom')) {
+                                    simulatedY = sBbox.y;
+                                } else {
+                                    simulatedY = sBbox.y + sBbox.height / 2 - newH / 2;
+                                }
                             }
                             
                             if (['rectangle', 'image', 'bitmap', 'arc', 'triangle', 'right-triangle', 'rhombus', 'trapezoid', 'parallelogram', 'text'].includes(s.type)) {
@@ -1538,8 +1613,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 }
             }
             
-            auxShapes = selectedShapeIds
-                .filter(id => id !== action.initialShape.id)
+            auxShapes = affectedShapeIds
+                .filter(id => id !== action.initialShape.id.replace('-preview', ''))
                 .map(id => {
                     const s = shapes.find(sh => sh.id === id);
                     if (!s) return null;
@@ -1577,7 +1652,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             
             const selectedIds = [];
             shapes.forEach(shape => {
-                if (shape.state === 'disabled' || shape.state === 'hidden') return;
+                if (shape.state === 'disabled' || shape.state === 'hidden' || lockedShapeIds.has(shape.id)) return;
                 // Simple fast rect intersection:
                 let x = 0, y = 0, w = 0, h = 0;
                 
@@ -1634,29 +1709,51 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         }
     } else if (action?.type === 'duplicating' && activeTransformShapeRef.current) {
         if (hasDraggedRef.current) {
-            // activeTransformShape contains the final geometry after dragging.
-            // It was created from a deep copy of the original shape, so it has all the original properties (name, color, etc.).
-            // We just need to assign a new unique ID before adding it to the canvas.
-            const newIds: string[] = [];
             const timeStr = new Date().getTime();
+            const idMap = new Map<string, string>();
             
             const newShape = { 
                 ...activeTransformShapeRef.current, 
-                id: `dup-${timeStr}-0` 
+                id: `dup-${timeStr}-0`,
+                groupId: activeTransformShapeRef.current.groupId // Will be patched later if it belongs to a parent group, or kept if it's top-level
             };
-            addShape(newShape, true);
-            newIds.push(newShape.id);
+            idMap.set(activeTransformShapeRef.current.id.replace('-preview', ''), newShape.id);
             
-            auxiliaryTransformShapesRef.current.forEach((shape, index) => {
+            const newAuxShapes = auxiliaryTransformShapesRef.current.map((shape, index) => {
                 const newAux = {
                     ...shape,
                     id: `dup-${timeStr}-${index + 1}`
                 };
-                addShape(newAux, true);
-                newIds.push(newAux.id);
+                idMap.set(shape.id, newAux.id);
+                return newAux;
             });
             
-            onSelectShape(newIds);
+            const patchShape = (shape: Shape) => {
+                if (shape.groupId && idMap.has(shape.groupId)) {
+                    shape.groupId = idMap.get(shape.groupId);
+                }
+                if (shape.type === 'group' && shape.shapeIds) {
+                    shape.shapeIds = shape.shapeIds.map(id => idMap.has(id) ? idMap.get(id)! : id);
+                }
+            };
+            
+            patchShape(newShape);
+            newAuxShapes.forEach(patchShape);
+            
+            if (addShapes) {
+                addShapes([newShape, ...newAuxShapes], true);
+            } else {
+                const newIds: string[] = [];
+                addShape(newShape, true);
+                newIds.push(newShape.id);
+                
+                newAuxShapes.forEach(aux => {
+                    addShape(aux, true);
+                    newIds.push(aux.id);
+                });
+                
+                onSelectShape(newIds);
+            }
             showNotification(t('canvas.shapeDuplicated'));
         }
     } else if (action?.type === 'point-editing' && activeTransformShapeRef.current) {
@@ -1722,7 +1819,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     setAuxiliaryTransformShapes([]);
     hasDraggedRef.current = false;
     mouseDownPosRef.current = null;
-  }, [action, addShape, updateShape, updateShapes, onSelectShape, activeTransformShape, auxiliaryTransformShapes, showNotification, props.onDistributePathChangeEnd]);
+  }, [action, addShape, addShapes, updateShape, updateShapes, onSelectShape, activeTransformShape, auxiliaryTransformShapes, showNotification, props.onDistributePathChangeEnd]);
   
   const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isDrawingPolyline) {
@@ -1738,6 +1835,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     const shape = shapes.find(s => s.id === clickedShapeId);
     if (shape && shape.type === 'text') {
         onStartInlineEdit(shape.id);
+    } else if (shape && shape.groupId) {
+        onSelectShape(shape.id, e.ctrlKey || e.metaKey, e.shiftKey, true);
     }
   };
 
@@ -1860,7 +1959,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         if (action?.type === 'drawing' && hasDraggedRef.current) {
             items.push(action.shape);
         } else if (action?.type === 'duplicating' && activeTransformShape) {
-            items.push(activeTransformShape);
+            items.push({ ...activeTransformShape, id: `${activeTransformShape.id}-preview` });
         } else if (activeTransformShape) {
             const index = items.findIndex(s => s?.id === activeTransformShape.id);
             if (index !== -1) {
@@ -1869,8 +1968,12 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         }
         
         auxiliaryTransformShapes.forEach(auxShape => {
-            const index = items.findIndex(s => s?.id === auxShape.id);
-            if (index !== -1) items[index] = auxShape;
+            if (action?.type === 'duplicating') {
+                items.push({ ...auxShape, id: `${auxShape.id}-preview` });
+            } else {
+                const index = items.findIndex(s => s?.id === auxShape.id);
+                if (index !== -1) items[index] = auxShape;
+            }
         });
     
     if (isDrawingPolyline && polylinePoints.length > 0 && previewMousePos) {
@@ -1944,33 +2047,23 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
   const selectedShape = selectedShapes.length === 1 ? selectedShapes[0] : null;
 
-  const shapesByGroup = useMemo(() => {
-        const groups: Record<string, Shape[]> = {};
-        const looseShapes: Shape[] = [];
-        
+  const activeGroupIds = useMemo(() => {
+        const ids = new Set<string>();
         selectedShapes.forEach(shape => {
-            if (shape.groupId) {
-                if (!groups[shape.groupId]) groups[shape.groupId] = [];
-                groups[shape.groupId].push(shape);
-            } else {
-                looseShapes.push(shape);
+            if (shape.groupId && !selectedShapeIds.includes(shape.groupId)) {
+                ids.add(shape.groupId);
             }
         });
-        return { groups, looseShapes };
-  }, [selectedShapes]);
+        return Array.from(ids);
+  }, [selectedShapes, selectedShapeIds]);
 
-  const computeGroupBounds = (shapesArray: Shape[]) => {
-       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-       shapesArray.forEach(shape => {
-           const b = getVisualBoundingBox(shape, undefined, shapes);
-           if (!b) return;
-           minX = Math.min(minX, b.x);
-           minY = Math.min(minY, b.y);
-           maxX = Math.max(maxX, b.x + b.width);
-           maxY = Math.max(maxY, b.y + b.height);
-       });
-       if (minX === Infinity) return null;
-       return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  const computeGroupBounds = (groupId: string) => {
+       const groupShape = itemsToRender.find(s => s.id === groupId);
+       if (!groupShape || groupShape.type !== 'group') return null;
+       const b = getBoundingBox(groupShape, itemsToRender);
+       if (!b) return null;
+       // Add a little padding to the group bounds so it frames the content nicely
+       return { x: b.x - 2, y: b.y - 2, width: b.width + 4, height: b.height + 4 };
   };
 
 
@@ -2018,7 +2111,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
   const getTransform = (shape: Shape) => {
     if ('rotation' in shape && shape.rotation && shape.rotation !== 0) {
-        const center = getShapeCenter(shape);
+        const center = getShapeCenter(shape, shapes);
         if(center) return `rotate(${-shape.rotation} ${center.x} ${center.y})`;
     }
     return undefined;
@@ -2335,7 +2428,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
                 const isDisabled = shape.state === 'disabled';
                 const isDrawing = activeTool !== 'select';
-                const isDuplicationPreview = action?.type === 'duplicating' && shape === activeTransformShape;
+                const isDuplicationPreview = action?.type === 'duplicating' && shape.id.endsWith('-preview');
                 const shapeCursor = isDisabled ? 'default' : (isDrawing ? 'inherit' : 'move');
                 const hitboxStrokeWidth = Math.max(shape.strokeWidth, 20 / viewTransform.scale);
                 
@@ -2355,7 +2448,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     style: { 
                         opacity: shape.state === 'disabled' || isDuplicationPreview ? 0.5 : 1,
                         cursor: shapeCursor,
-                     },
+                        pointerEvents: lockedShapeIds.has(shape.id) ? 'none' : (isDisabled ? 'none' : 'auto'),
+                     } as React.CSSProperties,
                     transform: transform,
                 };
 
@@ -2649,7 +2743,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                  <SelectionControls
                      key={`selection-controls-${shape.id}`}
                      shape={shape}
-                     allShapes={shapes}
+                     allShapes={itemsToRender}
                      setAction={setAction}
                      svgRef={svgRef}
                      activeTool={activeTool}
@@ -2662,10 +2756,10 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                      action={action}
                  />
              ))}
-             {!props.distributePathState && selectedShapes.length > 1 && (
+             {!props.distributePathState && activeGroupIds.length > 0 && (
                 <g style={{ pointerEvents: 'none' }}>
-                    {Object.entries(shapesByGroup.groups).map(([groupId, shapesInGroup]) => {
-                        const groupBounds = computeGroupBounds(shapesInGroup);
+                    {activeGroupIds.map((groupId) => {
+                        const groupBounds = computeGroupBounds(groupId);
                         if (!groupBounds) return null;
                         return (
                             <rect 

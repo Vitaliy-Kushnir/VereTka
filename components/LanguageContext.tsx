@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { translations, Language } from '../lib/translations';
 
 interface LanguageContextType {
@@ -40,7 +40,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem('veretka-language', lang);
   };
 
-  const t = (key: string, variables?: Record<string, string | number>): string => {
+  const t = useCallback((key: string, variables?: Record<string, string | number>): string => {
     const langDict = translations[language as keyof typeof translations] || translations['uk'];
     let text = langDict[key as keyof typeof translations['uk']] || translations['uk'][key as keyof typeof translations['uk']] || key;
     
@@ -51,7 +51,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
     
     return text;
-  };
+  }, [language]);
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t }}>

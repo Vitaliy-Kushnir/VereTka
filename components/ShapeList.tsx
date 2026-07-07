@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Shape, Tool, PolylineShape, DistributePathState } from '../types';
-import { ArrowUpIcon, ArrowDownIcon, TrashIcon, SquareIcon, CircleIcon, LineIcon, EllipseIcon, PencilIcon, TriangleIcon, PolygonIcon, StarIcon, SelectIcon, EditPointsIcon, PolylineIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, BezierIcon, RectangleIcon, ArcIcon, PiesliceIcon, ChordIcon, RightTriangleIcon, EyeIcon, EyeOffIcon, TextIcon, ImageIcon, BitmapIcon, LocateIcon } from './icons';
+import { ArrowUpIcon, ArrowDownIcon, TrashIcon, SquareIcon, CircleIcon, LineIcon, EllipseIcon, PencilIcon, TriangleIcon, PolygonIcon, StarIcon, SelectIcon, EditPointsIcon, PolylineIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, BezierIcon, RectangleIcon, ArcIcon, PiesliceIcon, ChordIcon, RightTriangleIcon, EyeIcon, EyeOffIcon, TextIcon, ImageIcon, BitmapIcon, LocateIcon, LockIcon } from './icons';
 import { getDefaultNameForShape, getTkinterType, isDefaultName } from '../lib/constants';
 import { isPolylineAxisAlignedRectangle } from '../lib/geometry';
 import { useLanguage } from './LanguageContext';
@@ -9,6 +9,7 @@ import { useLanguage } from './LanguageContext';
 interface ShapeListProps {
   distributePathState?: DistributePathState | null;
   shapes: Shape[];
+  lockedShapeIds: Set<string>;
   selectedShapeIds: string[];
   onSelectShape: (id: string | null, isCtrlPressed?: boolean, isShiftPressed?: boolean) => void;
   onDeleteShape: (id: string) => void;
@@ -93,7 +94,7 @@ const ShapeNameDisplay = ({ isSelected, shapeName, showTkinterNames, tkinterName
     );
 };
 
-const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, selectedShapeIds, onSelectShape, onDeleteShape, onMoveShape, onUpdateShape, onReorderShape, showTkinterNames }) => {
+const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, lockedShapeIds, selectedShapeIds, onSelectShape, onDeleteShape, onMoveShape, onUpdateShape, onReorderShape, showTkinterNames }) => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingValue, setEditingValue] = useState('');
     const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -143,7 +144,7 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, sele
             }
 
             const containerRect = container.getBoundingClientRect();
-            const itemRect = selectedItem.getBoundingClientRect();
+            const itemRect = (selectedItem as HTMLElement).getBoundingClientRect();
             
             const isVisible = itemRect.top >= containerRect.top && itemRect.bottom <= containerRect.bottom;
             
@@ -253,14 +254,19 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, sele
         const shapeName = !isDefaultName(shape.name || '') ? shape.name : defaultName;
         const tkinterName = showTkinterNames ? `[${getTkinterType(shape).toLowerCase()}]` : '';
         const fullTitle = `${shapeName} ${tkinterName}`.trim();
+        const isLocked = lockedShapeIds.has(shape.id);
         
         return (
             <li
                 ref={(el) => { itemRefs.current[shape.id] = el; }}
                 key={shape.id}
-                onClick={(e) => onSelectShape(shape.id, e.ctrlKey || e.metaKey, e.shiftKey)}
-                onDoubleClick={() => handleStartEditing(shape)}
-                draggable={!isEditing}
+                onClick={(e) => {
+                    if (isLocked) return;
+                    const isAlreadySelected = selectedShapeIds.includes(shape.id) || (shape.groupId && selectedShapeIds.includes(shape.groupId));
+                    onSelectShape(shape.id, e.ctrlKey || e.metaKey, e.shiftKey, !!isAlreadySelected);
+                }}
+                onDoubleClick={() => !isLocked && handleStartEditing(shape)}
+                draggable={!isEditing && !isLocked}
                 onDragStart={isEditing ? undefined : (e) => handleDragStart(e, shape.id)}
                 onDragOver={isEditing ? undefined : (e) => handleDragOver(e, shape.id)}
                 onDragLeave={isEditing ? undefined : handleDragLeave}
@@ -287,6 +293,7 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, sele
                         <div className="flex-shrink-0 w-3.5 h-3.5 flex items-center justify-center" style={{ opacity: shape.state === 'hidden' ? 0.5 : 1 }}>
                             {getIconForShape(shape)}
                         </div>
+                        {isLocked && <div className="flex-shrink-0 text-[var(--text-secondary)]"><LockIcon size={12} /></div>}
                         <div className="overflow-hidden flex-1 text-sm" style={{ opacity: shape.state === 'hidden' ? 0.5 : 1 }}>
                             {isEditing ? (
                                 <input

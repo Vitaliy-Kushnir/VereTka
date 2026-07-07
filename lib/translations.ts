@@ -435,6 +435,8 @@ export const translations = {
     'settings.code.lineNumbersDesc': 'Показувати номери рядків у вікні коду.',
     'settings.code.highlight': 'Підсвічувати код',
     'settings.code.highlightDesc': 'Підсвічувати рядок коду, що відповідає вибраній фігурі.',
+    'settings.code.generateTags': 'Генерувати теги (для груп/шарів)',
+    'settings.code.generateTagsDesc': 'Додавати параметр tags= у Tkinter для фігур.',
 
     // Templates Tab
     'settings.templates.title': 'Шаблони проєктів',
@@ -1121,6 +1123,8 @@ export const translations = {
     'settings.code.lineNumbersDesc': 'Show line numbers in the code window.',
     'settings.code.highlight': 'Highlight Code',
     'settings.code.highlightDesc': 'Highlight the code line corresponding to the selected shape.',
+    'settings.code.generateTags': 'Generate Tkinter tags',
+    'settings.code.generateTagsDesc': 'Add tags= parameter for groups/layers in Tkinter code.',
 
     // Templates Tab
     'settings.templates.title': 'Project Templates',
@@ -1773,6 +1777,8 @@ export const translations = {
     'settings.code.lineNumbersDesc': 'Mostra i numeri di riga nella finestra del codice.',
     'settings.code.highlight': 'Evidenzia codice',
     'settings.code.highlightDesc': 'Evidenzia la riga del codice corrispondente alla forma selezionata.',
+    'settings.code.generateTags': 'Generare tag Tkinter',
+    'settings.code.generateTagsDesc': 'Aggiungi il parametro tags= per gruppi/livelli.',
 
     // Templates Tab
     'settings.templates.title': 'Modelli di progetto',
@@ -2426,6 +2432,8 @@ export const translations = {
     'settings.code.lineNumbersDesc': 'Mostrarlos en la ventana de código.',
     'settings.code.highlight': 'Resaltar código',
     'settings.code.highlightDesc': 'Resaltar la línea en el editor de código al seleccionar un objeto.',
+    'settings.code.generateTags': 'Generar etiquetas Tkinter',
+    'settings.code.generateTagsDesc': 'Añadir parámetro tags= para grupos/capas.',
 
     // Templates Tab
     'settings.templates.title': 'Tus plantillas',

@@ -1,10 +1,11 @@
 
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { type Shape, type Tool, type DrawMode, PolylineShape, BezierCurveShape, ViewTransform, RectangleShape, ImageShape, IsoscelesTriangleShape, TrapezoidShape, ParallelogramShape, PathShape, CanvasAction, LineShape, PolygonShape, ArcShape, RightTriangleShape, TextShape, BitmapShape, RotatableShape, EllipseShape, type ProjectTemplate, type NewProjectSettings, FillableShape, DistributePathState, DistributeEntity } from './types';
+import { type Shape, type Tool, type DrawMode, PolylineShape, BezierCurveShape, ViewTransform, RectangleShape, ImageShape, IsoscelesTriangleShape, TrapezoidShape, ParallelogramShape, PathShape, CanvasAction, LineShape, PolygonShape, ArcShape, RightTriangleShape, TextShape, BitmapShape, RotatableShape, EllipseShape, type ProjectTemplate, type NewProjectSettings, FillableShape, DistributePathState, DistributeEntity, Layer } from './types';
 import Canvas from './components/Canvas';
 import CodeDisplay, { type CodeLine } from './components/CodeDisplay';
 import PropertyEditor from './components/PropertyEditor';
 import ShapeList from './components/ShapeList';
+import LayerList from './components/LayerList';
 import { useHistoryState } from './hooks/useHistoryState';
 import { generateTkinterCode } from './services/geminiService';
 import { generateTkinterCodeLocally } from './services/localGeneratorService';
@@ -37,7 +38,7 @@ type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
 type SettingsTab = 'canvas' | 'grid' | 'appearance' | 'code' | 'templates';
 
-const APP_VERSION = '1.3.5';
+const APP_VERSION = '1.3.6';
 const RULER_THICKNESS = 24;
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 30;
@@ -987,23 +988,67 @@ const applyDistributePathToShapes = (currentShapes: Shape[], pathState: Distribu
 
 export default function App(): React.ReactNode {
   const { t } = useLanguage();
-  const { state: historyState, setState: setHistoryState, updateCurrentState, undo, redo, canUndo, canRedo, reset: resetHistoryState } = useHistoryState<{shapes: Shape[], distributePathState: DistributePathState | null}>({ shapes: [], distributePathState: null });
+  const { state: historyState, setState: setHistoryState, updateCurrentState, undo, redo, canUndo, canRedo, reset: resetHistoryState } = useHistoryState<{shapes: Shape[], distributePathState: DistributePathState | null, layers: Layer[], activeLayerId: string | null}>({ 
+      shapes: [], 
+      distributePathState: null,
+      layers: [{ id: 'layer-1', name: t('layer.defaultName') || 'Шар 1', visible: true, locked: false, shapeIds: [] }],
+      activeLayerId: 'layer-1'
+  });
   const shapes = historyState.shapes;
   const distributePathState = historyState.distributePathState;
+  const defaultLayers = useMemo(() => [{ id: 'layer-1', name: t('layer.defaultName') || 'Шар 1', visible: true, locked: false, shapeIds: [] }], [t]);
+  const layers = historyState.layers || defaultLayers;
+  const activeLayerId = historyState.activeLayerId || 'layer-1';
 
   const setShapes = useCallback((newShapesOrFn: Shape[] | ((prev: Shape[]) => Shape[])) => {
     setHistoryState(prev => {
         const newShapes = typeof newShapesOrFn === 'function' ? newShapesOrFn(prev.shapes) : newShapesOrFn;
-        return { ...prev, shapes: newShapes };
+        
+        const addedShapes = newShapes.filter(ns => !prev.shapes.some(ps => ps.id === ns.id));
+        const removedShapeIds = prev.shapes.filter(ps => !newShapes.some(ns => ns.id === ps.id)).map(s => s.id);
+
+        let newLayers = prev.layers || [{ id: 'layer-1', name: t('layer.defaultName') || 'Шар 1', visible: true, locked: false, shapeIds: [] }];
+        if (addedShapes.length > 0 || removedShapeIds.length > 0) {
+            newLayers = newLayers.map(layer => {
+                let updatedShapeIds = layer.shapeIds || [];
+                if (removedShapeIds.length > 0) {
+                    updatedShapeIds = updatedShapeIds.filter(id => !removedShapeIds.includes(id));
+                }
+                if (addedShapes.length > 0 && layer.id === (prev.activeLayerId || newLayers[0].id)) {
+                    updatedShapeIds = [...updatedShapeIds, ...addedShapes.map(s => s.id)];
+                }
+                return { ...layer, shapeIds: updatedShapeIds };
+            });
+        }
+
+        return { ...prev, shapes: newShapes, layers: newLayers };
     });
-  }, [setHistoryState]);
+  }, [setHistoryState, t]);
 
   const updateShapesWithoutHistory = useCallback((newShapesOrFn: Shape[] | ((prev: Shape[]) => Shape[])) => {
       updateCurrentState(prev => {
           const newShapes = typeof newShapesOrFn === 'function' ? newShapesOrFn(prev.shapes) : newShapesOrFn;
-          return { ...prev, shapes: newShapes };
+          
+          const addedShapes = newShapes.filter(ns => !prev.shapes.some(ps => ps.id === ns.id));
+          const removedShapeIds = prev.shapes.filter(ps => !newShapes.some(ns => ns.id === ps.id)).map(s => s.id);
+
+          let newLayers = prev.layers || [{ id: 'layer-1', name: t('layer.defaultName') || 'Шар 1', visible: true, locked: false, shapeIds: [] }];
+          if (addedShapes.length > 0 || removedShapeIds.length > 0) {
+              newLayers = newLayers.map(layer => {
+                  let updatedShapeIds = layer.shapeIds || [];
+                  if (removedShapeIds.length > 0) {
+                      updatedShapeIds = updatedShapeIds.filter(id => !removedShapeIds.includes(id));
+                  }
+                  if (addedShapes.length > 0 && layer.id === (prev.activeLayerId || newLayers[0].id)) {
+                      updatedShapeIds = [...updatedShapeIds, ...addedShapes.map(s => s.id)];
+                  }
+                  return { ...layer, shapeIds: updatedShapeIds };
+              });
+          }
+
+          return { ...prev, shapes: newShapes, layers: newLayers };
       });
-  }, [updateCurrentState]);
+  }, [updateCurrentState, t]);
 
   const setDistributePathState = useCallback((newPathOrFn: DistributePathState | null | ((prev: DistributePathState | null) => DistributePathState | null)) => {
       setHistoryState(prev => {
@@ -1019,11 +1064,100 @@ export default function App(): React.ReactNode {
       });
   }, [updateCurrentState]);
 
-  const resetHistory = useCallback((newShapes: Shape[]) => {
-      resetHistoryState({ shapes: newShapes, distributePathState: null });
-  }, [resetHistoryState]);
+  const resetHistory = useCallback((newShapes: Shape[], newLayers?: Layer[], newActiveLayerId?: string) => {
+      resetHistoryState({ 
+          shapes: newShapes, 
+          distributePathState: null,
+          layers: newLayers || [{ id: 'layer-1', name: t('layer.defaultName') || 'Шар 1', visible: true, locked: false, shapeIds: newShapes.map(s => s.id) }],
+          activeLayerId: newActiveLayerId || 'layer-1'
+      });
+  }, [resetHistoryState, t]);
+
+  const addLayer = useCallback(() => {
+      setHistoryState(prev => {
+          const newLayer: Layer = {
+              id: `layer-${Date.now()}`,
+              name: `${t('layer.defaultName') || 'Шар'} ${(prev.layers || []).length + 1}`,
+              visible: true,
+              locked: false,
+              shapeIds: []
+          };
+          return {
+              ...prev,
+              layers: [newLayer, ...(prev.layers || [])],
+              activeLayerId: newLayer.id
+          };
+      });
+  }, [setHistoryState, t]);
+
+  const toggleLayerVisibility = useCallback((layerId: string) => {
+      setHistoryState(prev => ({
+          ...prev,
+          layers: (prev.layers || []).map(l => l.id === layerId ? { ...l, visible: !l.visible } : l)
+      }));
+  }, [setHistoryState]);
+
+  const toggleLayerLock = useCallback((layerId: string) => {
+      setHistoryState(prev => ({
+          ...prev,
+          layers: (prev.layers || []).map(l => l.id === layerId ? { ...l, locked: !l.locked } : l)
+      }));
+  }, [setHistoryState]);
+
+  const setActiveLayer = useCallback((layerId: string) => {
+      setHistoryState(prev => ({ ...prev, activeLayerId: layerId }));
+  }, [setHistoryState]);
+
+  const deleteLayer = useCallback((layerId: string) => {
+      setHistoryState(prev => {
+          const layers = prev.layers || [];
+          if (layers.length <= 1) return prev; // Don't delete the last layer
+          
+          const layerToDelete = layers.find(l => l.id === layerId);
+          const newShapes = prev.shapes.filter(s => !layerToDelete?.shapeIds.includes(s.id));
+          const newLayers = layers.filter(l => l.id !== layerId);
+          const newActiveLayerId = prev.activeLayerId === layerId ? newLayers[0].id : prev.activeLayerId;
+          
+          return {
+              ...prev,
+              shapes: newShapes,
+              layers: newLayers,
+              activeLayerId: newActiveLayerId
+          };
+      });
+  }, [setHistoryState]);
+
+  const updateLayerName = useCallback((layerId: string, newName: string) => {
+      setHistoryState(prev => ({
+          ...prev,
+          layers: (prev.layers || []).map(l => l.id === layerId ? { ...l, name: newName } : l)
+      }));
+  }, [setHistoryState]);
+
+  const moveLayer = useCallback((layerId: string, direction: 'up' | 'down') => {
+      setHistoryState(prev => {
+          const layers = [...(prev.layers || [])];
+          const index = layers.findIndex(l => l.id === layerId);
+          if (index === -1) return prev;
+          
+          if (direction === 'up' && index > 0) {
+              const temp = layers[index];
+              layers[index] = layers[index - 1];
+              layers[index - 1] = temp;
+          } else if (direction === 'down' && index < layers.length - 1) {
+              const temp = layers[index];
+              layers[index] = layers[index + 1];
+              layers[index + 1] = temp;
+          } else {
+              return prev;
+          }
+          
+          return { ...prev, layers };
+      });
+  }, [setHistoryState]);
 
   const [projectName, setProjectName] = useState<string>(t('app.1069'));
+  const [rightPanelTab, setRightPanelTab] = useState<'layers' | 'shapes'>('layers');
   const [activeTool, setActiveTool] = useState<Tool>('select');
   const [selectedShapeIds, setSelectedShapeIds] = useState<string[]>([]);
   const [inlineEditingShapeId, setInlineEditingShapeId] = useState<string | null>(null);
@@ -1087,6 +1221,7 @@ export default function App(): React.ReactNode {
   const [generatorType, setGeneratorType] = useState<GeneratorType>('local');
   const [highlightCodeOnSelection, setHighlightCodeOnSelection] = useState<boolean>(true);
   const [autoGenerateComments, setAutoGenerateComments] = useState<boolean>(true);
+  const [generateTkinterTags, setGenerateTkinterTags] = useState<boolean>(false);
   const [outlineWithFill, setOutlineWithFill] = useState<boolean>(true);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(!!document.fullscreenElement);
   const [maxRecentProjects, setMaxRecentProjects] = useState(12);
@@ -1237,9 +1372,9 @@ export default function App(): React.ReactNode {
         projectName: pName,
         shapes: s,
         canvasSettings: { width: canvasWidth, height: canvasHeight, bgColor: canvasBgColor, varName: canvasVarName },
-        uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill }
+        uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags }
     });
-  }, [canvasWidth, canvasHeight, canvasBgColor, canvasVarName, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill]);
+  }, [canvasWidth, canvasHeight, canvasBgColor, canvasVarName, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags]);
 
   const lastSavedSignatureRef = useRef('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -1269,8 +1404,41 @@ export default function App(): React.ReactNode {
 
   const displayedShapes = useMemo(() => {
     let currentShapes = shapes;
+    
+    // Apply layer visibility and ordering
+    if (layers && layers.length > 0) {
+        const shapeMap = new Map(currentShapes.map(s => [s.id, s]));
+        const orderedShapes: Shape[] = [];
+        
+        // Render from bottom layer to top layer
+        for (let i = layers.length - 1; i >= 0; i--) {
+            const layer = layers[i];
+            if (layer.visible) {
+                for (const shapeId of layer.shapeIds || []) {
+                    const shape = shapeMap.get(shapeId);
+                    if (shape) {
+                        orderedShapes.push(shape);
+                        shapeMap.delete(shapeId);
+                    }
+                }
+            } else {
+                // If layer is hidden, just delete its shapes from map so they aren't rendered
+                for (const shapeId of layer.shapeIds || []) {
+                    shapeMap.delete(shapeId);
+                }
+            }
+        }
+        
+        // Unassigned shapes fall back to rendering at the bottom
+        for (const shape of shapeMap.values()) {
+            orderedShapes.unshift(shape);
+        }
+        
+        currentShapes = orderedShapes;
+    }
+
     if (distributePathState) {
-        currentShapes = applyDistributePathToShapes(shapes, distributePathState);
+        currentShapes = applyDistributePathToShapes(currentShapes, distributePathState);
     }
     if (Object.keys(previewOverrides).length === 0) {
         return currentShapes;
@@ -1279,7 +1447,19 @@ export default function App(): React.ReactNode {
         const override = previewOverrides[s.id];
         return override ? { ...s, ...override } as Shape : s;
     });
-  }, [shapes, previewOverrides, distributePathState]);
+  }, [shapes, previewOverrides, distributePathState, layers]);
+
+  const lockedShapeIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const layer of layers || []) {
+      if (layer.locked) {
+        for (const id of layer.shapeIds || []) {
+          ids.add(id);
+        }
+      }
+    }
+    return ids;
+  }, [layers]);
 
   const cancelShapePreview = useCallback(() => {
       setPreviewOverrides({});
@@ -1352,6 +1532,18 @@ export default function App(): React.ReactNode {
     }
   }, [setShapes, isImportingImage]);
 
+  const addShapes = useCallback((newShapes: Shape[], isDuplication = false) => {
+    if (isImportingImage) {
+        setIsImportingImage(false);
+    }
+    if (newShapes.length === 0) return;
+    setShapes(prevShapes => [...prevShapes, ...newShapes]);
+    if (isDuplication || (newShapes[0].type !== 'polyline' && newShapes[0].type !== 'bezier')) {
+        setSelectedShapeIds(newShapes.map(s => s.id));
+        setActiveTool('select');
+    }
+  }, [setShapes, isImportingImage]);
+
   const updateShape = useCallback((updatedShape: Shape) => {
     cancelShapePreview();
     setShapes(prevShapes => {
@@ -1407,7 +1599,7 @@ export default function App(): React.ReactNode {
         const shapeToDelete = prevShapes.find(s => s.id === id);
         let idsToDelete = [id];
         if (shapeToDelete?.type === 'group') {
-            idsToDelete = [...idsToDelete, ...shapeToDelete.shapeIds];
+            idsToDelete = [...idsToDelete, ...(shapeToDelete as any).shapeIds];
         }
         return prevShapes.filter(shape => !idsToDelete.includes(shape.id));
     });
@@ -1518,67 +1710,138 @@ export default function App(): React.ReactNode {
         return newShape;
     };
 
-    ids.forEach(id => {
-        const shapeToDuplicate = shapes.find(s => s.id === id);
-        if (!shapeToDuplicate) return;
+    setHistoryState(prev => {
+        const newShapes = [...prev.shapes];
+        const newLayers = (prev.layers || []).map(l => ({ ...l, shapeIds: [...(l.shapeIds || [])] }));
 
-        const rootCopy = duplicateSingleShape(shapeToDuplicate);
-        shapesToAdd.push(rootCopy);
-        newRootIds.push(rootCopy.id);
+        ids.forEach(id => {
+            const shapeToDuplicate = prev.shapes.find(s => s.id === id);
+            if (!shapeToDuplicate) return;
+            
+            const originalLayer = newLayers.find(l => l.shapeIds.includes(id));
+            const layerId = originalLayer ? originalLayer.id : (prev.activeLayerId || (newLayers.length > 0 ? newLayers[0].id : 'layer-1'));
+            
+            const rootCopy = duplicateSingleShape(shapeToDuplicate);
+            newShapes.push(rootCopy);
+            newRootIds.push(rootCopy.id);
+            
+            const targetLayer = newLayers.find(l => l.id === layerId);
+            if (targetLayer) {
+                targetLayer.shapeIds.push(rootCopy.id);
+            }
+            
+            if (rootCopy.type === 'group') {
+                const children = prev.shapes.filter(s => shapeToDuplicate.shapeIds?.includes(s.id));
+                const newChildIds: string[] = [];
+                children.forEach(child => {
+                    const childLayer = newLayers.find(l => l.shapeIds.includes(child.id));
+                    const childLayerId = childLayer ? childLayer.id : layerId;
 
-        if (rootCopy.type === 'group') {
-            const children = shapes.filter(s => shapeToDuplicate.shapeIds?.includes(s.id));
-            const newChildIds: string[] = [];
-            children.forEach(child => {
-                const childCopy = duplicateSingleShape(child, rootCopy.id);
-                shapesToAdd.push(childCopy);
-                newChildIds.push(childCopy.id);
-            });
-            rootCopy.shapeIds = newChildIds;
+                    const childCopy = duplicateSingleShape(child, rootCopy.id);
+                    newShapes.push(childCopy);
+                    newChildIds.push(childCopy.id);
+                    
+                    const childTargetLayer = newLayers.find(l => l.id === childLayerId);
+                    if (childTargetLayer) {
+                        childTargetLayer.shapeIds.push(childCopy.id);
+                    }
+                });
+                rootCopy.shapeIds = newChildIds;
+            }
+        });
+
+        if (newRootIds.length > 0) {
+            showNotification(t('app.1102'));
         }
-    });
 
-    if (shapesToAdd.length > 0) {
-        setShapes(prevShapes => [...prevShapes, ...shapesToAdd]);
-        showNotification(t('app.1102'));
-    }
+        return { ...prev, shapes: newShapes, layers: newLayers };
+    });
     
     return Array.isArray(idOrIds) ? newRootIds : newRootIds[0];
-  }, [shapes, setShapes, showNotification, t]);
+  }, [setHistoryState, showNotification, t]);
   
   const moveShape = useCallback((id: string, direction: 'up' | 'down') => {
-    setShapes(prevShapes => {
-        const index = prevShapes.findIndex(s => s.id === id);
-        if (index === -1) return prevShapes;
-        const newShapes = [...prevShapes];
+    setHistoryState(prev => {
+        let newLayers = [...(prev.layers || [])];
+        let layerChanged = false;
+        
+        newLayers = newLayers.map(layer => {
+            if (!layer.shapeIds || !layer.shapeIds.includes(id)) return layer;
+            
+            const index = layer.shapeIds.indexOf(id);
+            const targetIndex = direction === 'up' ? index + 1 : index - 1;
+            
+            if (targetIndex < 0 || targetIndex >= layer.shapeIds.length) return layer;
+            
+            const newShapeIds = [...layer.shapeIds];
+            [newShapeIds[index], newShapeIds[targetIndex]] = [newShapeIds[targetIndex], newShapeIds[index]];
+            
+            layerChanged = true;
+            return { ...layer, shapeIds: newShapeIds };
+        });
+        
+        if (!layerChanged) return prev;
+        
+        // Also update shapes array for consistency
+        const index = prev.shapes.findIndex(s => s.id === id);
+        if (index === -1) return { ...prev, layers: newLayers };
+        const newShapes = [...prev.shapes];
         const targetIndex = direction === 'up' ? index + 1 : index - 1;
-        if (targetIndex < 0 || targetIndex >= newShapes.length) return prevShapes;
-        [newShapes[index], newShapes[targetIndex]] = [newShapes[targetIndex], newShapes[index]];
-        return newShapes;
+        if (targetIndex >= 0 && targetIndex < newShapes.length) {
+            [newShapes[index], newShapes[targetIndex]] = [newShapes[targetIndex], newShapes[index]];
+        }
+        
+        return { ...prev, shapes: newShapes, layers: newLayers };
     });
-  }, [setShapes]);
+  }, [setHistoryState]);
 
   const reorderShape = useCallback((draggedId: string, targetId: string, position: 'top' | 'bottom') => {
-    setShapes(prevShapes => {
-        const draggedIndex = prevShapes.findIndex(s => s.id === draggedId);
-        const targetIndex = prevShapes.findIndex(s => s.id === targetId);
-
-        if (draggedIndex === -1 || targetIndex === -1 || draggedIndex === targetIndex) {
-            return prevShapes;
+    setHistoryState(prev => {
+        let newLayers = [...(prev.layers || [])];
+        let draggedLayerIndex = -1;
+        let draggedItemIndex = -1;
+        for (let i = 0; i < newLayers.length; i++) {
+            const ids = newLayers[i].shapeIds || [];
+            const index = ids.indexOf(draggedId);
+            if (index !== -1) { draggedLayerIndex = i; draggedItemIndex = index; break; }
         }
-
-        const newShapes = [...prevShapes];
-        const [draggedItem] = newShapes.splice(draggedIndex, 1);
+        if (draggedLayerIndex === -1) return prev;
         
-        const newTargetIndex = newShapes.findIndex(s => s.id === targetId);
-
-        const insertionIndex = position === 'top' ? newTargetIndex + 1 : newTargetIndex;
+        newLayers[draggedLayerIndex] = {
+            ...newLayers[draggedLayerIndex],
+            shapeIds: newLayers[draggedLayerIndex].shapeIds.filter(id => id !== draggedId)
+        };
         
-        newShapes.splice(insertionIndex, 0, draggedItem);
-
-        return newShapes;
+        let targetLayerIndex = -1;
+        let targetItemIndex = -1;
+        for (let i = 0; i < newLayers.length; i++) {
+            const ids = newLayers[i].shapeIds || [];
+            const index = ids.indexOf(targetId);
+            if (index !== -1) { targetLayerIndex = i; targetItemIndex = index; break; }
+        }
+        if (targetLayerIndex === -1) return prev;
+        
+        const targetLayerIds = [...newLayers[targetLayerIndex].shapeIds];
+        if (draggedLayerIndex === targetLayerIndex && draggedItemIndex < targetItemIndex) {
+            targetItemIndex--; 
+        }
+        const insertionIndex = position === 'top' ? targetItemIndex + 1 : targetItemIndex;
+        targetLayerIds.splice(insertionIndex, 0, draggedId);
+        newLayers[targetLayerIndex] = { ...newLayers[targetLayerIndex], shapeIds: targetLayerIds };
+        
+        const newShapes = [...prev.shapes];
+        const draggedShapesIndex = newShapes.findIndex(s => s.id === draggedId);
+        if (draggedShapesIndex !== -1) {
+            const [draggedShape] = newShapes.splice(draggedShapesIndex, 1);
+            const targetShapesIndex = newShapes.findIndex(s => s.id === targetId);
+            if (targetShapesIndex !== -1) {
+                const shapeInsertionIndex = position === 'top' ? targetShapesIndex + 1 : targetShapesIndex;
+                newShapes.splice(shapeInsertionIndex, 0, draggedShape);
+            }
+        }
+        return { ...prev, shapes: newShapes, layers: newLayers };
     });
-  }, [setShapes]);
+  }, [setHistoryState]);
 
   const convertToPath = useCallback((shapeId: string) => {
     const shape = shapes.find(s => s.id === shapeId);
@@ -1606,7 +1869,7 @@ export default function App(): React.ReactNode {
 
   const lastSelectedShapeIdRef = useRef<string | null>(null);
 
-  const handleSelectShape = useCallback((id: string | string[] | null, isCtrlPressed: boolean = false, isShiftPressed: boolean = false) => {
+  const handleSelectShape = useCallback((id: string | string[] | null, isCtrlPressed: boolean = false, isShiftPressed: boolean = false, ignoreGroup: boolean = false) => {
     if (distributePathState) return;
     if (Array.isArray(id)) {
         setSelectedShapeIds(id);
@@ -1621,10 +1884,10 @@ export default function App(): React.ReactNode {
       }
       
       const targetShape = shapes.find(s => s.id === id);
-      const targetGroupId = targetShape?.groupId;
+      const targetGroupId = !ignoreGroup ? targetShape?.groupId : undefined;
       
       const idsToToggle = targetGroupId 
-        ? shapes.filter(s => s.groupId === targetGroupId).map(s => s.id)
+        ? [targetGroupId]
         : [id];
 
       if (isShiftPressed && lastSelectedShapeIdRef.current) {
@@ -1639,7 +1902,7 @@ export default function App(): React.ReactNode {
               for (let i = minIndex; i <= maxIndex; i++) {
                   const s = shapes[i];
                   if (s.groupId) {
-                      shapes.filter(gs => gs.groupId === s.groupId).forEach(gs => rangeIds.add(gs.id));
+                      rangeIds.add(s.groupId);
                   } else {
                       rangeIds.add(s.id);
                   }
@@ -1789,7 +2052,7 @@ export default function App(): React.ReactNode {
   }, [shapes, inlineEditingShapeId]);
 
   const handleGenerateCode = useCallback(async () => {
-    const shapesForGeneration = shapes.filter(s => !(s.type === 'image' && s.isImport));
+    const shapesForGeneration = displayedShapes.filter(s => !(s.type === 'image' && s.isImport));
     if (shapesForGeneration.length === 0) { showNotification(t('app.1108'), 'info'); return; }
     
     if (generatorType === 'gemini' && !apiKey) {
@@ -1809,10 +2072,10 @@ export default function App(): React.ReactNode {
 
     try {
       if (generatorType === 'local') {
-        const { codeLines } = await generateTkinterCodeLocally(finalShapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill, t);
+        const { codeLines } = await generateTkinterCodeLocally(finalShapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill, generateTkinterTags, t);
         setGeneratedCodeLines(codeLines);
       } else {
-        const code = await generateTkinterCode(apiKey!, finalShapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill);
+        const code = await generateTkinterCode(apiKey!, finalShapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill, generateTkinterTags);
         const lines = code.split('\n');
         const codeLines = lines.map(line => {
             const match = line.match(/(.*?) # ID:([a-zA-Z0-9.-]+)/);
@@ -1833,22 +2096,25 @@ export default function App(): React.ReactNode {
     } finally {
       setIsLoading(false);
     }
-  }, [shapes, canvasWidth, canvasHeight, canvasBgColor, projectName, generatorType, canvasVarName, autoGenerateComments, apiKey, activeCheats, outlineWithFill, showNotification]);
+  }, [displayedShapes, canvasWidth, canvasHeight, canvasBgColor, projectName, generatorType, canvasVarName, autoGenerateComments, generateTkinterTags, apiKey, activeCheats, outlineWithFill, showNotification, t]);
+
+  const displayedShapesString = useMemo(() => JSON.stringify(displayedShapes), [displayedShapes]);
+  const shapesString = useMemo(() => JSON.stringify(shapes), [shapes]);
 
   useEffect(() => {
     if (generatorType === 'local' && isProjectActive) {
         const generate = async () => {
-            let shapesForGeneration = shapes.filter(s => !(s.type === 'image' && s.isImport));
+            let shapesForGeneration = displayedShapes.filter(s => !(s.type === 'image' && s.isImport));
             if (activeCheats.has('002')) {
                 shapesForGeneration = shapesForGeneration.filter(s => s.type !== 'image');
             }
-            const { codeLines } = await generateTkinterCodeLocally(shapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill, t);
+            const { codeLines } = await generateTkinterCodeLocally(shapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill, generateTkinterTags, t);
             setGeneratedCodeLines(codeLines);
-            setShapesAtGenerationTime(JSON.parse(JSON.stringify(shapes)));
+            setShapesAtGenerationTime(JSON.parse(shapesString));
         };
         generate();
     }
-  }, [shapes, canvasWidth, canvasHeight, canvasBgColor, generatorType, projectName, isProjectActive, canvasVarName, autoGenerateComments, activeCheats, outlineWithFill]);
+  }, [displayedShapesString, shapesString, canvasWidth, canvasHeight, canvasBgColor, generatorType, projectName, isProjectActive, canvasVarName, autoGenerateComments, generateTkinterTags, activeCheats, outlineWithFill, t]);
   
   const hasUnsyncedChangesWithCode = useMemo(() => {
     if (!shapesAtGenerationTime) return false;
@@ -1955,12 +2221,14 @@ export default function App(): React.ReactNode {
     return {
         projectName: pName,
         shapes: shapesToSave,
+        layers: layers,
+        activeLayerId: activeLayerId,
         thumbnail: generateProjectThumbnail(shapesToSave, canvasWidth, canvasHeight, canvasBgColor),
         canvasSettings: { width: canvasWidth, height: canvasHeight, bgColor: canvasBgColor, varName: canvasVarName },
         viewTransform,
-        uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill }
+        uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags }
     };
-  }, [shapes, canvasWidth, canvasHeight, canvasBgColor, canvasVarName, viewTransform, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateProjectThumbnail]);
+  }, [shapes, layers, activeLayerId, canvasWidth, canvasHeight, canvasBgColor, canvasVarName, viewTransform, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags, generateProjectThumbnail]);
 
     const handleSaveProject = useCallback(async () => {
         if (!hasUnsavedChanges && fileHandle) {
@@ -2114,7 +2382,7 @@ export default function App(): React.ReactNode {
             const newProjectName = savedData.projectName || (fileName ? fileName.replace(/\.vec.json$/, '') : t('app.1014'));
             
             performClear();
-            resetHistory(savedData.shapes);
+            resetHistory(savedData.shapes, savedData.layers, savedData.activeLayerId);
             setProjectName(newProjectName);
             setCanvasWidth(savedData.canvasSettings.width);
             setCanvasHeight(savedData.canvasSettings.height);
@@ -2139,6 +2407,7 @@ export default function App(): React.ReactNode {
             setGeneratorType(ui.generatorType || 'local');
             setHighlightCodeOnSelection(ui.highlightCodeOnSelection ?? true);
             setAutoGenerateComments(ui.autoGenerateComments ?? true);
+            setGenerateTkinterTags(ui.generateTkinterTags ?? false);
             setOutlineWithFill(ui.outlineWithFill ?? true);
             
             lastSavedSignatureRef.current = getProjectSignature(newProjectName, savedData.shapes);
@@ -2704,8 +2973,9 @@ export default function App(): React.ReactNode {
     if (distributePathState) return;
     if (selectedShapeIds.length < 2) return;
     const newGroupId = `group-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-    setShapes(prev => {
-        const newShapes = prev.map(s => selectedShapeIds.includes(s.id) ? { ...s, groupId: newGroupId } : s);
+    
+    setHistoryState(prev => {
+        const newShapes = prev.shapes.map(s => selectedShapeIds.includes(s.id) ? { ...s, groupId: newGroupId } : s);
         const groupShape: Shape = {
             type: 'group',
             id: newGroupId,
@@ -2713,13 +2983,31 @@ export default function App(): React.ReactNode {
             state: 'normal',
             stroke: 'none',
             strokeWidth: 0,
-            shapeIds: [...selectedShapeIds],
+            shapeIds: [...selectedShapeIds], rotation: 0,
         };
-        return [...newShapes, groupShape];
+        newShapes.push(groupShape);
+        
+        const targetLayerId = prev.activeLayerId || (prev.layers && prev.layers.length > 0 ? prev.layers[0].id : 'layer-1');
+        
+        let newLayers = (prev.layers || []).map(layer => {
+            let shapeIds = layer.shapeIds || [];
+            
+            if (layer.id !== targetLayerId) {
+                shapeIds = shapeIds.filter(id => !selectedShapeIds.includes(id));
+            } else {
+                const shapesToAdd = selectedShapeIds.filter(id => !shapeIds.includes(id));
+                shapeIds = [...shapeIds, ...shapesToAdd, newGroupId];
+            }
+            
+            return { ...layer, shapeIds };
+        });
+
+        return { ...prev, shapes: newShapes, layers: newLayers };
     });
+    
     setSelectedShapeIds([newGroupId]);
     showNotification(t('menu.edit.group') || 'Об\'єкти згруповано');
-  }, [selectedShapeIds, setShapes, showNotification, t]);
+  }, [selectedShapeIds, distributePathState, setHistoryState, showNotification, t]);
 
   const handleUngroup = useCallback(() => {
     if (distributePathState) return;
@@ -3435,7 +3723,7 @@ export default function App(): React.ReactNode {
                                     distributePathState={distributePathState}
                                     onDistributePathChange={setDistributePathStateWithoutHistory}
                                     onDistributePathChangeEnd={() => distributePathState && setDistributePathState(distributePathState)}
-                                    width={canvasWidth} height={canvasHeight} backgroundColor={previewCanvasBgColor ?? canvasBgColor} shapes={displayedShapes} addShape={addShape} updateShape={updateShape} updateShapes={updateShapes} activeTool={activeTool} drawMode={drawMode}
+                                    width={canvasWidth} height={canvasHeight} backgroundColor={previewCanvasBgColor ?? canvasBgColor} shapes={displayedShapes} lockedShapeIds={lockedShapeIds} addShape={addShape} addShapes={addShapes} updateShape={updateShape} updateShapes={updateShapes} activeTool={activeTool} drawMode={drawMode}
                                     fillColor={isFillEnabled ? (previewFillColor ?? fillColor) : 'none'} strokeColor={isStrokeEnabled ? (previewStrokeColor ?? strokeColor) : 'none'} strokeWidth={isStrokeEnabled ? strokeWidth : 0}
                                     textColor={previewTextColor ?? textColor}
                                     textFont={textFont}
@@ -3491,18 +3779,50 @@ export default function App(): React.ReactNode {
                  <div className="lg:hidden flex justify-end mb-4">
                     <button onClick={() => setIsRightPanelVisible(false)} className="p-2 rounded-lg text-[var(--accent-text)]"><XIcon /></button>
                 </div>
-                 <div className="flex-1 min-h-0">
-                    <ShapeList
-                        distributePathState={distributePathState}
-                        shapes={shapes}
-                        selectedShapeIds={selectedShapeIds}
-                        onSelectShape={handleSelectShape}
-                        onDeleteShape={confirmDeleteShape}
-                        onMoveShape={moveShape}
-                        onUpdateShape={updateShape}
-                        onReorderShape={reorderShape}
-                        showTkinterNames={showTkinterNames}
-                    />
+                 <div className="flex-1 min-h-0 flex flex-col bg-[var(--bg-app)] border border-[var(--border-color)] rounded-lg overflow-hidden">
+                    <div className="flex border-b border-[var(--border-color)]">
+                        <button 
+                            className={`flex-1 py-2 text-sm font-medium ${rightPanelTab === 'layers' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}
+                            onClick={() => setRightPanelTab('layers')}
+                        >
+                            {t('layer.title') || 'Шари'}
+                        </button>
+                        <button 
+                            className={`flex-1 py-2 text-sm font-medium ${rightPanelTab === 'shapes' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}
+                            onClick={() => setRightPanelTab('shapes')}
+                        >
+                            {t('shape.list') || 'Фігури'}
+                        </button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto">
+                        {rightPanelTab === 'layers' && (
+                            <LayerList
+                                layers={layers}
+                                activeLayerId={activeLayerId}
+                                onAddLayer={addLayer}
+                                onDeleteLayer={deleteLayer}
+                                onToggleVisibility={toggleLayerVisibility}
+                                onToggleLock={toggleLayerLock}
+                                onSetActiveLayer={setActiveLayer}
+                                onUpdateLayerName={updateLayerName}
+                                onMoveLayer={moveLayer}
+                            />
+                        )}
+                        {rightPanelTab === 'shapes' && (
+                            <ShapeList
+                                distributePathState={distributePathState}
+                                shapes={shapes}
+                                lockedShapeIds={lockedShapeIds}
+                                selectedShapeIds={selectedShapeIds}
+                                onSelectShape={handleSelectShape}
+                                onDeleteShape={confirmDeleteShape}
+                                onMoveShape={moveShape}
+                                onUpdateShape={updateShape}
+                                onReorderShape={reorderShape}
+                                showTkinterNames={showTkinterNames}
+                            />
+                        )}
+                    </div>
                 </div>
                 <div className="flex-[2_2_0%] min-h-0">
                     <PropertyEditor 
@@ -3566,6 +3886,7 @@ export default function App(): React.ReactNode {
               generatorType={generatorType} setGeneratorType={setGeneratorType}
               highlightCodeOnSelection={highlightCodeOnSelection} setHighlightCodeOnSelection={setHighlightCodeOnSelection}
               autoGenerateComments={autoGenerateComments} setAutoGenerateComments={setAutoGenerateComments}
+              generateTkinterTags={generateTkinterTags} setGenerateTkinterTags={setGenerateTkinterTags}
               outlineWithFill={outlineWithFill} setOutlineWithFill={setOutlineWithFill}
               maxRecentProjects={maxRecentProjects}
               setMaxRecentProjects={setMaxRecentProjects}

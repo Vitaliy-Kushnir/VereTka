@@ -1,16 +1,24 @@
 const fs = require('fs');
 let code = fs.readFileSync('types.ts', 'utf-8');
 
-const target = `    | { type: 'edit-distribute-path', handle: 'center' | 'radius' | 'start' | 'end', startPoint: { x: number, y: number }, initialDistributePath: DistributePathState }
-    | null;`;
-const replacement = `    | { type: 'edit-distribute-path', handle: 'center' | 'radius' | 'start' | 'end', startPoint: { x: number, y: number }, initialDistributePath: DistributePathState }
-    | { type: 'selecting', startPos: { x: number, y: number }, currentPos: { x: number, y: number } }
-    | null;`;
+const layerInterfaces = `export interface Layer {
+    id: string;
+    name: string;
+    visible: boolean;
+    locked: boolean;
+    shapeIds: string[]; // references to shapes inside this layer
+}
 
-if (code.includes(target)) {
-    code = code.replace(target, replacement);
+export interface LayerState {
+    layers: Layer[];
+    activeLayerId: string | null;
+}
+`;
+
+if (!code.includes('export interface Layer {')) {
+    code = code + '\n' + layerInterfaces;
     fs.writeFileSync('types.ts', code);
-    console.log('patched types.ts');
+    console.log('Added Layer types to types.ts');
 } else {
-    console.log('Target not found in types.ts');
+    console.log('Layer types already exist');
 }
