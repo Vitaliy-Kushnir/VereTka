@@ -18,15 +18,15 @@ interface LayerListProps {
 export default function LayerList({ layers, activeLayerId, onAddLayer, onDeleteLayer, onToggleVisibility, onToggleLock, onSetActiveLayer, onUpdateLayerName, onMoveLayer }: LayerListProps) {
     const { t } = useLanguage();
     const [editingLayerId, setEditingLayerId] = useState<string | null>(null);
-    const [editName, setEditName] = useState('');
+    const [editName, setEditName] = useState<string>('');
 
     const startEditing = (layer: Layer) => {
         setEditingLayerId(layer.id);
-        setEditName(layer.name);
+        setEditName(layer.name || '');
     };
 
     const finishEditing = () => {
-        if (editingLayerId && editName.trim()) {
+        if (editingLayerId && editName && editName.trim()) {
             onUpdateLayerName(editingLayerId, editName.trim());
         }
         setEditingLayerId(null);

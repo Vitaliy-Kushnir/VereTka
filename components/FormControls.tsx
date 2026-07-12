@@ -49,7 +49,7 @@ export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: num
         let num = parseFloat(displayValue);
 
         // If input is invalid or empty, revert to the last valid value from props.
-        if (isNaN(num) || displayValue.trim() === '') {
+        if (isNaN(num) || (displayValue?.trim() || '') === '') {
             setDisplayValue((value as any) === '' ? '' : String(value));
             if((value as any) !== '' && value !== Number(displayValue)) {
                 onChange(value);
@@ -1540,11 +1540,13 @@ export const Select: React.FC<{ id: string; value: string; onChange: (value: str
     </select>
 );
 
-export const TextArea: React.FC<{ id: string; value: string; onChange: (value: string) => void; disabled?: boolean; rows?: number, title?: string, placeholder?: string }> = ({ id, value, onChange, disabled, rows = 3, title, placeholder }) => (
+export const TextArea: React.FC<{ id: string; value: string; onChange: (value: string) => void; onFocus?: () => void; onBlur?: () => void; disabled?: boolean; rows?: number, title?: string, placeholder?: string }> = ({ id, value, onChange, onFocus, onBlur, disabled, rows = 3, title, placeholder }) => (
     <textarea
         id={id}
         value={value}
         onChange={e => onChange(e.target.value)}
+        onFocus={onFocus}
+        onBlur={onBlur}
         disabled={disabled}
         rows={rows}
         title={title}

@@ -69,7 +69,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
     }, [shape, action, allShapes]);
     
     const VisualBoundsRect = visualBounds && (
-        <g style={{ pointerEvents: 'none' }}>
+        <g >
             <rect
                 x={visualBounds.x}
                 y={visualBounds.y}
@@ -97,7 +97,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
 
         return (
             <g 
-                style={{ pointerEvents: 'none' }}
+                
                 aria-label={t('selection.anchorPoint')}
             >
                 <circle
@@ -255,7 +255,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
                             x2={nextPoint.x} y2={nextPoint.y}
                             stroke="transparent"
                             strokeWidth={scaledTouchHandleSize}
-                            style={{ cursor: action ? 'inherit' : 'copy' }}
+                            
                             onMouseDown={(e) => handleSegmentMouseDown(e, index, nextIndex)}
                         />
                     );
@@ -264,7 +264,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
                 {displayPoints.map((p, index) => {
                     const isActive = index === activePointIndex;
                     return (
-                        <g key={`point-${index}`} onMouseDown={(e) => handleNodeDown(e, index)} onTouchStart={(e) => handleNodeDown(e as any, index)} data-handle="true" style={{ cursor: action ? 'inherit' : 'grab' }} >
+                        <g key={`point-${index}`} onMouseDown={(e) => handleNodeDown(e, index)} onTouchStart={(e) => handleNodeDown(e as any, index)} data-handle="true" style={{ cursor: "grab" }}>
                             <circle 
                                 cx={p.x} 
                                 cy={p.y}
@@ -272,13 +272,12 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
                                 fill={isActive ? 'var(--selection-stroke)' : 'var(--bg-primary)'}
                                 stroke="var(--selection-stroke)" 
                                 strokeWidth={scaledStrokeWidth}
-                                style={{ pointerEvents: 'none' }} 
-                            />
+                                />
                              <circle
                                 cx={p.x}
                                 cy={p.y}
                                 r={scaledTouchHandleSize / 2}
-                                fill="transparent"
+                                fill="#ffffff" fillOpacity={0.01} style={{  cursor: "grab" }} 
                             />
                         </g>
                     )
@@ -349,22 +348,22 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
             <React.Fragment>
                 {VisualBoundsRect}
                 <g>
-                    <line x1={rotatedStart.x} y1={rotatedStart.y} x2={rotatedEnd.x} y2={rotatedEnd.y} stroke="var(--selection-stroke)" strokeWidth={6 / viewTransform.scale} strokeOpacity="0.3" strokeLinecap="round" style={{ pointerEvents: 'none' }} />
+                    <line x1={rotatedStart.x} y1={rotatedStart.y} x2={rotatedEnd.x} y2={rotatedEnd.y} stroke="var(--selection-stroke)" strokeWidth={6 / viewTransform.scale} strokeOpacity="0.3" strokeLinecap="round" />
                     
-                    <g onMouseDown={(e) => handleLineResizeDown(e, 'line-start')} onTouchStart={(e) => handleLineResizeDown(e as any, 'line-start')} data-handle="true" style={{ cursor: action ? 'inherit' : 'grab' }}>
-                        <circle cx={rotatedStart.x} cy={rotatedStart.y} r={scaledHandleSize / 1.5} fill="var(--bg-primary)" stroke="var(--selection-stroke)" strokeWidth={scaledStrokeWidth} style={{pointerEvents: 'none'}} />
-                        <circle cx={rotatedStart.x} cy={rotatedStart.y} r={scaledTouchHandleSize / 2} fill="transparent" />
+                    <g onMouseDown={(e) => handleLineResizeDown(e, 'line-start')} onTouchStart={(e) => handleLineResizeDown(e as any, 'line-start')} data-handle="true" style={{ cursor: "grab" }}>
+                        <circle cx={rotatedStart.x} cy={rotatedStart.y} r={scaledHandleSize / 1.5} fill="var(--bg-primary)" stroke="var(--selection-stroke)" strokeWidth={scaledStrokeWidth} />
+                        <circle cx={rotatedStart.x} cy={rotatedStart.y} r={scaledTouchHandleSize / 2} fill="#ffffff" fillOpacity={0.01} style={{  cursor: "grab" }}  />
                     </g>
 
-                    <g onMouseDown={(e) => handleLineResizeDown(e, 'line-end')} onTouchStart={(e) => handleLineResizeDown(e as any, 'line-end')} data-handle="true" style={{ cursor: action ? 'inherit' : 'grab' }}>
-                        <circle cx={rotatedEnd.x} cy={rotatedEnd.y} r={scaledHandleSize / 1.5} fill="var(--bg-primary)" stroke="var(--selection-stroke)" strokeWidth={scaledStrokeWidth} style={{pointerEvents: 'none'}} />
-                        <circle cx={rotatedEnd.x} cy={rotatedEnd.y} r={scaledTouchHandleSize / 2} fill="transparent" />
+                    <g onMouseDown={(e) => handleLineResizeDown(e, 'line-end')} onTouchStart={(e) => handleLineResizeDown(e as any, 'line-end')} data-handle="true" style={{ cursor: "grab" }}>
+                        <circle cx={rotatedEnd.x} cy={rotatedEnd.y} r={scaledHandleSize / 1.5} fill="var(--bg-primary)" stroke="var(--selection-stroke)" strokeWidth={scaledStrokeWidth} />
+                        <circle cx={rotatedEnd.x} cy={rotatedEnd.y} r={scaledTouchHandleSize / 2} fill="#ffffff" fillOpacity={0.01} style={{  cursor: "grab" }}  />
                     </g>
 
-                    <g onMouseDown={handleRotateDown} onTouchStart={handleRotateDown} data-handle="true" style={{ cursor: action ? 'inherit' : ROTATE_CURSOR_STYLE }}>
-                        <line x1={center.x} y1={center.y} x2={rotationHandlePos.x} y2={rotationHandlePos.y} stroke="var(--selection-stroke)" strokeWidth={scaledStrokeWidth} style={{ pointerEvents: 'none' }} />
-                        <circle cx={rotationHandlePos.x} cy={rotationHandlePos.y} r={scaledHandleSize / 2} fill="var(--bg-primary)" stroke="var(--selection-stroke)" strokeWidth={scaledStrokeWidth} style={{pointerEvents: 'none'}} transform={`rotate(${-rotation} ${rotationHandlePos.x} ${rotationHandlePos.y})`} />
-                        <circle cx={rotationHandlePos.x} cy={rotationHandlePos.y} r={scaledTouchHandleSize / 2} fill="transparent" />
+                    <g onMouseDown={handleRotateDown} onTouchStart={handleRotateDown} data-handle="true" style={{ cursor: ROTATE_CURSOR_STYLE }}>
+                        <line x1={center.x} y1={center.y} x2={rotationHandlePos.x} y2={rotationHandlePos.y} stroke="var(--selection-stroke)" strokeWidth={scaledStrokeWidth} />
+                        <circle cx={rotationHandlePos.x} cy={rotationHandlePos.y} r={scaledHandleSize / 2} fill="var(--bg-primary)" stroke="var(--selection-stroke)" strokeWidth={scaledStrokeWidth}  transform={`rotate(${-rotation} ${rotationHandlePos.x} ${rotationHandlePos.y})`} />
+                        <circle cx={rotationHandlePos.x} cy={rotationHandlePos.y} r={scaledTouchHandleSize / 2} fill="#ffffff" fillOpacity={0.01} style={{  cursor: ROTATE_CURSOR_STYLE }}  />
                     </g>
                 </g>
             </React.Fragment>
@@ -500,19 +499,18 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
     
     const renderSpecialHandle = (pos: { x: number, y: number }, onMouseDown: (e: React.MouseEvent | React.TouchEvent) => void) => {
         return (
-            <g onMouseDown={onMouseDown} onTouchStart={onMouseDown} data-handle="true" style={{ cursor: action ? 'inherit' : ADJUST_CURSOR_STYLE }}>
+            <g onMouseDown={onMouseDown} onTouchStart={onMouseDown} data-handle="true" style={{ cursor: ADJUST_CURSOR_STYLE }}>
                 <circle
                     cx={pos.x} cy={pos.y}
                     r={scaledHandleSize / 1.5}
                     fill="var(--special-handle-fill)"
                     stroke="var(--special-handle-stroke)"
                     strokeWidth={scaledStrokeWidth}
-                    style={{ pointerEvents: 'none' }}
-                />
+                    />
                 <circle
                     cx={pos.x} cy={pos.y}
                     r={scaledTouchHandleSize / 2}
-                    fill="transparent"
+                    fill="#ffffff" fillOpacity={0.01} style={{  cursor: ADJUST_CURSOR_STYLE }} 
                 />
             </g>
         );
@@ -619,8 +617,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
                 <rect 
                     x={bbox.x} y={bbox.y} width={bbox.width} height={bbox.height} 
                     fill="none" stroke="var(--selection-stroke)" strokeWidth={scaledStrokeWidth} 
-                    style={{ pointerEvents: 'none' }} 
-                />
+                    />
             </g>
             {VisualBoundsRect}
             <g>
@@ -632,9 +629,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
                             key={name} 
                             onMouseDown={(e) => handleResizeDown(e, name)}
                             onTouchStart={(e) => handleResizeDown(e as any, name)}
-                            data-handle="true" 
-                            style={{ cursor: action ? 'inherit' : `${cursor}` }}
-                        >
+                            data-handle="true" style={{ cursor: `${cursor}` }}>
                             <rect 
                                 x={rotatedPos.x - scaledHandleSize / 2} 
                                 y={rotatedPos.y - scaledHandleSize / 2} 
@@ -643,7 +638,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
                                 fill="var(--bg-primary)"
                                 stroke="var(--selection-stroke)"
                                 strokeWidth={scaledStrokeWidth}
-                                style={{ pointerEvents: 'none' }} 
+                                 
                                 transform={`rotate(${rotation} ${rotatedPos.x} ${rotatedPos.y})`}
                             />
                             <rect 
@@ -651,17 +646,17 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
                                 y={rotatedPos.y - scaledTouchHandleSize / 2} 
                                 width={scaledTouchHandleSize} 
                                 height={scaledTouchHandleSize}
-                                fill="transparent"
+                                fill="#ffffff" fillOpacity={0.01} style={{  cursor: cursor }} 
                             />
                         </g>
                     )
                 })}
             
                 {('rotation' in shape) && shape.rotation !== undefined && (
-                    <g onMouseDown={handleRotateDown} onTouchStart={handleRotateDown} data-handle="true" style={{ cursor: action ? 'inherit' : ROTATE_CURSOR_STYLE }}>
-                        <line x1={center.x} y1={center.y} x2={rotationHandlePos.x} y2={rotationHandlePos.y} stroke="var(--selection-stroke)" strokeWidth={scaledStrokeWidth} style={{ pointerEvents: 'none' }} />
-                        <circle cx={rotationHandlePos.x} cy={rotationHandlePos.y} r={scaledHandleSize / 2} fill="var(--bg-primary)" stroke="var(--selection-stroke)" strokeWidth={scaledStrokeWidth} style={{pointerEvents: 'none'}} transform={`rotate(${rotation} ${rotationHandlePos.x} ${rotationHandlePos.y})`} />
-                        <circle cx={rotationHandlePos.x} cy={rotationHandlePos.y} r={scaledTouchHandleSize / 2} fill="transparent" />
+                    <g onMouseDown={handleRotateDown} onTouchStart={handleRotateDown} data-handle="true" style={{ cursor: ROTATE_CURSOR_STYLE }}>
+                        <line x1={center.x} y1={center.y} x2={rotationHandlePos.x} y2={rotationHandlePos.y} stroke="var(--selection-stroke)" strokeWidth={scaledStrokeWidth} />
+                        <circle cx={rotationHandlePos.x} cy={rotationHandlePos.y} r={scaledHandleSize / 2} fill="var(--bg-primary)" stroke="var(--selection-stroke)" strokeWidth={scaledStrokeWidth}  transform={`rotate(${rotation} ${rotationHandlePos.x} ${rotationHandlePos.y})`} />
+                        <circle cx={rotationHandlePos.x} cy={rotationHandlePos.y} r={scaledTouchHandleSize / 2} fill="#ffffff" fillOpacity={0.01} style={{  cursor: ROTATE_CURSOR_STYLE }}  />
                     </g>
                 )}
                  

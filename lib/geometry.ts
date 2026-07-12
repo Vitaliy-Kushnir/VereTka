@@ -465,9 +465,40 @@ export const getBoundingBox = (shape: Shape, allShapes?: Shape[]): { x: number, 
     if (shape.type === 'group' && allShapes) {
         const children = allShapes.filter(s => shape.shapeIds?.includes(s.id));
         if (children.length === 0) return null;
+        
+        // If the group has a rotation and a center, we temporarily unrotate the children to get the correct bbox
+        const tempShapes = [...allShapes];
+        let targetChildren = children;
+        if ('rotation' in shape && shape.rotation && shape.rotationCenter) {
+            targetChildren = children.map(child => {
+                const c = getShapeCenter(child, tempShapes);
+                if (!c) return child;
+                const unrotatedC = rotatePoint(c, shape.rotationCenter!, -shape.rotation!);
+                const dx = unrotatedC.x - c.x;
+                const dy = unrotatedC.y - c.y;
+                let newS = { ...child } as any;
+                if ('rotation' in newS && newS.type !== 'group') newS.rotation = ((newS.rotation || 0) - shape.rotation!) % 360;
+                if (child.type === 'line' || child.type === 'polyline' || child.type === 'bezier' || child.type === 'pencil' || child.type === 'polygon' || child.type === 'star') {
+                    newS.points = newS.points.map((p: any) => ({ x: p.x + dx, y: p.y + dy }));
+                } else if (child.type === 'text') {
+                    newS.x += dx; newS.y += dy;
+                } else if ('x' in child && 'y' in child && child.type !== 'text') {
+                    newS.x += dx; newS.y += dy;
+                } else if ('cx' in child && 'cy' in child) {
+                    newS.cx += dx; newS.cy += dy;
+                }
+                return newS;
+            });
+            // Update tempShapes with unrotated children so nested calls work correctly
+            targetChildren.forEach(tc => {
+                const idx = tempShapes.findIndex(s => s.id === tc.id);
+                if (idx !== -1) tempShapes[idx] = tc;
+            });
+        }
+        
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        children.forEach(child => {
-            const bbox = getVisualBoundingBox(child, undefined, allShapes);
+        targetChildren.forEach(child => {
+            const bbox = getVisualBoundingBox(child, undefined, tempShapes);
             if (bbox) {
                 minX = Math.min(minX, bbox.x);
                 minY = Math.min(minY, bbox.y);
@@ -534,13 +565,16 @@ export const getBoundingBox = (shape: Shape, allShapes?: Shape[]): { x: number, 
 };
 
 export const getShapeCenter = (shape: Shape, allShapes?: Shape[]): { x: number; y: number } | null => {
+    if ('rotationCenter' in shape && shape.rotationCenter) {
+        return shape.rotationCenter;
+    }
     // Prioritize explicit center properties for accuracy, as they are the geometric center.
     if ('cx' in shape && 'cy' in shape) {
         return { x: shape.cx, y: shape.cy };
     }
 
     const unrotatedShape = 'rotation' in shape && shape.rotation !== 0 ? { ...shape, rotation: 0 } : shape;
-    const box = getBoundingBox(unrotatedShape, allShapes);
+    const box = getBoundingBox(shape.type === 'group' ? shape : unrotatedShape, allShapes);
 
     if (!box) {
         // Fallback for shapes without a calculable bounding box (e.g., zero-size)

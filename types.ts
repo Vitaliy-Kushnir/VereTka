@@ -40,6 +40,7 @@ export interface ViewTransform {
 interface BaseShape {
     id: string;
     name?: string;
+    tags?: string;
     type: Tool;
     state: 'normal' | 'hidden' | 'disabled';
     stroke: string;
@@ -247,6 +248,7 @@ export interface BitmapShape extends BaseShape, RotatableShape {
 }
 
 export interface GroupShape extends BaseShape, RotatableShape {
+    rotationCenter?: { x: number, y: number };
     type: 'group';
     shapeIds: string[];
 }

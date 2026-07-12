@@ -22,7 +22,7 @@ import FeedbackModal from './components/FeedbackModal';
 import CheatCodeModal from './components/CheatCodeModal';
 import { saveFile, generateSvg, exportToRaster, openProjectFile, saveToHandle } from './lib/exportUtils';
 import { SquareIcon, CodeIcon, XIcon, AxesIcon, FitToScreenIcon, SelectIcon, EditPointsIcon, RectangleIcon, EllipseIcon, CircleIcon, LineIcon, PolylineIcon, BezierIcon, PolygonIcon, PencilIcon, TriangleIcon, RightTriangleIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, PiesliceIcon, ChordIcon, ArcIcon, StarIcon, TextIcon, ImageIcon, BitmapIcon, UndoIcon, RedoIcon, DuplicateIcon, GroupIcon, UngroupIcon, ToolsIcon, TrashIcon, GridIcon, SettingsIcon, DrawFromCornerIcon, DrawFromCenterIcon, CheckIcon, MenuIcon, SunIcon, MoonIcon, HomeIcon, BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, SadMonitorIcon, FullscreenIcon, ExitFullscreenIcon, AlignShapesLeftIcon, AlignShapesCenterHIcon, AlignShapesRightIcon, AlignShapesTopIcon, AlignShapesCenterVIcon, AlignShapesBottomIcon, DistributeHorizontalIcon, DistributeVerticalIcon, ChevronDownIcon, ChevronRightIcon, DistributePathIcon } from './components/icons';
-import { getFinalPoints, getVisualBoundingBox, getBoundingBox, getEditablePoints, getShapeCenter } from './lib/geometry';
+import { getFinalPoints, getVisualBoundingBox, getBoundingBox, getEditablePoints, getShapeCenter, rotatePoint } from './lib/geometry';
 import { getDefaultNameForShape, isDefaultName } from './lib/constants';
 import Ruler from './components/Ruler';
 import { ColorInput, Select, NumberInput } from './components/FormControls';
@@ -38,7 +38,7 @@ type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
 type SettingsTab = 'canvas' | 'grid' | 'appearance' | 'code' | 'templates';
 
-const APP_VERSION = '1.3.6';
+const APP_VERSION = '1.3.8';
 const RULER_THICKNESS = 24;
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 30;
@@ -917,6 +917,11 @@ const applyDistributePathToShapes = (currentShapes: Shape[], pathState: Distribu
                     case 'line': case 'bezier': case 'pencil': case 'polyline':
                         updatedS = { ...updatedS, points: (updatedS as any).points.map((p: any) => ({ x: p.x + dx, y: p.y + dy })) };
                         break;
+                    case 'group':
+                        if ((updatedS as any).rotationCenter) {
+                            updatedS = { ...updatedS, rotationCenter: { x: (updatedS as any).rotationCenter.x + dx, y: (updatedS as any).rotationCenter.y + dy } };
+                        }
+                        break;
                 }
             }
             
@@ -1160,6 +1165,14 @@ export default function App(): React.ReactNode {
   const [rightPanelTab, setRightPanelTab] = useState<'layers' | 'shapes'>('layers');
   const [activeTool, setActiveTool] = useState<Tool>('select');
   const [selectedShapeIds, setSelectedShapeIds] = useState<string[]>([]);
+  const [reorderConfirmInfo, setReorderConfirmInfo] = useState<{
+      draggedId: string,
+      targetId: string,
+      position: 'top' | 'bottom',
+      action: 'add' | 'remove',
+      groupId: string
+  } | null>(null);
+  const [extractConfirmInfo, setExtractConfirmInfo] = useState<boolean>(false);
   const [inlineEditingShapeId, setInlineEditingShapeId] = useState<string | null>(null);
   const [keyboardSnapLines, setKeyboardSnapLines] = useState<{x: number | null, y: number | null}>({x: null, y: null});
   const keyboardSnapLinesTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -1222,6 +1235,7 @@ export default function App(): React.ReactNode {
   const [highlightCodeOnSelection, setHighlightCodeOnSelection] = useState<boolean>(true);
   const [autoGenerateComments, setAutoGenerateComments] = useState<boolean>(true);
   const [generateTkinterTags, setGenerateTkinterTags] = useState<boolean>(false);
+  const [showSystemTags, setShowSystemTags] = useState<boolean>(false);
   const [outlineWithFill, setOutlineWithFill] = useState<boolean>(true);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(!!document.fullscreenElement);
   const [maxRecentProjects, setMaxRecentProjects] = useState(12);
@@ -1316,7 +1330,7 @@ export default function App(): React.ReactNode {
   const codeStringForExport = useMemo(() => {
     const lines = showComments 
       ? generatedCodeLines 
-      : generatedCodeLines.filter(line => !line.content.trim().startsWith('#'));
+      : generatedCodeLines.filter(line => !(line?.content?.trim() || '').startsWith('#'));
     
     return lines.map(line => line.content).join('\n');
   }, [generatedCodeLines, showComments]);
@@ -1372,9 +1386,9 @@ export default function App(): React.ReactNode {
         projectName: pName,
         shapes: s,
         canvasSettings: { width: canvasWidth, height: canvasHeight, bgColor: canvasBgColor, varName: canvasVarName },
-        uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags }
+        uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags, showSystemTags }
     });
-  }, [canvasWidth, canvasHeight, canvasBgColor, canvasVarName, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags]);
+  }, [canvasWidth, canvasHeight, canvasBgColor, canvasVarName, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags, showSystemTags]);
 
   const lastSavedSignatureRef = useRef('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -1539,7 +1553,8 @@ export default function App(): React.ReactNode {
     if (newShapes.length === 0) return;
     setShapes(prevShapes => [...prevShapes, ...newShapes]);
     if (isDuplication || (newShapes[0].type !== 'polyline' && newShapes[0].type !== 'bezier')) {
-        setSelectedShapeIds(newShapes.map(s => s.id));
+        const topLevelIds = newShapes.filter(s => !s.groupId || !newShapes.some(ns => ns.id === s.groupId)).map(s => s.id);
+        setSelectedShapeIds(topLevelIds);
         setActiveTool('select');
     }
   }, [setShapes, isImportingImage]);
@@ -1566,6 +1581,54 @@ export default function App(): React.ReactNode {
                   }
                   return shape;
               });
+          }
+
+          if (updatedShape.rotation !== oldShape.rotation) {
+             const deltaRot = (updatedShape.rotation || 0) - (oldShape.rotation || 0);
+             const rotCenter = getShapeCenter(oldShape, prevShapes);
+
+             if (rotCenter) {
+                 const getAffectedIds = (id: string, arr: string[] = []) => {
+                     if (!arr.includes(id)) arr.push(id);
+                     const s = prevShapes.find(sh => sh.id === id);
+                     if (s?.type === 'group' && s.shapeIds) {
+                         s.shapeIds.forEach(childId => getAffectedIds(childId, arr));
+                     }
+                     return arr;
+                 };
+
+                 const childIds = updatedShape.shapeIds.reduce((acc, id) => getAffectedIds(id, acc), [] as string[]);
+                 
+                 nextShapes = nextShapes.map(shape => {
+                     if (childIds.includes(shape.id)) {
+                        const s = shape;
+                        const c = getShapeCenter(s, prevShapes);
+                        if (!c) return s;
+                        const rotatedC = rotatePoint(c, rotCenter, deltaRot);
+                        const dx = rotatedC.x - c.x;
+                        const dy = rotatedC.y - c.y;
+
+                        let newS = { ...s };
+                        if ('rotation' in newS && newS.type !== 'group') {
+                            newS.rotation = ((newS.rotation || 0) + deltaRot) % 360;
+                        }
+                        if (s.type === 'line' || s.type === 'polyline' || s.type === 'bezier' || s.type === 'pencil' || s.type === 'polygon' || s.type === 'star') {
+                            (newS as any).points = (s as any).points.map((p: any) => ({ x: p.x + dx, y: p.y + dy }));
+                        } else if (s.type === 'text') {
+                            (newS as any).x = s.x + dx;
+                            (newS as any).y = s.y + dy;
+                        } else if ('x' in s && 'y' in s && s.type !== 'text' && s.type !== 'group') {
+                            (newS as any).x = s.x + dx;
+                            (newS as any).y = s.y + dy;
+                        } else if ('cx' in s && 'cy' in s) {
+                            (newS as any).cx = s.cx + dx;
+                            (newS as any).cy = s.cy + dy;
+                        }
+                        return newS;
+                     }
+                     return shape;
+                 });
+             }
           }
       }
       
@@ -1760,44 +1823,69 @@ export default function App(): React.ReactNode {
     return Array.isArray(idOrIds) ? newRootIds : newRootIds[0];
   }, [setHistoryState, showNotification, t]);
   
-  const moveShape = useCallback((id: string, direction: 'up' | 'down') => {
+  const executeReorderShape = useCallback((draggedId: string, targetId: string, position: 'top' | 'bottom', newAction?: 'add' | 'remove') => {
     setHistoryState(prev => {
         let newLayers = [...(prev.layers || [])];
-        let layerChanged = false;
-        
-        newLayers = newLayers.map(layer => {
-            if (!layer.shapeIds || !layer.shapeIds.includes(id)) return layer;
-            
-            const index = layer.shapeIds.indexOf(id);
-            const targetIndex = direction === 'up' ? index + 1 : index - 1;
-            
-            if (targetIndex < 0 || targetIndex >= layer.shapeIds.length) return layer;
-            
-            const newShapeIds = [...layer.shapeIds];
-            [newShapeIds[index], newShapeIds[targetIndex]] = [newShapeIds[targetIndex], newShapeIds[index]];
-            
-            layerChanged = true;
-            return { ...layer, shapeIds: newShapeIds };
-        });
-        
-        if (!layerChanged) return prev;
-        
-        // Also update shapes array for consistency
-        const index = prev.shapes.findIndex(s => s.id === id);
-        if (index === -1) return { ...prev, layers: newLayers };
-        const newShapes = [...prev.shapes];
-        const targetIndex = direction === 'up' ? index + 1 : index - 1;
-        if (targetIndex >= 0 && targetIndex < newShapes.length) {
-            [newShapes[index], newShapes[targetIndex]] = [newShapes[targetIndex], newShapes[index]];
-        }
-        
-        return { ...prev, shapes: newShapes, layers: newLayers };
-    });
-  }, [setHistoryState]);
+        let newShapes = [...prev.shapes];
 
-  const reorderShape = useCallback((draggedId: string, targetId: string, position: 'top' | 'bottom') => {
-    setHistoryState(prev => {
-        let newLayers = [...(prev.layers || [])];
+        const draggedShapeIdx = newShapes.findIndex(s => s.id === draggedId);
+        const targetShapeIdx = newShapes.findIndex(s => s.id === targetId);
+        if (draggedShapeIdx === -1 || targetShapeIdx === -1) return prev;
+        
+        let draggedShape = { ...newShapes[draggedShapeIdx] };
+        const targetShape = newShapes[targetShapeIdx];
+        
+        const oldGroupId = draggedShape.groupId;
+        let finalGroupId = draggedShape.groupId;
+
+        if (newAction === 'add') {
+            finalGroupId = targetShape.type === 'group' ? targetShape.id : targetShape.groupId;
+        } else if (newAction === 'remove') {
+            finalGroupId = undefined;
+        }
+
+        if (oldGroupId !== finalGroupId) {
+            draggedShape.groupId = finalGroupId;
+            
+            if (oldGroupId) {
+                const oldGroupIdx = newShapes.findIndex(s => s.id === oldGroupId);
+                if (oldGroupIdx !== -1) {
+                    const oldGroup = { ...newShapes[oldGroupIdx] };
+                    oldGroup.shapeIds = oldGroup.shapeIds.filter(id => id !== draggedId);
+                    if (oldGroup.shapeIds.length === 0) {
+                        newShapes.splice(oldGroupIdx, 1);
+                        newLayers = newLayers.map(layer => ({
+                            ...layer,
+                            shapeIds: layer.shapeIds ? layer.shapeIds.filter(id => id !== oldGroupId) : []
+                        }));
+                    } else {
+                        newShapes[oldGroupIdx] = oldGroup;
+                    }
+                }
+            }
+            if (finalGroupId) {
+                const newGroupIdx = newShapes.findIndex(s => s.id === finalGroupId);
+                if (newGroupIdx !== -1) {
+                    const newGroup = { ...newShapes[newGroupIdx] };
+                    newGroup.shapeIds = [...newGroup.shapeIds, draggedId];
+                    newShapes[newGroupIdx] = newGroup;
+                }
+            }
+        }
+
+        const getBlock = (shapes, startId) => {
+            const shape = shapes.find(s => s.id === startId);
+            if (!shape) return [];
+            if (shape.type === 'group' || shape.groupId) {
+                const gid = shape.type === 'group' ? shape.id : shape.groupId;
+                return shapes.filter(s => s.id === gid || s.groupId === gid).map(s => s.id);
+            }
+            return [shape.id];
+        };
+
+        const myBlockIds = getBlock(newShapes, draggedId);
+        const targetBlockIds = getBlock(newShapes, targetId);
+
         let draggedLayerIndex = -1;
         let draggedItemIndex = -1;
         for (let i = 0; i < newLayers.length; i++) {
@@ -1805,12 +1893,13 @@ export default function App(): React.ReactNode {
             const index = ids.indexOf(draggedId);
             if (index !== -1) { draggedLayerIndex = i; draggedItemIndex = index; break; }
         }
-        if (draggedLayerIndex === -1) return prev;
         
-        newLayers[draggedLayerIndex] = {
-            ...newLayers[draggedLayerIndex],
-            shapeIds: newLayers[draggedLayerIndex].shapeIds.filter(id => id !== draggedId)
-        };
+        if (draggedLayerIndex !== -1) {
+            newLayers[draggedLayerIndex] = {
+                ...newLayers[draggedLayerIndex],
+                shapeIds: newLayers[draggedLayerIndex].shapeIds.filter(id => !myBlockIds.includes(id))
+            };
+        }
         
         let targetLayerIndex = -1;
         let targetItemIndex = -1;
@@ -1819,26 +1908,138 @@ export default function App(): React.ReactNode {
             const index = ids.indexOf(targetId);
             if (index !== -1) { targetLayerIndex = i; targetItemIndex = index; break; }
         }
-        if (targetLayerIndex === -1) return prev;
         
-        const targetLayerIds = [...newLayers[targetLayerIndex].shapeIds];
-        if (draggedLayerIndex === targetLayerIndex && draggedItemIndex < targetItemIndex) {
-            targetItemIndex--; 
+        if (targetLayerIndex !== -1) {
+            const targetLayerIds = [...newLayers[targetLayerIndex].shapeIds];
+            
+            const insertIdx = position === 'top' ? targetItemIndex + 1 : targetItemIndex;
+            targetLayerIds.splice(insertIdx, 0, ...myBlockIds);
+            newLayers[targetLayerIndex] = { ...newLayers[targetLayerIndex], shapeIds: targetLayerIds };
         }
-        const insertionIndex = position === 'top' ? targetItemIndex + 1 : targetItemIndex;
-        targetLayerIds.splice(insertionIndex, 0, draggedId);
-        newLayers[targetLayerIndex] = { ...newLayers[targetLayerIndex], shapeIds: targetLayerIds };
         
-        const newShapes = [...prev.shapes];
-        const draggedShapesIndex = newShapes.findIndex(s => s.id === draggedId);
-        if (draggedShapesIndex !== -1) {
-            const [draggedShape] = newShapes.splice(draggedShapesIndex, 1);
-            const targetShapesIndex = newShapes.findIndex(s => s.id === targetId);
-            if (targetShapesIndex !== -1) {
-                const shapeInsertionIndex = position === 'top' ? targetShapesIndex + 1 : targetShapesIndex;
-                newShapes.splice(shapeInsertionIndex, 0, draggedShape);
+        const myShapes = newShapes.filter(s => myBlockIds.includes(s.id));
+        newShapes = newShapes.filter(s => !myBlockIds.includes(s.id));
+        
+        const targetShapesIndex = newShapes.findIndex(s => s.id === targetId);
+        if (targetShapesIndex !== -1) {
+            const tBlockIds = getBlock(newShapes, targetId);
+            const targetIndices = tBlockIds.map(bid => newShapes.findIndex(s => s.id === bid)).filter(idx => idx !== -1).sort((a,b) => a - b);
+            
+            const shapeInsertionIndex = position === 'top' ? targetIndices[targetIndices.length - 1] + 1 : targetIndices[0];
+            newShapes.splice(shapeInsertionIndex, 0, ...myShapes);
+        } else {
+            newShapes.push(...myShapes);
+        }
+        
+        const finalDraggedIdx = newShapes.findIndex(s => s.id === draggedId);
+        if (finalDraggedIdx !== -1) {
+            newShapes[finalDraggedIdx] = draggedShape;
+        }
+
+        return { ...prev, shapes: newShapes, layers: newLayers };
+    });
+  }, [setHistoryState]);
+
+  const reorderShape = useCallback((draggedId: string, targetId: string, position: 'top' | 'bottom') => {
+      const draggedShape = shapes.find(s => s.id === draggedId);
+      const targetShape = shapes.find(s => s.id === targetId);
+      
+      if (!draggedShape || !targetShape) return;
+      if (draggedShape.type === 'group' || draggedShape.groupId) {
+          executeReorderShape(draggedId, targetId, position);
+          return;
+      }
+      
+      const targetGroupId = targetShape.type === 'group' ? targetShape.id : targetShape.groupId;
+
+      if (draggedShape.groupId !== targetGroupId) {
+          if (targetGroupId) {
+              setReorderConfirmInfo({ draggedId, targetId, position, action: 'add', groupId: targetGroupId });
+              return;
+          } else if (draggedShape.groupId) {
+              setReorderConfirmInfo({ draggedId, targetId, position, action: 'remove', groupId: draggedShape.groupId });
+              return;
+          }
+      }
+      
+      executeReorderShape(draggedId, targetId, position);
+  }, [shapes, executeReorderShape]);
+
+  const moveShape = useCallback((id: string, direction: 'up' | 'down') => {
+    setHistoryState(prev => {
+        const getBlock = (shapes, startId) => {
+            const shape = shapes.find(s => s.id === startId);
+            if (!shape) return [];
+            if (shape.type === 'group' || shape.groupId) {
+                const gid = shape.type === 'group' ? shape.id : shape.groupId;
+                return shapes.filter(s => s.id === gid || s.groupId === gid).map(s => s.id);
+            }
+            return [shape.id];
+        };
+
+        const myBlockIds = getBlock(prev.shapes, id);
+        if (myBlockIds.length === 0) return prev;
+
+        let newLayers = [...(prev.layers || [])];
+        let newShapes = [...prev.shapes];
+
+        let myLayerIndex = -1;
+        for (let i = 0; i < newLayers.length; i++) {
+            if (newLayers[i].shapeIds && newLayers[i].shapeIds.includes(id)) {
+                myLayerIndex = i;
+                break;
             }
         }
+
+        if (myLayerIndex === -1) return prev;
+
+        const layerShapeIds = newLayers[myLayerIndex].shapeIds || [];
+        
+        const myLayerIndices = myBlockIds.map(bid => layerShapeIds.indexOf(bid)).filter(idx => idx !== -1).sort((a,b) => a - b);
+        if (myLayerIndices.length === 0) return prev;
+
+        const myFirstIdx = myLayerIndices[0];
+        const myLastIdx = myLayerIndices[myLayerIndices.length - 1];
+
+        let targetId = null;
+        let position = null;
+
+        if (direction === 'up' && myLastIdx + 1 < layerShapeIds.length) {
+            targetId = layerShapeIds[myLastIdx + 1];
+            position = 'top';
+        } else if (direction === 'down' && myFirstIdx - 1 >= 0) {
+            targetId = layerShapeIds[myFirstIdx - 1];
+            position = 'bottom';
+        }
+
+        if (!targetId || !position) return prev;
+
+        const targetBlockIds = getBlock(newShapes, targetId);
+
+        newLayers[myLayerIndex] = {
+            ...newLayers[myLayerIndex],
+            shapeIds: layerShapeIds.filter(sid => !myBlockIds.includes(sid))
+        };
+
+        const newLayerShapeIds = [...newLayers[myLayerIndex].shapeIds];
+        const targetIndices = targetBlockIds.map(bid => newLayerShapeIds.indexOf(bid)).filter(idx => idx !== -1).sort((a,b) => a - b);
+        if (targetIndices.length > 0) {
+            const insertIdx = position === 'top' ? targetIndices[targetIndices.length - 1] + 1 : targetIndices[0];
+            newLayerShapeIds.splice(insertIdx, 0, ...myBlockIds);
+            newLayers[myLayerIndex].shapeIds = newLayerShapeIds;
+        }
+
+        const myShapes = newShapes.filter(s => myBlockIds.includes(s.id));
+        newShapes = newShapes.filter(s => !myBlockIds.includes(s.id));
+
+        const targetShapeIndices = targetBlockIds.map(bid => newShapes.findIndex(s => s.id === bid)).filter(idx => idx !== -1).sort((a,b) => a - b);
+        if (targetShapeIndices.length > 0) {
+            const insertShapeIdx = position === 'top' ? targetShapeIndices[targetShapeIndices.length - 1] + 1 : targetShapeIndices[0];
+            newShapes.splice(insertShapeIdx, 0, ...myShapes);
+        } else {
+            newShapes.push(...myShapes);
+        }
+
         return { ...prev, shapes: newShapes, layers: newLayers };
     });
   }, [setHistoryState]);
@@ -1901,7 +2102,7 @@ export default function App(): React.ReactNode {
               const rangeIds = new Set<string>();
               for (let i = minIndex; i <= maxIndex; i++) {
                   const s = shapes[i];
-                  if (s.groupId) {
+                  if (s.groupId && !ignoreGroup) {
                       rangeIds.add(s.groupId);
                   } else {
                       rangeIds.add(s.id);
@@ -1919,14 +2120,14 @@ export default function App(): React.ReactNode {
       lastSelectedShapeIdRef.current = id;
 
       if (isCtrlPressed) {
-        const isAlreadySelected = prev.includes(id);
+        const isAlreadySelected = idsToToggle.some(toggleId => prev.includes(toggleId)) || prev.includes(id);
         if (isAlreadySelected) {
-            return prev.filter(p => !idsToToggle.includes(p));
+            return prev.filter(p => !idsToToggle.includes(p) && p !== id);
         } else {
-            return [...prev, ...idsToToggle];
+            return Array.from(new Set([...prev, ...idsToToggle]));
         }
       }
-      return idsToToggle;
+      return Array.from(new Set(idsToToggle));
     });
 
     setIsDrawingPolyline(false);
@@ -2072,10 +2273,10 @@ export default function App(): React.ReactNode {
 
     try {
       if (generatorType === 'local') {
-        const { codeLines } = await generateTkinterCodeLocally(finalShapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill, generateTkinterTags, t);
+        const { codeLines } = await generateTkinterCodeLocally(finalShapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill, generateTkinterTags, showSystemTags, t);
         setGeneratedCodeLines(codeLines);
       } else {
-        const code = await generateTkinterCode(apiKey!, finalShapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill, generateTkinterTags);
+        const code = await generateTkinterCode(apiKey!, finalShapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill, generateTkinterTags, showSystemTags);
         const lines = code.split('\n');
         const codeLines = lines.map(line => {
             const match = line.match(/(.*?) # ID:([a-zA-Z0-9.-]+)/);
@@ -2096,7 +2297,7 @@ export default function App(): React.ReactNode {
     } finally {
       setIsLoading(false);
     }
-  }, [displayedShapes, canvasWidth, canvasHeight, canvasBgColor, projectName, generatorType, canvasVarName, autoGenerateComments, generateTkinterTags, apiKey, activeCheats, outlineWithFill, showNotification, t]);
+  }, [displayedShapes, canvasWidth, canvasHeight, canvasBgColor, projectName, generatorType, canvasVarName, autoGenerateComments, generateTkinterTags, showSystemTags, apiKey, activeCheats, outlineWithFill, showNotification, t]);
 
   const displayedShapesString = useMemo(() => JSON.stringify(displayedShapes), [displayedShapes]);
   const shapesString = useMemo(() => JSON.stringify(shapes), [shapes]);
@@ -2108,13 +2309,13 @@ export default function App(): React.ReactNode {
             if (activeCheats.has('002')) {
                 shapesForGeneration = shapesForGeneration.filter(s => s.type !== 'image');
             }
-            const { codeLines } = await generateTkinterCodeLocally(shapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill, generateTkinterTags, t);
+            const { codeLines } = await generateTkinterCodeLocally(shapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill, generateTkinterTags, showSystemTags, t);
             setGeneratedCodeLines(codeLines);
             setShapesAtGenerationTime(JSON.parse(shapesString));
         };
         generate();
     }
-  }, [displayedShapesString, shapesString, canvasWidth, canvasHeight, canvasBgColor, generatorType, projectName, isProjectActive, canvasVarName, autoGenerateComments, generateTkinterTags, activeCheats, outlineWithFill, t]);
+  }, [displayedShapesString, shapesString, canvasWidth, canvasHeight, canvasBgColor, generatorType, projectName, isProjectActive, canvasVarName, autoGenerateComments, generateTkinterTags, showSystemTags, activeCheats, outlineWithFill, t]);
   
   const hasUnsyncedChangesWithCode = useMemo(() => {
     if (!shapesAtGenerationTime) return false;
@@ -2226,7 +2427,7 @@ export default function App(): React.ReactNode {
         thumbnail: generateProjectThumbnail(shapesToSave, canvasWidth, canvasHeight, canvasBgColor),
         canvasSettings: { width: canvasWidth, height: canvasHeight, bgColor: canvasBgColor, varName: canvasVarName },
         viewTransform,
-        uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags }
+        uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags, showSystemTags }
     };
   }, [shapes, layers, activeLayerId, canvasWidth, canvasHeight, canvasBgColor, canvasVarName, viewTransform, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags, generateProjectThumbnail]);
 
@@ -2408,6 +2609,7 @@ export default function App(): React.ReactNode {
             setHighlightCodeOnSelection(ui.highlightCodeOnSelection ?? true);
             setAutoGenerateComments(ui.autoGenerateComments ?? true);
             setGenerateTkinterTags(ui.generateTkinterTags ?? false);
+            setShowSystemTags(ui.showSystemTags ?? false);
             setOutlineWithFill(ui.outlineWithFill ?? true);
             
             lastSavedSignatureRef.current = getProjectSignature(newProjectName, savedData.shapes);
@@ -2579,7 +2781,7 @@ export default function App(): React.ReactNode {
 
         if (extension === '.txt' && includeLineNumbers) {
             contentToSave = generatedCodeLines
-                .filter(line => showComments || !line.content.trim().startsWith('#'))
+                .filter(line => showComments || !(line?.content?.trim() || '').startsWith('#'))
                 .map((line, index) => `${String(index + 1).padStart(4, ' ')} | ${line.content}`)
                 .join('\n');
         } else {
@@ -2975,17 +3177,47 @@ export default function App(): React.ReactNode {
     const newGroupId = `group-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     
     setHistoryState(prev => {
-        const newShapes = prev.shapes.map(s => selectedShapeIds.includes(s.id) ? { ...s, groupId: newGroupId } : s);
+        // Find max index of selected shapes in the shapes array
+        const selectedIndices = prev.shapes
+            .map((s, idx) => selectedShapeIds.includes(s.id) ? idx : -1)
+            .filter(idx => idx !== -1);
+        const maxIndex = Math.max(...selectedIndices);
+        
+        // Extract selected shapes and update them with the new groupId
+        const selectedShapes = prev.shapes
+            .filter(s => selectedShapeIds.includes(s.id))
+            .map(s => ({ ...s, groupId: newGroupId }));
+        
+        // Filter out selected shapes to get non-selected shapes
+        const nonSelectedShapes = prev.shapes.filter(s => !selectedShapeIds.includes(s.id));
+        
+        // The insertion index in the nonSelectedShapes array
+        // maxIndex is the index in the original array. The number of selected shapes before or at maxIndex is exactly selectedIndices.length.
+        const insertIndex = maxIndex - selectedIndices.length + 1;
+        
+        const sortedSelectedShapeIds = selectedShapes.map(s => s.id);
+        const groupIndex = prev.shapes.filter(s => s.type === 'group').length + 1;
+        
         const groupShape: Shape = {
             type: 'group',
             id: newGroupId,
-            name: `Group`,
+            name: `Group ${groupIndex}`,
+            tags: `group_${groupIndex}`,
             state: 'normal',
             stroke: 'none',
             strokeWidth: 0,
-            shapeIds: [...selectedShapeIds], rotation: 0,
+            shapeIds: sortedSelectedShapeIds, rotation: 0,
         };
-        newShapes.push(groupShape);
+        
+        // Construct the new shapes array by inserting the selected shapes back at the maxIndex
+        const newShapes = [
+            ...nonSelectedShapes.slice(0, insertIndex),
+            ...selectedShapes,
+            ...nonSelectedShapes.slice(insertIndex)
+        ];
+        
+        (groupShape as any).rotationCenter = getShapeCenter(groupShape, newShapes);
+        newShapes.push(groupShape); // group element itself usually stays at the end or doesn't matter since it's just a logical container
         
         const targetLayerId = prev.activeLayerId || (prev.layers && prev.layers.length > 0 ? prev.layers[0].id : 'layer-1');
         
@@ -2995,8 +3227,30 @@ export default function App(): React.ReactNode {
             if (layer.id !== targetLayerId) {
                 shapeIds = shapeIds.filter(id => !selectedShapeIds.includes(id));
             } else {
-                const shapesToAdd = selectedShapeIds.filter(id => !shapeIds.includes(id));
-                shapeIds = [...shapeIds, ...shapesToAdd, newGroupId];
+                // To maintain the logical ordering in the layer shapeIds as well, we should also extract and insert at max index
+                const layerSelectedIndices = shapeIds
+                    .map((id, idx) => selectedShapeIds.includes(id) ? idx : -1)
+                    .filter(idx => idx !== -1);
+                
+                if (layerSelectedIndices.length > 0) {
+                    const maxLayerIndex = Math.max(...layerSelectedIndices);
+                    const layerInsertIndex = maxLayerIndex - layerSelectedIndices.length + 1;
+                    
+                    const nonSelectedShapeIds = shapeIds.filter(id => !selectedShapeIds.includes(id));
+                    
+                    // The shapes to add might not all be in this layer originally, but we bring them here
+                    // Maintain the order they had in the overall selection
+                    shapeIds = [
+                        ...nonSelectedShapeIds.slice(0, layerInsertIndex),
+                        ...sortedSelectedShapeIds,
+                        newGroupId,
+                        ...nonSelectedShapeIds.slice(layerInsertIndex)
+                    ];
+                } else {
+                    // Fallback if none of the selected shapes were in this layer but we're moving them here
+                    const shapesToAdd = selectedShapeIds.filter(id => !shapeIds.includes(id));
+                    shapeIds = [...shapeIds, ...shapesToAdd, newGroupId];
+                }
             }
             
             return { ...layer, shapeIds };
@@ -3013,28 +3267,79 @@ export default function App(): React.ReactNode {
     if (distributePathState) return;
     if (selectedShapeIds.length === 0) return;
     
-    // Find groups to unpack. A group could be selected directly, or via its children
-    const groupIdsToClear = new Set<string>();
-    shapes.forEach(s => {
-        if (selectedShapeIds.includes(s.id)) {
-            if (s.type === 'group') groupIdsToClear.add(s.id);
-            else if (s.groupId) groupIdsToClear.add(s.groupId);
-        }
+    setHistoryState(prev => {
+        const groupIdsToClear = new Set<string>();
+        prev.shapes.forEach(s => {
+            if (selectedShapeIds.includes(s.id)) {
+                if (s.type === 'group') groupIdsToClear.add(s.id);
+                else if (s.groupId) groupIdsToClear.add(s.groupId);
+            }
+        });
+
+        if (groupIdsToClear.size === 0) return prev;
+
+        const newShapes = prev.shapes
+            .filter(s => !groupIdsToClear.has(s.id))
+            .map(s => (s.groupId && groupIdsToClear.has(s.groupId)) ? { ...s, groupId: undefined } : s);
+            
+        let newLayers = (prev.layers || []).map(layer => {
+            if (!layer.shapeIds) return layer;
+            return {
+                ...layer,
+                shapeIds: layer.shapeIds.filter(id => !groupIdsToClear.has(id))
+            };
+        });
+
+        const newlyUngroupedIds = prev.shapes.filter(s => s.groupId && groupIdsToClear.has(s.groupId)).map(s => s.id);
+        setSelectedShapeIds(newlyUngroupedIds);
+        showNotification(t('menu.edit.ungroup') || 'Групу розформовано');
+
+        return { ...prev, shapes: newShapes, layers: newLayers };
     });
+  }, [selectedShapeIds, distributePathState, setHistoryState, showNotification, t]);
 
-    if (groupIdsToClear.size === 0) return;
+  const handleExtractFromGroup = useCallback(() => {
+    setExtractConfirmInfo(true);
+  }, []);
 
-    setShapes(prev => {
-        const remainingShapes = prev.filter(s => !groupIdsToClear.has(s.id)); // Remove GroupShapes
-        return remainingShapes.map(s => (s.groupId && groupIdsToClear.has(s.groupId)) ? { ...s, groupId: undefined } : s);
+  const confirmExtractFromGroup = useCallback(() => {
+    setHistoryState(prev => {
+        let newShapes = [...prev.shapes];
+        let newLayers = [...(prev.layers || [])];
+        
+        const groupsToUpdate = new Set<string>();
+        selectedShapeIds.forEach(id => {
+            const shape = newShapes.find(s => s.id === id);
+            if (shape && shape.groupId) {
+                groupsToUpdate.add(shape.groupId);
+                const sIdx = newShapes.findIndex(s => s.id === id);
+                if (sIdx !== -1) {
+                    newShapes[sIdx] = { ...shape, groupId: undefined };
+                }
+            }
+        });
+        
+        groupsToUpdate.forEach(gid => {
+            const gIdx = newShapes.findIndex(s => s.id === gid);
+            if (gIdx !== -1) {
+                const groupShape = { ...newShapes[gIdx] };
+                groupShape.shapeIds = groupShape.shapeIds.filter(id => !selectedShapeIds.includes(id));
+                if (groupShape.shapeIds.length === 0) {
+                    newShapes.splice(gIdx, 1);
+                    newLayers = newLayers.map(layer => ({
+                        ...layer,
+                        shapeIds: layer.shapeIds ? layer.shapeIds.filter(id => id !== gid) : []
+                    }));
+                } else {
+                    newShapes[gIdx] = groupShape;
+                }
+            }
+        });
+        
+        return { ...prev, shapes: newShapes, layers: newLayers };
     });
-
-    // Select the newly ungrouped children
-    const newlyUngroupedIds = shapes.filter(s => s.groupId && groupIdsToClear.has(s.groupId)).map(s => s.id);
-    setSelectedShapeIds(newlyUngroupedIds);
-
-    showNotification(t('menu.edit.ungroup') || 'Групу розформовано');
-  }, [shapes, selectedShapeIds, setShapes, showNotification, t]);
+    setExtractConfirmInfo(false);
+  }, [selectedShapeIds, setHistoryState]);
 
   const canConvertToPath = useMemo(() => {
     if (!selectedShape) return false;
@@ -3825,12 +4130,12 @@ export default function App(): React.ReactNode {
                     </div>
                 </div>
                 <div className="flex-[2_2_0%] min-h-0">
-                    <PropertyEditor 
+                    <PropertyEditor onExtractFromGroup={handleExtractFromGroup} showSystemTags={showSystemTags} shapes={shapes} 
                         distributePathState={distributePathState}
                         onDistributePathChange={setDistributePathState}
                         onConfirmDistributePath={() => {
                             if (distributePathState) {
-                                setSelectedShapeIds(distributePathState.entities.flatMap(e => e.ids));
+                                setSelectedShapeIds(distributePathState.entities.map(e => e.ids[0]));
                             }
                             setHistoryState(prev => {
                                 const newShapes = applyDistributePathToShapes(prev.shapes, prev.distributePathState!);
@@ -3839,7 +4144,7 @@ export default function App(): React.ReactNode {
                         }}
                         onCancelDistributePath={() => {
                             if (distributePathState) {
-                                setSelectedShapeIds(distributePathState.entities.flatMap(e => e.ids));
+                                setSelectedShapeIds(distributePathState.entities.map(e => e.ids[0]));
                             }
                             setDistributePathState(null);
                         }}
@@ -3887,6 +4192,7 @@ export default function App(): React.ReactNode {
               highlightCodeOnSelection={highlightCodeOnSelection} setHighlightCodeOnSelection={setHighlightCodeOnSelection}
               autoGenerateComments={autoGenerateComments} setAutoGenerateComments={setAutoGenerateComments}
               generateTkinterTags={generateTkinterTags} setGenerateTkinterTags={setGenerateTkinterTags}
+              showSystemTags={showSystemTags} setShowSystemTags={setShowSystemTags}
               outlineWithFill={outlineWithFill} setOutlineWithFill={setOutlineWithFill}
               maxRecentProjects={maxRecentProjects}
               setMaxRecentProjects={setMaxRecentProjects}
@@ -3941,6 +4247,36 @@ export default function App(): React.ReactNode {
                 cancelText={confirmationAction.cancelText}
                 variant={confirmationAction.variant}
                 alternativeAction={confirmationAction.alternativeAction}
+              />
+          )}
+          {reorderConfirmInfo && (
+              <ConfirmationModal
+                isOpen={true}
+                title={t('app.confirmReorderTitle') || 'Підтвердження дії'}
+                message={reorderConfirmInfo.action === 'add' 
+                    ? (t('app.confirmGroupAdd') || 'Ви збираєтесь додати фігуру до групи. Продовжити?') 
+                    : (t('app.confirmGroupRemove') || 'Ви збираєтесь вилучити фігуру з групи. Продовжити?')}
+                onConfirm={() => {
+                    executeReorderShape(reorderConfirmInfo.draggedId, reorderConfirmInfo.targetId, reorderConfirmInfo.position, reorderConfirmInfo.action);
+                    setReorderConfirmInfo(null);
+                }}
+                onClose={() => setReorderConfirmInfo(null)}
+                confirmText={t('action.confirm') || 'Підтвердити'}
+                cancelText={t('action.cancel') || 'Скасувати'}
+              />
+          )}
+          {extractConfirmInfo && (
+              <ConfirmationModal
+                isOpen={true}
+                title={t('app.confirmExtractTitle') || 'Вилучення з групи'}
+                message={t('app.confirmExtractMessage') || 'Ви дійсно бажаєте вилучити вибрану фігуру (або фігури) з групи?'}
+                onConfirm={() => {
+                    confirmExtractFromGroup();
+                    setExtractConfirmInfo(false);
+                }}
+                onClose={() => setExtractConfirmInfo(false)}
+                confirmText={t('action.confirm') || 'Підтвердити'}
+                cancelText={t('action.cancel') || 'Скасувати'}
               />
           )}
           {isSaveAsModalOpen && (

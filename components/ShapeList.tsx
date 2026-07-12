@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { Shape, Tool, PolylineShape, DistributePathState } from '../types';
 import { ArrowUpIcon, ArrowDownIcon, TrashIcon, SquareIcon, CircleIcon, LineIcon, EllipseIcon, PencilIcon, TriangleIcon, PolygonIcon, StarIcon, SelectIcon, EditPointsIcon, PolylineIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, BezierIcon, RectangleIcon, ArcIcon, PiesliceIcon, ChordIcon, RightTriangleIcon, EyeIcon, EyeOffIcon, TextIcon, ImageIcon, BitmapIcon, LocateIcon, LockIcon } from './icons';
 import { getDefaultNameForShape, getTkinterType, isDefaultName } from '../lib/constants';
@@ -106,6 +106,32 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, lock
     const itemRefs = useRef<Record<string, HTMLLIElement | null>>({});
     const [isSelectedItemVisible, setIsSelectedItemVisible] = useState(true);
     const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(false);
+    const [scrollFix, setScrollFix] = useState<{ id: string, clientY: number } | null>(null);
+
+    useLayoutEffect(() => {
+        if (scrollFix && listContainerRef.current) {
+            const item = itemRefs.current[scrollFix.id];
+            if (item) {
+                const currentY = item.getBoundingClientRect().top;
+                const diff = currentY - scrollFix.clientY;
+                if (diff !== 0) {
+                    listContainerRef.current.scrollTop += diff;
+                }
+            }
+            setScrollFix(null);
+        }
+    }, [shapes, scrollFix]);
+
+    const handleMoveShape = (e: React.MouseEvent, id: string, direction: 'up' | 'down') => {
+        e.stopPropagation();
+        if (listContainerRef.current) {
+            const item = itemRefs.current[id];
+            if (item) {
+                setScrollFix({ id, clientY: item.getBoundingClientRect().top });
+            }
+        }
+        onMoveShape(id, direction);
+    };
 
     const firstSelectedId = selectedShapeIds.length > 0 ? selectedShapeIds[0] : null;
 
@@ -246,8 +272,19 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, lock
         const isDistributing = distributePathState?.entities.some(e => e.ids.includes(shape.id)) ?? false;
         const isSelected = selectedShapeIds.includes(shape.id);
         const isEditing = editingId === shape.id;
-        const canMoveUp = originalIndex < shapes.length - 1;
-        const canMoveDown = originalIndex > 0;
+        
+        let canMoveUp = originalIndex < shapes.length - 1;
+        let canMoveDown = originalIndex > 0;
+        if (shape.groupId) {
+            const group = shapes.find(s => s.id === shape.groupId);
+            if (group && group.type === 'group' && group.shapeIds) {
+                const groupChildren = shapes.filter(s => group.shapeIds!.includes(s.id));
+                const childIndexInGroup = groupChildren.findIndex(s => s.id === shape.id);
+                canMoveUp = childIndexInGroup < groupChildren.length - 1;
+                canMoveDown = childIndexInGroup > 0;
+            }
+        }
+        
         const defaultName = getDefaultNameForShape(shape, t);
         const isDragOverTop = dragOverId === shape.id && dropPosition === 'top';
         const isDragOverBottom = dragOverId === shape.id && dropPosition === 'bottom';
@@ -262,8 +299,18 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, lock
                 key={shape.id}
                 onClick={(e) => {
                     if (isLocked) return;
+                    
+                    if (shape.type === 'group' && e.shiftKey) {
+                        // User specifically requested: selecting all child shapes in a group by clicking in the list on the row with the group name with the SHIFT key pressed.
+                        if (shape.shapeIds && shape.shapeIds.length > 0) {
+                            onSelectShape(shape.shapeIds, e.ctrlKey || e.metaKey, false, true);
+                        }
+                        return;
+                    }
+                    
                     const isAlreadySelected = selectedShapeIds.includes(shape.id) || (shape.groupId && selectedShapeIds.includes(shape.groupId));
-                    onSelectShape(shape.id, e.ctrlKey || e.metaKey, e.shiftKey, !!isAlreadySelected);
+                    const ignoreGroup = !!isAlreadySelected || e.ctrlKey || e.metaKey || e.shiftKey;
+                    onSelectShape(shape.id, e.ctrlKey || e.metaKey, e.shiftKey, ignoreGroup);
                 }}
                 onDoubleClick={() => !isLocked && handleStartEditing(shape)}
                 draggable={!isEditing && !isLocked}
@@ -320,10 +367,10 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, lock
 
                     <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity ml-1 flex-shrink-0">
                         <div className="flex flex-col">
-                            <button onClick={(e) => { e.stopPropagation(); onMoveShape(shape.id, 'up'); }} disabled={!canMoveUp} className="p-[2px] hover:bg-[var(--bg-app)] rounded-t-sm disabled:opacity-30 disabled:cursor-not-allowed text-[var(--text-secondary)] hover:text-[var(--text-primary)]" title={t('list.moveUp')}>
+                            <button onClick={(e) => handleMoveShape(e, shape.id, 'up')} disabled={!canMoveUp} className="p-[2px] hover:bg-[var(--bg-app)] rounded-t-sm disabled:opacity-30 disabled:cursor-not-allowed text-[var(--text-secondary)] hover:text-[var(--text-primary)]" title={t('list.moveUp')}>
                                 <ArrowUpIcon size={12} />
                             </button>
-                            <button onClick={(e) => { e.stopPropagation(); onMoveShape(shape.id, 'down'); }} disabled={!canMoveDown} className="p-[2px] hover:bg-[var(--bg-app)] rounded-b-sm disabled:opacity-30 disabled:cursor-not-allowed text-[var(--text-secondary)] hover:text-[var(--text-primary)]" title={t('list.moveDown')}>
+                            <button onClick={(e) => handleMoveShape(e, shape.id, 'down')} disabled={!canMoveDown} className="p-[2px] hover:bg-[var(--bg-app)] rounded-b-sm disabled:opacity-30 disabled:cursor-not-allowed text-[var(--text-secondary)] hover:text-[var(--text-primary)]" title={t('list.moveDown')}>
                                 <ArrowDownIcon size={12} />
                             </button>
                         </div>
@@ -383,7 +430,7 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, lock
                             const el = renderShapeItem(shape, index, originalIndex, 0);
 
                             if (shape.type === 'group') {
-                                const children = shapes.filter(s => shape.shapeIds?.includes(s.id));
+                                const children = shapes.filter(s => shape.shapeIds?.includes(s.id)).reverse();
                                 return (
                                     <React.Fragment key={shape.id}>
                                         {el}

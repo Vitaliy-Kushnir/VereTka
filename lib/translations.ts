@@ -3,6 +3,15 @@ export type Language = string;
 
 export const translations = {
   uk: {
+    'props.objectsCount': 'Об\'єктів:',
+    'prop.pathType': 'Тип шляху',
+    'tool.distribute.path.circle': 'Коло',
+    'tool.distribute.path.line': 'Лінія',
+    'prop.orientAlongPath': 'Орієнтувати вздовж',
+    'prop.rotateAlongPath': 'Обертати вздовж',
+    'layer.title': 'Шари',
+    'shape.list': 'Об\'єкти',
+    'tool.distribute.path.customAngle': 'Власний кут',
     _languageName: 'Українська',
     // Menu
     'menu.file': 'Файл',
@@ -75,6 +84,11 @@ export const translations = {
     'apikey.delete': 'Видалити ключ',
     'action.cancel': 'Скасувати',
     'action.confirm': 'Підтвердити',
+    'app.confirmReorderTitle': 'Підтвердження дії',
+    'app.confirmGroupAdd': 'Ви дійсно бажаєте перемістити вибрану фігуру до цієї групи?',
+    'app.confirmGroupRemove': 'Ви дійсно бажаєте вилучити вибрану фігуру з групи?',
+    'app.confirmExtractTitle': 'Вилучення з групи',
+    'app.confirmExtractMessage': 'Ви дійсно бажаєте вилучити вибрану фігуру з групи?',
     'action.cancel2': 'Скасувати',
     'action.close': 'Закрити',
     'action.save': 'Зберегти',
@@ -691,6 +705,15 @@ export const translations = {
 
   },
   en: {
+    'props.objectsCount': 'Objects:',
+    'prop.pathType': 'Path Type',
+    'tool.distribute.path.circle': 'Circle',
+    'tool.distribute.path.line': 'Line',
+    'prop.orientAlongPath': 'Orient Along',
+    'prop.rotateAlongPath': 'Rotate Along',
+    'layer.title': 'Layers',
+    'shape.list': 'Objects',
+    'tool.distribute.path.customAngle': 'Custom Angle',
     _languageName: 'English',
     // Menu
     'menu.file': 'File',
@@ -763,6 +786,11 @@ export const translations = {
     'apikey.delete': 'Delete key',
     'action.cancel': 'Cancel',
     'action.confirm': 'Confirm',
+    'app.confirmReorderTitle': 'Confirm Action',
+    'app.confirmGroupAdd': 'Are you sure you want to move the selected shape into this group?',
+    'app.confirmGroupRemove': 'Are you sure you want to remove the selected shape from its group?',
+    'app.confirmExtractTitle': 'Extract from Group',
+    'app.confirmExtractMessage': 'Are you sure you want to extract the selected shape from its group?',
     'action.cancel2': 'Cancel',
     'action.close': 'Close',
     'action.save': 'Save',
@@ -1379,6 +1407,15 @@ export const translations = {
 
   },
   it: {
+    'props.objectsCount': 'Oggetti:',
+    'prop.pathType': 'Tipo di Percorso',
+    'tool.distribute.path.circle': 'Cerchio',
+    'tool.distribute.path.line': 'Linea',
+    'prop.orientAlongPath': 'Orienta lungo',
+    'prop.rotateAlongPath': 'Ruota lungo',
+    'layer.title': 'Livelli',
+    'shape.list': 'Oggetti',
+    'tool.distribute.path.customAngle': 'Angolo personalizzato',
 
     _languageName: 'Italiano',
     // Menu
@@ -1452,6 +1489,11 @@ export const translations = {
     'apikey.delete': 'Cancella chiave',
     'action.cancel': 'Cancellare',
     'action.confirm': 'Confermare',
+    'app.confirmReorderTitle': 'Conferma Azione',
+    'app.confirmGroupAdd': 'Sei sicuro di voler spostare la forma selezionata in questo gruppo?',
+    'app.confirmGroupRemove': 'Sei sicuro di voler rimuovere la forma selezionata dal gruppo?',
+    'app.confirmExtractTitle': 'Estrai dal Gruppo',
+    'app.confirmExtractMessage': 'Sei sicuro di voler estrarre la forma selezionata dal gruppo?',
     'action.cancel2': 'Cancellare',
     'action.close': 'Vicino',
     'action.save': 'Salva',
@@ -2033,6 +2075,15 @@ export const translations = {
 
   },
   es: {
+    'props.objectsCount': 'Objetos:',
+    'prop.pathType': 'Tipo de Ruta',
+    'tool.distribute.path.circle': 'Círculo',
+    'tool.distribute.path.line': 'Línea',
+    'prop.orientAlongPath': 'Orientar a lo largo',
+    'prop.rotateAlongPath': 'Rotar a lo largo',
+    'layer.title': 'Capas',
+    'shape.list': 'Objetos',
+    'tool.distribute.path.customAngle': 'Ángulo personalizado',
 
 
     _languageName: 'Español',
@@ -2107,6 +2158,11 @@ export const translations = {
     'apikey.delete': 'Eliminar clave',
     'action.cancel': 'Cancelar',
     'action.confirm': 'Confirmar',
+    'app.confirmReorderTitle': 'Confirmar Acción',
+    'app.confirmGroupAdd': '¿Estás seguro de que deseas mover la forma seleccionada a este grupo?',
+    'app.confirmGroupRemove': '¿Estás seguro de que deseas eliminar la forma seleccionada del grupo?',
+    'app.confirmExtractTitle': 'Extraer del Grupo',
+    'app.confirmExtractMessage': '¿Estás seguro de que deseas extraer la forma seleccionada del grupo?',
     'action.cancel2': 'Cancelar',
     'action.close': 'Cerrar',
     'action.save': 'Guardar',

@@ -62,7 +62,7 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, 
     if (showComments) {
         return codeLines.length > 0;
     }
-    return codeLines.some(line => !line.content.trim().startsWith('#'));
+    return codeLines.some(line => !(line?.content?.trim() || '').startsWith('#'));
   }, [codeLines, showComments]);
 
   useEffect(() => {
@@ -134,7 +134,7 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, 
     return (
       <div className={`p-4 overflow-auto text-sm h-full font-mono allow-selection`}>
         {codeLines.map((line, index) => {
-            const isComment = line.content.trim().startsWith('#');
+            const isComment = line?.content?.trim() || ''.startsWith('#');
             if (!showComments && isComment) {
                 return null;
             }

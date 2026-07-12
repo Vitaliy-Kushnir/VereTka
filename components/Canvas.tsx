@@ -1112,6 +1112,12 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 case 'polyline':
                   updatedShape = { ...initialShape, points: initialShape.points.map(p => ({ x: p.x + dx, y: p.y + dy })) as any };
                   break;
+                case 'group':
+                  updatedShape = { ...initialShape };
+                  if ((updatedShape as any).rotationCenter) {
+                      (updatedShape as any).rotationCenter = { x: (updatedShape as any).rotationCenter.x + dx, y: (updatedShape as any).rotationCenter.y + dy };
+                  }
+                  break;
             }
             break;
         }
@@ -1425,7 +1431,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     break;
                 }
                 case 'group': {
-                    updatedShape = { ...initialShape, _newBbox: { x: newGlobalCenter.x - newWidth / 2, y: newGlobalCenter.y - newHeight / 2, width: newWidth, height: newHeight } } as any;
+                    updatedShape = { ...initialShape, _newBbox: { x: newGlobalCenter.x - newWidth / 2, y: newGlobalCenter.y - newHeight / 2, width: newWidth, height: newHeight }, rotationCenter: newGlobalCenter } as any;
                     break;
                 }
             }
@@ -1625,6 +1631,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                             return { ...s, cx: s.cx + finalDx, cy: s.cy + finalDy };
                         case 'line': case 'bezier': case 'pencil': case 'polyline':
                             return { ...s, points: (s as any).points.map((p: any) => ({ x: p.x + finalDx, y: p.y + finalDy })) };
+                        case 'group':
+                            if ((s as any).rotationCenter) {
+                                return { ...s, rotationCenter: { x: (s as any).rotationCenter.x + finalDx, y: (s as any).rotationCenter.y + finalDy } };
+                            }
+                            return s;
                         default:
                             return s;
                     }
@@ -1650,44 +1661,35 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             const maxX = Math.max(action.startPos.x, action.currentPos.x);
             const maxY = Math.max(action.startPos.y, action.currentPos.y);
             
-            const selectedIds = [];
+            let selectedIds: string[] = [];
             shapes.forEach(shape => {
                 if (shape.state === 'disabled' || shape.state === 'hidden' || lockedShapeIds.has(shape.id)) return;
-                // Simple fast rect intersection:
-                let x = 0, y = 0, w = 0, h = 0;
-                
-                if (shape.type === 'rectangle' || shape.type === 'triangle' || shape.type === 'right-triangle' || shape.type === 'rhombus' || shape.type === 'trapezoid' || shape.type === 'parallelogram' || shape.type === 'star' || shape.type === 'polygon' || shape.type === 'image' || shape.type === 'bitmap') {
-                    const sx = 'x' in shape ? shape.x : 0;
-                    const sy = 'y' in shape ? shape.y : 0;
-                    const sw = 'width' in shape ? shape.width : 0;
-                    const sh = 'height' in shape ? shape.height : 0;
-                    if (sx < maxX && sx + sw > minX && sy < maxY && sy + sh > minY) {
-                        selectedIds.push(shape.id);
-                    }
-                } else if (shape.type === 'ellipse') {
-                    const cx = shape.cx, cy = shape.cy, rx = shape.rx, ry = shape.ry;
-                    if (cx - rx < maxX && cx + rx > minX && cy - ry < maxY && cy + ry > minY) {
-                        selectedIds.push(shape.id);
-                    }
-                } else if (shape.type === 'line' || shape.type === 'pencil' || shape.type === 'polyline' || shape.type === 'bezier') {
-                    const pts = shape.points;
-                    let mx = Infinity, my = Infinity, mxx = -Infinity, myy = -Infinity;
-                    for (const p of pts) {
-                        if (p.x < mx) mx = p.x;
-                        if (p.x > mxx) mxx = p.x;
-                        if (p.y < my) my = p.y;
-                        if (p.y > myy) myy = p.y;
-                    }
-                    if (mx < maxX && mxx > minX && my < maxY && myy > minY) {
-                        selectedIds.push(shape.id);
-                    }
-                } else if (shape.type === 'text') {
-                    const sx = shape.x, sy = shape.y, sw = (shape.text.length * shape.fontSize * 0.6), sh = shape.fontSize;
-                    if (sx < maxX && sx + sw > minX && sy - sh < maxY && sy > minY) {
-                        selectedIds.push(shape.id);
+                let intersect = false;
+                const bbox = getVisualBoundingBox(shape, undefined, shapes);
+                if (bbox) {
+                    if (bbox.x < maxX && bbox.x + bbox.width > minX && bbox.y < maxY && bbox.y + bbox.height > minY) {
+                        intersect = true;
                     }
                 }
+                if (intersect) {
+                    selectedIds.push(shape.id);
+                }
             });
+            
+            if (!e.shiftKey) {
+                const groupIds = new Set<string>();
+                const idsToRemove = new Set<string>();
+                selectedIds.forEach(id => {
+                    const shape = shapes.find(s => s.id === id);
+                    if (shape && shape.groupId) {
+                        groupIds.add(shape.groupId);
+                        idsToRemove.add(id);
+                    }
+                });
+                selectedIds = selectedIds.filter(id => !idsToRemove.has(id));
+                selectedIds = [...selectedIds, ...Array.from(groupIds)];
+            }
+            
             onSelectShape(selectedIds.length > 0 ? selectedIds : null);
         } else {
             onSelectShape(null);
@@ -2036,13 +2038,19 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   }, [shapes, action, hasDraggedRef, activeTransformShape, auxiliaryTransformShapes, isDrawingPolyline, polylinePoints, previewMousePos, strokeColor, strokeWidth, isDrawingBezier, bezierPoints]);
   
   const selectedShapes = useMemo(() => {
-    return selectedShapeIds.map(id => {
+    const s = selectedShapeIds.map(id => {
        const aux = auxiliaryTransformShapes.find(a => a.id === id);
        if (aux) return aux;
        const s = shapes.find(s => s?.id === id);
        if (s?.id === activeTransformShape?.id) { return activeTransformShape; }
        return s;
-    }).filter(s => s != null) as Shape[];
+    }).filter(Boolean) as Shape[];
+    const uniqueIds = new Set();
+    return s.filter(shape => {
+        if (uniqueIds.has(shape.id)) return false;
+        uniqueIds.add(shape.id);
+        return true;
+    });
   }, [shapes, selectedShapeIds, activeTransformShape, auxiliaryTransformShapes]);
 
   const selectedShape = selectedShapes.length === 1 ? selectedShapes[0] : null;

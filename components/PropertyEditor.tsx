@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Shape, LineShape, BezierCurveShape, PathShape, JoinStyle, PolygonShape, IsoscelesTriangleShape, RhombusShape, ParallelogramShape, TrapezoidShape, PolylineShape, RectangleShape, EllipseShape, Tool, ArcShape, RightTriangleShape, TextShape, ImageShape, BitmapShape, BuiltInBitmap } from '../types';
 import { getVisualBoundingBox, getFinalPoints, getPolygonSideLength, getBoundingBox, getPolygonRadiusFromSideLength, getEditablePoints, getShapeCenter, getTextBoundingBox, rotatePoint } from '../lib/geometry';
 import { InputWrapper, Label, NumberInput, ColorInput, Checkbox, Select, TextArea, DashSelect } from './FormControls';
-import { DuplicateIcon, TrashIcon, LockIcon, UnlockIcon, ConvertToPathIcon, BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from './icons';
+import { DuplicateIcon, TrashIcon, LockIcon, UngroupIcon, UnlockIcon, ConvertToPathIcon, BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from './icons';
 import { getDefaultNameForShape, TOOL_TYPE_TO_NAME, DASH_STYLES } from '../lib/constants';
 import { useLanguage } from './LanguageContext';
 
@@ -14,6 +14,7 @@ interface PropertyEditorProps {
   updateShapes?: (shapes: Shape[]) => void;
   deleteShape: (id: string) => void;
   duplicateShape: (id: string) => void;
+  onExtractFromGroup?: () => void;
   activeTool: Tool;
   activePointIndex: number | null;
   setActivePointIndex: (index: number | null) => void;
@@ -29,6 +30,7 @@ interface PropertyEditorProps {
   onDistributePathChange?: (state: import('../types').DistributePathState) => void;
   onConfirmDistributePath?: () => void;
   onCancelDistributePath?: () => void;
+  showSystemTags?: boolean;
 }
 
 // Type declaration for the experimental Local Font Access API
@@ -380,7 +382,6 @@ const PointsEditor: React.FC<{
                                     value={roundFn(displayedPoints[i].x)} 
                                     onChange={v => handlePointChange(i, 'x', v)} 
                                     disabled={!isEditing}
-                                    onFocus={() => setActivePointIndex(i)}
                                     title={t('prop.title.nodeX').replace('{i}', i.toString())}
                                     className={activePointIndex === i ? 'bg-[#4f46e5]/30' : ''}
                                     smartRound={false}
@@ -390,7 +391,6 @@ const PointsEditor: React.FC<{
                                     value={roundFn(displayedPoints[i].y)} 
                                     onChange={v => handlePointChange(i, 'y', v)} 
                                     disabled={!isEditing}
-                                    onFocus={() => setActivePointIndex(i)}
                                     title={t('prop.title.nodeY').replace('{i}', i.toString())}
                                     className={activePointIndex === i ? 'bg-[#4f46e5]/30' : ''}
                                     smartRound={false}
@@ -523,7 +523,7 @@ const isCollapsible = (shape: Shape | null): boolean => {
     return ['line', 'pencil', 'polyline', 'bezier'].includes(shape.type);
 };
 
-const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShapes, updateShape, updateShapes, deleteShape, duplicateShape, activeTool, activePointIndex, setActivePointIndex, deletePoint, addPoint, convertToPath, showNotification, setShapePreview, cancelShapePreview, fillColor, strokeColor, distributePathState, onDistributePathChange, onConfirmDistributePath, onCancelDistributePath }) => {
+const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShapes, updateShape, updateShapes, deleteShape, duplicateShape, activeTool, activePointIndex, setActivePointIndex, deletePoint, addPoint, convertToPath, showNotification, setShapePreview, cancelShapePreview, fillColor, strokeColor, distributePathState, onDistributePathChange, onConfirmDistributePath, onCancelDistributePath, showSystemTags, onExtractFromGroup }) => {
   const selectedShape = selectedShapes.length === 1 ? selectedShapes[0] : null;
   const isMultiSelection = selectedShapes.length > 1;
   const [systemFonts, setSystemFonts] = useState<string[] | null>(null);
@@ -1534,13 +1534,94 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
     const commonW = hasCommonW ? roundToHundredths(allVisualBboxes[0].width) : '';
     const commonH = hasCommonH ? roundToHundredths(allVisualBboxes[0].height) : '';
 
+    const getTransformedShapes = (shape: Shape, dx: number, dy: number, scaleX: number, scaleY: number, refBbox: any, allS: Shape[]): Shape[] => {
+        let results: Shape[] = [];
+        let newShape = { ...shape };
+        
+        if (dx !== 0 || dy !== 0) {
+            switch (newShape.type) {
+                case 'rectangle': case 'triangle': case 'right-triangle': case 'rhombus': case 'trapezoid': case 'parallelogram': case 'arc': case 'text': case 'image': case 'bitmap':
+                    (newShape as any).x += dx; (newShape as any).y += dy; break;
+                case 'ellipse': case 'polygon': case 'star':
+                    (newShape as any).cx += dx; (newShape as any).cy += dy; break;
+                case 'line': case 'bezier': case 'pencil': case 'polyline':
+                    (newShape as any).points = (newShape as any).points.map((p: any) => ({ x: p.x + dx, y: p.y + dy })); break;
+                case 'group':
+                    if ((newShape as any).rotationCenter) {
+                        (newShape as any).rotationCenter = {
+                            x: (newShape as any).rotationCenter.x + dx,
+                            y: (newShape as any).rotationCenter.y + dy
+                        };
+                    }
+                    break;
+            }
+        }
+        
+        if (scaleX !== 1 || scaleY !== 1) {
+            switch (newShape.type) {
+                case 'rectangle': case 'image': case 'bitmap': case 'arc': case 'triangle': case 'right-triangle': case 'rhombus': case 'trapezoid': case 'parallelogram': case 'text':
+                    (newShape as any).x = refBbox.x + ((newShape as any).x - refBbox.x) * scaleX;
+                    (newShape as any).y = refBbox.y + ((newShape as any).y - refBbox.y) * scaleY;
+                    (newShape as any).width *= scaleX; 
+                    (newShape as any).height *= scaleY; 
+                    if (newShape.type === 'text') {
+                         const scale = Math.max(scaleX, scaleY);
+                         (newShape as any).fontSize *= scale;
+                    }
+                    break;
+                case 'ellipse':
+                    (newShape as any).cx = refBbox.x + ((newShape as any).cx - refBbox.x) * scaleX;
+                    (newShape as any).cy = refBbox.y + ((newShape as any).cy - refBbox.y) * scaleY;
+                    (newShape as any).rx *= scaleX; 
+                    (newShape as any).ry *= scaleY; 
+                    break;
+                case 'polygon': case 'star':
+                    (newShape as any).cx = refBbox.x + ((newShape as any).cx - refBbox.x) * scaleX;
+                    (newShape as any).cy = refBbox.y + ((newShape as any).cy - refBbox.y) * scaleY;
+                    (newShape as any).radius *= Math.max(scaleX, scaleY); 
+                    if ((newShape as any).innerRadius) {
+                        (newShape as any).innerRadius *= Math.max(scaleX, scaleY);
+                    }
+                    break;
+                case 'line': case 'bezier': case 'pencil': case 'polyline':
+                    (newShape as any).points = (newShape as any).points.map((p: any) => ({ 
+                        x: refBbox.x + (p.x - refBbox.x) * scaleX, 
+                        y: refBbox.y + (p.y - refBbox.y) * scaleY 
+                    })); 
+                    break;
+                case 'group':
+                    if ((newShape as any).rotationCenter) {
+                        (newShape as any).rotationCenter = {
+                            x: refBbox.x + ((newShape as any).rotationCenter.x - refBbox.x) * scaleX,
+                            y: refBbox.y + ((newShape as any).rotationCenter.y - refBbox.y) * scaleY
+                        };
+                    }
+                    break;
+            }
+        }
+        
+        results.push(newShape);
+        
+        if (newShape.type === 'group' && newShape.shapeIds) {
+            newShape.shapeIds.forEach((childId) => {
+                const child = allS.find(s => s.id === childId);
+                if (child) {
+                    const childResults = getTransformedShapes(child, dx, dy, scaleX, scaleY, refBbox, allS);
+                    results = results.concat(childResults);
+                }
+            });
+        }
+        
+        return results;
+    };
+
     const handleMultiVisualChange = (property: 'x'|'y'|'width'|'height', value: number) => {
         if (typeof updateShapes !== 'function') return;
-        const updatedShapes = selectedShapes.map(shape => {
+        let allUpdated = [];
+        selectedShapes.forEach(shape => {
             const bbox = getVisualBoundingBox(shape, undefined, allShapes);
-            if (!bbox) return shape;
+            if (!bbox) return;
             
-            let newShape = { ...shape };
             let dx = 0;
             let dy = 0;
             let scaleX = 1;
@@ -1557,32 +1638,10 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                 if (shape.isAspectRatioLocked) scaleX = scaleY;
             }
 
-            if (dx !== 0 || dy !== 0) {
-                switch (newShape.type) {
-                    case 'rectangle': case 'triangle': case 'right-triangle': case 'rhombus': case 'trapezoid': case 'parallelogram': case 'arc': case 'text': case 'image': case 'bitmap':
-                        (newShape as any).x += dx; (newShape as any).y += dy; break;
-                    case 'ellipse': case 'polygon': case 'star':
-                        (newShape as any).cx += dx; (newShape as any).cy += dy; break;
-                    case 'line': case 'bezier': case 'pencil': case 'polyline':
-                        (newShape as any).points = (newShape as any).points.map((p: any) => ({ x: p.x + dx, y: p.y + dy })); break;
-                }
-            }
-
-            if (scaleX !== 1 || scaleY !== 1) {
-                switch (newShape.type) {
-                    case 'rectangle': case 'image': case 'bitmap': case 'arc': case 'triangle': case 'right-triangle': case 'rhombus': case 'trapezoid': case 'parallelogram': case 'text':
-                        (newShape as any).width *= scaleX; (newShape as any).height *= scaleY; break;
-                    case 'ellipse':
-                        (newShape as any).rx *= scaleX; (newShape as any).ry *= scaleY; break;
-                    case 'polygon': case 'star':
-                        (newShape as any).radius *= Math.max(scaleX, scaleY); break;
-                    case 'line': case 'bezier': case 'pencil': case 'polyline':
-                        (newShape as any).points = (newShape as any).points.map((p: any) => ({ x: bbox.x + (p.x - bbox.x) * scaleX, y: bbox.y + (p.y - bbox.y) * scaleY })); break;
-                }
-            }
-            return newShape;
+            const transformed = getTransformedShapes(shape, dx, dy, scaleX, scaleY, bbox, allShapes);
+            allUpdated = allUpdated.concat(transformed);
         });
-        updateShapes(updatedShapes);
+        if (allUpdated.length > 0) updateShapes(allUpdated);
     };
 
     
@@ -1594,9 +1653,9 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
     return (
       <div className="shadow-lg h-full flex flex-col rounded-lg bg-[var(--bg-primary)]">
           <div className="flex justify-between items-center p-2 px-3 bg-[var(--bg-app)]/50 rounded-t-lg border-b border-[var(--border-primary)] flex-shrink-0">
-              <h2 className="font-semibold text-[var(--text-primary)] text-sm">{t('props.title')} ({selectedShapes.length})</h2>
+              <h2 className="font-semibold text-[var(--text-primary)] text-sm">{t('props.title')} ({t('props.objectsCount') || 'Objects:'} {selectedShapes.length})</h2>
               <div className="flex items-center gap-1">
-                 {/* Tooling for multi-selection can go here */}
+                 {selectedShapes.some(s => s.groupId) && onExtractFromGroup && (<button onClick={onExtractFromGroup} title={t('menu.edit.ungroup') || 'Вилучити з групи'} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><UngroupIcon size={18}/></button>)}
               </div>
           </div>
           
@@ -1918,6 +1977,9 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
             <div className="flex items-center gap-1">
                 {canConvertToPath && <button onClick={() => convertToPath(selectedShape.id)} title={t('menu.object.toPath')} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><ConvertToPathIcon size={18}/></button>}
                 <button onClick={() => duplicateShape(selectedShape.id)} title={t('menu.edit.duplicate')} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><DuplicateIcon size={18}/></button>
+                {selectedShapes.some(s => s.groupId) && onExtractFromGroup && (
+                    <button onClick={onExtractFromGroup} title={t('menu.edit.ungroup') || 'Вилучити з групи'} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><UngroupIcon size={18}/></button>
+                )}
                 <button onClick={() => deleteShape(selectedShape.id)} title={t('menu.edit.delete')} className="p-1.5 rounded hover:bg-[var(--destructive-bg)] text-[var(--destructive-text)] hover:text-[var(--accent-text)]"><TrashIcon size={18}/></button>
             </div>
         </div>
@@ -1932,7 +1994,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                     onFocus={(e) => setEditingName(e.target.value)}
                     onBlur={() => {
                         if (editingName !== null) {
-                            updateShape({ ...selectedShape, name: editingName.trim() === '' ? getDefaultNameForShape(selectedShape, t) : editingName.trim() });
+                            updateShape({ ...selectedShape, name: (editingName?.trim() || '') === '' ? getDefaultNameForShape(selectedShape, t) : (editingName?.trim() || '') });
                         }
                         setEditingName(null);
                     }}
@@ -1943,6 +2005,24 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                     }}
                     className="bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2 py-1 w-full border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none"
                 />
+            </InputWrapper>
+            <InputWrapper>
+                <Label htmlFor={`${selectedShape.id}-tags`} title="Різні теги записувати у різних стрічках поля">Теги:</Label>
+                <TextArea
+                    id={`${selectedShape.id}-tags`}
+                    value={selectedShape.tags ?? ''}
+                    onChange={(v) => updateShape({ ...selectedShape, tags: v })}
+                    placeholder="Власні теги..."
+                    rows={3}
+                />
+                {(showSystemTags || selectedShape.groupId) && (
+                    <div className="mt-1 text-xs text-[var(--text-tertiary)] bg-[var(--bg-tertiary)] p-2 rounded">
+                        {showSystemTags && <div><strong>Системні теги:</strong><br/>{selectedShape.id}{selectedShape.groupId ? <><br/>{selectedShape.groupId}</> : null}</div>}
+                        {selectedShape.groupId && allShapes.find(s => s.id === selectedShape.groupId)?.tags && (
+                            <div className={showSystemTags ? "mt-1" : ""}><strong>Теги групи:</strong><br/><span className="whitespace-pre-line">{allShapes.find(s => s.id === selectedShape.groupId)?.tags}</span></div>
+                        )}
+                    </div>
+                )}
             </InputWrapper>
             <InputWrapper>
                 <Label htmlFor={`${selectedShape.id}-comment`} title={t('props.commentDesc')}>{t('props.comment')}</Label>

@@ -33,7 +33,7 @@ const generateLocalComment = (shape: Shape, t: (key: string) => string): string 
 };
 
 
-function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, canvasVarName: string, outlineWithFill: boolean, generateTkinterTags: boolean): string | null {
+function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, canvasVarName: string, outlineWithFill: boolean, generateTkinterTags: boolean, showSystemTags: boolean, allShapes: Shape[] = []): string | null {
     if (shape.state === 'hidden') return null;
     
     const options: Record<string, any> = {};
@@ -80,12 +80,31 @@ function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, ca
         }
     }
     
+    const tagsSet = new Set<string>();
     if (generateTkinterTags) {
-        if (shape.groupId) {
-            options.tags = [`"${shape.id}"`, `"${shape.groupId}"`];
-        } else {
-            options.tags = shape.id;
+        if (showSystemTags) {
+            tagsSet.add(shape.id);
         }
+        
+        if (shape.tags) {
+            shape.tags.split('\n').map(t => t.trim()).filter(Boolean).forEach(t => tagsSet.add(t));
+        }
+
+        if (shape.groupId) {
+            if (showSystemTags) {
+                tagsSet.add(shape.groupId);
+            }
+            const parentGroup = allShapes.find(s => s.id === shape.groupId);
+            if (parentGroup && parentGroup.tags) {
+                parentGroup.tags.split('\n').map(t => t.trim()).filter(Boolean).forEach(t => tagsSet.add(t));
+            }
+        }
+    }
+    
+    if (tagsSet.size > 1) {
+        options.tags = Array.from(tagsSet).map(t => `"${t.replace(/"/g, '\\"')}"`);
+    } else if (tagsSet.size === 1) {
+        options.tags = Array.from(tagsSet)[0];
     }
 
     const commonLineProps = (s: LineShape | BezierCurveShape | PolylineShape | PathShape) => {
@@ -269,6 +288,7 @@ export async function generateTkinterCodeLocally(
     autoGenerateComments: boolean,
     outlineWithFill: boolean,
     generateTkinterTags: boolean,
+    showSystemTags: boolean,
     t: (key: string) => string
 ): Promise<{ codeLines: CodeLine[] }> {
     
@@ -314,7 +334,7 @@ export async function generateTkinterCodeLocally(
         codeLines.push({ content: t('code.comment.noShapes'), shapeId: null });
     } else {
         shapes.forEach(shape => {
-            const lineContent = shapeToTkinterString(shape, imageVarMap, finalCanvasVarName, outlineWithFill, generateTkinterTags);
+            const lineContent = shapeToTkinterString(shape, imageVarMap, finalCanvasVarName, outlineWithFill, generateTkinterTags, showSystemTags, shapes);
             if (lineContent) {
                 let commentToUse = shape.comment;
                 if (autoGenerateComments && !commentToUse) {
