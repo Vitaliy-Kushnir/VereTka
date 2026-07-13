@@ -38,7 +38,7 @@ type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
 type SettingsTab = 'canvas' | 'grid' | 'appearance' | 'code' | 'templates';
 
-const APP_VERSION = '1.3.8';
+const APP_VERSION = '1.3.9';
 const RULER_THICKNESS = 24;
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 30;
@@ -1080,16 +1080,24 @@ export default function App(): React.ReactNode {
 
   const addLayer = useCallback(() => {
       setHistoryState(prev => {
+          const currentLayers = prev.layers || [];
+          let newIndex = currentLayers.length + 1;
+          let newName = `${t('layer.defaultName') || 'Шар'} ${newIndex}`;
+          while (currentLayers.some(l => l.name === newName)) {
+              newIndex++;
+              newName = `${t('layer.defaultName') || 'Шар'} ${newIndex}`;
+          }
+          
           const newLayer: Layer = {
               id: `layer-${Date.now()}`,
-              name: `${t('layer.defaultName') || 'Шар'} ${(prev.layers || []).length + 1}`,
+              name: newName,
               visible: true,
               locked: false,
               shapeIds: []
           };
           return {
               ...prev,
-              layers: [newLayer, ...(prev.layers || [])],
+              layers: [newLayer, ...currentLayers],
               activeLayerId: newLayer.id
           };
       });
@@ -1162,7 +1170,7 @@ export default function App(): React.ReactNode {
   }, [setHistoryState]);
 
   const [projectName, setProjectName] = useState<string>(t('app.1069'));
-  const [rightPanelTab, setRightPanelTab] = useState<'layers' | 'shapes'>('layers');
+  const [rightPanelTab, setRightPanelTab] = useState<'layers' | 'shapes'>('shapes');
   const [activeTool, setActiveTool] = useState<Tool>('select');
   const [selectedShapeIds, setSelectedShapeIds] = useState<string[]>([]);
   const [reorderConfirmInfo, setReorderConfirmInfo] = useState<{
@@ -1964,6 +1972,58 @@ export default function App(): React.ReactNode {
       
       executeReorderShape(draggedId, targetId, position);
   }, [shapes, executeReorderShape]);
+
+  const moveToLayer = useCallback((shapeId: string, layerId: string) => {
+      setHistoryState(prev => {
+          let newShapes = [...(prev.shapes || [])];
+          let newLayers = [...(prev.layers || [])];
+          
+          const shapeIdx = newShapes.findIndex(s => s.id === shapeId);
+          if (shapeIdx === -1) return prev;
+          
+          let shape = { ...newShapes[shapeIdx] };
+
+          // Determine which IDs need to be moved
+          let idsToMove = [shapeId];
+          if (shape.type === 'group' && shape.shapeIds) {
+              idsToMove = [...shape.shapeIds, shapeId];
+          } else if (shape.groupId) {
+              // Handle if it's a child - we need to remove it from the group
+              const oldGroupId = shape.groupId;
+              shape.groupId = undefined;
+              
+              const oldGroupIdx = newShapes.findIndex(s => s.id === oldGroupId);
+              if (oldGroupIdx !== -1) {
+                  const oldGroup = { ...newShapes[oldGroupIdx] };
+                  oldGroup.shapeIds = oldGroup.shapeIds.filter(id => id !== shapeId);
+                  if (oldGroup.shapeIds.length === 0) {
+                      newShapes.splice(oldGroupIdx, 1);
+                      newLayers = newLayers.map(layer => ({
+                          ...layer,
+                          shapeIds: layer.shapeIds ? layer.shapeIds.filter(id => id !== oldGroupId) : []
+                      }));
+                  } else {
+                      newShapes[oldGroupIdx] = oldGroup;
+                  }
+              }
+          }
+          
+          newShapes[shapeIdx] = shape;
+
+          // Remove shapes from their old layers and add to new
+          newLayers = newLayers.map(l => {
+              if (l.id === layerId) {
+                  // Add only IDs that aren't already there
+                  const toAdd = idsToMove.filter(id => !l.shapeIds.includes(id));
+                  return { ...l, shapeIds: [...l.shapeIds, ...toAdd] };
+              } else {
+                  return { ...l, shapeIds: l.shapeIds.filter(id => !idsToMove.includes(id)) };
+              }
+          });
+
+          return { ...prev, shapes: newShapes, layers: newLayers };
+      });
+  }, [setHistoryState]);
 
   const moveShape = useCallback((id: string, direction: 'up' | 'down') => {
     setHistoryState(prev => {
@@ -3201,7 +3261,7 @@ export default function App(): React.ReactNode {
         const groupShape: Shape = {
             type: 'group',
             id: newGroupId,
-            name: `Group ${groupIndex}`,
+            name: `${t('group.defaultName') || 'Group'} ${groupIndex}`,
             tags: `group_${groupIndex}`,
             state: 'normal',
             stroke: 'none',
@@ -3968,7 +4028,7 @@ export default function App(): React.ReactNode {
            <main className="flex-grow grid grid-cols-1 md:grid-cols-[380px_1fr] lg:grid-cols-[380px_1fr_295px] min-h-0">
              
             {/* Left Column */}
-            {isProjectActive && <aside className={`${isLeftPanelVisible ? 'fixed inset-0 bg-[var(--bg-app)]/95 backdrop-blur-sm z-40 p-4 flex flex-col' : 'hidden'} md:static md:bg-transparent md:z-auto md:p-0 md:flex flex-col gap-4 min-h-0 bg-[var(--bg-primary)]/50 md:p-2`}>
+            {isProjectActive && <aside className={`${isLeftPanelVisible ? 'fixed inset-0 bg-[var(--bg-app)]/95 backdrop-blur-sm z-40 p-4 flex flex-col' : 'hidden'} md:static md:bg-transparent md:z-auto md:flex flex-col gap-4 min-h-0 bg-[var(--bg-primary)]/50 md:p-2`}>
                 <div className="md:hidden flex justify-end mb-4">
                     <button onClick={() => setIsLeftPanelVisible(false)} className="p-2 rounded-lg text-[var(--accent-text)]"><XIcon/></button>
                 </div>
@@ -4080,27 +4140,27 @@ export default function App(): React.ReactNode {
             </div>
             
              {/* Right Column */}
-            {isProjectActive && <aside className={`${isRightPanelVisible ? 'fixed inset-0 bg-[var(--bg-app)]/95 backdrop-blur-sm z-40 p-4 flex flex-col' : 'hidden'} lg:static lg:bg-transparent lg:z-auto lg:p-0 lg:flex flex-col gap-4 overflow-y-auto md:p-2`}>
+            {isProjectActive && <aside className={`${isRightPanelVisible ? 'fixed inset-0 bg-[var(--bg-app)]/95 backdrop-blur-sm z-40 p-4 flex flex-col' : 'hidden'} lg:static lg:bg-transparent lg:z-auto lg:flex flex-col gap-4 overflow-y-auto md:p-2`}>
                  <div className="lg:hidden flex justify-end mb-4">
                     <button onClick={() => setIsRightPanelVisible(false)} className="p-2 rounded-lg text-[var(--accent-text)]"><XIcon /></button>
                 </div>
-                 <div className="flex-1 min-h-0 flex flex-col bg-[var(--bg-app)] border border-[var(--border-color)] rounded-lg overflow-hidden">
-                    <div className="flex border-b border-[var(--border-color)]">
-                        <button 
-                            className={`flex-1 py-2 text-sm font-medium ${rightPanelTab === 'layers' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}
-                            onClick={() => setRightPanelTab('layers')}
-                        >
-                            {t('layer.title') || 'Шари'}
-                        </button>
+                 <div className="flex-[3_3_0%] min-h-0 flex flex-col shadow-lg bg-[var(--bg-primary)] rounded-lg overflow-hidden mt-1">
+                    <div className="flex border-b border-[var(--border-primary)] flex-shrink-0">
                         <button 
                             className={`flex-1 py-2 text-sm font-medium ${rightPanelTab === 'shapes' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}
                             onClick={() => setRightPanelTab('shapes')}
                         >
                             {t('shape.list') || 'Фігури'}
                         </button>
+                        <button 
+                            className={`flex-1 py-2 text-sm font-medium ${rightPanelTab === 'layers' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}
+                            onClick={() => setRightPanelTab('layers')}
+                        >
+                            {t('layer.title') || 'Шари'}
+                        </button>
                     </div>
-                    <div className="flex-1 overflow-y-auto">
-                        {rightPanelTab === 'layers' && (
+                    <div className="flex-1 overflow-hidden relative">
+                        <div className={`absolute inset-0 ${rightPanelTab === 'layers' ? 'block' : 'hidden'}`}>
                             <LayerList
                                 layers={layers}
                                 activeLayerId={activeLayerId}
@@ -4112,8 +4172,8 @@ export default function App(): React.ReactNode {
                                 onUpdateLayerName={updateLayerName}
                                 onMoveLayer={moveLayer}
                             />
-                        )}
-                        {rightPanelTab === 'shapes' && (
+                        </div>
+                        <div className={`absolute inset-0 ${rightPanelTab === 'shapes' ? 'block' : 'hidden'}`}>
                             <ShapeList
                                 distributePathState={distributePathState}
                                 shapes={shapes}
@@ -4125,8 +4185,12 @@ export default function App(): React.ReactNode {
                                 onUpdateShape={updateShape}
                                 onReorderShape={reorderShape}
                                 showTkinterNames={showTkinterNames}
+                                layers={layers}
+                                activeLayerId={activeLayerId}
+                                onMoveToLayer={moveToLayer}
+                                onSetActiveLayer={setActiveLayer}
                             />
-                        )}
+                        </div>
                     </div>
                 </div>
                 <div className="flex-[2_2_0%] min-h-0">

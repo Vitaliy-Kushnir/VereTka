@@ -13,6 +13,8 @@ export const translations = {
     'shape.list': 'Об\'єкти',
     'tool.distribute.path.customAngle': 'Власний кут',
     _languageName: 'Українська',
+    "layer.defaultName": "Шар",
+    "group.defaultName": "Група",
     // Menu
     'menu.file': 'Файл',
     'menu.file.new': 'Новий проєкт...',
@@ -30,6 +32,7 @@ export const translations = {
     'menu.edit.duplicate': 'Дублювати',
     'menu.edit.group': 'Згрупувати',
     'menu.edit.ungroup': 'Розгрупувати',
+    'menu.edit.extractFromGroup': 'Вилучити із групи',
     'menu.tools': 'Інструменти',
     'menu.edit.delete': 'Видалити',
 
@@ -525,6 +528,7 @@ export const translations = {
     'list.moveDown': 'Перемістити нижче',
     'list.delete': 'Видалити',
     'list.empty': "Немає об\'єктів.",
+    'list.hidden': 'прихований',
 
     // Property Editor
     'props.title': 'Властивості',
@@ -715,6 +719,8 @@ export const translations = {
     'shape.list': 'Objects',
     'tool.distribute.path.customAngle': 'Custom Angle',
     _languageName: 'English',
+    "layer.defaultName": "Layer",
+    "group.defaultName": "Group",
     // Menu
     'menu.file': 'File',
     'menu.file.new': 'New Project...',
@@ -732,6 +738,7 @@ export const translations = {
     'menu.edit.duplicate': 'Duplicate',
     'menu.edit.group': 'Group',
     'menu.edit.ungroup': 'Ungroup',
+    'menu.edit.extractFromGroup': 'Extract from group',
     'menu.tools': 'Tools',
     'menu.edit.delete': 'Delete',
 
@@ -1227,6 +1234,7 @@ export const translations = {
     'list.moveDown': 'Move Down',
     'list.delete': 'Delete',
     'list.empty': "No objects.",
+    'list.hidden': 'hidden',
 
     // Property Editor
     'props.title': 'Properties',
@@ -1418,6 +1426,8 @@ export const translations = {
     'tool.distribute.path.customAngle': 'Angolo personalizzato',
 
     _languageName: 'Italiano',
+    "layer.defaultName": "Livello",
+    "group.defaultName": "Gruppo",
     // Menu
     'menu.file': 'File',
     'menu.file.new': 'Nuovo progetto...',
@@ -1435,6 +1445,7 @@ export const translations = {
     'menu.edit.duplicate': 'Duplicato',
     'menu.edit.group': 'Raggruppa',
     'menu.edit.ungroup': 'Separa',
+    'menu.edit.extractFromGroup': 'Estrai dal gruppo',
     'menu.tools': 'Strumenti',
     'menu.edit.delete': 'Eliminare',
 
@@ -1895,6 +1906,7 @@ export const translations = {
     'list.moveDown': 'Sposta giù',
     'list.delete': 'Eliminare',
     'list.empty': "Nessun oggetto.",
+    'list.hidden': 'nascosto',
 
     // Property Editor
     'props.title': 'Proprietà',
@@ -2087,6 +2099,8 @@ export const translations = {
 
 
     _languageName: 'Español',
+    "layer.defaultName": "Capa",
+    "group.defaultName": "Grupo",
     // Menu
     'menu.file': 'Archivo',
     'menu.file.new': 'Nuevo Proyecto...',
@@ -2104,6 +2118,7 @@ export const translations = {
     'menu.edit.duplicate': 'Duplicar',
     'menu.edit.group': 'Agrupar',
     'menu.edit.ungroup': 'Desagrupar',
+    'menu.edit.extractFromGroup': 'Extraer del grupo',
     'menu.tools': 'Herramientas',
     'menu.edit.delete': 'Eliminar',
 
@@ -2564,6 +2579,7 @@ export const translations = {
     'list.moveDown': 'Bajar',
     'list.delete': 'Eliminar',
     'list.empty': "Aún no hay objetos.",
+    'list.hidden': 'oculto',
 
     // Property Editor
     'props.title': 'Propiedades',

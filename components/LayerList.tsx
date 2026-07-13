@@ -27,15 +27,24 @@ export default function LayerList({ layers, activeLayerId, onAddLayer, onDeleteL
 
     const finishEditing = () => {
         if (editingLayerId && editName && editName.trim()) {
-            onUpdateLayerName(editingLayerId, editName.trim());
+            const trimmedName = editName.trim();
+            const currentLayer = layers.find(l => l.id === editingLayerId);
+            
+            if (trimmedName !== currentLayer?.name) {
+                if (layers.some(l => l.name === trimmedName && l.id !== editingLayerId)) {
+                    alert(t('layer.duplicateName') || 'Шар з такою назвою вже існує. Будь ласка, виберіть іншу назву.');
+                    return; // Keep editing mode open
+                }
+                onUpdateLayerName(editingLayerId, trimmedName);
+            }
         }
         setEditingLayerId(null);
     };
 
     return (
-        <div className="flex flex-col h-full">
-            <div className="flex justify-between items-center p-2 border-b border-[var(--border-color)]">
-                <span className="font-medium text-sm text-[var(--text-primary)]">{t('layer.title') || 'Шари'}</span>
+        <div className="flex flex-col h-full bg-[var(--bg-primary)]">
+            <div className="flex justify-between items-center p-2 px-3 bg-[var(--bg-app)]/50 border-b border-[var(--border-primary)] flex-shrink-0">
+                <span className="font-semibold text-sm text-[var(--text-primary)]">{t('layer.title') || 'Шари'}</span>
                 <button 
                     onClick={onAddLayer}
                     className="p-1 rounded hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)]"

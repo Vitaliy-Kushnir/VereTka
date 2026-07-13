@@ -1655,7 +1655,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
           <div className="flex justify-between items-center p-2 px-3 bg-[var(--bg-app)]/50 rounded-t-lg border-b border-[var(--border-primary)] flex-shrink-0">
               <h2 className="font-semibold text-[var(--text-primary)] text-sm">{t('props.title')} ({t('props.objectsCount') || 'Objects:'} {selectedShapes.length})</h2>
               <div className="flex items-center gap-1">
-                 {selectedShapes.some(s => s.groupId) && onExtractFromGroup && (<button onClick={onExtractFromGroup} title={t('menu.edit.ungroup') || 'Вилучити з групи'} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><UngroupIcon size={18}/></button>)}
+                 {selectedShapes.some(s => s.groupId) && onExtractFromGroup && (<button onClick={onExtractFromGroup} title={t('menu.edit.extractFromGroup') || 'Вилучити із групи'} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><UngroupIcon size={18}/></button>)}
               </div>
           </div>
           
@@ -1978,7 +1978,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                 {canConvertToPath && <button onClick={() => convertToPath(selectedShape.id)} title={t('menu.object.toPath')} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><ConvertToPathIcon size={18}/></button>}
                 <button onClick={() => duplicateShape(selectedShape.id)} title={t('menu.edit.duplicate')} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><DuplicateIcon size={18}/></button>
                 {selectedShapes.some(s => s.groupId) && onExtractFromGroup && (
-                    <button onClick={onExtractFromGroup} title={t('menu.edit.ungroup') || 'Вилучити з групи'} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><UngroupIcon size={18}/></button>
+                    <button onClick={onExtractFromGroup} title={t('menu.edit.extractFromGroup') || 'Вилучити із групи'} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><UngroupIcon size={18}/></button>
                 )}
                 <button onClick={() => deleteShape(selectedShape.id)} title={t('menu.edit.delete')} className="p-1.5 rounded hover:bg-[var(--destructive-bg)] text-[var(--destructive-text)] hover:text-[var(--accent-text)]"><TrashIcon size={18}/></button>
             </div>
