@@ -42,7 +42,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const t = useCallback((key: string, variables?: Record<string, string | number>): string => {
     const langDict = translations[language as keyof typeof translations] || translations['uk'];
-    let text = langDict[key as keyof typeof translations['uk']] || translations['uk'][key as keyof typeof translations['uk']] || key;
+    let text = (langDict as any)[key] || (translations['uk'] as any)[key] || key;
     
     if (variables) {
       Object.keys(variables).forEach(varKey => {

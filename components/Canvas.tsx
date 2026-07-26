@@ -9,6 +9,7 @@ import { CheckSquareIcon, ClosePathIcon, XSquareIcon } from './icons';
 import { TOOL_TYPE_TO_NAME, ROTATE_CURSOR_STYLE, ADJUST_CURSOR_STYLE, getDefaultNameForShape, getVisualFontFamily, isDefaultName, DUPLICATE_CURSOR_STYLE } from '../lib/constants';
 
 interface CanvasProps {
+  onDrawingAttempt?: () => boolean;
   width: number;
   height: number;
   backgroundColor: string;
@@ -257,6 +258,12 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
     if (e.button !== 0) return;
     
+    if (activeTool !== 'select' && activeTool !== 'edit-points' && true) {
+        if (props.onDrawingAttempt && !props.onDrawingAttempt()) {
+            return;
+        }
+    }
+    
     const targetElement = e.target as SVGElement;
     // Important: Check if the click is on a resize/rotate handle *first*.
     if (targetElement.closest('[data-handle="true"]')) {
@@ -287,7 +294,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     }
 
     if (activeTool === 'select') {
-        if (clickedShape && clickedShape.state !== 'disabled') {
+        if (clickedShape && clickedShape.state !== 'disabled' && clickedShape.state !== 'hidden') {
             if (props.distributePathState) {
                 const clickedEntity = props.distributePathState.entities.find(e => e.ids.includes(clickedShape.id));
                 if (clickedEntity) {
@@ -425,7 +432,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     } else if (newShape) {
         addShape(newShape);
     }
-  }, [activeTool, shapes, onSelectShape, fillColor, strokeColor, strokeWidth, textColor, textFont, textFontSize, numberOfSides, isDrawingPolyline, setPolylinePoints, isDrawingBezier, setBezierPoints, getTransformedPointerPosition, getPointerPosition, selectedShapeIds, pendingImage, setPendingImage, addShape, isImportingImage]);
+  }, [activeTool, shapes, onSelectShape, fillColor, strokeColor, strokeWidth, textColor, textFont, textFontSize, numberOfSides, isDrawingPolyline, setPolylinePoints, isDrawingBezier, setBezierPoints, getTransformedPointerPosition, getPointerPosition, selectedShapeIds, pendingImage, setPendingImage, addShape, isImportingImage, props.onDrawingAttempt, props.distributePathState]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rawPos = getPointerPosition(e);
@@ -480,7 +487,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 }
             }
         } else {
-            const box = getVisualBoundingBox(action.initialShape, undefined, shapes);
+            const box = getVisualBoundingBox((action as any).initialShape, undefined, shapes);
             if (box) movingBboxOriginal = box;
         }
         
@@ -645,9 +652,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     }
     
     const modifyingActions = ['point-editing', 'arc-angle-editing', 'triangle-vertex-editing', 'star-inner-radius-editing', 'trapezoid-offset-editing', 'parallelogram-angle-editing', 'edit-distribute-path'];
-    const isSnappableModifyingAction = modifyingActions.includes(action.type) && (action.type === 'point-editing' || action.type === 'edit-distribute-path' || !('rotation' in action.initialShape) || (action.initialShape as any).rotation === 0);
+    const isSnappableModifyingAction = modifyingActions.includes(action.type) && (action.type === 'point-editing' || !('rotation' in (action as any).initialShape) || ((action as any).initialShape as any).rotation === 0);
 
-    if ((enableSnapping || showCenterGuides) && (action.type === 'resizing' || action.type === 'drawing' || isSnappableModifyingAction) && !e.altKey && (action.type !== 'resizing' || !('rotation' in action.initialShape) || action.initialShape.rotation === 0)) {
+    if ((enableSnapping || showCenterGuides) && (action.type === 'resizing' || action.type === 'drawing' || isSnappableModifyingAction) && !e.altKey && (action.type !== 'resizing' || !('rotation' in (action as any).initialShape) || (action as any).initialShape.rotation === 0)) {
         const SNAP_DIST = 5 / viewTransform.scale;
         
         let bestX = pos.x;
@@ -672,15 +679,15 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             
             if (snapX) {
                 movingXPoints.push({ current: pos.x, getPos: t => t });
-                if (!isLineStart && !isLineEnd && 'x' in action.initialShape) {
-                    const fixedX = action.handle.includes('right') ? action.initialShape.x : action.initialShape.x + action.initialShape.width;
+                if (!isLineStart && !isLineEnd && 'x' in (action as any).initialShape) {
+                    const fixedX = action.handle.includes('right') ? (action as any).initialShape.x : (action as any).initialShape.x + (action as any).initialShape.width;
                     movingXPoints.push({ current: (fixedX + pos.x) / 2, getPos: t => 2 * t - fixedX });
                 }
             }
             if (snapY) {
                 movingYPoints.push({ current: pos.y, getPos: t => t });
-                if (!isLineStart && !isLineEnd && 'y' in action.initialShape) {
-                    const fixedY = action.handle.includes('bottom') ? action.initialShape.y : action.initialShape.y + action.initialShape.height;
+                if (!isLineStart && !isLineEnd && 'y' in (action as any).initialShape) {
+                    const fixedY = action.handle.includes('bottom') ? (action as any).initialShape.y : (action as any).initialShape.y + (action as any).initialShape.height;
                     movingYPoints.push({ current: (fixedY + pos.y) / 2, getPos: t => 2 * t - fixedY });
                 }
             }
@@ -698,7 +705,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             snapX = true;
             snapY = true;
             
-            const shape = action.initialShape;
+            const shape = (action as any).initialShape;
             
             let canSnapX = false;
             let canSnapY = false;
@@ -929,7 +936,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         return;
     }
         
-    const shapeToTransform = activeTransformShape ?? ('initialShape' in action ? action.initialShape : null);
+    const shapeToTransform = activeTransformShape ?? ('initialShape' in action ? (action as any).initialShape : null);
     if (!shapeToTransform) return;
         
     let updatedShape: Shape = shapeToTransform!;
@@ -940,7 +947,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             const { pointIndex, center } = action;
             
             // CRITICAL FIX: Use shapeToTransform, which holds the cumulative changes from the drag,
-            // as the base for the next update. Do NOT use action.initialShape.
+            // as the base for the next update. Do NOT use (action as any).initialShape.
             const targetShape = shapeToTransform as PolylineShape | PathShape | BezierCurveShape | LineShape;
             
             // Get rotation from the current shape being transformed.
@@ -1469,7 +1476,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         }
     };
     selectedShapeIds.forEach(getAffectedIds);
-    if (action.initialShape) getAffectedIds(action.initialShape.id);
+    if ((action as any).initialShape) getAffectedIds((action as any).initialShape.id);
 
     const getRootSelectedId = (id: string): string => {
         const realId = id.replace('-preview', '');
@@ -1482,11 +1489,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     if ((action.type === 'resizing' || action.type === 'rotating' || action.type === 'dragging' || action.type === 'duplicating') && affectedShapeIds.length > 1 && updatedShape) {
         if (action.type === 'rotating') {
             const rotShape = updatedShape as Shape & RotatableShape;
-            const initShape = action.initialShape as Shape & RotatableShape;
+            const initShape = (action as any).initialShape as Shape & RotatableShape;
             const deltaRot = (rotShape.rotation ?? 0) - (initShape.rotation ?? 0);
             
             auxShapes = affectedShapeIds
-                .filter(id => id !== action.initialShape.id.replace('-preview', ''))
+                .filter(id => id !== (action as any).initialShape.id.replace('-preview', ''))
                 .map(id => {
                     const s = shapes.find(sh => sh.id === id);
                     if (!s) return null;
@@ -1495,7 +1502,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     
                     const rootId = getRootSelectedId(s.id);
                     let rotCenter = action.center;
-                    if (rootId !== action.initialShape.id) {
+                    if (rootId !== (action as any).initialShape.id) {
                         const rootShape = shapes.find(sh => sh.id === rootId);
                         rotCenter = rootShape ? (getShapeCenter(rootShape, shapes) || c) : c;
                     }
@@ -1520,7 +1527,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 }).filter(Boolean) as Shape[];
         } else if (action.type === 'resizing') {
             if (action.handle === 'line-start' || action.handle === 'line-end') {
-                const initLine = action.initialShape as LineShape;
+                const initLine = (action as any).initialShape as LineShape;
                 const newPoints = (updatedShape as LineShape).points;
                 const dx = newPoints[0].x - initLine.points[0].x;
                 const dy = newPoints[0].y - initLine.points[0].y;
@@ -1528,7 +1535,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 const dyEnd = newPoints[1].y - initLine.points[1].y;
 
                 auxShapes = affectedShapeIds
-                    .filter(id => id !== action.initialShape.id.replace('-preview', ''))
+                    .filter(id => id !== (action as any).initialShape.id.replace('-preview', ''))
                     .map(id => {
                         const s = shapes.find(sh => sh.id === id);
                         if (s && s.type === 'line') {
@@ -1541,7 +1548,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         return s;
                     }).filter(Boolean) as Shape[];
             } else {
-                const oldBbox = action.initialShapeProps.bbox;
+                const oldBbox = (action as any).initialShapeProps.bbox;
                 const newBbox = (updatedShape as any)._newBbox || getBoundingBox({ ...updatedShape, rotation: 0 }, shapes);
                 // We shouldn't strictly require oldBbox.width > 0 && oldBbox.height > 0
                 // For lines/rectangles it could be 0. But let's keep it safe.
@@ -1552,7 +1559,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     const scaleY = newBbox.height / safeOldH;
                     
                     auxShapes = affectedShapeIds
-                        .filter(id => id !== action.initialShape.id.replace('-preview', ''))
+                        .filter(id => id !== (action as any).initialShape.id.replace('-preview', ''))
                         .map(id => {
                             const s = shapes.find(sh => sh.id === id);
                             if (!s) return null;
@@ -1568,7 +1575,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                             const rootId = getRootSelectedId(s.id);
                             let simulatedX, simulatedY;
                             
-                            if (rootId === action.initialShape.id) {
+                            if (rootId === (action as any).initialShape.id) {
                                 simulatedX = newBbox.x + (sBbox.x - oldBbox.x) * scaleX;
                                 simulatedY = newBbox.y + (sBbox.y - oldBbox.y) * scaleY;
                             } else {
@@ -1620,7 +1627,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             }
             
             auxShapes = affectedShapeIds
-                .filter(id => id !== action.initialShape.id.replace('-preview', ''))
+                .filter(id => id !== (action as any).initialShape.id.replace('-preview', ''))
                 .map(id => {
                     const s = shapes.find(sh => sh.id === id);
                     if (!s) return null;
@@ -2118,11 +2125,36 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   const cursor = getCursorStyle();
 
   const getTransform = (shape: Shape) => {
-    if ('rotation' in shape && shape.rotation && shape.rotation !== 0) {
-        const center = getShapeCenter(shape, shapes);
-        if(center) return `rotate(${-shape.rotation} ${center.x} ${center.y})`;
+    let transformStr = "";
+    const isSpecialFlip = ['image', 'bitmap', 'text', 'arc'].includes(shape.type);
+    const isFlippedH = isSpecialFlip && 'isFlippedHorizontally' in shape && (shape as any).isFlippedHorizontally;
+    const isFlippedV = isSpecialFlip && 'isFlippedVertically' in shape && (shape as any).isFlippedVertically;
+    const hasRotation = 'rotation' in shape && shape.rotation && shape.rotation !== 0;
+
+    if (!isFlippedH && !isFlippedV && !hasRotation) return undefined;
+
+    const center = getShapeCenter(shape, shapes);
+    if (!center) return undefined;
+
+    if (center.x !== 0 || center.y !== 0) {
+        transformStr += `translate(${center.x} ${center.y}) `;
     }
-    return undefined;
+
+    if (hasRotation) {
+        transformStr += `rotate(${-shape.rotation}) `;
+    }
+
+    if (isFlippedH || isFlippedV) {
+        const sx = isFlippedH ? -1 : 1;
+        const sy = isFlippedV ? -1 : 1;
+        transformStr += `scale(${sx} ${sy}) `;
+    }
+
+    if (center.x !== 0 || center.y !== 0) {
+        transformStr += `translate(${-center.x} ${-center.y})`;
+    }
+
+    return transformStr.trim() || undefined;
   };
   
     const arrowMarkers = useMemo(() => {
@@ -2240,16 +2272,16 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   const isDuplicating = action?.type === 'duplicating';
 
   const rotationInfo = useMemo(() => {
-    if (action?.type === 'rotating' && action.initialShape && 'rotation' in action.initialShape) {
+    if (action?.type === 'rotating' && (action as any).initialShape && 'rotation' in (action as any).initialShape) {
         let currentRotation: number | null = null;
         if (activeTransformShape && 'rotation' in activeTransformShape) {
             currentRotation = (activeTransformShape as RotatableShape).rotation;
-        } else if (action.initialShape && 'rotation' in action.initialShape) {
-            currentRotation = (action.initialShape as RotatableShape).rotation;
+        } else if ((action as any).initialShape && 'rotation' in (action as any).initialShape) {
+            currentRotation = ((action as any).initialShape as RotatableShape).rotation;
         }
 
         if (currentRotation !== null) {
-            const initialRotation = action.initialShape.rotation;
+            const initialRotation = (action as any).initialShape.rotation;
             let delta = currentRotation - initialRotation;
             
             if (delta > 180) delta -= 360;
@@ -2432,16 +2464,21 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 )}
 
             {itemsToRender.filter(Boolean).map(shape => {
-                if (shape.state === 'hidden') return null;
+                const isSelected = selectedShapeIds.includes(shape.id) || (!!shape.groupId && selectedShapeIds.includes(shape.groupId));
+                const isHidden = shape.state === 'hidden';
+                
+                // User requirement: In hidden mode, display shapes (semi-transparently) ONLY if they are selected.
+                if (isHidden && !isSelected) return null;
 
+                const isHiddenAndSelected = isHidden && isSelected;
                 const isDisabled = shape.state === 'disabled';
                 const isDrawing = activeTool !== 'select';
                 const isDuplicationPreview = action?.type === 'duplicating' && shape.id.endsWith('-preview');
-                const shapeCursor = isDisabled ? 'default' : (isDrawing ? 'inherit' : 'move');
+                const shapeCursor = (isDisabled || isHiddenAndSelected) ? 'default' : (isDrawing ? 'inherit' : 'move');
                 const hitboxStrokeWidth = Math.max(shape.strokeWidth, 20 / viewTransform.scale);
                 
                 let transform = getTransform(shape);
-                const isThisShapeBeingPointEdited = action?.type === 'point-editing' && shape.id === action.initialShape.id;
+                const isThisShapeBeingPointEdited = action?.type === 'point-editing' && shape.id === (action as any).initialShape.id;
                 // FIX: Complete the variable name from `isThisShapeBeing` to `isThisShapeBeingPointEdited`.
                 if (isThisShapeBeingPointEdited) {
                     transform = undefined;
@@ -2454,9 +2491,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     stroke: shape.stroke,
                     strokeWidth: shape.strokeWidth,
                     style: { 
-                        opacity: shape.state === 'disabled' || isDuplicationPreview ? 0.5 : 1,
+                        opacity: shape.state === 'disabled' || isDuplicationPreview ? 0.5 : (isHidden ? 0.3 : 1),
                         cursor: shapeCursor,
-                        pointerEvents: lockedShapeIds.has(shape.id) ? 'none' : (isDisabled ? 'none' : 'auto'),
+                        pointerEvents: lockedShapeIds.has(shape.id) || isHidden ? 'none' : (isDisabled ? 'none' : 'auto'),
                      } as React.CSSProperties,
                     transform: transform,
                 };
@@ -2488,7 +2525,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 const finalStaticProps: any = {
                     ...staticProps,
                     strokeWidth: shape.strokeWidth, // Завжди використовуємо візуальну товщину
-                    pointerEvents: (shape.type === 'line' || shape.type === 'pencil' || (shape.type === 'polyline' && !shape.isClosed)) ? 'stroke' : 'all',
+                    pointerEvents: lockedShapeIds.has(shape.id) || isHidden || isDisabled ? 'none' : ((shape.type === 'line' || shape.type === 'pencil' || (shape.type === 'polyline' && !shape.isClosed)) ? 'stroke' : 'all'),
                 }
 
                 switch (shape.type) {
@@ -2524,7 +2561,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                     data-id={shape.id}
                                     strokeLinecap={shape.capstyle === 'projecting' ? 'square' : (shape.capstyle ?? 'butt')}
                                     transform={finalStaticProps.transform}
-                                    style={{ cursor: finalStaticProps.style.cursor, pointerEvents: 'stroke' }}
+                                    style={{ cursor: finalStaticProps.style.cursor, pointerEvents: finalStaticProps.pointerEvents === 'none' ? 'none' : 'stroke' }}
                                 />
                                 <line {...finalStaticProps} stroke={shape.stroke} strokeWidth={shape.strokeWidth} x1={shape.points[0].x} y1={shape.points[0].y} x2={shape.points[1].x} y2={shape.points[1].y} {...lineLikeProps(shape)} style={{ ...finalStaticProps.style, pointerEvents: 'none' }} />
                             </React.Fragment>
@@ -2545,7 +2582,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                         strokeLinejoin={shape.joinstyle ?? 'round'}
                                         transform={finalStaticProps.transform}
                                         data-id={shape.id}
-                                        style={{ cursor: finalStaticProps.style.cursor, pointerEvents: 'stroke' }}
+                                        style={{ cursor: finalStaticProps.style.cursor, pointerEvents: finalStaticProps.pointerEvents === 'none' ? 'none' : 'stroke' }}
                                     />
                                     <path {...finalStaticProps} stroke={shape.stroke} strokeWidth={shape.strokeWidth} d={pathData} fill={fill} {...lineLikeProps(shape)} {...joinStyleProps(shape)} style={{ ...finalStaticProps.style, pointerEvents: 'none' }} />
                                 </React.Fragment>
@@ -2562,13 +2599,13 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                     stroke="transparent"
                                     strokeWidth={hitboxStrokeWidth}
                                     fill="none"
-                                    strokeLinecap="round"
+                                    
                                     strokeLinejoin={shape.joinstyle ?? 'round'}
                                     transform={finalStaticProps.transform}
                                     data-id={shape.id}
-                                    style={{ cursor: finalStaticProps.style.cursor, pointerEvents: 'stroke' }}
+                                    style={{ cursor: finalStaticProps.style.cursor, pointerEvents: finalStaticProps.pointerEvents === 'none' ? 'none' : 'stroke' }}
                                  />
-                                 <path {...finalStaticProps} stroke={shape.stroke} strokeWidth={shape.strokeWidth} d={d} fill="none" strokeLinecap="round" {...joinStyleProps(shape)} {...lineLikeProps(shape)} style={{ ...finalStaticProps.style, pointerEvents: 'none' }} />
+                                 <path {...finalStaticProps} stroke={shape.stroke} strokeWidth={shape.strokeWidth} d={d} fill="none" {...joinStyleProps(shape)} {...lineLikeProps(shape)} style={{ ...finalStaticProps.style, pointerEvents: 'none' }} />
                             </React.Fragment>
                         );
                     }
@@ -2589,9 +2626,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                 <React.Fragment key={shape.id}>
                                     {/* Hitbox */}
                                     {shape.smooth ? (
-                                        <path d={d!} stroke="transparent" strokeWidth={hitboxStrokeWidth} fill="none" strokeLinecap="round" strokeLinejoin={shape.joinstyle ?? 'miter'} transform={finalStaticProps.transform} data-id={shape.id} style={{ cursor: finalStaticProps.style.cursor, pointerEvents: 'stroke' }} />
+                                        <path d={d!} stroke="transparent" strokeWidth={hitboxStrokeWidth} fill="none" strokeLinejoin={shape.joinstyle ?? 'miter'} transform={finalStaticProps.transform} data-id={shape.id} style={{ cursor: finalStaticProps.style.cursor, pointerEvents: finalStaticProps.pointerEvents === 'none' ? 'none' : 'stroke' }} />
                                     ) : (
-                                        <polyline points={pointsStr!} stroke="transparent" strokeWidth={hitboxStrokeWidth} fill="none" strokeLinecap={shape.capstyle === 'projecting' ? 'square' : (shape.capstyle ?? 'butt')} strokeLinejoin={shape.joinstyle ?? 'miter'} transform={finalStaticProps.transform} data-id={shape.id} style={{ cursor: finalStaticProps.style.cursor, pointerEvents: 'stroke' }} />
+                                        <polyline points={pointsStr!} stroke="transparent" strokeWidth={hitboxStrokeWidth} fill="none" strokeLinecap={shape.capstyle === 'projecting' ? 'square' : (shape.capstyle ?? 'butt')} strokeLinejoin={shape.joinstyle ?? 'miter'} transform={finalStaticProps.transform} data-id={shape.id} style={{ cursor: finalStaticProps.style.cursor, pointerEvents: finalStaticProps.pointerEvents === 'none' ? 'none' : 'stroke' }} />
                                     )}
                                     
                                     {/* Visual */}
@@ -2747,7 +2784,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                      style={{ pointerEvents: 'none' }}
                  />
              )}
-             {!props.distributePathState && selectedShapes.map((shape) => (
+             {!props.distributePathState && selectedShapes.filter(s => s.state !== 'hidden').map((shape) => (
                  <SelectionControls
                      key={`selection-controls-${shape.id}`}
                      shape={shape}
@@ -2799,7 +2836,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                 setAction({ type: 'edit-distribute-path', handle: 'center', startPoint: pt, initialDistributePath: props.distributePathState! });
                             }} onTouchStart={(e) => {
                                 e.stopPropagation();
-                                const pt = getTransformedPointerPosition(getPointerPosition(e));
+                                const pt = getTransformedPointerPosition(getPointerPosition(e.touches[0]));
                                 setAction({ type: 'edit-distribute-path', handle: 'center', startPoint: pt, initialDistributePath: props.distributePathState! });
                             }} />
                             {/* Radius Handle */}
@@ -2809,7 +2846,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                 setAction({ type: 'edit-distribute-path', handle: 'radius', startPoint: pt, initialDistributePath: props.distributePathState! });
                             }} onTouchStart={(e) => {
                                 e.stopPropagation();
-                                const pt = getTransformedPointerPosition(getPointerPosition(e));
+                                const pt = getTransformedPointerPosition(getPointerPosition(e.touches[0]));
                                 setAction({ type: 'edit-distribute-path', handle: 'radius', startPoint: pt, initialDistributePath: props.distributePathState! });
                             }} />
                             {/* Rotation Handle */}
@@ -2830,7 +2867,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                         setAction({ type: 'edit-distribute-path', handle: 'rotate', startPoint: pt, initialDistributePath: props.distributePathState! });
                                     }} onTouchStart={(e) => {
                                         e.stopPropagation();
-                                        const pt = getTransformedPointerPosition(getPointerPosition(e));
+                                        const pt = getTransformedPointerPosition(getPointerPosition(e.touches[0]));
                                         setAction({ type: 'edit-distribute-path', handle: 'rotate', startPoint: pt, initialDistributePath: props.distributePathState! });
                                     }} />
                             </g>
@@ -2858,7 +2895,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                 setAction({ type: 'edit-distribute-path', handle: 'start', startPoint: pt, initialDistributePath: props.distributePathState! });
                             }} onTouchStart={(e) => {
                                 e.stopPropagation();
-                                const pt = getTransformedPointerPosition(getPointerPosition(e));
+                                const pt = getTransformedPointerPosition(getPointerPosition(e.touches[0]));
                                 setAction({ type: 'edit-distribute-path', handle: 'start', startPoint: pt, initialDistributePath: props.distributePathState! });
                             }} />
                             {/* End Handle */}
@@ -2868,7 +2905,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                 setAction({ type: 'edit-distribute-path', handle: 'end', startPoint: pt, initialDistributePath: props.distributePathState! });
                             }} onTouchStart={(e) => {
                                 e.stopPropagation();
-                                const pt = getTransformedPointerPosition(getPointerPosition(e));
+                                const pt = getTransformedPointerPosition(getPointerPosition(e.touches[0]));
                                 setAction({ type: 'edit-distribute-path', handle: 'end', startPoint: pt, initialDistributePath: props.distributePathState! });
                             }} />
                             {/* Rotation Handle */}
@@ -2889,7 +2926,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                         setAction({ type: 'edit-distribute-path', handle: 'rotate', startPoint: pt, initialDistributePath: props.distributePathState! });
                                     }} onTouchStart={(e) => {
                                         e.stopPropagation();
-                                        const pt = getTransformedPointerPosition(getPointerPosition(e));
+                                        const pt = getTransformedPointerPosition(getPointerPosition(e.touches[0]));
                                         setAction({ type: 'edit-distribute-path', handle: 'rotate', startPoint: pt, initialDistributePath: props.distributePathState! });
                                     }} />
                             </g>
@@ -2922,7 +2959,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             {/* Snap Lines */}
             {(snapLines.x !== null || (keyboardSnapLines && keyboardSnapLines.x !== null)) && (
                 <line 
-                    x1={snapLines.x !== null ? snapLines.x : keyboardSnapLines?.x} y1={-100000} x2={snapLines.x !== null ? snapLines.x : keyboardSnapLines?.x} y2={100000} 
+                    x1={snapLines.x !== null ? snapLines.x : (keyboardSnapLines?.x ?? undefined)} y1={-100000} x2={snapLines.x !== null ? snapLines.x : (keyboardSnapLines?.x ?? undefined)} y2={100000} 
                     stroke="var(--accent-primary)" 
                     strokeWidth={1 / viewTransform.scale} 
                     strokeDasharray={`${5 / viewTransform.scale},${5 / viewTransform.scale}`} 
@@ -2931,7 +2968,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             )}
             {(snapLines.y !== null || (keyboardSnapLines && keyboardSnapLines.y !== null)) && (
                 <line 
-                    x1={-100000} y1={snapLines.y !== null ? snapLines.y : keyboardSnapLines?.y} x2={100000} y2={snapLines.y !== null ? snapLines.y : keyboardSnapLines?.y} 
+                    x1={-100000} y1={snapLines.y !== null ? snapLines.y : (keyboardSnapLines?.y ?? undefined)} x2={100000} y2={snapLines.y !== null ? snapLines.y : (keyboardSnapLines?.y ?? undefined)} 
                     stroke="var(--accent-primary)" 
                     strokeWidth={1 / viewTransform.scale} 
                     strokeDasharray={`${5 / viewTransform.scale},${5 / viewTransform.scale}`} 

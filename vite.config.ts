@@ -17,8 +17,8 @@ export default defineConfig({
         theme_color: '#1f2937',
         background_color: '#111827',
         display: 'standalone',
-        scope: '/VereTka/',
-        start_url: '/VereTka/',
+        scope: '/',
+        start_url: '/',
         orientation: 'any',
         icons: [
           {
@@ -66,9 +66,10 @@ export default defineConfig({
       }
     })
   ],
-  base: '/VereTka/',
+  base: '/',
   server: {
     port: 3000,
+    strictPort: true,
     host: '0.0.0.0',
     allowedHosts: true,
   },

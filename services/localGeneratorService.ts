@@ -90,13 +90,19 @@ function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, ca
             shape.tags.split('\n').map(t => t.trim()).filter(Boolean).forEach(t => tagsSet.add(t));
         }
 
-        if (shape.groupId) {
+        let currentGroupId: string | undefined = shape.groupId;
+        while (currentGroupId) {
             if (showSystemTags) {
-                tagsSet.add(shape.groupId);
+                tagsSet.add(currentGroupId);
             }
-            const parentGroup = allShapes.find(s => s.id === shape.groupId);
-            if (parentGroup && parentGroup.tags) {
-                parentGroup.tags.split('\n').map(t => t.trim()).filter(Boolean).forEach(t => tagsSet.add(t));
+            const parentGroup = allShapes.find(s => s.id === currentGroupId);
+            if (parentGroup) {
+                if (parentGroup.tags) {
+                    parentGroup.tags.split('\n').map(t => t.trim()).filter(Boolean).forEach(t => tagsSet.add(t));
+                }
+                currentGroupId = parentGroup.groupId;
+            } else {
+                currentGroupId = undefined;
             }
         }
     }

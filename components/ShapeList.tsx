@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { Shape, Tool, PolylineShape, DistributePathState, Layer } from '../types';
-import { ArrowUpIcon, ArrowDownIcon, TrashIcon, SquareIcon, CircleIcon, LineIcon, EllipseIcon, PencilIcon, TriangleIcon, PolygonIcon, StarIcon, SelectIcon, EditPointsIcon, PolylineIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, BezierIcon, RectangleIcon, ArcIcon, PiesliceIcon, ChordIcon, RightTriangleIcon, EyeIcon, EyeOffIcon, TextIcon, ImageIcon, BitmapIcon, LocateIcon, LockIcon, ChevronDownIcon, ChevronRightIcon } from './icons';
+import { ArrowUpIcon, ArrowDownIcon, TrashIcon, SquareIcon, CircleIcon, LineIcon, EllipseIcon, PencilIcon, TriangleIcon, PolygonIcon, StarIcon, SelectIcon, SelectOffIcon, EditPointsIcon, PolylineIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, BezierIcon, RectangleIcon, ArcIcon, PiesliceIcon, ChordIcon, RightTriangleIcon, EyeIcon, EyeOffIcon, TextIcon, ImageIcon, BitmapIcon, LocateIcon, LockIcon, ChevronDownIcon, ChevronRightIcon } from './icons';
 import { getDefaultNameForShape, getTkinterType, isDefaultName } from '../lib/constants';
 import { isPolylineAxisAlignedRectangle } from '../lib/geometry';
 import { useLanguage } from './LanguageContext';
@@ -13,14 +13,16 @@ interface ShapeListProps {
   activeLayerId: string | null;
   lockedShapeIds: Set<string>;
   selectedShapeIds: string[];
-  onSelectShape: (id: string | null, isCtrlPressed?: boolean, isShiftPressed?: boolean, ignoreGroup?: boolean) => void;
+  onSelectShape: (id: string | string[] | null, isCtrlPressed?: boolean, isShiftPressed?: boolean, ignoreGroup?: boolean) => void;
   onDeleteShape: (id: string) => void;
   onMoveShape: (id: string, direction: 'up' | 'down') => void;
   onUpdateShape: (shape: Shape) => void;
-  onReorderShape: (draggedId: string, targetId: string, position: 'top' | 'bottom') => void;
+  onReorderShape: (draggedId: string, targetId: string, position: 'top' | 'bottom' | 'inside') => void;
   onMoveToLayer: (shapeId: string, layerId: string) => void;
   onSetActiveLayer: (layerId: string) => void;
   showTkinterNames: boolean;
+  onLayerWarning?: (reason: 'hidden' | 'locked', layerId: string) => void;
+  ignoreHiddenWarningForLayer?: string | null;
 }
 
 const toolToIcon: Record<Tool | 'group', React.ReactNode> = {
@@ -98,12 +100,12 @@ const ShapeNameDisplay = ({ isSelected, shapeName, showTkinterNames, tkinterName
     );
 };
 
-const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, layers, activeLayerId, lockedShapeIds, selectedShapeIds, onSelectShape, onDeleteShape, onMoveShape, onUpdateShape, onReorderShape, onMoveToLayer, onSetActiveLayer, showTkinterNames }) => {
+const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, layers, activeLayerId, lockedShapeIds, selectedShapeIds, onSelectShape, onDeleteShape, onMoveShape, onUpdateShape, onReorderShape, onMoveToLayer, onSetActiveLayer, showTkinterNames, onLayerWarning, ignoreHiddenWarningForLayer }) => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingValue, setEditingValue] = useState('');
     const [draggedId, setDraggedId] = useState<string | null>(null);
     const [dragOverId, setDragOverId] = useState<string | null>(null);
-    const [dropPosition, setDropPosition] = useState<'top' | 'bottom' | null>(null);
+    const [dropPosition, setDropPosition] = useState<'top' | 'bottom' | 'inside' | null>(null);
     const [collapsedLayers, setCollapsedLayers] = useState<Set<string>>(new Set());
     const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
     const { t } = useLanguage();
@@ -247,18 +249,40 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
         e.preventDefault();
         if (shapeId === draggedId) return;
         setDragOverId(shapeId);
+        
         const rect = e.currentTarget.getBoundingClientRect();
-        const midpoint = rect.top + rect.height / 2;
-        setDropPosition(e.clientY < midpoint ? 'top' : 'bottom');
+        const y = e.clientY - rect.top;
+        const targetShape = shapes.find(s => s.id === shapeId);
+        
+        if (targetShape?.type === 'group') {
+            if (y < rect.height * 0.25) {
+                setDropPosition('top');
+            } else if (y > rect.height * 0.75) {
+                setDropPosition('bottom');
+            } else {
+                setDropPosition('inside');
+            }
+        } else {
+            const midpoint = rect.height / 2;
+            setDropPosition(y < midpoint ? 'top' : 'bottom');
+        }
     };
 
-    const handleDragLeave = () => {
+    const handleDragLeave = (e?: React.DragEvent) => {
         setDragOverId(null);
         setDropPosition(null);
     };
 
     const handleDrop = (e: React.DragEvent<HTMLLIElement>, targetId: string) => {
         e.preventDefault();
+        e.stopPropagation();
+        if (lockedShapeIds.has(targetId)) {
+            if (onLayerWarning) onLayerWarning('locked', layer.id);
+            setDraggedId(null);
+            setDragOverId(null);
+            setDropPosition(null);
+            return;
+        }
         if (draggedId && draggedId !== targetId && dropPosition) {
             onReorderShape(draggedId, targetId, dropPosition);
         }
@@ -267,13 +291,32 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
         setDropPosition(null);
     };
 
-    const handleDragEnd = () => {
+    const handleDragEnd = (e?: React.DragEvent) => {
         setDraggedId(null);
         setDragOverId(null);
         setDropPosition(null);
     };
 
-    const renderShapeItem = (shape: Shape, index: number, originalIndex: number, level: number = 0, isLayerVisible: boolean = true, isLastChild: boolean = false) => {
+    const renderShapeTree = (shape: Shape, index: number, originalIndex: number, level: number = 0, isLayerVisible: boolean = true, isLastChild: boolean = false, layerShapes: Shape[] = []) => {
+        let childrenNode: React.ReactNode = null;
+        if (shape.type === 'group') {
+            const children = layerShapes.filter(s => shape.shapeIds?.includes(s.id)).reverse();
+            if (children.length > 0 && !collapsedGroups.has(shape.id)) {
+                childrenNode = (
+                    <ul className="ml-[14px] pl-2 space-y-0.5 pt-0 mt-0 relative z-0">
+                        {children.map((child, cIdx) => {
+                            const cOriginalIndex = shapes.findIndex(s => s.id === child.id);
+                            const isLastChildForGroup = cIdx === children.length - 1;
+                            return renderShapeTree(child, cIdx, cOriginalIndex, level + 1, isLayerVisible, isLastChildForGroup, layerShapes);
+                        })}
+                    </ul>
+                );
+            }
+        }
+        return renderShapeItem(shape, index, originalIndex, level, isLayerVisible, isLastChild, childrenNode);
+    };
+
+    const renderShapeItem = (shape: Shape, index: number, originalIndex: number, level: number = 0, isLayerVisible: boolean = true, isLastChild: boolean = false, childrenNode: React.ReactNode = null) => {
         if (!shape) return null;
         const isDistributing = distributePathState?.entities.some(e => e.ids.includes(shape.id)) ?? false;
         const isSelected = selectedShapeIds.includes(shape.id);
@@ -296,6 +339,7 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
         const defaultName = getDefaultNameForShape(shape, t);
         const isDragOverTop = dragOverId === shape.id && dropPosition === 'top';
         const isDragOverBottom = dragOverId === shape.id && dropPosition === 'bottom';
+        const isDragOverInside = dragOverId === shape.id && dropPosition === 'inside';
         const shapeName = !isDefaultName(shape.name || '') ? shape.name : defaultName;
         const tkinterName = showTkinterNames ? `[${getTkinterType(shape).toLowerCase()}]` : '';
         const fullTitle = `${shapeName} ${tkinterName}`.trim();
@@ -306,27 +350,24 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
                 ref={(el) => { itemRefs.current[shape.id] = el; }}
                 key={shape.id}
                 onClick={(e) => {
+                    e.stopPropagation();
                     if (isLocked) return;
                     
-                    if (shape.type === 'group' && e.shiftKey) {
-                        // User specifically requested: selecting all child shapes in a group by clicking in the list on the row with the group name with the SHIFT key pressed.
-                        if (shape.shapeIds && shape.shapeIds.length > 0) {
-                            onSelectShape(shape.shapeIds, e.ctrlKey || e.metaKey, false, true);
-                        }
-                        return;
-                    }
+
                     
-                    const isAlreadySelected = selectedShapeIds.includes(shape.id) || (shape.groupId && selectedShapeIds.includes(shape.groupId));
-                    const ignoreGroup = !!isAlreadySelected || e.ctrlKey || e.metaKey || e.shiftKey;
-                    onSelectShape(shape.id, e.ctrlKey || e.metaKey, e.shiftKey, ignoreGroup);
+                    // In list view, always select the exact item clicked to allow selecting inner shapes
+                    onSelectShape(shape.id, e.ctrlKey || e.metaKey, e.shiftKey, true);
                 }}
-                onDoubleClick={() => !isLocked && handleStartEditing(shape)}
+                onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    if (!isLocked) handleStartEditing(shape);
+                }}
                 draggable={!isEditing && !isLocked}
-                onDragStart={isEditing ? undefined : (e) => handleDragStart(e, shape.id)}
-                onDragOver={isEditing ? undefined : (e) => handleDragOver(e, shape.id)}
-                onDragLeave={isEditing ? undefined : handleDragLeave}
-                onDrop={isEditing ? undefined : (e) => handleDrop(e, shape.id)}
-                onDragEnd={isEditing ? undefined : handleDragEnd}
+                onDragStart={isEditing ? undefined : (e) => { e.stopPropagation(); handleDragStart(e, shape.id); }}
+                onDragOver={isEditing ? undefined : (e) => { e.stopPropagation(); handleDragOver(e, shape.id); }}
+                onDragLeave={isEditing ? undefined : (e) => { e.stopPropagation(); handleDragLeave(e); }}
+                onDrop={isEditing ? undefined : (e) => { e.stopPropagation(); handleDrop(e, shape.id); }}
+                onDragEnd={isEditing ? undefined : (e) => { e.stopPropagation(); handleDragEnd(e); }}
                 className={`group flex flex-col p-0 rounded-md transition-all duration-150 relative
                     ${draggedId === shape.id ? 'opacity-30' : ''}
                 `}
@@ -338,6 +379,9 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
                     )}
                     {isDragOverBottom && (
                         <div className="absolute -bottom-[3px] left-0 right-0 h-[3px] bg-[var(--selection-stroke)] rounded-full shadow-[0_0_4px_var(--selection-stroke)] z-50 pointer-events-none animate-pulse"></div>
+                    )}
+                    {isDragOverInside && (
+                         <div className="absolute inset-0 bg-[var(--selection-stroke)]/20 outline outline-2 outline-[var(--selection-stroke)] rounded-md pointer-events-none z-50 animate-pulse"></div>
                     )}
 
                     {level > 0 && (
@@ -353,15 +397,15 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
                                 <div className={`absolute left-[-9px] top-[-2px] bottom-[-2px] w-[2px] ${isParentSelected ? 'bg-[var(--accent-primary)]' : 'bg-[var(--text-tertiary)]'} pointer-events-none z-10`}></div>
                             ) : (
                                 /* Half vertical line for last child */
-                                <div className={`absolute left-[-9px] top-[-2px] bottom-[calc(50%-1px)] w-[2px] ${isParentSelected ? 'bg-[var(--accent-primary)]' : 'bg-[var(--text-tertiary)]'} pointer-events-none z-10`}></div>
+                                <div className={`absolute left-[-9px] top-[-2px] h-[16px] w-[2px] ${isParentSelected ? 'bg-[var(--accent-primary)]' : 'bg-[var(--text-tertiary)]'} pointer-events-none z-10`}></div>
                             )}
 
                             {/* Horizontal dash to child */}
-                            <div className={`absolute left-[-9px] top-[calc(50%-1px)] w-[9px] h-[2px] ${isParentSelected ? 'bg-[var(--accent-primary)]' : 'bg-[var(--text-tertiary)]'} pointer-events-none z-10`}></div>
+                            <div className={`absolute left-[-9px] top-[14px] w-[9px] h-[2px] ${isParentSelected ? 'bg-[var(--accent-primary)]' : 'bg-[var(--text-tertiary)]'} pointer-events-none z-10`}></div>
                         </>
                     )}
 
-                    <div className="flex items-center gap-2 overflow-hidden flex-1 relative z-10">
+                    <div className={`flex items-center gap-2 overflow-hidden flex-1 relative z-10 ${isLocked ? 'pointer-events-none' : ''}`}>
                         {shape.type === 'group' && (
                             <button
                                 onClick={(e) => {
@@ -374,11 +418,12 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
                                     });
                                 }}
                                 className="flex-shrink-0 p-0.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+                                style={{ pointerEvents: 'auto' }}
                             >
                                 {collapsedGroups.has(shape.id) ? <ChevronRightIcon size={12} /> : <ChevronDownIcon size={12} />}
                             </button>
                         )}
-                        <button onClick={(e) => handleToggleVisibility(e, shape)} title={shape.state === 'hidden' ? t('list.visibility.show') : t('list.visibility.hide')} className="flex-shrink-0 p-0.5 rounded hover:bg-[var(--bg-hover)]">
+                        <button onClick={(e) => handleToggleVisibility(e, shape)} disabled={isLocked} title={shape.state === 'hidden' ? t('list.visibility.show') : t('list.visibility.hide')} className="flex-shrink-0 p-0.5 rounded hover:bg-[var(--bg-hover)] disabled:opacity-50">
                             {shape.state === 'hidden' ? <EyeOffIcon size={12} /> : <EyeIcon size={12} />}
                         </button>
                         <div className="flex-shrink-0 w-3.5 h-3.5 flex items-center justify-center" style={{ opacity: (!isLayerVisible || shape.state === 'hidden') ? 0.5 : 1 }}>
@@ -410,20 +455,21 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
                         </div>
                     </div>
 
-                    <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity ml-1 flex-shrink-0">
+                    <div className={`flex items-center opacity-0 group-hover:opacity-100 transition-opacity ml-1 flex-shrink-0 ${isLocked ? 'hidden' : ''}`}>
                         <div className="flex flex-col">
-                            <button onClick={(e) => handleMoveShape(e, shape.id, 'up')} disabled={!canMoveUp} className="p-[2px] hover:bg-[var(--bg-app)] rounded-t-sm disabled:opacity-30 disabled:cursor-not-allowed text-[var(--text-secondary)] hover:text-[var(--text-primary)]" title={t('list.moveUp')}>
+                            <button onClick={(e) => handleMoveShape(e, shape.id, 'up')} disabled={!canMoveUp || isLocked} className="p-[2px] hover:bg-[var(--bg-app)] rounded-t-sm disabled:opacity-30 disabled:cursor-not-allowed text-[var(--text-secondary)] hover:text-[var(--text-primary)]" title={t('list.moveUp')}>
                                 <ArrowUpIcon size={12} />
                             </button>
-                            <button onClick={(e) => handleMoveShape(e, shape.id, 'down')} disabled={!canMoveDown} className="p-[2px] hover:bg-[var(--bg-app)] rounded-b-sm disabled:opacity-30 disabled:cursor-not-allowed text-[var(--text-secondary)] hover:text-[var(--text-primary)]" title={t('list.moveDown')}>
+                            <button onClick={(e) => handleMoveShape(e, shape.id, 'down')} disabled={!canMoveDown || isLocked} className="p-[2px] hover:bg-[var(--bg-app)] rounded-b-sm disabled:opacity-30 disabled:cursor-not-allowed text-[var(--text-secondary)] hover:text-[var(--text-primary)]" title={t('list.moveDown')}>
                                 <ArrowDownIcon size={12} />
                             </button>
                         </div>
-                        <button onClick={(e) => { e.stopPropagation(); onDeleteShape(shape.id); }} disabled={!!distributePathState} className="p-1 ml-1 text-red-500 hover:bg-red-500 hover:text-white rounded-md transition-colors opacity-70 hover:opacity-100 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-red-500" title={t('list.delete')}>
+                        <button onClick={(e) => { e.stopPropagation(); onDeleteShape(shape.id); }} disabled={!!distributePathState || isLocked} className="p-1 ml-1 text-red-500 hover:bg-red-500 hover:text-white rounded-md transition-colors opacity-70 hover:opacity-100 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-red-500" title={t('list.delete')}>
                             <TrashIcon size={14} />
                         </button>
                     </div>
                 </div>
+                {childrenNode}
             </li>
         );
     };
@@ -474,8 +520,17 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
                             return (
                                 <div key={layer.id} className="flex flex-col">
                                     <div 
-                                        className={`px-2 py-1 flex items-center justify-between text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider rounded cursor-pointer transition-colors ${activeLayerId === layer.id ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]' : 'hover:bg-[var(--bg-hover)]'} ${isDragOverLayer ? 'bg-[var(--accent-primary)]/20 outline outline-1 outline-[var(--accent-primary)]' : ''}`}
-                                        onClick={() => onSetActiveLayer(layer.id)}
+                                        className={`group px-2 py-1 flex items-center justify-between text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider rounded cursor-pointer transition-colors ${activeLayerId === layer.id ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]' : 'hover:bg-[var(--bg-hover)]'} ${isDragOverLayer ? 'bg-[var(--accent-primary)]/20 outline outline-1 outline-[var(--accent-primary)]' : ''}`}
+                                        onClick={(e) => {
+                                            if (e.shiftKey) {
+                                                if (layer.shapeIds.length > 0) {
+                                                    const selectableIds = layer.shapeIds.filter(id => !lockedShapeIds.has(id));
+                                                    if (selectableIds.length > 0) onSelectShape(selectableIds, e.ctrlKey || e.metaKey, false, true);
+                                                }
+                                            } else {
+                                                onSetActiveLayer(layer.id);
+                                            }
+                                        }}
                                         onDragOver={(e) => {
                                             e.preventDefault();
                                             setDragOverId(layer.id);
@@ -486,6 +541,18 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
                                         }}
                                         onDrop={(e) => {
                                             e.preventDefault();
+                                            if (layer.locked) {
+                                                if (onLayerWarning) onLayerWarning('locked', layer.id);
+                                                setDragOverId(null);
+                                                setDraggedId(null);
+                                                return;
+                                            }
+                                            if (!layer.visible && ignoreHiddenWarningForLayer !== layer.id) {
+                                                if (onLayerWarning) onLayerWarning('hidden', layer.id);
+                                                setDragOverId(null);
+                                                setDraggedId(null);
+                                                return;
+                                            }
                                             if (draggedId) {
                                                 onMoveToLayer(draggedId, layer.id);
                                             }
@@ -519,8 +586,33 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
                                             </button>
                                             <span className="flex items-center gap-1">
                                                 {layer.name}
+                                                {layer.locked && <span className="flex-shrink-0 text-[var(--text-secondary)] ml-1" title={t('menu.edit.lock') || 'Заблоковано'}><LockIcon size={12} /></span>}
                                                 {!layer.visible && <span className="text-[10px] text-amber-500 font-normal leading-none tracking-normal capitalize" title={t('list.layerHidden') || 'Шар прихований'}>Прихований [H]</span>}
                                             </span>
+                                        </div>
+                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button 
+                                                className="p-1 rounded hover:bg-[var(--bg-app)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                                                onClick={(e) => { 
+                                                    e.stopPropagation(); 
+                                                    const selectableIds = layer.shapeIds.filter(id => !lockedShapeIds.has(id));
+                                                    if (selectableIds.length > 0) onSelectShape(selectableIds, e.ctrlKey || e.metaKey, false, true); 
+                                                }}
+                                                title={t('list.selectAll')}
+                                            >
+                                                <SelectIcon size={12} />
+                                            </button>
+                                            <button 
+                                                className="p-1 rounded hover:bg-[var(--bg-app)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                                                onClick={(e) => { 
+                                                    e.stopPropagation(); 
+                                                    const newSelection = selectedShapeIds.filter(id => !layer.shapeIds.includes(id));
+                                                    onSelectShape(newSelection.length > 0 ? newSelection : null, false, false, true); 
+                                                }}
+                                                title={t('list.deselectAll')}
+                                            >
+                                                <SelectOffIcon size={12} />
+                                            </button>
                                         </div>
                                         {activeLayerId === layer.id && <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)] flex-shrink-0"></span>}
                                     </div>
@@ -531,25 +623,7 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
                                             if (shape.groupId) return null; // Skip children of groups
                                             
                                             const originalIndex = shapes.findIndex(s => s.id === shape.id);
-                                            const el = renderShapeItem(shape, index, originalIndex, 0, layer.visible);
-                                            if (shape.type === 'group') {
-                                                const children = layerShapes.filter(s => shape.shapeIds?.includes(s.id)).reverse();
-                                                return (
-                                                    <React.Fragment key={shape.id}>
-                                                        {el}
-                                                        {!collapsedGroups.has(shape.id) && (
-                                                            <ul className="ml-[14px] pl-2 space-y-0.5 pt-0 mt-0 relative z-0">
-                                                                {children.map((child, cIdx) => {
-                                                                    const cOriginalIndex = shapes.findIndex(s => s.id === child.id);
-                                                                    const isLastChild = cIdx === children.length - 1;
-                                                                    return renderShapeItem(child, cIdx, cOriginalIndex, 1, layer.visible, isLastChild);
-                                                                })}
-                                                            </ul>
-                                                        )}
-                                                    </React.Fragment>
-                                                );
-                                            }
-                                            return el;
+                                            return renderShapeTree(shape, index, originalIndex, 0, layer.visible, false, layerShapes);
                                         })}
                                         {layerShapes.length === 0 && (
                                             <li className="text-xs text-[var(--text-tertiary)] italic px-3 py-1">

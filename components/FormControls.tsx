@@ -9,8 +9,8 @@ export const InputWrapper: React.FC<{ children: React.ReactNode }> = ({ children
     <div className="flex items-center gap-2">{children}</div>
 );
 
-export const Label: React.FC<{ htmlFor: string; children?: React.ReactNode; title?: string }> = ({ htmlFor, children, title }) => (
-    <label htmlFor={htmlFor} className="text-sm font-medium text-[var(--text-secondary)] w-28 flex-shrink-0" title={title}>{children}</label>
+export const Label: React.FC<{ htmlFor: string; children?: React.ReactNode; title?: string; className?: string }> = ({ htmlFor, children, title, className }) => (
+    <label htmlFor={htmlFor} className={`text-sm font-medium text-[var(--text-secondary)] w-28 flex-shrink-0 ${className || ""}`} title={title}>{children}</label>
 );
 
 export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: number; onChange: (value: number) => void, disabled?: boolean; step?: number; min?: number; max?: number; onFocus?: React.FocusEventHandler<HTMLInputElement>; title?: string, className?: string, smartRound?: boolean, unit?: string; onBlur?: React.FocusEventHandler<HTMLInputElement>; onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>; autoFocus?: boolean, stepLogic?: 'grid'; placeholder?: string }> (

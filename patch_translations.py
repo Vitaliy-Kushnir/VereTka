@@ -1,32 +1,31 @@
 import re
 
-with open('lib/translations.ts', 'r') as f:
-    content = f.read()
+with open("lib/translations.ts", "r") as f:
+    text = f.read()
 
-# Add uk
-content = content.replace(
-    "'action.confirm': 'Підтвердити',",
-    "'action.confirm': 'Підтвердити',\n    'app.confirmReorderTitle': 'Підтвердження дії',\n    'app.confirmGroupAdd': 'Ви дійсно бажаєте перемістити вибрану фігуру до цієї групи?',\n    'app.confirmGroupRemove': 'Ви дійсно бажаєте вилучити вибрану фігуру з групи?',\n    'app.confirmExtractTitle': 'Вилучення з групи',\n    'app.confirmExtractMessage': 'Ви дійсно бажаєте вилучити вибрану фігуру з групи?',"
-)
+# For UK
+s_uk = "'menu.edit.extractFromGroup': 'Вилучити із групи',"
+r_uk = s_uk + "\n    'menu.edit.flipH': 'Віддзеркалити по горизонталі',\n    'menu.edit.flipV': 'Віддзеркалити по вертикалі',"
+if s_uk in text:
+    text = text.replace(s_uk, r_uk)
 
-# Add en
-content = content.replace(
-    "'action.confirm': 'Confirm',",
-    "'action.confirm': 'Confirm',\n    'app.confirmReorderTitle': 'Confirm Action',\n    'app.confirmGroupAdd': 'Are you sure you want to move the selected shape into this group?',\n    'app.confirmGroupRemove': 'Are you sure you want to remove the selected shape from its group?',\n    'app.confirmExtractTitle': 'Extract from Group',\n    'app.confirmExtractMessage': 'Are you sure you want to extract the selected shape from its group?',"
-)
+# For EN
+s_en = "'menu.edit.extractFromGroup': 'Extract from group',"
+r_en = s_en + "\n    'menu.edit.flipH': 'Flip Horizontal',\n    'menu.edit.flipV': 'Flip Vertical',"
+if s_en in text:
+    text = text.replace(s_en, r_en)
 
-# Add it
-content = content.replace(
-    "'action.confirm': 'Confermare',",
-    "'action.confirm': 'Confermare',\n    'app.confirmReorderTitle': 'Conferma Azione',\n    'app.confirmGroupAdd': 'Sei sicuro di voler spostare la forma selezionata in questo gruppo?',\n    'app.confirmGroupRemove': 'Sei sicuro di voler rimuovere la forma selezionata dal gruppo?',\n    'app.confirmExtractTitle': 'Estrai dal Gruppo',\n    'app.confirmExtractMessage': 'Sei sicuro di voler estrarre la forma selezionata dal gruppo?',"
-)
+# For IT
+s_it = "'menu.edit.extractFromGroup': 'Estrai dal gruppo',"
+r_it = s_it + "\n    'menu.edit.flipH': 'Capovolgi Orizzontalmente',\n    'menu.edit.flipV': 'Capovolgi Verticalmente',"
+if s_it in text:
+    text = text.replace(s_it, r_it)
 
-# Add es
-content = content.replace(
-    "'action.confirm': 'Confirmar',",
-    "'action.confirm': 'Confirmar',\n    'app.confirmReorderTitle': 'Confirmar Acción',\n    'app.confirmGroupAdd': '¿Estás seguro de que deseas mover la forma seleccionada a este grupo?',\n    'app.confirmGroupRemove': '¿Estás seguro de que deseas eliminar la forma seleccionada del grupo?',\n    'app.confirmExtractTitle': 'Extraer del Grupo',\n    'app.confirmExtractMessage': '¿Estás seguro de que deseas extraer la forma seleccionada del grupo?',"
-)
+# For ES
+s_es = "'menu.edit.extractFromGroup': 'Extraer del grupo',"
+r_es = s_es + "\n    'menu.edit.flipH': 'Voltear Horizontalmente',\n    'menu.edit.flipV': 'Voltear Verticalmente',"
+if s_es in text:
+    text = text.replace(s_es, r_es)
 
-with open('lib/translations.ts', 'w') as f:
-    f.write(content)
-print("SUCCESS")
+with open("lib/translations.ts", "w") as f:
+    f.write(text)

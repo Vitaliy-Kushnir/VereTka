@@ -23,11 +23,36 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
     const { t } = useLanguage();
     
     const getTransform = (shape: Shape) => {
-        if ('rotation' in shape && shape.rotation && shape.rotation !== 0) {
-            const center = shape.type === 'text' ? {x: shape.x, y: shape.y} : getShapeCenter(shape);
-            if(center) return `rotate(${-shape.rotation} ${center.x} ${center.y})`;
+        let transformStr = "";
+        const isSpecialFlip = ['image', 'bitmap', 'text', 'arc'].includes(shape.type);
+    const isFlippedH = isSpecialFlip && 'isFlippedHorizontally' in shape && (shape as any).isFlippedHorizontally;
+        const isFlippedV = isSpecialFlip && 'isFlippedVertically' in shape && (shape as any).isFlippedVertically;
+        const hasRotation = 'rotation' in shape && shape.rotation && shape.rotation !== 0;
+
+        if (!isFlippedH && !isFlippedV && !hasRotation) return undefined;
+
+        const center = shape.type === 'text' ? {x: shape.x, y: shape.y} : getShapeCenter(shape);
+        if (!center) return undefined;
+
+        if (center.x !== 0 || center.y !== 0) {
+            transformStr += `translate(${center.x} ${center.y}) `;
         }
-        return undefined;
+
+        if (hasRotation) {
+            transformStr += `rotate(${-shape.rotation}) `;
+        }
+
+        if (isFlippedH || isFlippedV) {
+            const sx = isFlippedH ? -1 : 1;
+            const sy = isFlippedV ? -1 : 1;
+            transformStr += `scale(${sx} ${sy}) `;
+        }
+
+        if (center.x !== 0 || center.y !== 0) {
+            transformStr += `translate(${-center.x} ${-center.y})`;
+        }
+
+        return transformStr.trim() || undefined;
     };
     
     const arrowMarkers = useMemo(() => {
@@ -211,7 +236,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
                                     const fill = shape.isClosed ? shape.fill : 'none';
                                     return <path key={shape.id} {...staticProps} d={getSmoothedPathData(shape.points, shape.smooth, shape.isClosed)} fill={fill} {...lineLikeProps(shape)} {...joinStyleProps(shape)} />;
                                 case 'pencil':
-                                    return <path key={shape.id} {...staticProps} d={getPolylinePointsAsPath(shape.points)} fill="none" strokeLinecap="round" {...joinStyleProps(shape)} {...lineLikeProps(shape)} />;
+                                    return <path key={shape.id} {...staticProps} d={getPolylinePointsAsPath(shape.points)} fill="none" {...joinStyleProps(shape)} {...lineLikeProps(shape)} />;
                                 case 'polyline': {
                                     const polyProps: React.SVGProps<any> = { ...staticProps, ...joinStyleProps(shape) };
                                     if (shape.stipple && shape.isClosed && shape.fill !== 'none') polyProps.mask = `url(#mask-${shape.stipple})`;

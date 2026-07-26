@@ -482,7 +482,7 @@ export const getBoundingBox = (shape: Shape, allShapes?: Shape[]): { x: number, 
                     newS.points = newS.points.map((p: any) => ({ x: p.x + dx, y: p.y + dy }));
                 } else if (child.type === 'text') {
                     newS.x += dx; newS.y += dy;
-                } else if ('x' in child && 'y' in child && child.type !== 'text') {
+                } else if ('x' in child && 'y' in child ) {
                     newS.x += dx; newS.y += dy;
                 } else if ('cx' in child && 'cy' in child) {
                     newS.cx += dx; newS.cy += dy;
@@ -692,10 +692,16 @@ export function getFinalPoints(shape: Shape, overrideCenter?: { x: number; y: nu
             for (let i = 0; i <= segments; i++) {
                 const angle = start + i * angleStep;
                 const rad = (angle * Math.PI) / 180;
-                points.push({
-                    x: cx + rx * Math.cos(rad),
-                    y: cy - ry * Math.sin(rad), // SVG Y-axis is inverted
-                });
+                let pointX = cx + rx * Math.cos(rad);
+                let pointY = cy - ry * Math.sin(rad); // SVG Y-axis is inverted
+                
+                if (('isFlippedHorizontally' in shape) && (shape as any).isFlippedHorizontally) {
+                    pointX = cx - (pointX - cx);
+                }
+                if (('isFlippedVertically' in shape) && (shape as any).isFlippedVertically) {
+                    pointY = cy - (pointY - cy);
+                }
+                points.push({ x: pointX, y: pointY });
             }
 
             if (style === 'pieslice') {

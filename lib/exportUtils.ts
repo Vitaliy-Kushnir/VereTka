@@ -103,11 +103,37 @@ function shapeToSvgString(shape: Shape): string {
     if (shape.state === 'hidden') return '';
 
     const getTransform = (s: Shape): string => {
-        if ('rotation' in s && s.rotation && s.rotation !== 0) {
-            const center = s.type === 'text' ? {x: s.x, y: s.y} : getShapeCenter(s);
-            if (center) return `transform="rotate(${-s.rotation} ${center.x} ${center.y})"`;
+        let transformStr = "";
+        const isSpecialFlip = ['image', 'bitmap', 'text', 'arc'].includes(s.type);
+        const isFlippedH = isSpecialFlip && 'isFlippedHorizontally' in s && (s as any).isFlippedHorizontally;
+        const isFlippedV = isSpecialFlip && 'isFlippedVertically' in s && (s as any).isFlippedVertically;
+        const hasRotation = 'rotation' in s && s.rotation && s.rotation !== 0;
+
+        if (!isFlippedH && !isFlippedV && !hasRotation) return '';
+
+        const center = s.type === 'text' ? {x: s.x, y: s.y} : getShapeCenter(s);
+        if (!center) return '';
+
+        if (center.x !== 0 || center.y !== 0) {
+            transformStr += `translate(${center.x} ${center.y}) `;
         }
-        return '';
+
+        if (hasRotation) {
+            transformStr += `rotate(${-s.rotation}) `;
+        }
+
+        if (isFlippedH || isFlippedV) {
+            const sx = isFlippedH ? -1 : 1;
+            const sy = isFlippedV ? -1 : 1;
+            transformStr += `scale(${sx} ${sy}) `;
+        }
+
+        if (center.x !== 0 || center.y !== 0) {
+            transformStr += `translate(${-center.x} ${-center.y})`;
+        }
+
+        const t = transformStr.trim();
+        return t ? `transform="${t}"` : '';
     };
 
     const commonProps = (s: Shape): string => {

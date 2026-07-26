@@ -1,0 +1,157 @@
+type ContextualControlsProps = {
+  allShapes: Shape[];
+  selectedShapes: Shape[];
+  updateShape: (s: Shape) => void;
+  updateShapes: (shapes: Shape[]) => void;
+  setShapePreview: (shapeId: string, overrides: Partial<Shape>) => void;
+  cancelShapePreview: () => void;
+  fillColor: string;
+  strokeColor: string;
+};
+
+const ContextualControls: React.FC<ContextualControlsProps> = ({ allShapes, selectedShapes, updateShape, updateShapes, setShapePreview, cancelShapePreview, fillColor, strokeColor }) => {
+  const { t } = useLanguage();
+  const standardWebFonts = { "Sans-Serif": ["Arial", "Calibri", "Helvetica", "Segoe UI", "Tahoma", "Trebuchet MS", "Verdana"], "Serif": ["Times New Roman", "Georgia", "Garamond"], "Monospace": ["Courier New", "Consolas", "Lucida Console", "Monaco"], };
+  const tkFonts = ["TkDefaultFont", "TkTextFont", "TkFixedFont", "TkMenuFont", "TkHeadingFont", "TkCaptionFont", "TkSmallCaptionFont", "TkIconFont", "TkTooltipFont"];
+
+  const effectiveShapes = useMemo(() => {
+    const getChildren = (shapeIds: string[]): Shape[] => {
+      let res: Shape[] = [];
+      shapeIds.forEach(id => {
+        const s = allShapes.find(x => x.id === id);
+        if (s) {
+          if (s.type === 'group') {
+            res = res.concat(getChildren((s as any).shapeIds || []));
+          } else {
+            res.push(s);
+          }
+        }
+      });
+      return res;
+    };
+    
+    let res: Shape[] = [];
+    selectedShapes.forEach(s => {
+      if (s.type === 'group') {
+        res = res.concat(getChildren((s as any).shapeIds || []));
+      } else {
+        res.push(s);
+      }
+    });
+    return res;
+  }, [selectedShapes, allShapes]);
+
+  const handleUpdate = (propsToUpdate: Partial<Shape>) => {
+      if (!effectiveShapes.length) return;
+      const updatedShapes = effectiveShapes.map(s => ({ ...s, ...propsToUpdate } as Shape));
+      if (typeof updateShapes === 'function') {
+          updateShapes(updatedShapes);
+      } else {
+          updatedShapes.forEach(s => updateShape(s));
+      }
+  }
+  const handleFillToggle = (checked: boolean) => {
+    const fillable = effectiveShapes.find(s => 'fill' in s);
+    if (fillable) {
+      if (checked) {
+        const colorToRestore = (fillable as any)._previousFill || fillColor;
+        handleUpdate({ fill: colorToRestore });
+      } else {
+        handleUpdate({ fill: 'none', _previousFill: (fillable as any).fill });
+      }
+    }
+  };
+  const handleStrokeToggle = (checked: boolean) => {
+      const strokable = effectiveShapes.find(s => 'stroke' in s);
+      if (!strokable) return;
+      if (checked) {
+        const colorToRestore = (strokable as any)._previousStroke || strokeColor;
+        handleUpdate({ stroke: colorToRestore });
+    } else {
+        handleUpdate({ stroke: 'none', _previousStroke: strokable.stroke });
+    }
+  };
+
+  const hasFill = effectiveShapes.some(s => 'fill' in s && s.type !== 'text');
+  const isFillDisabledForShape = useMemo(() => {
+    if (!effectiveShapes.length) return true;
+    return effectiveShapes.every(s => {
+        if (s.type === 'arc' && (s as any).style === 'arc') return true;
+        if ((s.type === 'polyline' || s.type === 'bezier') && !(s as any).isClosed) return true;
+        return false;
+    });
+  }, [effectiveShapes]);
+  const hasStroke = effectiveShapes.some(s => 'stroke' in s && 'strokeWidth' in s && !['image', 'bitmap', 'text'].includes(s.type));
+  const hasSides = effectiveShapes.some(s => s.type === 'polygon' || s.type === 'star');
+  const isText = effectiveShapes.some(s => s.type === 'text');
+
+  // Compute common properties for multi selection
+  const commonFill = hasFill && effectiveShapes.filter(s => 'fill' in s && s.type !== 'text').every((s, _, arr) => (s as any).fill === (arr[0] as any).fill) ? (effectiveShapes.find(s => 'fill' in s && s.type !== 'text') as any)?.fill : '';
+  const commonStroke = hasStroke && effectiveShapes.filter(s => 'stroke' in s && 'strokeWidth' in s).every((s, _, arr) => s.stroke === arr[0].stroke) ? effectiveShapes.find(s => 'stroke' in s)?.stroke : '';
+  const commonStrokeWidth = hasStroke && effectiveShapes.filter(s => 'strokeWidth' in s).every((s, _, arr) => (s as any).strokeWidth === (arr[0] as any).strokeWidth) ? (effectiveShapes.find(s => 'strokeWidth' in s) as any)?.strokeWidth : '';
+  const commonSides = hasSides && effectiveShapes.filter(s => 'sides' in s).every((s, _, arr) => (s as any).sides === (arr[0] as any).sides) ? (effectiveShapes.find(s => 'sides' in s) as any)?.sides : '';
+
+  const firstTextShape = effectiveShapes.find(s => s.type === 'text') as TextShape | undefined;
+
+  const round = (num: number) => Math.round(num * 100) / 100;
+
+  return (
+      <>
+          {hasFill && (
+              <PropertyControl label={t('prop.fill')} htmlFor={'ctx-fill'}>
+                   <input type="checkbox" checked={commonFill !== 'none' && !isFillDisabledForShape} onChange={e => handleFillToggle(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" disabled={isFillDisabledForShape} />
+                  <ColorInput id={'ctx-fill'} value={commonFill === 'none' ? '#000000' : commonFill} onChange={v => handleUpdate({ fill: v })} onPreview={v => effectiveShapes.forEach(s => setShapePreview(s.id, { fill: v ?? undefined }))} onCancel={cancelShapePreview} disabled={commonFill === 'none' || isFillDisabledForShape} placeholder={commonFill === '' ? (t('props.mixed') || 'Різні') : undefined} />
+              </PropertyControl>
+          )}
+          {hasStroke && (
+              <>
+                  <PropertyControl label={t('prop.stroke')} htmlFor={'ctx-stroke'}>
+                       <input type="checkbox" checked={commonStroke !== 'none'} onChange={e => handleStrokeToggle(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" />
+                      <ColorInput id={'ctx-stroke'} value={commonStroke === 'none' ? '#ffffff' : commonStroke} onChange={v => handleUpdate({ stroke: v })} onPreview={v => effectiveShapes.forEach(s => setShapePreview(s.id, { stroke: v ?? undefined }))} onCancel={cancelShapePreview} disabled={commonStroke === 'none'} placeholder={commonStroke === '' ? (t('props.mixed') || 'Різні') : undefined} />
+                  </PropertyControl>
+                  <PropertyControl label={t('prop.width')} htmlFor={'ctx-strokeWidth'}>
+                    <div className="w-20">
+                      <NumberInput id={'ctx-strokeWidth'} min={0} value={commonStrokeWidth as any} onChange={v => handleUpdate({ strokeWidth: v })} disabled={commonStroke === 'none'} placeholder={commonStrokeWidth === '' ? (t('props.mixed') || 'Різні') : undefined} />
+                    </div>
+                  </PropertyControl>
+              </>
+          )}
+          {hasSides && (
+               <PropertyControl label={t('prop.sides')} htmlFor={'ctx-sides'}>
+                    <div className="w-20">
+                        <NumberInput id={'ctx-sides'} min={3} max={50} value={commonSides as any} onChange={v => handleUpdate({ sides: v })} placeholder={commonSides === '' ? (t('props.mixed') || 'Різні') : undefined} />
+                    </div>
+              </PropertyControl>
+          )}
+          {isText && firstTextShape && (
+              <>
+                  <PropertyControl label={t('prop.color')} htmlFor={`${firstTextShape.id}-ctx-fill`}>
+                      <ColorInput id={`${firstTextShape.id}-ctx-fill`} value={firstTextShape.fill} onChange={v => handleUpdate({ fill: v })} onPreview={v => effectiveShapes.forEach(s => { if (s.type === 'text') setShapePreview(s.id, { fill: v ?? undefined }); })} onCancel={cancelShapePreview} />
+                  </PropertyControl>
+                  <PropertyControl label={t('prop.font')} htmlFor={`${firstTextShape.id}-ctx-font`}>
+                     <Select id={`${firstTextShape.id}-ctx-font`} value={firstTextShape.font} onChange={v => handleUpdate({ font: v })} className="w-32 py-0.5">
+                          {Object.entries(standardWebFonts).map(([group, fonts]) => (<optgroup label={group} key={group}>{fonts.map(f => <option key={f} value={f}>{f}</option>)}</optgroup>))}
+                          <optgroup label={t('app.1101')}>{tkFonts.map(f => <option key={f} value={f}>{f}</option>)}</optgroup>
+                      </Select>
+                  </PropertyControl>
+                  <PropertyControl label={t('prop.size')} htmlFor={`${firstTextShape.id}-ctx-fontSize`}>
+                        <div className="w-20">
+                            <NumberInput id={`${firstTextShape.id}-ctx-fontSize`} min={1} value={round(firstTextShape.fontSize)} onChange={v => handleUpdate({ fontSize: v })} />
+                        </div>
+                  </PropertyControl>
+                  <div className="flex items-center gap-0.5 bg-[var(--bg-app)] p-0.5 rounded-md">
+                      <button title={t('style.bold')} onClick={() => handleUpdate({ weight: firstTextShape.weight === 'bold' ? 'normal' : 'bold' })} className={`p-1.5 rounded ${firstTextShape.weight === 'bold' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><BoldIcon size={16}/></button>
+                      <button title={t('style.italic')} onClick={() => handleUpdate({ slant: firstTextShape.slant === 'italic' ? 'roman' : 'italic' })} className={`p-1.5 rounded ${firstTextShape.slant === 'italic' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><ItalicIcon size={16}/></button>
+                      <button title={t('style.underline')} onClick={() => handleUpdate({ underline: !firstTextShape.underline })} className={`p-1.5 rounded ${firstTextShape.underline ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><UnderlineIcon size={16}/></button>
+                      <button title={t('style.strikethrough')} onClick={() => handleUpdate({ overstrike: !firstTextShape.overstrike })} className={`p-1.5 rounded ${firstTextShape.overstrike ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><StrikethroughIcon size={16}/></button>
+                  </div>
+                   <div className="flex items-center gap-0.5 bg-[var(--bg-app)] p-0.5 rounded-md ml-2">
+                      <button title={t('align.left')} onClick={() => handleUpdate({ justify: 'left' })} className={`p-1.5 rounded ${firstTextShape.justify === 'left' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><AlignLeftIcon size={16}/></button>
+                      <button title={t('align.center')} onClick={() => handleUpdate({ justify: 'center' })} className={`p-1.5 rounded ${firstTextShape.justify === 'center' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><AlignCenterIcon size={16}/></button>
+                      <button title={t('align.right')} onClick={() => handleUpdate({ justify: 'right' })} className={`p-1.5 rounded ${firstTextShape.justify === 'right' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><AlignRightIcon size={16}/></button>
+                  </div>
+              </>
+          )}
+      </>
+  );
+}

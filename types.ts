@@ -23,7 +23,7 @@ export type Tool =
     | 'chord'
     | 'text'
     | 'image'
-    | 'bitmap';
+    | 'bitmap' | 'group';
 
 export type DrawMode = 'corner' | 'center';
 export type JoinStyle = 'miter' | 'round' | 'bevel';
@@ -50,6 +50,8 @@ interface BaseShape {
     groupId?: string;
     // Fix: Add _previousStroke to store stroke color when stroke is toggled off.
     _previousStroke?: string;
+    isFlippedHorizontally?: boolean;
+    isFlippedVertically?: boolean;
 }
 
 export interface RotatableShape {
@@ -304,7 +306,7 @@ export type CanvasAction =
     | { type: 'star-inner-radius-editing', initialShape: PolygonShape, center: {x: number, y: number} }
     | { type: 'trapezoid-offset-editing', handle: 'left' | 'right', initialShape: TrapezoidShape }
     | { type: 'parallelogram-angle-editing', initialShape: ParallelogramShape }
-    | { type: 'edit-distribute-path', handle: 'center' | 'radius' | 'start' | 'end', startPoint: { x: number, y: number }, initialDistributePath: DistributePathState }
+    | { type: 'edit-distribute-path', handle: 'center' | 'radius' | 'start' | 'end' | 'rotate' | 'move-all', startPoint: { x: number, y: number }, initialDistributePath: DistributePathState }
     | { type: 'selecting', startPos: { x: number, y: number }, currentPos: { x: number, y: number } }
     | null;
 

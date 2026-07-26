@@ -1,0 +1,183 @@
+type ContextualControlsProps = {
+  selectedShapes: Shape[];
+  updateShape: (s: Shape) => void;
+  updateShapes: (shapes: Shape[]) => void;
+  setShapePreview: (shapeId: string, overrides: Partial<Shape>) => void;
+  cancelShapePreview: () => void;
+  fillColor: string;
+  strokeColor: string;
+};
+
+const ContextualControls: React.FC<ContextualControlsProps> = ({ selectedShapes, updateShape, updateShapes, setShapePreview, cancelShapePreview, fillColor, strokeColor }) => {
+  const { t } = useLanguage();
+  const standardWebFonts = { "Sans-Serif": ["Arial", "Calibri", "Helvetica", "Segoe UI", "Tahoma", "Trebuchet MS", "Verdana"], "Serif": ["Times New Roman", "Georgia", "Garamond"], "Monospace": ["Courier New", "Consolas", "Lucida Console", "Monaco"], };
+  const tkFonts = ["TkDefaultFont", "TkTextFont", "TkFixedFont", "TkMenuFont", "TkHeadingFont", "TkCaptionFont", "TkSmallCaptionFont", "TkIconFont", "TkTooltipFont"];
+
+  const selectedShape = selectedShapes[0];
+  const isMultiSelection = selectedShapes.length > 1;
+
+  const shape = selectedShape as TextShape;
+
+  const handleUpdate = (propsToUpdate: Partial<Shape>) => {
+      if (!selectedShape) return;
+      const updatedShapes = selectedShapes.map(s => ({ ...s, ...propsToUpdate } as Shape));
+      if (typeof updateShapes === 'function') {
+          updateShapes(updatedShapes);
+      } else {
+          updatedShapes.forEach(s => updateShape(s));
+      }
+  }
+  const handleFillToggle = (checked: boolean) => {
+    if (selectedShape && 'fill' in selectedShape) {
+      if (checked) {
+        const colorToRestore = selectedShape._previousFill || fillColor;
+        handleUpdate({ fill: colorToRestore });
+    } else {
+        handleUpdate({ fill: 'none', _previousFill: selectedShape.fill });
+    }
+    }
+  };
+  const handleStrokeToggle = (checked: boolean) => {
+      if (!selectedShape) return;
+      if (checked) {
+        const colorToRestore = selectedShape._previousStroke || strokeColor;
+        handleUpdate({ stroke: colorToRestore });
+    } else {
+        handleUpdate({ stroke: 'none', _previousStroke: selectedShape.stroke });
+    }
+  };
+
+  const hasFill = selectedShapes.some(s => 'fill' in s && s.type !== 'text');
+  const isFillDisabledForShape = useMemo(() => {
+    if (!selectedShape) return true;
+    return selectedShapes.every(s => {
+        if (s.type === 'arc' && s.style === 'arc') return true;
+        if ((s.type === 'polyline' || s.type === 'bezier') && !s.isClosed) return true;
+        return false;
+    });
+  }, [selectedShapes, selectedShape]);
+  const hasStroke = selectedShapes.some(s => 'stroke' in s && 'strokeWidth' in s && !['image', 'bitmap', 'text'].includes(s.type));
+  const hasSides = selectedShapes.some(s => s.type === 'polygon' || s.type === 'star');
+  const isText = selectedShapes.some(s => s.type === 'text');
+
+  // Compute common properties for multi selection
+  const commonFill = hasFill && selectedShapes.every(s => 'fill' in s && s.fill === (selectedShape as any).fill) ? (selectedShape as any).fill : '';
+  const commonStroke = hasStroke && selectedShapes.every(s => 'stroke' in s && s.stroke === selectedShape.stroke) ? selectedShape.stroke : '';
+  const commonStrokeWidth = hasStroke && selectedShapes.every(s => 'strokeWidth' in s && s.strokeWidth === selectedShape.strokeWidth) ? selectedShape.strokeWidth : '';
+  const commonSides = hasSides && selectedShapes.every(s => 'sides' in s && (s as PolygonShape).sides === (selectedShape as PolygonShape).sides) ? (selectedShape as PolygonShape).sides : '';
+
+  const round = (num: number) => Math.round(num * 100) / 100;
+
+  return (
+      <>
+          {hasFill && (
+              <PropertyControl label={t('prop.fill')} htmlFor={`ctx-fill`}>
+                   <input type="checkbox" checked={commonFill !== 'none' && !isFillDisabledForShape} onChange={e => handleFillToggle(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" disabled={isFillDisabledForShape} />
+                  <ColorInput id={`ctx-fill`} value={commonFill === 'none' ? '#000000' : commonFill} onChange={v => handleUpdate({ fill: v })} onPreview={v => selectedShapes.forEach(s => setShapePreview(s.id, { fill: v ?? undefined }))} onCancel={cancelShapePreview} disabled={commonFill === 'none' || isFillDisabledForShape} placeholder={commonFill === '' ? (t('props.mixed') || 'Різні') : undefined} />
+              </PropertyControl>
+          )}
+          {hasStroke && (
+              <>
+                  <PropertyControl label={t('prop.stroke')} htmlFor={`ctx-stroke`}>
+                       <input type="checkbox" checked={commonStroke !== 'none'} onChange={e => handleStrokeToggle(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" />
+                      <ColorInput id={`ctx-stroke`} value={commonStroke === 'none' ? '#ffffff' : commonStroke} onChange={v => handleUpdate({ stroke: v })} onPreview={v => selectedShapes.forEach(s => setShapePreview(s.id, { stroke: v ?? undefined }))} onCancel={cancelShapePreview} disabled={commonStroke === 'none'} placeholder={commonStroke === '' ? (t('props.mixed') || 'Різні') : undefined} />
+                  </PropertyControl>
+                  <PropertyControl label={t('prop.width')} htmlFor={`ctx-strokeWidth`}>
+                    <div className="w-20">
+                      <NumberInput id={`ctx-strokeWidth`} min={0} value={commonStrokeWidth as any} onChange={v => handleUpdate({ strokeWidth: v })} disabled={commonStroke === 'none'} placeholder={commonStrokeWidth === '' ? (t('props.mixed') || 'Різні') : undefined} />
+                    </div>
+                  </PropertyControl>
+              </>
+          )}
+          {hasSides && (
+               <PropertyControl label={t('prop.sides')} htmlFor={`ctx-sides`}>
+                    <div className="w-20">
+                        <NumberInput id={`ctx-sides`} min={3} max={50} value={commonSides as any} onChange={v => handleUpdate({ sides: v })} placeholder={commonSides === '' ? (t('props.mixed') || 'Різні') : undefined} />
+                    </div>
+              </PropertyControl>
+          )}
+          {isText && (
+              <>
+                  <PropertyControl label={t('prop.color')} htmlFor={`${shape.id}-ctx-fill`}>
+                      <ColorInput id={`${shape.id}-ctx-fill`} value={shape.fill} onChange={v => handleUpdate({ fill: v })} onPreview={v => setShapePreview(shape.id, { fill: v ?? undefined })} onCancel={cancelShapePreview} />
+                  </PropertyControl>
+                  <PropertyControl label={t('prop.font')} htmlFor={`${shape.id}-ctx-font`}>
+                     <Select id={`${shape.id}-ctx-font`} value={shape.font} onChange={v => handleUpdate({ font: v })} className="w-32 py-0.5">
+                          {Object.entries(standardWebFonts).map(([group, fonts]) => (<optgroup label={group} key={group}>{fonts.map(f => <option key={f} value={f}>{f}</option>)}</optgroup>))}
+                          <optgroup label={t('app.1101')}>{tkFonts.map(f => <option key={f} value={f}>{f}</option>)}</optgroup>
+                      </Select>
+                  </PropertyControl>
+                  <PropertyControl label={t('prop.size')} htmlFor={`${shape.id}-ctx-fontSize`}>
+                        <div className="w-20">
+                            <NumberInput id={`${shape.id}-ctx-fontSize`} min={1} value={round(shape.fontSize)} onChange={v => handleUpdate({ fontSize: v })} />
+                        </div>
+                  </PropertyControl>
+                  <div className="flex items-center gap-0.5 bg-[var(--bg-app)] p-0.5 rounded-md">
+                      <button title={t('style.bold')} onClick={() => handleUpdate({ weight: shape.weight === 'bold' ? 'normal' : 'bold' })} className={`p-1.5 rounded ${shape.weight === 'bold' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><BoldIcon size={16}/></button>
+                      <button title={t('style.italic')} onClick={() => handleUpdate({ slant: shape.slant === 'italic' ? 'roman' : 'italic' })} className={`p-1.5 rounded ${shape.slant === 'italic' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><ItalicIcon size={16}/></button>
+                      <button title={t('style.underline')} onClick={() => handleUpdate({ underline: !shape.underline })} className={`p-1.5 rounded ${shape.underline ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><UnderlineIcon size={16}/></button>
+                      <button title={t('style.strikethrough')} onClick={() => handleUpdate({ overstrike: !shape.overstrike })} className={`p-1.5 rounded ${shape.overstrike ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><StrikethroughIcon size={16}/></button>
+                  </div>
+                   <div className="flex items-center gap-0.5 bg-[var(--bg-app)] p-0.5 rounded-md">
+                      <button title={t('align.left')} onClick={() => handleUpdate({ justify: 'left' })} className={`p-1.5 rounded ${shape.justify === 'left' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><AlignLeftIcon size={16}/></button>
+                      <button title={t('align.center')} onClick={() => handleUpdate({ justify: 'center' })} className={`p-1.5 rounded ${shape.justify === 'center' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><AlignCenterIcon size={16}/></button>
+                      <button title={t('align.right')} onClick={() => handleUpdate({ justify: 'right' })} className={`p-1.5 rounded ${shape.justify === 'right' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)]'}`}><AlignRightIcon size={16}/></button>
+                  </div>
+              </>
+          )}
+      </>
+  );
+}
+
+
+const DistributePathTopControls: React.FC<{ distributePathState: DistributePathState, onDistributePathChange: (s: DistributePathState) => void }> = ({ distributePathState, onDistributePathChange }) => {
+    const { t } = useLanguage();
+    return (
+        <div className="flex items-center gap-3">
+             <PropertyControl label={t('prop.pathType') || 'Тип шляху'} htmlFor="dist-path-type">
+                  <Select id="dist-path-type" className="w-24 py-1" value={distributePathState.type} onChange={(v) => {
+                      const newType = v as 'circle' | 'line';
+                      let newOrientationType = distributePathState.orientationType;
+                      if (newType === 'circle' && (newOrientationType === 'parallel' || newOrientationType === 'perpendicular')) {
+                          newOrientationType = newOrientationType === 'parallel' ? 'tangent' : 'radial';
+                      } else if (newType === 'line' && (newOrientationType === 'tangent' || newOrientationType === 'radial')) {
+                          newOrientationType = newOrientationType === 'tangent' ? 'parallel' : 'perpendicular';
+                      }
+                      onDistributePathChange({ ...distributePathState, type: newType, orientationType: newOrientationType });
+                  }}>
+                      <option value="circle">{t('tool.distribute.path.circle') || 'Коло'}</option>
+                      <option value="line">{t('tool.distribute.path.line') || 'Лінія'}</option>
+                  </Select>
+             </PropertyControl>
+             
+             <PropertyControl label={t('prop.orientAlongPath') || 'Орієнтувати'} htmlFor="dist-orient-check">
+                  <input type="checkbox" id="dist-orient-check" checked={!!distributePathState.orientAlongPath} onChange={(e) => onDistributePathChange({ ...distributePathState, orientAlongPath: e.target.checked })} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" />
+             </PropertyControl>
+
+             {distributePathState.orientAlongPath && (
+                  <PropertyControl label="" htmlFor="dist-orient-type">
+                      <Select id="dist-orient-type" className="w-28 py-1" value={distributePathState.orientationType} onChange={(v) => onDistributePathChange({ ...distributePathState, orientationType: v as any })}>
+                          {distributePathState.type === 'circle' ? (
+                              <>
+                                  <option value="radial">{t('tool.distribute.path.radial') || 'Радіально'}</option>
+                                  <option value="tangent">{t('tool.distribute.path.tangent') || 'Дотично'}</option>
+                                  <option value="custom">{t('tool.distribute.path.customAngle') || 'Власний кут'}</option>
+                              </>
+                          ) : (
+                              <>
+                                  <option value="parallel">{t('tool.distribute.path.parallel') || 'Паралельно'}</option>
+                                  <option value="perpendicular">{t('tool.distribute.path.perpendicular') || 'Перпендикулярно'}</option>
+                                  <option value="custom">{t('tool.distribute.path.customAngle') || 'Власний кут'}</option>
+                              </>
+                          )}
+                      </Select>
+                  </PropertyControl>
+             )}
+
+             <PropertyControl label={t('prop.rotateAlongPath') || 'Обертати'} htmlFor="dist-rotate-check" className={distributePathState.orientAlongPath ? 'opacity-50 pointer-events-none' : ''}>
+                  <input type="checkbox" id="dist-rotate-check" checked={!!distributePathState.rotateAlongPath} disabled={!!distributePathState.orientAlongPath} onChange={(e) => onDistributePathChange({ ...distributePathState, rotateAlongPath: e.target.checked })} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" />
+             </PropertyControl>
+        </div>
+    );
+};
+
