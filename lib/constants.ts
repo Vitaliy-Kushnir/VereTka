@@ -18,7 +18,7 @@ export const TOOL_TYPE_TO_NAME: Record<Tool, string> = {
     'rhombus': 'Ромб',
     'trapezoid': 'Трапеція',
     'parallelogram': 'Паралелограм',
-    'bezier': "Крива Без'є",
+    'bezier': "Крива",
     'arc': 'Дуга',
     'pieslice': 'Сектор',
     'chord': 'Сегмент',
@@ -156,7 +156,7 @@ export const getVisualFontFamily = (font: string): string => {
 const ALL_DEFAULT_NAMES = new Set([
     'Вибрати', 'Редагувати вузли', 'Прямокутник', 'Квадрат', 'Коло', 'Еліпс',
     'Лінія', 'Олівець', 'Трикутник', 'Прямокутний трикутник', 'Багатокутник',
-    'Зірка', 'Ламана', 'Ромб', 'Трапеція', 'Паралелограм', "Крива Без'є",
+    'Зірка', 'Ламана', 'Ромб', 'Трапеція', 'Паралелограм', "Крива",
     'Дуга', 'Сектор', 'Сегмент', 'Текст', 'Зображення', 'Bitmap', 'Зображення [імпорт]',
     'Select', 'Edit Points', 'Rectangle', 'Square', 'Circle', 'Ellipse',
     'Line', 'Polyline', 'Bezier Curve', 'Arc', 'Pieslice', 'Chord', 'Polygon',

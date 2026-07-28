@@ -112,7 +112,32 @@ export const HelpContentES: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
                 <Para>
                     Utiliza la herramienta de <Key>Editar Puntos</Key> para ver los marcadores sobre los que giran o se desplazan los rincones. Control de tiradores de las curvas bezier logran suavidades concretas en el diseño.
                 </Para>
-            </section>
+            
+                <SubTitle>Agrupación de Objetos</SubTitle>
+                <Para>
+                    Puede combinar múltiples formas en un <strong>Grupo</strong> para mover, escalar y rotar más fácilmente como una sola unidad.
+                    Para agrupar objetos, selecciónelos, haga clic derecho y elija <Key>Agrupar</Key> (o use el botón de la barra de herramientas o <Key>Ctrl+G</Key>).
+                    Para desagrupar, seleccione el grupo y elija <Key>Desagrupar</Key> (<Key>Ctrl+Shift+G</Key>).
+                    Hacer doble clic en un grupo le permite ingresar para editar elementos individuales.
+                </Para>
+                <SubTitle>Alineación y Distribución</SubTitle>
+                <Para>
+                    La barra de herramientas superior proporciona funciones para alinear objetos seleccionados (borde izquierdo/derecho, centro, etc.). Puede alinear objetos <strong>en relación con la selección</strong> o <strong>en relación con el lienzo</strong>.
+                    <br/><br/>
+                    <strong>Distribución:</strong> Puede distribuir uniformemente los objetos seleccionados horizontal o verticalmente. La <strong>Distribución de trayectos</strong> también está disponible, una característica única para colocar objetos a lo largo de otro contorno seleccionado (línea, curva o cualquier forma).
+                    Durante la distribución de la ruta, puede ajustar la orientación (radial, tangente, paralela) y el ángulo de rotación de los objetos.
+                </Para>
+                <SubTitle>Lista de Objetos y Capas</SubTitle>
+                <Para>
+                    El panel derecho contiene una lista de todas las formas en el lienzo. Puede cambiar el nombre de las formas (doble clic en el nombre), bloquearlas (para evitar cambios accidentales) o eliminarlas.
+                    <br/><br/>
+                    El orden en la lista corresponde al <strong>orden z (capas)</strong>: un objeto más arriba en la lista se dibujará encima de los que están debajo. Cambie el orden arrastrando formas en la lista.
+                </Para>
+                <SubTitle>Duplicación (Voltear)</SubTitle>
+                <Para>
+                    Los objetos seleccionados se pueden voltear horizontal o verticalmente utilizando los botones en el panel de propiedades o el menú contextual. Esto le permite crear dibujos simétricos fácilmente.
+                </Para>
+</section>
 
             <section>
                 <SectionTitle id="code-export">6. Exportación de Código</SectionTitle>
@@ -139,29 +164,53 @@ export const HelpContentES: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
             </section>
 
             <section>
-                <SectionTitle id="hotkeys">8. Atajos de Teclado</SectionTitle>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                    <div className="bg-[var(--bg-primary)] p-3 rounded-lg border border-[var(--border-secondary)]">
-                        <h4 className="font-medium text-[var(--text-primary)] mb-2">Comunes</h4>
-                        <ul className="space-y-1 text-sm">
-                            <li><Key>Ctrl + Z</Key> : Deshacer</li>
-                            <li><Key>Ctrl + Shift + Z</Key> : Rehacer</li>
-                            <li><Key>Ctrl + S</Key> : Guardar</li>
-                            <li><Key>Suprimir / Del</Key> : Borrar Objeto</li>
-                            <li><Key>Ctrl + D</Key> : Duplicar</li>
-                        </ul>
-                    </div>
-                    <div className="bg-[var(--bg-primary)] p-3 rounded-lg border border-[var(--border-secondary)]">
-                        <h4 className="font-medium text-[var(--text-primary)] mb-2">Herramientas</h4>
-                        <ul className="space-y-1 text-sm">
-                            <li><Key>V</Key> : Cursor</li>
-                            <li><Key>A</Key> : Puntos</li>
-                            <li><Key>R</Key> : Rectángulo</li>
-                            <li><Key>C</Key> : Círculo</li>
-                            <li><Key>T</Key> : Texto</li>
-                        </ul>
-                    </div>
-                </div>
+                <SectionTitle id="hotkeys">8. Teclas de Atajo</SectionTitle>
+                <Para>Use estas combinaciones para acelerar su flujo de trabajo.</Para>
+                
+                <SubTitle>Archivo e Historial</SubTitle>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem><Key>Ctrl+S</Key> — Guardar proyecto.</ListItem>
+                    <ListItem><Key>Ctrl+Z</Key> — Deshacer la última acción.</ListItem>
+                    <ListItem><Key>Ctrl+Y</Key> (o <Key>Ctrl+Shift+Z</Key>) — Rehacer acción.</ListItem>
+                </ul>
+
+                <SubTitle>Herramientas y Selección</SubTitle> 
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem><Key>V</Key> — Activar herramienta "Seleccionar".</ListItem>
+                    <ListItem><Key>A</Key> — Activar herramienta "Editar Nodos".</ListItem>
+                    <ListItem><Key>Ctrl+G</Key> — Agrupar objetos seleccionados.</ListItem>
+                    <ListItem><Key>Ctrl+Shift+G</Key> — Desagrupar.</ListItem>
+                    <ListItem><Key>Ctrl+D</Key> — Duplicar objeto seleccionado.</ListItem>
+                    <ListItem><Key>Ctrl+H</Key> — Voltear Horizontalmente.</ListItem>
+                    <ListItem><Key>Ctrl+V</Key> — Voltear Verticalmente.</ListItem>
+                    <ListItem><Key>Delete</Key> / <Key>Backspace</Key> — Eliminar objeto o nodo seleccionado.</ListItem>
+                </ul>
+                
+                <SubTitle>Movimiento</SubTitle>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                     <ListItem><Key>Flechas</Key> — Mover objeto seleccionado 1 píxel.</ListItem>
+                     <ListItem><Key>Shift + Flechas</Key> — Mover objeto seleccionado 10 píxeles.</ListItem>
+                     <ListItem><Key>Alt + Flechas</Key> — Mover sin ajustar (snapping).</ListItem>
+                </ul>
+                
+                <SubTitle>Navegación y General</SubTitle>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem>
+                        <Key>?</Key> — Mostrar todos los atajos.
+                    </ListItem>
+                    <ListItem>
+                        <Key>Rueda del Ratón</Key> — Acercar/alejar lienzo.
+                    </ListItem>
+                    <ListItem>
+                        <Key>Botón Central del Ratón</Key> — Desplazar lienzo (pan).
+                    </ListItem>
+                     <ListItem>
+                        <Key>F11</Key> — Entrar / salir de pantalla completa.
+                    </ListItem>
+                    <ListItem>
+                        <Key>Escape (Esc)</Key> — Cancelar acción actual, deseleccionar o cerrar modales.
+                    </ListItem>
+                </ul>
             </section>
         </>
     );

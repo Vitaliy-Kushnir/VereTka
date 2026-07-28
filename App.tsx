@@ -17,12 +17,13 @@ import ConfirmationModal from './components/ConfirmationModal';
 import SaveAsModal from './components/SaveAsModal';
 import AboutModal from './components/AboutModal';
 import HelpModal from './components/HelpModal';
+import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
 import ApiKeyModal from './components/ApiKeyModal';
 import FeedbackModal from './components/FeedbackModal';
 import CheatCodeModal from './components/CheatCodeModal';
 import { saveFile, generateSvg, exportToRaster, openProjectFile, saveToHandle } from './lib/exportUtils';
-import { SquareIcon, CodeIcon, XIcon, AxesIcon, FitToScreenIcon, SelectIcon, EditPointsIcon, RectangleIcon, EllipseIcon, CircleIcon, LineIcon, PolylineIcon, BezierIcon, PolygonIcon, PencilIcon, TriangleIcon, RightTriangleIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, PiesliceIcon, ChordIcon, ArcIcon, StarIcon, TextIcon, ImageIcon, BitmapIcon, UndoIcon, RedoIcon, DuplicateIcon, GroupIcon, UngroupIcon, ToolsIcon, TrashIcon, GridIcon, SettingsIcon, DrawFromCornerIcon, DrawFromCenterIcon, CheckIcon, MenuIcon, SunIcon, MoonIcon, HomeIcon, BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, SadMonitorIcon, FullscreenIcon, ExitFullscreenIcon, AlignShapesLeftIcon, AlignShapesCenterHIcon, AlignShapesRightIcon, AlignShapesTopIcon, AlignShapesCenterVIcon, AlignShapesBottomIcon, DistributeHorizontalIcon, DistributeVerticalIcon, ChevronDownIcon, ChevronRightIcon, DistributePathIcon } from './components/icons';
-import { getFinalPoints, getVisualBoundingBox, getBoundingBox, getEditablePoints, getShapeCenter, rotatePoint } from './lib/geometry';
+import { SquareIcon, CodeIcon, XIcon, AxesIcon, FitToScreenIcon, SelectIcon, EditPointsIcon, RectangleIcon, EllipseIcon, CircleIcon, LineIcon, PolylineIcon, BezierIcon, PolygonIcon, PencilIcon, TriangleIcon, RightTriangleIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, PiesliceIcon, ChordIcon, ArcIcon, StarIcon, TextIcon, ImageIcon, BitmapIcon, UndoIcon, RedoIcon, DuplicateIcon, GroupIcon, UngroupIcon, ToolsIcon, TrashIcon, GridIcon, SettingsIcon, DrawFromCornerIcon, DrawFromCenterIcon, CheckIcon, MenuIcon, SunIcon, MoonIcon, HomeIcon, BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, SadMonitorIcon, FullscreenIcon, ExitFullscreenIcon, AlignShapesLeftIcon, AlignShapesCenterHIcon, AlignShapesRightIcon, AlignShapesTopIcon, AlignShapesCenterVIcon, AlignShapesBottomIcon, DistributeHorizontalIcon, DistributeVerticalIcon, ChevronDownIcon, ChevronRightIcon, DistributePathIcon, FlipHorizontalIcon, FlipVerticalIcon, EraserIcon } from './components/icons';
+import { getFinalPoints, getVisualBoundingBox, getBoundingBox, getEditablePoints, getShapeCenter, rotatePoint, isShapeClosed, isPathClosed, evaluateShapeContourPointAndTangent } from './lib/geometry';
 import { getDefaultNameForShape, isDefaultName } from './lib/constants';
 import Ruler from './components/Ruler';
 import { ColorInput, Select, NumberInput } from './components/FormControls';
@@ -38,7 +39,7 @@ type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
 type SettingsTab = 'canvas' | 'grid' | 'appearance' | 'code' | 'templates';
 
-const APP_VERSION = '1.3.10';
+const APP_VERSION = '1.3.14';
 const RULER_THICKNESS = 24;
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 30;
@@ -78,6 +79,24 @@ const useDropdown = () => {
     return { isOpen, toggle, close, wrapperProps };
 };
 
+
+const MenuItem: React.FC<{ onClick: () => void; children: React.ReactNode; disabled?: boolean; shortcut?: string; selected?: boolean }> = ({ onClick, children, disabled, shortcut, selected }) => (
+    <button
+        onClick={onClick}
+        disabled={disabled}
+        className={`flex justify-between items-center w-full px-3 py-1.5 text-left text-sm ${selected ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--accent-primary)] hover:text-[var(--accent-text)]'} disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent disabled:cursor-not-allowed`}
+    >
+        <span>{children}</span>
+        {shortcut && <span className="text-xs text-[var(--text-tertiary)]">{shortcut}</span>}
+    </button>
+);
+
+const MenuCheckbox: React.FC<{ checked: boolean; onChange: (checked: boolean) => void; children: React.ReactNode; }> = ({ checked, onChange, children }) => (
+     <label className="flex items-center w-full px-3 py-1.5 text-left text-sm text-[var(--text-secondary)] hover:bg-[var(--accent-primary)] hover:text-[var(--accent-text)]">
+        <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="mr-3 h-4 w-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-secondary)]" />
+        <span>{children}</span>
+    </label>
+);
 
 const MenuBar: React.FC<{
     onGenerate: () => void;
@@ -120,13 +139,18 @@ const MenuBar: React.FC<{
     onGoHome: () => void;
     onOpenAbout: () => void;
     onOpenHelp: () => void;
+    onOpenShortcuts: () => void;
     onOpenFeedback: () => void;
     isDistributingPath: boolean;
-    onGroup: () => void;
-    onUngroup: () => void;
-    onExtractFromGroup: () => void;
-    onFlipH: () => void;
-    onFlipV: () => void;
+    onGroup?: () => void;
+    canGroup?: boolean;
+    onUngroup?: () => void;
+    canUngroup?: boolean;
+    onExtractFromGroup?: () => void;
+    canExtractFromGroup?: boolean;
+    onFlipH?: () => void;
+    onFlipV?: () => void;
+    canFlip?: boolean;
 }> = React.memo((props) => {
     const { isOpen: isFileOpen, toggle: toggleFile, close: closeFile, wrapperProps: fileProps } = useDropdown();
     const { isOpen: isEditOpen, toggle: toggleEdit, close: closeEdit, wrapperProps: editProps } = useDropdown();
@@ -135,28 +159,12 @@ const MenuBar: React.FC<{
     const { isOpen: isHelpOpen, toggle: toggleHelp, close: closeHelp, wrapperProps: helpProps } = useDropdown();
     const { t } = useLanguage();
     
-    const handleMenuClick = (action: () => void, closeMenu: () => void) => {
-        action();
+    const handleMenuClick = (action: (() => void) | undefined, closeMenu: () => void) => {
+        if (typeof action === 'function') {
+            action();
+        }
         closeMenu();
     };
-
-    const MenuItem: React.FC<{ onClick: () => void; children: React.ReactNode; disabled?: boolean; shortcut?: string; selected?: boolean }> = ({ onClick, children, disabled, shortcut, selected }) => (
-        <button
-            onClick={onClick}
-            disabled={disabled}
-            className={`flex justify-between items-center w-full px-3 py-1.5 text-left text-sm ${selected ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--accent-primary)] hover:text-[var(--accent-text)]'} disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent disabled:cursor-not-allowed`}
-        >
-            <span>{children}</span>
-            {shortcut && <span className="text-xs text-[var(--text-tertiary)]">{shortcut}</span>}
-        </button>
-    );
-
-    const MenuCheckbox: React.FC<{ checked: boolean; onChange: (checked: boolean) => void; children: React.ReactNode; }> = ({ checked, onChange, children }) => (
-         <label className="flex items-center w-full px-3 py-1.5 text-left text-sm text-[var(--text-secondary)] hover:bg-[var(--accent-primary)] hover:text-[var(--accent-text)]">
-            <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="mr-3 h-4 w-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-secondary)]" />
-            <span>{children}</span>
-        </label>
-    );
     
     return (
         <nav className="bg-[var(--bg-primary)] text-sm font-medium flex items-center px-2 select-none h-8 flex-shrink-0">
@@ -210,12 +218,12 @@ const MenuBar: React.FC<{
                     <button onClick={toggleObject} disabled={!props.isProjectActive} className={`px-3 py-1 rounded-md ${isObjectOpen ? 'bg-[var(--bg-secondary)]' : 'hover:bg-[var(--bg-secondary)]'} disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent`}>{t('menu.object')}</button>
                     {isObjectOpen && props.isProjectActive && (
                         <div className="absolute top-full left-0 mt-0 w-56 bg-[var(--bg-secondary)] rounded-md shadow-lg py-1 z-50 border border-[var(--border-secondary)]">
-                            <MenuItem onClick={() => handleMenuClick(props.onGroup, closeObject)} disabled={!props.isShapeSelected || props.isDistributingPath} shortcut="Ctrl+G">{t('menu.edit.group')}</MenuItem>
-                            <MenuItem onClick={() => handleMenuClick(props.onUngroup, closeObject)} disabled={!props.isShapeSelected || props.isDistributingPath} shortcut="Ctrl+Shift+G">{t('menu.edit.ungroup')}</MenuItem>
-                            <MenuItem onClick={() => handleMenuClick(props.onExtractFromGroup, closeObject)} disabled={!props.isShapeSelected || props.isDistributingPath}>{t('menu.edit.extractFromGroup')}</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onGroup, closeObject)} disabled={!props.canGroup} shortcut="Ctrl+G">{t('menu.edit.group')}</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onUngroup, closeObject)} disabled={!props.canUngroup} shortcut="Ctrl+Shift+G">{t('menu.edit.ungroup')}</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onExtractFromGroup, closeObject)} disabled={!props.canExtractFromGroup}>{t('menu.edit.extractFromGroup')}</MenuItem>
                             <hr className="border-[var(--border-secondary)] my-1"/>
-                            <MenuItem onClick={() => handleMenuClick(props.onFlipH, closeObject)} disabled={!props.isShapeSelected || props.isDistributingPath}>{t('menu.edit.flipH')}</MenuItem>
-                            <MenuItem onClick={() => handleMenuClick(props.onFlipV, closeObject)} disabled={!props.isShapeSelected || props.isDistributingPath}>{t('menu.edit.flipV')}</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onFlipH, closeObject)} disabled={!props.canFlip} shortcut="Ctrl+H">{t('menu.edit.flipH')}</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onFlipV, closeObject)} disabled={!props.canFlip} shortcut="Ctrl+V">{t('menu.edit.flipV')}</MenuItem>
                             <hr className="border-[var(--border-secondary)] my-1"/>
                             <MenuItem onClick={() => handleMenuClick(props.onConvertToPath, closeObject)} disabled={!props.canConvertToPath}>{t('menu.object.toPath')}</MenuItem>
                         </div>
@@ -251,6 +259,7 @@ const MenuBar: React.FC<{
                             <MenuItem onClick={() => handleMenuClick(props.onOpenAbout, closeHelp)}>{t('menu.help.about')}</MenuItem>
                             <hr className="border-[var(--border-secondary)] my-1"/>
                             <MenuItem onClick={() => handleMenuClick(props.onOpenHelp, closeHelp)}>{t('menu.help.manual')}</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(props.onOpenShortcuts, closeHelp)} shortcut="?">{t('menu.help.shortcuts')}</MenuItem>
                             <MenuItem onClick={() => handleMenuClick(props.onOpenFeedback, closeHelp)}>{t('menu.help.feedback')}</MenuItem>
                         </div>
                     )}
@@ -611,25 +620,62 @@ const ContextualControls: React.FC<ContextualControlsProps> = ({ allShapes, sele
 }
 
 
-const DistributePathTopControls: React.FC<{ distributePathState: DistributePathState, onDistributePathChange: (s: DistributePathState) => void }> = ({ distributePathState, onDistributePathChange }) => {
+const DistributePathTopControls: React.FC<{
+    distributePathState: DistributePathState,
+    onDistributePathChange: (s: DistributePathState) => void,
+    isSelectingPathShape?: boolean,
+    onToggleSelectPathShape?: () => void
+}> = ({ distributePathState, onDistributePathChange, isSelectingPathShape, onToggleSelectPathShape }) => {
     const { t } = useLanguage();
     return (
         <div className="flex items-center gap-3">
              <PropertyControl label={t('prop.pathType') || 'Тип шляху'} htmlFor="dist-path-type">
-                  <Select id="dist-path-type" className="w-24 py-1" value={distributePathState.type} onChange={(v) => {
-                      const newType = v as 'circle' | 'line';
+                  <Select id="dist-path-type" className="w-32 py-1" value={distributePathState.type} onChange={(v) => {
+                      const newType = v as 'circle' | 'line' | 'shape';
                       let newOrientationType = distributePathState.orientationType;
                       if (newType === 'circle' && (newOrientationType === 'parallel' || newOrientationType === 'perpendicular')) {
                           newOrientationType = newOrientationType === 'parallel' ? 'tangent' : 'radial';
-                      } else if (newType === 'line' && (newOrientationType === 'tangent' || newOrientationType === 'radial')) {
+                      } else if ((newType === 'line' || newType === 'shape') && (newOrientationType === 'tangent' || newOrientationType === 'radial')) {
                           newOrientationType = newOrientationType === 'tangent' ? 'parallel' : 'perpendicular';
                       }
-                      onDistributePathChange({ ...distributePathState, type: newType, orientationType: newOrientationType });
+                      const updatedState: DistributePathState = {
+                          ...distributePathState,
+                          type: newType,
+                          orientationType: newOrientationType
+                      };
+                      if (newType === 'shape' && !updatedState.shapePathParams) {
+                          updatedState.shapePathParams = { keepShape: false };
+                      }
+                      onDistributePathChange(updatedState);
                   }}>
                       <option value="circle">{t('tool.distribute.path.circle') || 'Коло'}</option>
-                      <option value="line">{t('tool.distribute.path.line') || 'Лінія'}</option>
+                      <option value="line">{t('tool.distribute.path.line') || 'Пряма'}</option>
+                      <option value="shape">{t('tool.distribute.path.shape') || 'Фігура (контур)'}</option>
                   </Select>
              </PropertyControl>
+
+             {distributePathState.type === 'shape' && (
+                 <>
+                     <button
+                         type="button"
+                         onClick={onToggleSelectPathShape}
+                         className={`px-2.5 py-1 text-xs rounded border transition-colors flex items-center gap-1.5 ${
+                             isSelectingPathShape
+                                 ? 'bg-[var(--accent-primary)] text-white border-transparent animate-pulse'
+                                 : 'bg-[var(--bg-secondary)] border-[var(--border-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)]'
+                         }`}
+                         title={t('tool.distribute.path.selectShapeBtn') || 'Обрати фігуру'}
+                     >
+                         <span>
+                             {isSelectingPathShape
+                                 ? (t('tool.distribute.path.selectShapeActive') || 'Клікніть фігуру...')
+                                 : (distributePathState.shapePathParams?.pathShape
+                                     ? `${t('tool.distribute.path.shape')}: ${distributePathState.shapePathParams.pathShape.name || distributePathState.shapePathParams.pathShape.type}`
+                                     : (t('tool.distribute.path.selectShapeBtn') || 'Обрати фігуру на полотні'))}
+                         </span>
+                     </button>
+                 </>
+             )}
              
              <PropertyControl label={t('prop.orientAlongPath') || 'Орієнтувати'} htmlFor="dist-orient-check">
                   <input type="checkbox" id="dist-orient-check" checked={!!distributePathState.orientAlongPath} onChange={(e) => onDistributePathChange({ ...distributePathState, orientAlongPath: e.target.checked })} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" />
@@ -677,8 +723,10 @@ const TopToolbar: React.FC<{
     onClear: () => void; isGenerating: boolean; hasShapes: boolean;
     onUndo: () => void; onRedo: () => void; canUndo: boolean; canRedo: boolean;
     onDuplicate: () => void; isShapeSelected: boolean;
-    onGroup: () => void; onUngroup: () => void;
-    onFlipH: () => void; onFlipV: () => void;
+    onGroup: () => void; canGroup?: boolean;
+    onUngroup: () => void; canUngroup?: boolean;
+    onExtractFromGroup?: () => void; canExtractFromGroup?: boolean;
+    onFlipH: () => void; onFlipV: () => void; canFlip?: boolean;
     onAlignShapes: (alignment: 'left' | 'center-h' | 'right' | 'top' | 'center-v' | 'bottom' | 'distribute-h' | 'distribute-v' | 'distribute-path', relativeTo: 'selection' | 'canvas', distributeOptions?: { orientAlongPath: boolean, orientationType: 'radial' | 'tangent' | 'parallel' | 'perpendicular' | 'custom', orientationAngle: number, rotateAlongPath: boolean }) => void;
     activeTool: Tool; setActiveTool: (tool: Tool) => void;
     onOpenMobileLeft: () => void; onOpenMobileRight: () => void;
@@ -694,10 +742,13 @@ const TopToolbar: React.FC<{
     isDistributingPath: boolean;
     distributePathState?: DistributePathState | null;
     onDistributePathChange?: (state: DistributePathState) => void;
+    isSelectingPathShape?: boolean;
+    onToggleSelectPathShape?: () => void;
 }> = React.memo((props) => {
     const { 
-        isGenerating, hasShapes, onUndo, onRedo, canUndo, canRedo, onDuplicate, onGroup, onUngroup, onFlipH, onFlipV, onAlignShapes, isShapeSelected, onOpenMobileLeft, onOpenMobileRight,
-        selectedShapes, activeTool, setActiveTool, onGenerate, showGenerateButton, onClear, isDistributingPath, distributePathState, onDistributePathChange
+        isGenerating, hasShapes, onUndo, onRedo, canUndo, canRedo, onDuplicate, onGroup, canGroup, onUngroup, canUngroup, onExtractFromGroup, canExtractFromGroup, onFlipH, onFlipV, canFlip, onAlignShapes, isShapeSelected, onOpenMobileLeft, onOpenMobileRight,
+        selectedShapes, activeTool, setActiveTool, onGenerate, showGenerateButton, onClear, isDistributingPath, distributePathState, onDistributePathChange,
+        isSelectingPathShape, onToggleSelectPathShape
     } = props;
     const { t } = useLanguage();
     const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
@@ -755,33 +806,40 @@ const TopToolbar: React.FC<{
                     <div className="absolute top-full left-0 mt-1 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-md shadow-lg z-50 min-w-[200px] py-1 text-sm">
                         <button 
                           onClick={() => { onGroup(); setIsToolsMenuOpen(false); }} 
-                          disabled={!isShapeSelected || isDistributingPath}
+                          disabled={!canGroup}
                           className="flex items-center gap-2 w-full text-left px-3 py-2 hover:bg-[var(--bg-secondary)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-primary)]"
                         >
                           <GroupIcon size={16} /> {t('menu.edit.group')}
                         </button>
                         <button 
                           onClick={() => { onUngroup(); setIsToolsMenuOpen(false); }} 
-                          disabled={!isShapeSelected || isDistributingPath}
+                          disabled={!canUngroup}
                           className="flex items-center gap-2 w-full text-left px-3 py-2 hover:bg-[var(--bg-secondary)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-primary)]"
                         >
                           <UngroupIcon size={16} /> {t('menu.edit.ungroup')}
+                        </button>
+                        <button 
+                          onClick={() => { onExtractFromGroup?.(); setIsToolsMenuOpen(false); }} 
+                          disabled={!canExtractFromGroup}
+                          className="flex items-center gap-2 w-full text-left px-3 py-2 hover:bg-[var(--bg-secondary)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-primary)]"
+                        >
+                          <UngroupIcon size={16} /> {t('menu.edit.extractFromGroup')}
                         </button>
                         
                         <div className="w-full h-px bg-[var(--border-secondary)] my-1"></div>
                         <button 
                           onClick={() => { onFlipH(); setIsToolsMenuOpen(false); }} 
-                          disabled={!isShapeSelected || isDistributingPath}
+                          disabled={!canFlip}
                           className="flex items-center gap-2 w-full text-left px-3 py-2 hover:bg-[var(--bg-secondary)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-primary)]"
                         >
-                          {t('menu.edit.flipH')}
+                          <FlipHorizontalIcon size={16} /> {t('menu.edit.flipH')}
                         </button>
                         <button 
                           onClick={() => { onFlipV(); setIsToolsMenuOpen(false); }} 
-                          disabled={!isShapeSelected || isDistributingPath}
+                          disabled={!canFlip}
                           className="flex items-center gap-2 w-full text-left px-3 py-2 hover:bg-[var(--bg-secondary)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-primary)]"
                         >
-                          {t('menu.edit.flipV')}
+                          <FlipVerticalIcon size={16} /> {t('menu.edit.flipV')}
                         </button>
                         <div className="w-full h-px bg-[var(--border-secondary)] my-1"></div>
                         <div className="relative">
@@ -834,7 +892,12 @@ const TopToolbar: React.FC<{
         {/* Center properties */}
         <div className="flex items-center gap-x-2 gap-y-2 flex-wrap">
             {distributePathState && onDistributePathChange ? (
-                <DistributePathTopControls distributePathState={distributePathState} onDistributePathChange={onDistributePathChange} />
+                <DistributePathTopControls
+                    distributePathState={distributePathState}
+                    onDistributePathChange={onDistributePathChange}
+                    isSelectingPathShape={isSelectingPathShape}
+                    onToggleSelectPathShape={onToggleSelectPathShape}
+                />
             ) : (
                 hasSelectedShapes ? <ContextualControls {...props} /> : <ToolControls {...props} />
             )}
@@ -847,7 +910,7 @@ const TopToolbar: React.FC<{
                 <button onClick={onOpenMobileRight} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]"><CodeIcon/></button>
             </div>
             <div className="w-px h-6 bg-[var(--border-secondary)] mx-1 md:hidden"></div>
-            <button onClick={onClear} disabled={!hasShapes} className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md font-semibold transition-colors duration-200 bg-[var(--destructive-bg)] text-[var(--accent-text)] hover:bg-[var(--destructive-bg-hover)] disabled:bg-[var(--bg-disabled)] disabled:text-[var(--text-disabled)] disabled:cursor-not-allowed"><TrashIcon size={16}/><span>{t('action.clear')}</span></button>
+            <button onClick={onClear} disabled={!hasShapes} className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md font-semibold transition-colors duration-200 bg-[var(--destructive-bg)] text-[var(--accent-text)] hover:bg-[var(--destructive-bg-hover)] disabled:bg-[var(--bg-disabled)] disabled:text-[var(--text-disabled)] disabled:cursor-not-allowed"><EraserIcon size={16}/><span>{t('action.clear')}</span></button>
             {showGenerateButton && (
                 <button onClick={onGenerate} disabled={isGenerating || !hasShapes} className="flex items-center gap-2 px-4 py-1.5 text-sm rounded-md font-semibold transition-colors duration-200 bg-[var(--accent-primary)] text-[var(--accent-text)] hover:bg-[var(--accent-primary-hover)] disabled:bg-[var(--bg-disabled)] disabled:text-[var(--text-disabled)] disabled:cursor-not-allowed">
                     <CodeIcon/>
@@ -861,9 +924,14 @@ const TopToolbar: React.FC<{
 
 const applyDistributePathToShapes = (currentShapes: Shape[], pathState: DistributePathState): Shape[] => {
     let newShapes = [...currentShapes];
+    const isClosed = isPathClosed(pathState);
+    const count = pathState.entities.length;
     
     pathState.entities.forEach((entity, idx) => {
-        const fraction = pathState.entities.length > 1 ? idx / (pathState.type === 'circle' ? pathState.entities.length : Math.max(1, pathState.entities.length - 1)) : 0;
+        let fraction = 0;
+        if (count > 1) {
+            fraction = isClosed ? idx / count : idx / (count - 1);
+        }
         
         let targetCX = 0;
         let targetCY = 0;
@@ -889,6 +957,17 @@ const applyDistributePathToShapes = (currentShapes: Shape[], pathState: Distribu
             targetCX = startX + (endX - startX) * fraction;
             targetCY = startY + (endY - startY) * fraction;
             tangentAngle = finalAngle;
+        } else if (pathState.type === 'shape' && pathState.shapePathParams?.pathShape) {
+            const contourShift = pathState.shapePathParams.contourShift ?? 0;
+            const res = evaluateShapeContourPointAndTangent(
+                pathState.shapePathParams.pathShape,
+                fraction,
+                pathState.angleOffset,
+                contourShift
+            );
+            targetCX = res.targetCX;
+            targetCY = res.targetCY;
+            tangentAngle = res.tangentAngle;
         }
         
         let normalAngle = 0;
@@ -904,34 +983,34 @@ const applyDistributePathToShapes = (currentShapes: Shape[], pathState: Distribu
         const normalX = Math.cos(normalAngle);
         const normalY = Math.sin(normalAngle);
         
-        let deltaRad = 0;
+        let screenAngleRad = 0;
         let rotationAngleDeg = 0;
         
         if (pathState.orientAlongPath) {
             let A = 0;
             if (pathState.type === 'circle') {
                 if (pathState.orientationType === 'radial' || pathState.orientationType === 'perpendicular') {
-                    A = pathAngle;
+                    A = pathAngle + Math.PI / 2;
                 } else if (pathState.orientationType === 'tangent' || pathState.orientationType === 'parallel') {
-                    A = pathAngle + Math.PI / 2;
-                } else if (pathState.orientationType === 'custom') {
-                    A = pathAngle + Math.PI / 2 + pathState.orientationAngle * (Math.PI / 180);
-                }
-            } else {
-                if (pathState.orientationType === 'parallel' || pathState.orientationType === 'tangent') {
                     A = pathAngle;
-                } else if (pathState.orientationType === 'perpendicular' || pathState.orientationType === 'radial') {
-                    A = pathAngle + Math.PI / 2;
                 } else if (pathState.orientationType === 'custom') {
                     A = pathAngle + pathState.orientationAngle * (Math.PI / 180);
                 }
+            } else {
+                if (pathState.orientationType === 'parallel' || pathState.orientationType === 'tangent') {
+                    A = pathAngle + Math.PI / 2;
+                } else if (pathState.orientationType === 'perpendicular' || pathState.orientationType === 'radial') {
+                    A = pathAngle;
+                } else if (pathState.orientationType === 'custom') {
+                    A = pathAngle + Math.PI / 2 + pathState.orientationAngle * (Math.PI / 180);
+                }
             }
             
-            deltaRad = -(A + Math.PI / 2);
-            rotationAngleDeg = deltaRad * (180 / Math.PI);
+            screenAngleRad = A;
+            rotationAngleDeg = -screenAngleRad * (180 / Math.PI);
         } else if (pathState.rotateAlongPath) {
+            screenAngleRad = pathState.angleOffset * (Math.PI / 180);
             rotationAngleDeg = -pathState.angleOffset;
-            deltaRad = rotationAngleDeg * (Math.PI / 180);
         }
 
         let offsetX = 0;
@@ -981,10 +1060,10 @@ const applyDistributePathToShapes = (currentShapes: Shape[], pathState: Distribu
                 }
             }
             
-            if (deltaRad !== 0 && entity.ids.length > 1) {
-                // Rotate group components around group center using CW matrix (so pass -deltaRad)
-                const cosA = Math.cos(-deltaRad);
-                const sinA = Math.sin(-deltaRad);
+            if (screenAngleRad !== 0 && entity.ids.length > 1) {
+                // Rotate group components around group center using CW matrix in screen space
+                const cosA = Math.cos(screenAngleRad);
+                const sinA = Math.sin(screenAngleRad);
                 
                 let scx = 0, scy = 0;
                 switch (originalS.type) {
@@ -1044,6 +1123,23 @@ const applyDistributePathToShapes = (currentShapes: Shape[], pathState: Distribu
         });
     });
     
+    if (pathState.type === 'shape' && pathState.shapePathParams?.pathShape) {
+        let pShape = pathState.shapePathParams.pathShape;
+        if ('rotation' in pShape) {
+            pShape = { ...pShape, rotation: pathState.angleOffset } as any;
+        }
+        const keepShape = !!pathState.shapePathParams.keepShape;
+        if (keepShape) {
+            if (!newShapes.some(s => s.id === pShape.id)) {
+                newShapes.push(pShape);
+            } else {
+                newShapes = newShapes.map(s => s.id === pShape.id ? pShape : s);
+            }
+        } else {
+            newShapes = newShapes.filter(s => s.id !== pShape.id);
+        }
+    }
+
     return newShapes;
 };
 
@@ -1055,8 +1151,9 @@ export default function App(): React.ReactNode {
       layers: [{ id: 'layer-1', name: t('layer.defaultName') || 'Шар 1', visible: true, locked: false, shapeIds: [] }],
       activeLayerId: 'layer-1'
   });
+  const [transientDistributePathState, setTransientDistributePathState] = useState<DistributePathState | null>(null);
   const shapes = historyState.shapes;
-  const distributePathState = historyState.distributePathState;
+  const distributePathState = transientDistributePathState || historyState.distributePathState;
   const defaultLayers = useMemo(() => [{ id: 'layer-1', name: t('layer.defaultName') || 'Шар 1', visible: true, locked: false, shapeIds: [] }], [t]);
   const layers = historyState.layers || defaultLayers;
   const activeLayerId = historyState.activeLayerId || 'layer-1';
@@ -1111,6 +1208,7 @@ export default function App(): React.ReactNode {
   const [isSaveTemplateModalOpen, setIsSaveTemplateModalOpen] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [apiKey, setApiKey] = useState<string | null>(null);
@@ -1125,8 +1223,9 @@ export default function App(): React.ReactNode {
   const [gridSnapStep, setGridSnapStep] = useState<number>(1);
   const [showTkinterNames, setShowTkinterNames] = useState<boolean>(true);
   const [showAxes, setShowAxes] = useState<boolean>(true);
-  const [drawingWarningModal, setDrawingWarningModal] = useState<{ show: boolean, reason: 'hidden' | 'locked', layerId?: string } | null>(null);
+  const [drawingWarningModal, setDrawingWarningModal] = useState<{ show: boolean, reason: 'hidden' | 'locked', layerId?: string, action?: () => void } | null>(null);
   const [ignoreHiddenWarningForLayer, setIgnoreHiddenWarningForLayer] = useState<string | null>(null); 
+  const [groupConfirmationModal, setGroupConfirmationModal] = useState<{ show: boolean, title: string, message: string, onConfirm: () => void } | null>(null);
   const [showCenterGuides, setShowCenterGuides] = useState<boolean>(false);
   const [enableSnapping, setEnableSnapping] = useState<boolean>(true);
   const [showCursorCoords, setShowCursorCoords] = useState<boolean>(true);
@@ -1280,6 +1379,7 @@ export default function App(): React.ReactNode {
   }, [updateCurrentState, t]);
 
   const setDistributePathState = useCallback((newPathOrFn: DistributePathState | null | ((prev: DistributePathState | null) => DistributePathState | null)) => {
+      setTransientDistributePathState(null);
       setHistoryState((prev: any) => {
           const newPath = typeof newPathOrFn === 'function' ? newPathOrFn(prev.distributePathState) : newPathOrFn;
           return { ...prev, distributePathState: newPath };
@@ -1287,11 +1387,20 @@ export default function App(): React.ReactNode {
   }, [setHistoryState]);
   
   const setDistributePathStateWithoutHistory = useCallback((newPathOrFn: DistributePathState | null | ((prev: DistributePathState | null) => DistributePathState | null)) => {
-      updateCurrentState((prev: any) => {
-          const newPath = typeof newPathOrFn === 'function' ? newPathOrFn(prev.distributePathState) : newPathOrFn;
-          return { ...prev, distributePathState: newPath };
+      setTransientDistributePathState((prev: DistributePathState | null) => {
+          const current = prev || historyState.distributePathState;
+          return typeof newPathOrFn === 'function' ? newPathOrFn(current) : newPathOrFn;
       });
-  }, [updateCurrentState]);
+  }, [historyState.distributePathState]);
+
+  const handleDistributePathChangeEnd = useCallback(() => {
+      setTransientDistributePathState((currentTransient) => {
+          if (currentTransient) {
+              setHistoryState((prev: any) => ({ ...prev, distributePathState: currentTransient }));
+          }
+          return null;
+      });
+  }, [setHistoryState]);
 
   const resetHistory = useCallback((newShapes: Shape[], newLayers?: Layer[], newActiveLayerId?: string) => {
       resetHistoryState({ 
@@ -1393,6 +1502,27 @@ export default function App(): React.ReactNode {
               shapes: newShapes,
               layers: newLayers,
               activeLayerId: newActiveLayerId
+          };
+      });
+  }, [setHistoryState]);
+
+  const clearLayer = useCallback((layerId: string) => {
+      setHistoryState((prev: any) => {
+          const layers = prev.layers || [];
+          const layerToClear = layers.find((l: any) => l.id === layerId);
+          if (!layerToClear || !layerToClear.shapeIds || layerToClear.shapeIds.length === 0) return prev;
+          if (layerToClear.locked) return prev;
+
+          const shapeIdsToRemove = new Set<string>(layerToClear.shapeIds);
+          const newShapes = prev.shapes.filter((s: any) => !shapeIdsToRemove.has(s.id));
+          const newLayers = layers.map((l: any) => l.id === layerId ? { ...l, shapeIds: [] } : l);
+          const newSelectedIds = (prev.selectedShapeIds || []).filter((id: string) => !shapeIdsToRemove.has(id));
+
+          return {
+              ...prev,
+              shapes: newShapes,
+              layers: newLayers,
+              selectedShapeIds: newSelectedIds,
           };
       });
   }, [setHistoryState]);
@@ -1672,16 +1802,86 @@ export default function App(): React.ReactNode {
     setTimeout(() => setNotification(null), duration);
   }, []);
 
+  const [isSelectingPathShape, setIsSelectingPathShape] = useState<boolean>(false);
+
+  const handleSelectPathShape = useCallback((clickedShape: Shape) => {
+      if (!distributePathState) return;
+
+      if (clickedShape.type === 'text') {
+          showNotification(t('tool.distribute.path.errText') || 'Фігуру "Текст" не можна використовувати як шлях');
+          return;
+      }
+
+      if (clickedShape.type === 'group' || clickedShape.groupId != null) {
+          showNotification(t('tool.distribute.path.errGroup') || 'Групи та фігури всередині груп не можна використовувати як шлях');
+          return;
+      }
+
+      const isInDistribution = distributePathState.entities.some(e => e.ids.includes(clickedShape.id));
+      if (isInDistribution) {
+          showNotification(t('tool.distribute.path.errInDistribution') || 'Фігуру, що бере участь у розподілі, не можна обрати як шлях');
+          return;
+      }
+
+      const keepShape = distributePathState.shapePathParams?.keepShape ?? true;
+
+      if (!keepShape) {
+          setShapes(prev => prev.filter(s => s.id !== clickedShape.id));
+      }
+
+      setDistributePathState({
+          ...distributePathState,
+          type: 'shape',
+          angleOffset: ('rotation' in clickedShape) ? (clickedShape.rotation || 0) : 0,
+          shapePathParams: {
+              shapeId: clickedShape.id,
+              pathShape: { ...clickedShape },
+              keepShape
+          }
+      });
+
+      setIsSelectingPathShape(false);
+  }, [distributePathState, showNotification, t, setShapes, setDistributePathState]);
+
   const addShape = useCallback((shape: Shape, isDuplication = false) => {
     if (isImportingImage) {
         setIsImportingImage(false);
     }
+
+    if (distributePathState && (distributePathState.type === 'shape' || isSelectingPathShape)) {
+        if (shape.type === 'text') {
+            showNotification(t('tool.distribute.path.errText') || 'Фігуру "Текст" не можна використовувати як шлях');
+            return;
+        }
+        if (shape.type === 'group' || shape.groupId != null) {
+            showNotification(t('tool.distribute.path.errGroup') || 'Групи та фігури всередині груп не можна використовувати як шлях');
+            return;
+        }
+        const keepShape = distributePathState.shapePathParams?.keepShape ?? true;
+        if (keepShape) {
+            setShapes(prevShapes => [...prevShapes, shape]);
+        }
+        setDistributePathState({
+            ...distributePathState,
+            type: 'shape',
+            shapePathParams: {
+                shapeId: shape.id,
+                pathShape: { ...shape },
+                keepShape
+            }
+        });
+        setIsSelectingPathShape(false);
+        setActiveTool('select');
+        return;
+    }
+
     setShapes(prevShapes => [...prevShapes, shape]);
     if (isDuplication || (shape.type !== 'polyline' && shape.type !== 'bezier')) {
         setSelectedShapeIds([shape.id]);
         setActiveTool('select');
     }
-  }, [setShapes, isImportingImage]);
+    setIgnoreHiddenWarningForLayer(null);
+  }, [setShapes, isImportingImage, distributePathState, isSelectingPathShape, showNotification, t, setDistributePathState]);
 
   const addShapes = useCallback((newShapes: Shape[], isDuplication = false) => {
     if (isImportingImage) {
@@ -1694,6 +1894,7 @@ export default function App(): React.ReactNode {
         setSelectedShapeIds(topLevelIds);
         setActiveTool('select');
     }
+    setIgnoreHiddenWarningForLayer(null);
   }, [setShapes, isImportingImage]);
 
   const updateShape = useCallback((updatedShape: Shape) => {
@@ -2196,6 +2397,7 @@ export default function App(): React.ReactNode {
 
           return { ...prev, shapes: newShapes, layers: newLayers };
       });
+      setIgnoreHiddenWarningForLayer(null);
   }, [setHistoryState]);
 
   const moveShape = useCallback((id: string, direction: 'up' | 'down') => {
@@ -2646,16 +2848,20 @@ export default function App(): React.ReactNode {
     localStorage.removeItem(AUTOSAVE_KEY);
   };
 
-  const confirmAction = useCallback((action: () => void, title: string, message: string, confirmText?: string, cancelText?: string, variant?: 'primary' | 'destructive', alternativeAction?: { text: string, onClick: () => void, title?: string }) => {
+  const confirmAction = useCallback((action: (() => void) | undefined, title: string, message: string, confirmText?: string, cancelText?: string, variant?: 'primary' | 'destructive', alternativeAction?: { text: string, onClick: () => void, title?: string }) => {
     if (!hasUnsavedChanges) {
-      action();
+      if (typeof action === 'function') {
+        action();
+      }
       return;
     }
     setConfirmationAction({
       title,
       message,
       onConfirm: () => {
-        action();
+        if (typeof action === 'function') {
+          action();
+        }
         setConfirmationAction(null);
       },
       confirmText,
@@ -3482,94 +3688,175 @@ export default function App(): React.ReactNode {
   const handleGroup = useCallback(() => {
     if (distributePathState) return;
     if (selectedShapeIds.length < 2) return;
-    const newGroupId = `group-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-    
-    setHistoryState((prev: any) => {
-        // Find max index of selected shapes in the shapes array
-        const selectedIndices = prev.shapes
-            .map((s: any, idx) => selectedShapeIds.includes(s.id) ? idx : -1)
-            .filter((idx: number) => idx !== -1);
-        const maxIndex = Math.max(...selectedIndices);
-        
-        // Extract selected shapes and update them with the new groupId
-        const selectedShapes = prev.shapes
-            .filter((s: any) => selectedShapeIds.includes(s.id))
-            .map((s: any) => ({ ...s, groupId: newGroupId }));
-        
-        // Filter out selected shapes to get non-selected shapes
-        const nonSelectedShapes = prev.shapes.filter((s: any) => !selectedShapeIds.includes(s.id));
-        
-        // The insertion index in the nonSelectedShapes array
-        // maxIndex is the index in the original array. The number of selected shapes before or at maxIndex is exactly selectedIndices.length.
-        const insertIndex = maxIndex - selectedIndices.length + 1;
-        
-        const sortedSelectedShapeIds = selectedShapes.map((s: any) => s.id);
-        const groupIndex = prev.shapes.filter((s: any) => s.type === 'group').length + 1;
-        
-        const groupShape: Shape = {
-            type: 'group',
-            id: newGroupId,
-            name: `${t('group.defaultName') || 'Group'} ${groupIndex}`,
-            tags: `group_${groupIndex}`,
-            state: 'normal',
-            stroke: 'none',
-            strokeWidth: 0,
-            shapeIds: sortedSelectedShapeIds, rotation: 0,
-        };
-        
-        // Construct the new shapes array by inserting the selected shapes back at the maxIndex
-        const newShapes = [
-            ...nonSelectedShapes.slice(0, insertIndex),
-            ...selectedShapes,
-            ...nonSelectedShapes.slice(insertIndex)
-        ];
-        
-        (groupShape as any).rotationCenter = getShapeCenter(groupShape, newShapes);
-        newShapes.push(groupShape); // group element itself usually stays at the end or doesn't matter since it's just a logical container
-        
-        const targetLayerId = prev.activeLayerId || (prev.layers && prev.layers.length > 0 ? prev.layers[0].id : 'layer-1');
-        
-        let newLayers = (prev.layers || []).map((layer: any) => {
-            let shapeIds = layer.shapeIds || [];
-            
-            if (layer.id !== targetLayerId) {
-                shapeIds = shapeIds.filter((id: string) => !selectedShapeIds.includes(id));
-            } else {
-                // To maintain the logical ordering in the layer shapeIds as well, we should also extract and insert at max index
-                const layerSelectedIndices = shapeIds
-                    .map((id: string, idx) => selectedShapeIds.includes(id) ? idx : -1)
-                    .filter((idx: number) => idx !== -1);
-                
-                if (layerSelectedIndices.length > 0) {
-                    const maxLayerIndex = Math.max(...layerSelectedIndices);
-                    const layerInsertIndex = maxLayerIndex - layerSelectedIndices.length + 1;
-                    
-                    const nonSelectedShapeIds = shapeIds.filter((id: string) => !selectedShapeIds.includes(id));
-                    
-                    // The shapes to add might not all be in this layer originally, but we bring them here
-                    // Maintain the order they had in the overall selection
-                    shapeIds = [
-                        ...nonSelectedShapeIds.slice(0, layerInsertIndex),
-                        ...sortedSelectedShapeIds,
-                        newGroupId,
-                        ...nonSelectedShapeIds.slice(layerInsertIndex)
-                    ];
-                } else {
-                    // Fallback if none of the selected shapes were in this layer but we're moving them here
-                    const shapesToAdd = selectedShapeIds.filter((id: string) => !shapeIds.includes(id));
-                    shapeIds = [...shapeIds, ...shapesToAdd, newGroupId];
-                }
-            }
-            
-            return { ...layer, shapeIds };
-        });
 
-        return { ...prev, shapes: newShapes, layers: newLayers };
+    const targetLayerId = activeLayerId || (layers && layers.length > 0 ? layers[0].id : 'layer-1');
+    const targetLayer = layers.find((l: any) => l.id === targetLayerId);
+
+    if (targetLayer && targetLayer.locked) {
+        setDrawingWarningModal({ show: true, reason: 'locked', layerId: targetLayerId });
+        return;
+    }
+
+    const layersOfSelectedShapes = new Set<string>();
+    const layerNamesOfSelectedShapes = new Set<string>();
+    layers.forEach((layer: any) => {
+        if (layer.shapeIds && layer.shapeIds.some((id: string) => selectedShapeIds.includes(id))) {
+            layersOfSelectedShapes.add(layer.id);
+            layerNamesOfSelectedShapes.add(layer.name);
+        }
     });
-    
-    setSelectedShapeIds([newGroupId]);
-    showNotification(t('menu.edit.group') || 'Об\'єкти згруповано');
-  }, [selectedShapeIds, distributePathState, setHistoryState, showNotification, t]);
+
+    const executeGroup = () => {
+        const newGroupId = `group-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+        
+        setHistoryState((prev: any) => {
+            // Find max index of selected shapes in the shapes array
+            const selectedIndices = prev.shapes
+                .map((s: any, idx: number) => selectedShapeIds.includes(s.id) ? idx : -1)
+                .filter((idx: number) => idx !== -1);
+            const maxIndex = Math.max(...selectedIndices);
+            
+            // Extract selected shapes and update them with the new groupId
+            const selectedShapes = prev.shapes
+                .filter((s: any) => selectedShapeIds.includes(s.id))
+                .map((s: any) => ({ ...s, groupId: newGroupId }));
+            
+            // Filter out selected shapes to get non-selected shapes
+            let nonSelectedShapes = prev.shapes.filter((s: any) => !selectedShapeIds.includes(s.id));
+            
+            const groupIdsToRemove = new Set<string>();
+
+            nonSelectedShapes = nonSelectedShapes.map((s: any) => {
+                if (s.type === 'group' && s.shapeIds) {
+                    const newShapeIds = s.shapeIds.filter((id: string) => !selectedShapeIds.includes(id));
+                    if (newShapeIds.length !== s.shapeIds.length) {
+                        if (newShapeIds.length < 2) {
+                            groupIdsToRemove.add(s.id);
+                        }
+                        return { ...s, shapeIds: newShapeIds };
+                    }
+                }
+                return s;
+            }).filter((s: any) => !(s.type === 'group' && groupIdsToRemove.has(s.id)));
+            
+            if (groupIdsToRemove.size > 0) {
+                nonSelectedShapes = nonSelectedShapes.map((s: any) => {
+                    if (s.groupId && groupIdsToRemove.has(s.groupId)) {
+                        return { ...s, groupId: undefined };
+                    }
+                    return s;
+                });
+            }
+
+            // The insertion index in the nonSelectedShapes array
+            // maxIndex is the index in the original array. The number of selected shapes before or at maxIndex is exactly selectedIndices.length.
+            const insertIndex = maxIndex - selectedIndices.length + 1;
+            
+            const sortedSelectedShapeIds = selectedShapes.map((s: any) => s.id);
+            const groupIndex = prev.shapes.filter((s: any) => s.type === 'group').length + 1;
+            
+            const groupShape: Shape = {
+                type: 'group',
+                id: newGroupId,
+                name: `${t('group.defaultName') || 'Group'} ${groupIndex}`,
+                tags: `group_${groupIndex}`,
+                state: 'normal',
+                stroke: 'none',
+                strokeWidth: 0,
+                shapeIds: sortedSelectedShapeIds, rotation: 0,
+            };
+            
+            // Construct the new shapes array by inserting the selected shapes back at the maxIndex
+            const newShapes = [
+                ...nonSelectedShapes.slice(0, insertIndex),
+                ...selectedShapes,
+                ...nonSelectedShapes.slice(insertIndex)
+            ];
+            
+            (groupShape as any).rotationCenter = getShapeCenter(groupShape, newShapes);
+            newShapes.push(groupShape); // group element itself usually stays at the end or doesn't matter since it's just a logical container
+            
+            let newLayers = (prev.layers || []).map((layer: any) => {
+                let shapeIds = layer.shapeIds || [];
+                
+                if (groupIdsToRemove.size > 0) {
+                    shapeIds = shapeIds.filter((id: string) => !groupIdsToRemove.has(id));
+                }
+
+                if (layer.id !== targetLayerId) {
+                    shapeIds = shapeIds.filter((id: string) => !selectedShapeIds.includes(id));
+                } else {
+                    // To maintain the logical ordering in the layer shapeIds as well, we should also extract and insert at max index
+                    const layerSelectedIndices = shapeIds
+                        .map((id: string, idx: number) => selectedShapeIds.includes(id) ? idx : -1)
+                        .filter((idx: number) => idx !== -1);
+                    
+                    if (layerSelectedIndices.length > 0) {
+                        const maxLayerIndex = Math.max(...layerSelectedIndices);
+                        const layerInsertIndex = maxLayerIndex - layerSelectedIndices.length + 1;
+                        
+                        const nonSelectedShapeIds = shapeIds.filter((id: string) => !selectedShapeIds.includes(id));
+                        
+                        // The shapes to add might not all be in this layer originally, but we bring them here
+                        // Maintain the order they had in the overall selection
+                        shapeIds = [
+                            ...nonSelectedShapeIds.slice(0, layerInsertIndex),
+                            ...sortedSelectedShapeIds,
+                            newGroupId,
+                            ...nonSelectedShapeIds.slice(layerInsertIndex)
+                        ];
+                    } else {
+                        // Fallback if none of the selected shapes were in this layer but we're moving them here
+                        const shapesToAdd = selectedShapeIds.filter((id: string) => !shapeIds.includes(id));
+                        shapeIds = [...shapeIds, ...shapesToAdd, newGroupId];
+                    }
+                }
+                
+                return { ...layer, shapeIds };
+            });
+
+            return { ...prev, shapes: newShapes, layers: newLayers };
+        });
+        
+        setSelectedShapeIds([newGroupId]);
+        showNotification(t('menu.edit.group') || 'Об\'єкти згруповано');
+    };
+
+    const checkGroupAndExecute = () => {
+        const shapesWithGroup = shapes.filter((s: any) => selectedShapeIds.includes(s.id) && s.groupId !== undefined);
+        if (shapesWithGroup.length > 0) {
+            setGroupConfirmationModal({
+                show: true,
+                title: t('app.confirmGroupTitle') || 'Групування об\'єктів',
+                message: t('app.confirmExtractAndGroup') || 'Деякі з вибраних об\'єктів вже належать до існуючих груп. Ви дійсно бажаєте вилучити їх з цих груп та згрупувати в нову?',
+                onConfirm: () => {
+                    executeGroup();
+                    setGroupConfirmationModal(null);
+                }
+            });
+        } else {
+            executeGroup();
+        }
+    };
+
+    if (layersOfSelectedShapes.size > 1 || (layersOfSelectedShapes.size === 1 && !layersOfSelectedShapes.has(targetLayerId))) {
+        const fromLayers = Array.from(layerNamesOfSelectedShapes).join(', ');
+        const toLayer = targetLayer ? targetLayer.name : targetLayerId;
+        const msg = (t('app.confirmGroupDifferentLayers') || 'Об\'єкти з шарів "{from}" будуть згруповані та розміщені на активному шарі "{to}". Продовжити?').replace('{from}', fromLayers).replace('{to}', toLayer);
+        
+        setGroupConfirmationModal({
+            show: true,
+            title: t('app.confirmGroupTitle') || 'Групування об\'єктів',
+            message: msg,
+            onConfirm: () => {
+                setGroupConfirmationModal(null);
+                setTimeout(() => checkGroupAndExecute(), 0);
+            }
+        });
+    } else {
+        checkGroupAndExecute();
+    }
+  }, [selectedShapeIds, distributePathState, setHistoryState, showNotification, t, activeLayerId, layers]);
 
   const handleUngroup = useCallback(() => {
     if (distributePathState) return;
@@ -3674,6 +3961,24 @@ export default function App(): React.ReactNode {
     setExtractConfirmInfo(false);
   }, [selectedShapeIds, setHistoryState]);
 
+  const canGroup = useMemo(() => {
+    return selectedShapeIds.length >= 2 && !distributePathState;
+  }, [selectedShapeIds.length, distributePathState]);
+
+  const canUngroup = useMemo(() => {
+    if (selectedShapeIds.length === 0 || distributePathState) return false;
+    return selectedShapes.some((s: any) => s.type === 'group' || !!s.groupId);
+  }, [selectedShapeIds.length, distributePathState, selectedShapes]);
+
+  const canExtractFromGroup = useMemo(() => {
+    if (selectedShapeIds.length === 0 || distributePathState) return false;
+    return selectedShapes.some((s: any) => !!s.groupId);
+  }, [selectedShapeIds.length, distributePathState, selectedShapes]);
+
+  const canFlip = useMemo(() => {
+    return selectedShapeIds.length > 0 && !distributePathState;
+  }, [selectedShapeIds.length, distributePathState]);
+
   const canConvertToPath = useMemo(() => {
     if (!selectedShape) return false;
     return ['rectangle', 'ellipse', 'triangle', 'right-triangle', 'rhombus', 'trapezoid', 'parallelogram', 'polygon', 'star', 'arc'].includes(selectedShape.type);
@@ -3692,13 +3997,42 @@ export default function App(): React.ReactNode {
   }, [showNotification]);
 
     const handleLocateSelectedShape = useCallback(() => {
-        if ((selectedShapeIds.length === 0) || !viewportRef.current) return;
-        const selectedShapes = shapes.filter((s: any) => selectedShapeIds.includes(s.id));
+        if ((selectedShapeIds.length === 0 && !distributePathState) || !viewportRef.current) return;
+        
+        let selectedShapes = displayedShapes.filter((s: any) => selectedShapeIds.includes(s.id));
+        
+        if (distributePathState) {
+            const distributedIds = new Set(distributePathState.entities.flatMap(e => e.ids));
+            selectedShapes = displayedShapes.filter((s: any) => distributedIds.has(s.id));
+            
+            if (distributePathState.type === 'shape' && distributePathState.shapePathParams?.pathShape) {
+                selectedShapes.push(distributePathState.shapePathParams.pathShape as any);
+            } else if (distributePathState.type === 'line') {
+                 selectedShapes.push({
+                     id: 'dummy-line',
+                     type: 'line',
+                     points: [{x: distributePathState.lineParams.x1, y: distributePathState.lineParams.y1}, {x: distributePathState.lineParams.x2, y: distributePathState.lineParams.y2}],
+                     strokeWidth: 1
+                 } as any);
+            } else if (distributePathState.type === 'circle') {
+                 selectedShapes.push({
+                     id: 'dummy-circle',
+                     type: 'ellipse',
+                     cx: distributePathState.circleParams.cx,
+                     cy: distributePathState.circleParams.cy,
+                     rx: distributePathState.circleParams.radius,
+                     ry: distributePathState.circleParams.radius,
+                     strokeWidth: 1,
+                     rotation: 0
+                 } as any);
+            }
+        }
+
         if (selectedShapes.length === 0) return;
 
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         for (const shape of selectedShapes) {
-            const bbox = getVisualBoundingBox(shape, undefined, shapes);
+            const bbox = getVisualBoundingBox(shape, undefined, displayedShapes);
             if (bbox) {
                 minX = Math.min(minX, bbox.x);
                 minY = Math.min(minY, bbox.y);
@@ -3739,7 +4073,7 @@ export default function App(): React.ReactNode {
         const newY = viewportCenterY - (shapeCenterY * newScale);
 
         setViewTransform({ scale: newScale, x: newX, y: newY });
-    }, [selectedShapeIds, shapes, showAxes, viewportSize, setViewTransform]);
+    }, [selectedShapeIds, displayedShapes, distributePathState, showAxes, viewportSize, setViewTransform]);
 
     useEffect(() => {
         if (selectedShapeIds.length > 1 && activeTool === 'edit-points') {
@@ -3807,7 +4141,9 @@ export default function App(): React.ReactNode {
                           }
                       }
                       if (direction === 'horizontal') {
-                          if ('x' in newS && 'width' in newS) {
+                          if (newS.type === 'text') {
+                              newS.x = 2 * centerAxis - newS.x;
+                          } else if ('x' in newS && 'width' in newS) {
                               newS.x = 2 * centerAxis - newS.x - newS.width;
                           } else if ('cx' in newS) {
                               newS.cx = 2 * centerAxis - newS.cx;
@@ -3815,7 +4151,9 @@ export default function App(): React.ReactNode {
                               newS.points = newS.points.map((p: any) => ({ x: 2 * centerAxis - p.x, y: p.y }));
                           }
                       } else {
-                          if ('y' in newS && 'height' in newS) {
+                          if (newS.type === 'text') {
+                              newS.y = 2 * centerAxis - newS.y;
+                          } else if ('y' in newS && 'height' in newS) {
                               newS.y = 2 * centerAxis - newS.y - newS.height;
                           } else if ('cy' in newS) {
                               newS.cy = 2 * centerAxis - newS.cy;
@@ -3843,7 +4181,7 @@ export default function App(): React.ReactNode {
                           newS.topLeftOffsetRatio = newS.topRightOffsetRatio;
                           newS.topRightOffsetRatio = temp;
                       }
-                      if (['polygon', 'star', 'triangle', 'right-triangle', 'trapezoid', 'parallelogram', 'image', 'bitmap', 'text', 'arc'].includes(newS.type)) {
+                      if (['polygon', 'star', 'triangle', 'right-triangle', 'trapezoid', 'parallelogram', 'image', 'bitmap', 'arc'].includes(newS.type)) {
                           if (direction === 'horizontal') {
                               newS.isFlippedHorizontally = !newS.isFlippedHorizontally;
                           } else {
@@ -3876,22 +4214,27 @@ export default function App(): React.ReactNode {
         const isEditingText = (e.target as HTMLElement).matches('input, textarea, [contenteditable="true"]');
         if (isEditingText || inlineEditingShapeId) return;
 
-        if (e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
-            switch (e.code) {
-                case 'KeyH':
-                    handleFlip('horizontal');
-                    e.preventDefault();
-                    return;
-                case 'KeyV':
-                    handleFlip('vertical');
-                    e.preventDefault();
-                    return;
-            }
+        if (e.key === '?' || e.code === 'Slash') {
+            e.preventDefault();
+            setIsShortcutsModalOpen(prev => !prev);
+            return;
         }
 
         // Modifier shortcuts
         if (e.ctrlKey || e.metaKey) {
             switch (e.code) {
+                case 'KeyH':
+                    if (selectedShapeIds.length > 0) {
+                        e.preventDefault();
+                        handleFlip('horizontal');
+                    }
+                    return;
+                case 'KeyV':
+                    if (selectedShapeIds.length > 0) {
+                        e.preventDefault();
+                        handleFlip('vertical');
+                    }
+                    return;
                 case 'KeyD':
                     if (selectedShapeIds.length > 0 && !distributePathState) {
                         e.preventDefault();
@@ -4347,6 +4690,15 @@ export default function App(): React.ReactNode {
             onDuplicate={handleDuplicate}
             isShapeSelected={!(selectedShapeIds.length === 0)}
             onDelete={handleDelete}
+            onGroup={handleGroup}
+            canGroup={canGroup}
+            onUngroup={handleUngroup}
+            canUngroup={canUngroup}
+            onExtractFromGroup={handleExtractFromGroup}
+            canExtractFromGroup={canExtractFromGroup}
+            onFlipH={() => handleFlip('horizontal')}
+            onFlipV={() => handleFlip('vertical')}
+            canFlip={canFlip}
             onConvertToPath={handleConvertToPath}
             canConvertToPath={canConvertToPath}
             onFitCanvasToView={fitCanvasToView}
@@ -4370,6 +4722,7 @@ export default function App(): React.ReactNode {
             onGoHome={handleGoHome}
             onOpenAbout={() => setIsAboutModalOpen(true)}
             onOpenHelp={() => setIsHelpModalOpen(true)}
+            onOpenShortcuts={() => setIsShortcutsModalOpen(true)}
             onOpenFeedback={() => setIsFeedbackModalOpen(true)}
           />
 
@@ -4377,6 +4730,8 @@ export default function App(): React.ReactNode {
               allShapes={shapes}
               distributePathState={distributePathState}
               onDistributePathChange={setDistributePathState}
+              isSelectingPathShape={isSelectingPathShape}
+              onToggleSelectPathShape={() => setIsSelectingPathShape(prev => !prev)}
               isDistributingPath={!!distributePathState}
               activeTool={activeTool}
               setActiveTool={handleSetActiveTool}
@@ -4407,9 +4762,14 @@ export default function App(): React.ReactNode {
               canRedo={canRedo}
               onDuplicate={handleDuplicate}
               onGroup={handleGroup}
+              canGroup={canGroup}
               onUngroup={handleUngroup}
+              canUngroup={canUngroup}
+              onExtractFromGroup={handleExtractFromGroup}
+              canExtractFromGroup={canExtractFromGroup}
               onFlipH={() => handleFlip('horizontal')}
               onFlipV={() => handleFlip('vertical')}
+              canFlip={canFlip}
               onAlignShapes={handleAlignShapes}
               isShapeSelected={selectedShapeIds.length > 0}
               onOpenMobileLeft={handleOpenMobileLeft}
@@ -4491,7 +4851,9 @@ export default function App(): React.ReactNode {
                                     onDrawingAttempt={handleDrawingAttempt}
                                     distributePathState={distributePathState}
                                     onDistributePathChange={setDistributePathStateWithoutHistory}
-                                    onDistributePathChangeEnd={() => distributePathState && setDistributePathState(distributePathState)}
+                                    onDistributePathChangeEnd={handleDistributePathChangeEnd}
+                                    isSelectingPathShape={isSelectingPathShape}
+                                    onSelectPathShape={handleSelectPathShape}
                                     width={canvasWidth} height={canvasHeight} backgroundColor={previewCanvasBgColor ?? canvasBgColor} shapes={displayedShapes} lockedShapeIds={lockedShapeIds} addShape={addShape} addShapes={addShapes} updateShape={updateShape} updateShapes={updateShapes} activeTool={activeTool} drawMode={drawMode}
                                     fillColor={isFillEnabled ? (previewFillColor ?? fillColor) : 'none'} strokeColor={isStrokeEnabled ? (previewStrokeColor ?? strokeColor) : 'none'} strokeWidth={isStrokeEnabled ? strokeWidth : 0}
                                     textColor={previewTextColor ?? textColor}
@@ -4570,11 +4932,16 @@ export default function App(): React.ReactNode {
                                 activeLayerId={activeLayerId}
                                 onAddLayer={addLayer}
                                 onDeleteLayer={deleteLayer}
+                                onClearLayer={clearLayer}
                                 onToggleVisibility={toggleLayerVisibility}
                                 onToggleLock={toggleLayerLock}
                                 onSetActiveLayer={setActiveLayer}
                                 onUpdateLayerName={updateLayerName}
                                 onMoveLayer={moveLayer}
+                                shapes={shapes}
+                                canvasWidth={canvasWidth}
+                                canvasHeight={canvasHeight}
+                                canvasBgColor={canvasBgColor}
                             />
                         </div>
                         <div className={`absolute inset-0 ${rightPanelTab === 'shapes' ? 'block' : 'hidden'}`}>
@@ -4593,7 +4960,7 @@ export default function App(): React.ReactNode {
                                 activeLayerId={activeLayerId}
                                 onMoveToLayer={moveToLayer}
                                 onSetActiveLayer={setActiveLayer}
-                                onLayerWarning={(reason, layerId) => setDrawingWarningModal({ show: true, reason, layerId })}
+                                onLayerWarning={(reason, layerId, action) => setDrawingWarningModal({ show: true, reason, layerId, action })}
                                 ignoreHiddenWarningForLayer={ignoreHiddenWarningForLayer}
                             />
                         </div>
@@ -4749,6 +5116,20 @@ export default function App(): React.ReactNode {
                 cancelText={t('action.cancel') || 'Скасувати'}
               />
           )}
+          {groupConfirmationModal && (
+              <ConfirmationModal
+                isOpen={true}
+                title={groupConfirmationModal.title}
+                message={groupConfirmationModal.message}
+                onConfirm={() => {
+                    groupConfirmationModal.onConfirm();
+                }}
+                onClose={() => setGroupConfirmationModal(null)}
+                confirmText={t('action.confirm') || 'Підтвердити'}
+                cancelText={t('action.cancel') || 'Скасувати'}
+                variant="primary"
+              />
+          )}
           {isSaveAsModalOpen && (
             <SaveAsModal
                 isOpen={true}
@@ -4784,6 +5165,12 @@ export default function App(): React.ReactNode {
                 onClose={() => setIsHelpModalOpen(false)}
             />
           )}
+          {isShortcutsModalOpen && (
+            <KeyboardShortcutsModal
+                isOpen={isShortcutsModalOpen}
+                onClose={() => setIsShortcutsModalOpen(false)}
+            />
+          )}
           {drawingWarningModal && drawingWarningModal.show && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                 <div className="bg-[var(--bg-app)] border border-[var(--border-color)] p-6 rounded-lg shadow-xl w-[400px] relative">
@@ -4796,34 +5183,20 @@ export default function App(): React.ReactNode {
                     <h2 className="text-lg font-bold mb-4 text-[var(--text-primary)]">
                         {drawingWarningModal.reason === 'hidden' ? t('warning.layerHidden.title') || "Шар прихований" : t('warning.layerLocked.title') || "Шар заблокований"}
                     </h2>
-                    <p className="mb-4 text-sm text-[var(--text-secondary)]">
-                        {drawingWarningModal.reason === 'hidden' 
-                            ? (t('warning.layerHidden.message') || "Ви намагаєтесь створити об'єкт на прихованому шарі. Будь ласка, виберіть інший.").replace('.', (drawingWarningModal.layerId && layers.find((l: any) => l.id === drawingWarningModal.layerId) ? ` "${layers.find((l: any) => l.id === drawingWarningModal.layerId)?.name}".` : "."))
-                            : (t('warning.layerLocked.message') || "Ви намагаєтесь створити об'єкт на заблокованому шарі. Будь ласка, виберіть інший.").replace('.', (drawingWarningModal.layerId && layers.find((l: any) => l.id === drawingWarningModal.layerId) ? ` "${layers.find((l: any) => l.id === drawingWarningModal.layerId)?.name}".` : "."))}
+                    <p className="mb-6 text-sm text-[var(--text-secondary)]">
+                        {(() => {
+                            const targetLayerId = drawingWarningModal.layerId || activeLayerId;
+                            const targetLayer = layers.find((l: any) => l.id === targetLayerId);
+                            const layerNameStr = targetLayer ? ` "${targetLayer.name}"` : '';
+                            if (drawingWarningModal.reason === 'hidden') {
+                                const baseMsg = (t('warning.layerHidden.message') || "Ви намагаєтесь виконати дію на прихованому шарі").replace(/\.$/, '');
+                                return `${baseMsg}${layerNameStr}.`;
+                            } else {
+                                const baseMsg = (t('warning.layerLocked.message') || "Ви намагаєтесь виконати дію на заблокованому шарі").replace(/\.$/, '');
+                                return `${baseMsg}${layerNameStr}.`;
+                            }
+                        })()}
                     </p>
-                    <div className="mb-4">
-                        <label className="block text-xs mb-1 text-[var(--text-tertiary)]">{t('warning.selectLayer') || "Виберіть робочий шар:"}</label>
-                        <select 
-                            className="w-full bg-[var(--bg-primary)] text-[var(--text-primary)] border border-[var(--border-color)] rounded p-2"
-                            value={activeLayerId || ''}
-                            onChange={(e) => {
-                                const newLayerId = e.target.value;
-                                setActiveLayer(newLayerId);
-                                const newLayer = layers.find((l: any) => l.id === newLayerId);
-                                if (newLayer && !newLayer.visible) {
-                                    setDrawingWarningModal(prev => prev ? { ...prev, layerId: undefined, reason: 'hidden' } : null);
-                                } else {
-                                    setDrawingWarningModal(prev => prev ? { ...prev, layerId: undefined } : null);
-                                }
-                            }}
-                        >
-                            {layers.map((l: any) => (
-                                <option key={l.id} value={l.id} disabled={l.locked}>
-                                    {l.name} {l.locked ? `(${t('menu.edit.lock') || 'Заблоковано'})` : ''} {!l.visible ? `(${t('list.layerHidden') || 'Прихований'})` : ''}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
                     <div className="flex justify-end gap-2">
                         <button 
                             className="px-4 py-2 text-sm bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded hover:bg-[var(--bg-hover)]"
@@ -4831,11 +5204,15 @@ export default function App(): React.ReactNode {
                         >
                             {t('action.cancel') || 'Скасувати'}
                         </button>
-                        {drawingWarningModal.reason === 'hidden' && layers.find((l: any) => l.id === (drawingWarningModal.layerId || activeLayerId))?.visible === false ? (
+                        {drawingWarningModal.reason === 'hidden' ? (
                             <button 
                                 className="px-4 py-2 text-sm bg-amber-600 text-white rounded hover:bg-amber-700"
                                 onClick={() => {
-                                    setIgnoreHiddenWarningForLayer(drawingWarningModal.layerId || activeLayerId);
+                                    if (drawingWarningModal.action) {
+                                        drawingWarningModal.action();
+                                    } else {
+                                        setIgnoreHiddenWarningForLayer(drawingWarningModal.layerId || activeLayerId);
+                                    }
                                     setDrawingWarningModal(null);
                                 }}
                             >

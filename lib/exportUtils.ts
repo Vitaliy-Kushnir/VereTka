@@ -104,7 +104,7 @@ function shapeToSvgString(shape: Shape): string {
 
     const getTransform = (s: Shape): string => {
         let transformStr = "";
-        const isSpecialFlip = ['image', 'bitmap', 'text', 'arc'].includes(s.type);
+        const isSpecialFlip = ['image', 'bitmap', 'arc'].includes(s.type);
         const isFlippedH = isSpecialFlip && 'isFlippedHorizontally' in s && (s as any).isFlippedHorizontally;
         const isFlippedV = isSpecialFlip && 'isFlippedVertically' in s && (s as any).isFlippedVertically;
         const hasRotation = 'rotation' in s && s.rotation && s.rotation !== 0;

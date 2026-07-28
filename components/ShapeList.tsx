@@ -1,5 +1,6 @@
 
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { motion } from 'motion/react';
 import { Shape, Tool, PolylineShape, DistributePathState, Layer } from '../types';
 import { ArrowUpIcon, ArrowDownIcon, TrashIcon, SquareIcon, CircleIcon, LineIcon, EllipseIcon, PencilIcon, TriangleIcon, PolygonIcon, StarIcon, SelectIcon, SelectOffIcon, EditPointsIcon, PolylineIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, BezierIcon, RectangleIcon, ArcIcon, PiesliceIcon, ChordIcon, RightTriangleIcon, EyeIcon, EyeOffIcon, TextIcon, ImageIcon, BitmapIcon, LocateIcon, LockIcon, ChevronDownIcon, ChevronRightIcon } from './icons';
 import { getDefaultNameForShape, getTkinterType, isDefaultName } from '../lib/constants';
@@ -21,7 +22,7 @@ interface ShapeListProps {
   onMoveToLayer: (shapeId: string, layerId: string) => void;
   onSetActiveLayer: (layerId: string) => void;
   showTkinterNames: boolean;
-  onLayerWarning?: (reason: 'hidden' | 'locked', layerId: string) => void;
+  onLayerWarning?: (reason: 'hidden' | 'locked', layerId: string, action?: () => void) => void;
   ignoreHiddenWarningForLayer?: string | null;
 }
 
@@ -276,13 +277,40 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
     const handleDrop = (e: React.DragEvent<HTMLLIElement>, targetId: string) => {
         e.preventDefault();
         e.stopPropagation();
-        if (lockedShapeIds.has(targetId)) {
-            if (onLayerWarning) onLayerWarning('locked', layer.id);
+        
+        const targetShape = shapes.find(s => s.id === targetId);
+        const targetLayer = layers.find(l => l.shapeIds.includes(targetId));
+
+        if (targetLayer) {
+            if (targetLayer.locked) {
+                if (onLayerWarning) onLayerWarning('locked', targetLayer.id);
+                setDraggedId(null);
+                setDragOverId(null);
+                setDropPosition(null);
+                return;
+            }
+            if (!targetLayer.visible && ignoreHiddenWarningForLayer !== targetLayer.id) {
+                if (onLayerWarning) {
+                    onLayerWarning('hidden', targetLayer.id, () => {
+                        if (draggedId && draggedId !== targetId && dropPosition) {
+                            onReorderShape(draggedId, targetId, dropPosition);
+                        }
+                    });
+                }
+                setDraggedId(null);
+                setDragOverId(null);
+                setDropPosition(null);
+                return;
+            }
+        } else if (lockedShapeIds.has(targetId)) {
+            const activeL = layers.find(l => l.id === activeLayerId);
+            if (onLayerWarning && activeL) onLayerWarning('locked', activeL.id);
             setDraggedId(null);
             setDragOverId(null);
             setDropPosition(null);
             return;
         }
+
         if (draggedId && draggedId !== targetId && dropPosition) {
             onReorderShape(draggedId, targetId, dropPosition);
         }
@@ -346,10 +374,15 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
         const isLocked = lockedShapeIds.has(shape.id);
         
         return (
-            <li
-                ref={(el) => { itemRefs.current[shape.id] = el; }}
+            <motion.li
+                layout
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                ref={(el: any) => { itemRefs.current[shape.id] = el; }}
                 key={shape.id}
-                onClick={(e) => {
+                onClick={(e: React.MouseEvent) => {
                     e.stopPropagation();
                     if (isLocked) return;
                     
@@ -363,11 +396,11 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
                     if (!isLocked) handleStartEditing(shape);
                 }}
                 draggable={!isEditing && !isLocked}
-                onDragStart={isEditing ? undefined : (e) => { e.stopPropagation(); handleDragStart(e, shape.id); }}
-                onDragOver={isEditing ? undefined : (e) => { e.stopPropagation(); handleDragOver(e, shape.id); }}
-                onDragLeave={isEditing ? undefined : (e) => { e.stopPropagation(); handleDragLeave(e); }}
-                onDrop={isEditing ? undefined : (e) => { e.stopPropagation(); handleDrop(e, shape.id); }}
-                onDragEnd={isEditing ? undefined : (e) => { e.stopPropagation(); handleDragEnd(e); }}
+                onDragStart={isEditing ? undefined : (e: any) => { e.stopPropagation(); handleDragStart(e, shape.id); }}
+                onDragOver={isEditing ? undefined : (e: any) => { e.stopPropagation(); handleDragOver(e, shape.id); }}
+                onDragLeave={isEditing ? undefined : (e: any) => { e.stopPropagation(); handleDragLeave(e); }}
+                onDrop={isEditing ? undefined : (e: any) => { e.stopPropagation(); handleDrop(e, shape.id); }}
+                onDragEnd={isEditing ? undefined : (e: any) => { e.stopPropagation(); handleDragEnd(e); }}
                 className={`group flex flex-col p-0 rounded-md transition-all duration-150 relative
                     ${draggedId === shape.id ? 'opacity-30' : ''}
                 `}
@@ -470,7 +503,7 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
                     </div>
                 </div>
                 {childrenNode}
-            </li>
+            </motion.li>
         );
     };
 
@@ -520,7 +553,7 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
                             return (
                                 <div key={layer.id} className="flex flex-col">
                                     <div 
-                                        className={`group px-2 py-1 flex items-center justify-between text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider rounded cursor-pointer transition-colors ${activeLayerId === layer.id ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]' : 'hover:bg-[var(--bg-hover)]'} ${isDragOverLayer ? 'bg-[var(--accent-primary)]/20 outline outline-1 outline-[var(--accent-primary)]' : ''}`}
+                                        className={`group px-2 py-1 flex items-center justify-between text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider rounded cursor-pointer transition-colors ${activeLayerId === layer.id ? 'bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]' : 'hover:bg-[var(--bg-hover)]'} ${isDragOverLayer ? 'bg-[var(--accent-primary)]/20 outline-2 outline-dashed outline-[var(--accent-primary)] outline-offset-[-2px]' : ''}`}
                                         onClick={(e) => {
                                             if (e.shiftKey) {
                                                 if (layer.shapeIds.length > 0) {
@@ -548,7 +581,13 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
                                                 return;
                                             }
                                             if (!layer.visible && ignoreHiddenWarningForLayer !== layer.id) {
-                                                if (onLayerWarning) onLayerWarning('hidden', layer.id);
+                                                if (onLayerWarning) {
+                                                    onLayerWarning('hidden', layer.id, () => {
+                                                        if (draggedId) {
+                                                            onMoveToLayer(draggedId, layer.id);
+                                                        }
+                                                    });
+                                                }
                                                 setDragOverId(null);
                                                 setDraggedId(null);
                                                 return;
@@ -617,7 +656,44 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
                                         {activeLayerId === layer.id && <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)] flex-shrink-0"></span>}
                                     </div>
                                     {!collapsedLayers.has(layer.id) && (
-                                        <ul className={`space-y-0.5 pt-0.5 mt-0 ml-1 border-l-2 ${activeLayerId === layer.id ? 'border-[var(--accent-primary)]' : 'border-[var(--text-tertiary)]'} relative z-0`}>
+                                        <ul 
+                                            className={`space-y-0.5 pt-0.5 mt-0 ml-1 border-l-2 ${activeLayerId === layer.id ? 'border-[var(--accent-primary)]' : 'border-[var(--text-tertiary)]'} relative z-0 transition-colors ${dragOverId === `layer-list-${layer.id}` ? 'bg-[var(--accent-primary)]/10 outline-2 outline-dashed outline-[var(--accent-primary)] outline-offset-[-2px] rounded' : ''}`}
+                                            onDragOver={(e) => {
+                                                e.preventDefault();
+                                                setDragOverId(`layer-list-${layer.id}`);
+                                                setDropPosition(null);
+                                            }}
+                                            onDragLeave={() => {
+                                                if (dragOverId === `layer-list-${layer.id}`) setDragOverId(null);
+                                            }}
+                                            onDrop={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                if (layer.locked) {
+                                                    if (onLayerWarning) onLayerWarning('locked', layer.id);
+                                                    setDragOverId(null);
+                                                    setDraggedId(null);
+                                                    return;
+                                                }
+                                                if (!layer.visible && ignoreHiddenWarningForLayer !== layer.id) {
+                                                    if (onLayerWarning) {
+                                                        onLayerWarning('hidden', layer.id, () => {
+                                                            if (draggedId) {
+                                                                onMoveToLayer(draggedId, layer.id);
+                                                            }
+                                                        });
+                                                    }
+                                                    setDragOverId(null);
+                                                    setDraggedId(null);
+                                                    return;
+                                                }
+                                                if (draggedId) {
+                                                    onMoveToLayer(draggedId, layer.id);
+                                                }
+                                                setDragOverId(null);
+                                                setDraggedId(null);
+                                            }}
+                                        >
                                         {[...layerShapes].reverse().map((shape, index) => {
                                             if (!shape) return null;
                                             if (shape.groupId) return null; // Skip children of groups

@@ -24,12 +24,16 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   onConfirm,
   title,
   message,
-  confirmText = "Continue",
-  cancelText = "Cancel",
+  confirmText,
+  cancelText,
   variant = 'destructive',
   alternativeAction,
 }) => {
+  const { t } = useLanguage();
   if (!isOpen) return null;
+
+  const resolvedConfirmText = confirmText || t('action.ok');
+  const resolvedCancelText = cancelText || t('action.cancel');
 
   const confirmButtonClass = variant === 'primary' 
     ? "bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)]"
@@ -62,7 +66,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             onClick={onClose}
             className="px-6 py-2 rounded-lg font-semibold bg-[var(--bg-tertiary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
           >
-            {cancelText}
+            {resolvedCancelText}
           </button>
           {alternativeAction && (
             <button
@@ -77,7 +81,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             onClick={onConfirm}
             className={`px-6 py-2 rounded-lg font-semibold text-[var(--accent-text)] transition-colors ${confirmButtonClass}`}
           >
-            {confirmText}
+            {resolvedConfirmText}
           </button>
         </footer>
       </div>

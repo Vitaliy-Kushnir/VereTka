@@ -1,4 +1,7 @@
-import React, { useRef, useEffect, useState, useMemo } from 'react';
+const fs = require('fs');
+let code = fs.readFileSync('components/InlineTextEditor.tsx', 'utf8');
+
+const newCode = `import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { TextShape, ViewTransform } from '../types';
 import { getTextBoundingBox, rotatePoint } from '../lib/geometry';
 import { getVisualFontFamily } from '../lib/constants';
@@ -23,7 +26,7 @@ const InlineTextEditor: React.FC<InlineTextEditorProps> = ({ shape, viewTransfor
       
       // Auto-resize textarea height to fit content
       textarea.style.height = 'auto';
-      textarea.style.height = `${textarea.scrollHeight}px`;
+      textarea.style.height = \`\${textarea.scrollHeight}px\`;
     }
   }, []);
   
@@ -31,7 +34,7 @@ const InlineTextEditor: React.FC<InlineTextEditorProps> = ({ shape, viewTransfor
       onUpdateText(e.target.value);
       // Auto-resize on text change
       e.target.style.height = 'auto';
-      e.target.style.height = `${e.target.scrollHeight}px`;
+      e.target.style.height = \`\${e.target.scrollHeight}px\`;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -59,8 +62,8 @@ const InlineTextEditor: React.FC<InlineTextEditorProps> = ({ shape, viewTransfor
   // For line-height 1.2, there is a top gap of approximately (1.2 - 1) / 2 = 0.1 em.
   // We need to shift the textarea UP by this amount so its text aligns with the SVG text 
   // (which is rendered at exactly bbox.y due to dominantBaseline="hanging").
-  const topGap = 0;
-  const leftGap = 0; // Slight left adjustment if needed, usually 0 or 1px
+  const topGap = shape.fontSize * 0.1;
+  const leftGap = 1; // Slight left adjustment if needed, usually 0 or 1px
 
   // 2. Determine unrotated visual top-left
   const unrotatedTopLeft = { x: bbox.x - leftGap, y: bbox.y - topGap };
@@ -74,10 +77,10 @@ const InlineTextEditor: React.FC<InlineTextEditorProps> = ({ shape, viewTransfor
 
   const style: React.CSSProperties = {
     position: 'absolute',
-    left: `${left}px`,
-    top: `${top}px`,
-    width: `${(bbox.width + leftGap * 2) * scale}px`,
-    height: `${Math.max(bbox.height * scale, shape.fontSize * 1.2 * scale)}px`,
+    left: \`\${left}px\`,
+    top: \`\${top}px\`,
+    width: \`\${(bbox.width + leftGap * 2) * scale}px\`,
+    height: \`\${Math.max(bbox.height * scale, shape.fontSize * 1.2 * scale)}px\`,
     padding: 0,
     margin: 0,
     border: 'none',
@@ -88,14 +91,14 @@ const InlineTextEditor: React.FC<InlineTextEditorProps> = ({ shape, viewTransfor
     color: shape.fill,
     lineHeight: 1.2,
     fontFamily: getVisualFontFamily(shape.font),
-    fontSize: `${shape.fontSize * scale}px`,
+    fontSize: \`\${shape.fontSize * scale}px\`,
     fontWeight: shape.weight,
     fontStyle: shape.slant === 'italic' ? 'italic' : 'normal',
     textAlign: shape.justify,
     // The textarea itself is now positioned correctly, so we just rotate it around its top-left corner.
-    transform: `rotate(${-shape.rotation}deg)`,
-    transformOrigin: `0 0`,
-    whiteSpace: 'pre',
+    transform: \`rotate(\${-shape.rotation}deg)\`,
+    transformOrigin: \`0 0\`,
+    whiteSpace: 'pre-wrap',
     cursor: 'text',
     zIndex: 10,
   };
@@ -114,3 +117,7 @@ const InlineTextEditor: React.FC<InlineTextEditorProps> = ({ shape, viewTransfor
 };
 
 export default InlineTextEditor;
+`;
+
+fs.writeFileSync('components/InlineTextEditor.tsx', newCode);
+console.log("Replaced InlineTextEditor.tsx");

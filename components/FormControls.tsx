@@ -1065,11 +1065,11 @@ const AllColorsModal: React.FC<AllColorsModalProps> = ({ isOpen, onClose, onSele
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
             <div className="bg-[var(--bg-primary)] rounded-lg shadow-2xl w-full max-w-2xl h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 <header className="flex justify-between items-center p-4 border-b border-[var(--border-primary)] flex-shrink-0">
-                    <h2 className="text-xl font-bold text-[var(--text-primary)]">All Tkinter Colors</h2>
+                    <h2 className="text-xl font-bold text-[var(--text-primary)]">{t('color.allColorsTitle')}</h2>
                     <div className="relative w-64">
                         <input
                             type="text"
-                            placeholder="Search by name or HEX..."
+                            placeholder={t('color.searchPlaceholder')}
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                             className="w-full px-3 py-1.5 bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded-md border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none pr-8"
@@ -1078,37 +1078,37 @@ const AllColorsModal: React.FC<AllColorsModalProps> = ({ isOpen, onClose, onSele
                             <button
                                 onClick={() => setSearchTerm('')}
                                 className="absolute inset-y-0 right-0 px-2 flex items-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-                                title="Clear search"
-                                aria-label="Clear search"
+                                title={t('help.clearSearch')}
+                                aria-label={t('help.clearSearch')}
                             >
                                 <XIcon size={16} />
                             </button>
                         )}
                     </div>
-                    <button onClick={onClose} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full" aria-label="Close">
+                    <button onClick={onClose} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full" aria-label={t('action.close')}>
                         <XIcon />
                     </button>
                 </header>
                 <div className="flex justify-start items-center p-2 px-4 border-b border-[var(--border-primary)] flex-shrink-0 gap-2">
-                    <span className="text-sm font-semibold text-[var(--text-tertiary)]">Sort by:</span>
+                    <span className="text-sm font-semibold text-[var(--text-tertiary)]">{t('color.sortBy')}</span>
                     <div className="flex items-center gap-1">
                         <SortButton
-                            label="By group"
+                            label={t('color.sortGroup')}
                             isActive={sortType === 'group'}
                             onClick={() => setSortType('group')}
-                            title="Sort by logical color groups"
+                            title={t('color.sortGroupTitle')}
                         />
                         <SortButton
-                            label="Alphabetical (A-Z)"
+                            label={t('color.sortAlpha')}
                             isActive={sortType === 'alpha'}
                             onClick={() => setSortType('alpha')}
-                            title="Sort by name alphabetically"
+                            title={t('color.sortAlphaTitle')}
                         />
                         <SortButton
-                            label="By code (#)"
+                            label={t('color.sortHex')}
                             isActive={sortType === 'hex'}
                             onClick={() => setSortType('hex')}
-                            title="Sort by hexadecimal code"
+                            title={t('color.sortHexTitle')}
                         />
                     </div>
                 </div>
@@ -1132,7 +1132,7 @@ const AllColorsModal: React.FC<AllColorsModalProps> = ({ isOpen, onClose, onSele
                 </div>
                  <footer className="p-4 bg-[var(--bg-app)]/50 rounded-b-lg flex justify-between items-center flex-shrink-0">
                     <div className="flex items-center gap-3">
-                        <span className="text-sm text-[var(--text-tertiary)]">Selected:</span>
+                        <span className="text-sm text-[var(--text-tertiary)]">{t('color.selected')}</span>
                         {selectedColor ? (
                             <div className="flex items-center gap-2">
                                 <div className="w-5 h-5 rounded border border-white/20" style={{backgroundColor: selectedColor}}></div>
@@ -1142,7 +1142,7 @@ const AllColorsModal: React.FC<AllColorsModalProps> = ({ isOpen, onClose, onSele
                                 </span>
                             </div>
                         ) : (
-                            <span className="text-sm text-[var(--text-tertiary)] italic">None</span>
+                            <span className="text-sm text-[var(--text-tertiary)] italic">{t('color.none')}</span>
                         )}
                     </div>
                     <div className="flex items-center gap-3">
@@ -1472,7 +1472,7 @@ export const ColorInput: React.FC<{
                                     </button>
                                 ))
                             ) : (
-                                <div className="px-3 py-2 text-sm text-[var(--text-tertiary)]">Not found</div>
+                                <div className="px-3 py-2 text-sm text-[var(--text-tertiary)]">{t('color.notFound')}</div>
                             )}
                         </div>
                          <div className="p-1 border-t border-[var(--border-secondary)]">

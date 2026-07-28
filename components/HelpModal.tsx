@@ -6,6 +6,8 @@ import { HelpContentUK } from './help/HelpContentUK';
 import { HelpContentEN } from './help/HelpContentEN';
 import { HelpContentIT } from './help/HelpContentIT';
 import { HelpContentES } from './help/HelpContentES';
+import { HelpContentDE } from './help/HelpContentDE';
+import { HelpContentFR } from './help/HelpContentFR';
 
 interface HelpModalProps {
   isOpen: boolean;
@@ -27,9 +29,7 @@ const useDebounce = <T,>(value: T, delay: number): T => {
 };
 
 const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
-    const { t } = useLanguage();
-    const { language } = useLanguage();
-    if (!isOpen) return null;
+    const { t, language } = useLanguage();
 
     const contentRef = useRef<HTMLDivElement>(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -69,7 +69,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
 
     // Effect to update match count and reset index when search term changes
     useEffect(() => {
-        if (!contentRef.current) return;
+        if (!isOpen || !contentRef.current) return;
         
         if (!debouncedSearchTerm.trim()) {
             setMatchCount(0);
@@ -81,13 +81,13 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
         setMatchCount(allMarks.length);
         setCurrentMatchIndex(allMarks.length > 0 ? 0 : -1);
 
-    }, [debouncedSearchTerm]);
+    }, [debouncedSearchTerm, isOpen]);
 
 
     // Effect to apply active highlight and scroll.
     // It runs when the index or the search term changes.
     useEffect(() => {
-        if (!contentRef.current || currentMatchIndex === -1) return;
+        if (!isOpen || !contentRef.current || currentMatchIndex === -1) return;
 
         // Query for the currently rendered marks to ensure we have fresh nodes
         const allMarks = Array.from(contentRef.current.querySelectorAll<HTMLElement>('mark'));
@@ -108,7 +108,9 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             }
         });
 
-    }, [currentMatchIndex, debouncedSearchTerm]);
+    }, [currentMatchIndex, debouncedSearchTerm, isOpen]);
+
+    if (!isOpen) return null;
 
     const handleNextMatch = () => {
         if (matchCount === 0) return;
@@ -284,11 +286,20 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                         style={{ fontSize: `${fontSize}rem` }}
                     >
                         {(() => {
+                            const helpProps = { SectionTitle, SubTitle, Para, Key, ListItem };
                             switch (language) {
-                                case 'es': return <HelpContentES SectionTitle={SectionTitle} SubTitle={SubTitle} Para={Para} Key={Key} ListItem={ListItem} />;
-                                case 'it': return <HelpContentIT SectionTitle={SectionTitle} SubTitle={SubTitle} Para={Para} Key={Key} ListItem={ListItem} />;
-                                case 'uk': return <HelpContentUK SectionTitle={SectionTitle} SubTitle={SubTitle} Para={Para} Key={Key} ListItem={ListItem} />;
-                                default:   return <HelpContentEN SectionTitle={SectionTitle} SubTitle={SubTitle} Para={Para} Key={Key} ListItem={ListItem} />;
+                                case 'en':
+                                    return <HelpContentEN {...helpProps} />;
+                                case 'es':
+                                    return <HelpContentES {...helpProps} />;
+                                case 'it':
+                                    return <HelpContentIT {...helpProps} />;
+                                case 'de':
+                                    return <HelpContentDE {...helpProps} />;
+                                case 'fr':
+                                    return <HelpContentFR {...helpProps} />;
+                                default:
+                                    return <HelpContentUK {...helpProps} />;
                             }
                         })()}
                     </div>

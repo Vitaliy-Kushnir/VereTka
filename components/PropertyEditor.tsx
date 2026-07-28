@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Shape, LineShape, BezierCurveShape, PathShape, JoinStyle, PolygonShape, IsoscelesTriangleShape, RhombusShape, ParallelogramShape, TrapezoidShape, PolylineShape, RectangleShape, EllipseShape, Tool, ArcShape, RightTriangleShape, TextShape, ImageShape, BitmapShape, BuiltInBitmap } from '../types';
-import { getVisualBoundingBox, getFinalPoints, getPolygonSideLength, getBoundingBox, getPolygonRadiusFromSideLength, getEditablePoints, getShapeCenter, getTextBoundingBox, rotatePoint } from '../lib/geometry';
+import { getVisualBoundingBox, getFinalPoints, getPolygonSideLength, getBoundingBox, getPolygonRadiusFromSideLength, getEditablePoints, getShapeCenter, getTextBoundingBox, rotatePoint, isShapeClosed } from '../lib/geometry';
 import { InputWrapper, Label, NumberInput, ColorInput, Checkbox, Select, TextArea, DashSelect } from './FormControls';
 import { DuplicateIcon, FlipHorizontalIcon, FlipVerticalIcon, TrashIcon, LockIcon, UngroupIcon, UnlockIcon, ConvertToPathIcon, BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from './icons';
 import { getDefaultNameForShape, TOOL_TYPE_TO_NAME, DASH_STYLES } from '../lib/constants';
@@ -1333,20 +1333,70 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                   <Select id="dist-type" 
                       value={distributePathState.type}
                       onChange={(e) => {
-                          const newType = e as 'circle' | 'line';
+                          const newType = e as 'circle' | 'line' | 'shape';
                           let newOrientationType = distributePathState.orientationType;
                           if (newType === 'circle' && (newOrientationType === 'parallel' || newOrientationType === 'perpendicular')) {
                               newOrientationType = newOrientationType === 'parallel' ? 'tangent' : 'radial';
-                          } else if (newType === 'line' && (newOrientationType === 'radial' || newOrientationType === 'tangent')) {
+                          } else if ((newType === 'line' || newType === 'shape') && (newOrientationType === 'radial' || newOrientationType === 'tangent')) {
                               newOrientationType = newOrientationType === 'radial' ? 'perpendicular' : 'parallel';
                           }
-                          onDistributePathChange({ ...distributePathState, type: newType, orientationType: newOrientationType });
+                          const updated: import('../types').DistributePathState = { ...distributePathState, type: newType, orientationType: newOrientationType };
+                          if (newType === 'shape' && !updated.shapePathParams) {
+                              updated.shapePathParams = { keepShape: true };
+                          }
+                          onDistributePathChange(updated);
                       }}
                   >
                       <option value="circle">{t('tool.circle') || 'Коло'}</option>
                       <option value="line">{t('tool.line') || 'Лінія'}</option>
+                      <option value="shape">{t('tool.distribute.path.shape') || 'Фігура (контур)'}</option>
                   </Select>
               </InputWrapper>
+
+              {distributePathState.type === 'shape' && (
+                  <>
+                      <div className="flex items-center gap-2 pt-1">
+                          <input 
+                              id="dist-keep-shape"
+                              type="checkbox" 
+                              checked={distributePathState.shapePathParams?.keepShape ?? true}
+                              onChange={(e) => {
+                                  const keepShape = e.target.checked;
+                                  onDistributePathChange({
+                                      ...distributePathState,
+                                      shapePathParams: {
+                                          ...distributePathState.shapePathParams,
+                                          keepShape
+                                      }
+                                  });
+                              }}
+                              className="rounded border-[var(--border-primary)] text-[var(--accent-primary)] focus:ring-[var(--accent-primary)] bg-[var(--bg-primary)]"
+                          />
+                          <Label htmlFor="dist-keep-shape" className="cursor-pointer mb-0">
+                              {t('tool.distribute.path.keepShape') || 'Залишити фігуру-шлях'}
+                          </Label>
+                      </div>
+
+                      {distributePathState.shapePathParams?.pathShape && isShapeClosed(distributePathState.shapePathParams.pathShape) && (
+                          <InputWrapper>
+                              <Label htmlFor='dist-contour-shift'>{t('tool.distribute.path.contourShift') || 'Зсув вздовж шляху (%)'}</Label>
+                              <NumberInput 
+                                  id='dist-contour-shift' 
+                                  value={Math.round(distributePathState.shapePathParams?.contourShift || 0)} 
+                                  min={0} 
+                                  max={100}
+                                  onChange={v => onDistributePathChange({
+                                      ...distributePathState,
+                                      shapePathParams: {
+                                          ...distributePathState.shapePathParams,
+                                          contourShift: Math.max(0, Math.min(100, v))
+                                      }
+                                  })} 
+                              />
+                          </InputWrapper>
+                      )}
+                  </>
+              )}
               
               <InputWrapper>
                   <Label htmlFor='dist-rotation'>{t('prop.rotation') || 'Кут обертання'}</Label>
@@ -1672,8 +1722,8 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
               <div className="flex items-center gap-1">
                  {handleFlip && (
                      <>
-                         <button onClick={() => handleFlip('horizontal')} title={t('menu.edit.flipH') || 'Віддзеркалити по горизонталі (Shift+H)'} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><FlipHorizontalIcon size={18}/></button>
-                         <button onClick={() => handleFlip('vertical')} title={t('menu.edit.flipV') || 'Віддзеркалити по вертикалі (Shift+V)'} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><FlipVerticalIcon size={18}/></button>
+                         <button onClick={() => handleFlip('horizontal')} title={t('menu.edit.flipH') || 'Віддзеркалити по горизонталі (Ctrl+H)'} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><FlipHorizontalIcon size={18}/></button>
+                         <button onClick={() => handleFlip('vertical')} title={t('menu.edit.flipV') || 'Віддзеркалити по вертикалі (Ctrl+V)'} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><FlipVerticalIcon size={18}/></button>
                      </>
                  )}
                  {selectedShapes.some(s => s.groupId) && onExtractFromGroup && (<button onClick={onExtractFromGroup} title={t('menu.edit.extractFromGroup') || 'Вилучити із групи'} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><UngroupIcon size={18}/></button>)}
@@ -1983,12 +2033,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
 
   const isTkinterBboxEditable = ('rotation' in selectedShape && selectedShape.rotation === 0) && (selectedShape.type === 'rectangle' || selectedShape.type === 'ellipse' || selectedShape.type === 'arc');
 
-  const isShapeClosed = selectedShape ? (
-      (selectedShape.type === 'polyline' || selectedShape.type === 'bezier') ? selectedShape.isClosed :
-      (selectedShape.type === 'line' || selectedShape.type === 'pencil') ? false :
-      (selectedShape.type === 'arc') ? selectedShape.style !== 'arc' :
-      true
-  ) : false;
+  const isSelectedShapeClosed = selectedShape ? isShapeClosed(selectedShape) : false;
 
   return (
     <div className="shadow-lg h-full flex flex-col rounded-lg bg-[var(--bg-primary)]">
@@ -1998,8 +2043,8 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
             <div className="flex items-center gap-1">
                 {handleFlip && (
                     <>
-                        <button onClick={() => handleFlip('horizontal')} title={t('menu.edit.flipH') || 'Віддзеркалити по горизонталі (Shift+H)'} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><FlipHorizontalIcon size={18}/></button>
-                        <button onClick={() => handleFlip('vertical')} title={t('menu.edit.flipV') || 'Віддзеркалити по вертикалі (Shift+V)'} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><FlipVerticalIcon size={18}/></button>
+                        <button onClick={() => handleFlip('horizontal')} title={t('menu.edit.flipH') || 'Віддзеркалити по горизонталі (Ctrl+H)'} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><FlipHorizontalIcon size={18}/></button>
+                        <button onClick={() => handleFlip('vertical')} title={t('menu.edit.flipV') || 'Віддзеркалити по вертикалі (Ctrl+V)'} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><FlipVerticalIcon size={18}/></button>
                     </>
                 )}
                 {canConvertToPath && <button onClick={() => convertToPath(selectedShape.id)} title={t('menu.object.toPath')} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><ConvertToPathIcon size={18}/></button>}
@@ -2137,7 +2182,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                     deletePoint={(index) => deletePoint(selectedShape.id, index)}
                     addPoint={(index) => addPoint(selectedShape.id, index)}
                     // FIX: Changed prop assignment from `isShapeClosed={isShapeClosed as any}` to `isShapeClosed={isShapeClosed}` for type safety.
-                    isShapeClosed={isShapeClosed}
+                    isShapeClosed={isSelectedShapeClosed}
                     roundFn={roundToHundredths}
                 />
             )}

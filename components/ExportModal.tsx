@@ -15,6 +15,15 @@ interface ExportModalProps {
   onExport: (settings: ExportSettings) => void;
 }
 
+const FormatButton: React.FC<{ value: 'svg' | 'png' | 'jpeg'; label: string; currentFormat: string; onSelect: (val: 'svg' | 'png' | 'jpeg') => void }> = ({ value, label, currentFormat, onSelect }) => (
+    <button
+        onClick={() => onSelect(value)}
+        className={`flex-1 px-3 py-2 text-sm font-semibold rounded-md transition ${currentFormat === value ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
+    >
+        {label}
+    </button>
+);
+
 const ExportModal: React.FC<ExportModalProps> = ({ onClose, onExport }) => {
     const { t } = useLanguage();
     const [format, setFormat] = useState<'svg' | 'png' | 'jpeg'>('png');
@@ -24,15 +33,6 @@ const ExportModal: React.FC<ExportModalProps> = ({ onClose, onExport }) => {
     const handleExport = () => {
         onExport({ format, scale, quality });
     };
-
-    const FormatButton: React.FC<{ value: 'svg' | 'png' | 'jpeg'; label: string }> = ({ value, label }) => (
-        <button
-            onClick={() => setFormat(value)}
-            className={`flex-1 px-3 py-2 text-sm font-semibold rounded-md transition ${format === value ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
-        >
-            {label}
-        </button>
-    );
 
     return (
         <div 
@@ -54,9 +54,9 @@ const ExportModal: React.FC<ExportModalProps> = ({ onClose, onExport }) => {
                     <div>
                         <Label htmlFor="format-group" title={t('export.formatDesc')}>{t('export.format')}</Label>
                         <div id="format-group" className="flex items-center gap-2 mt-2 p-1 bg-[var(--bg-app)] rounded-lg">
-                           <FormatButton value="svg" label="SVG" />
-                           <FormatButton value="png" label="PNG" />
-                           <FormatButton value="jpeg" label="JPEG" />
+                           <FormatButton value="svg" label="SVG" currentFormat={format} onSelect={setFormat} />
+                           <FormatButton value="png" label="PNG" currentFormat={format} onSelect={setFormat} />
+                           <FormatButton value="jpeg" label="JPEG" currentFormat={format} onSelect={setFormat} />
                         </div>
                     </div>
 

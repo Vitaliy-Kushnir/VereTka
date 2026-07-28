@@ -160,7 +160,32 @@ export const HelpContentEN: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
                 <Para>
                     The <Key>Edit</Key> panel in the right sidebar allows precise coordinate input for each node and deletion of points.
                 </Para>
-            </section>
+            
+                <SubTitle>Grouping Objects</SubTitle>
+                <Para>
+                    You can combine multiple shapes into a <strong>Group</strong> for easier moving, scaling, and rotating as a single unit. 
+                    To group objects, select them, right-click, and choose <Key>Group</Key> (or use the toolbar button or <Key>Ctrl+G</Key>). 
+                    To ungroup, select the group and choose <Key>Ungroup</Key> (<Key>Ctrl+Shift+G</Key>). 
+                    Double-clicking on a group allows you to enter it to edit individual elements.
+                </Para>
+                <SubTitle>Alignment and Distribution</SubTitle>
+                <Para>
+                    The top toolbar provides functions to align selected objects (left/right edge, center, etc.). You can align objects <strong>relative to the selection</strong> or <strong>relative to the canvas</strong>.
+                    <br/><br/>
+                    <strong>Distribution:</strong> You can evenly distribute selected objects horizontally or vertically. <strong>Path Distribution</strong> is also available — a unique feature to place objects along another selected contour (line, curve, or any shape). 
+                    During path distribution, you can adjust the orientation (radial, tangent, parallel) and the rotation angle of the objects.
+                </Para>
+                <SubTitle>Object List and Layers</SubTitle>
+                <Para>
+                    The right panel contains a list of all shapes on the canvas. You can rename shapes (double-click on the name), lock them (to prevent accidental changes), or hide them (toggle visibility).
+                    <br/><br/>
+                    The order in the list corresponds to the <strong>z-order (layers)</strong>: an object higher in the list will be drawn on top of those below it. Change the order by dragging shapes in the list.
+                </Para>
+                <SubTitle>Mirroring (Flip)</SubTitle>
+                <Para>
+                    Selected objects can be flipped horizontally or vertically using the buttons in the properties panel or the context menu. This allows you to easily create symmetrical drawings.
+                </Para>
+</section>
 
             <section>
                 <SectionTitle id="code-export">6. Code & Export</SectionTitle>
@@ -192,49 +217,52 @@ export const HelpContentEN: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
 
             <section>
                 <SectionTitle id="hotkeys">8. Hotkeys</SectionTitle>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                    <div className="bg-[var(--bg-primary)] p-3 rounded-lg border border-[var(--border-secondary)]">
-                        <h4 className="font-medium text-[var(--text-primary)] mb-2">General</h4>
-                        <ul className="space-y-1 text-sm">
-                            <li><Key>Ctrl + Z</Key> : Undo</li>
-                            <li><Key>Ctrl + Shift + Z</Key> : Redo</li>
-                            <li><Key>Ctrl + S</Key> : Save</li>
-                            <li><Key>Delete</Key> | <Key>Backspace</Key> : Delete Selected</li>
-                            <li><Key>Ctrl + D</Key> : Duplicate</li>
-                            <li><Key>Ctrl + A</Key> : Select All</li>
-                            <li><Key>F11</Key> : Fullscreen</li>
-                        </ul>
-                    </div>
-                    <div className="bg-[var(--bg-primary)] p-3 rounded-lg border border-[var(--border-secondary)]">
-                        <h4 className="font-medium text-[var(--text-primary)] mb-2">Tools</h4>
-                        <ul className="space-y-1 text-sm">
-                            <li><Key>V</Key> : Select</li>
-                            <li><Key>A</Key> : Edit Points</li>
-                            <li><Key>R</Key> : Rectangle</li>
-                            <li><Key>C</Key> : Circle</li>
-                            <li><Key>E</Key> : Ellipse</li>
-                            <li><Key>L</Key> : Line</li>
-                            <li><Key>T</Key> : Text</li>
-                        </ul>
-                    </div>
-                    <div className="bg-[var(--bg-primary)] p-3 rounded-lg border border-[var(--border-secondary)]">
-                        <h4 className="font-medium text-[var(--text-primary)] mb-2">Drawing</h4>
-                        <ul className="space-y-1 text-sm">
-                            <li><Key>Shift</Key> (hold) : Proportional draw</li>
-                            <li><Key>Alt</Key> (hold) : Draw from center</li>
-                        </ul>
-                    </div>
-                    <div className="bg-[var(--bg-primary)] p-3 rounded-lg border border-[var(--border-secondary)]">
-                        <h4 className="font-medium text-[var(--text-primary)] mb-2">View</h4>
-                        <ul className="space-y-1 text-sm">
-                            <li><Key>Space</Key> (hold) : Pan canvas</li>
-                            <li><Key>Wheel</Key> : Scroll Y</li>
-                            <li><Key>Shift + Wheel</Key> : Scroll X</li>
-                            <li><Key>Ctrl + Wheel</Key> : Zoom</li>
-                            <li><Key>Ctrl + 0</Key> : Fit canvas</li>
-                        </ul>
-                    </div>
-                </div>
+                <Para>Use these combinations to speed up your workflow.</Para>
+                
+                <SubTitle>File & History</SubTitle>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem><Key>Ctrl+S</Key> — Save project.</ListItem>
+                    <ListItem><Key>Ctrl+Z</Key> — Undo last action.</ListItem>
+                    <ListItem><Key>Ctrl+Y</Key> (or <Key>Ctrl+Shift+Z</Key>) — Redo action.</ListItem>
+                </ul>
+
+                <SubTitle>Tools & Selection</SubTitle> 
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem><Key>V</Key> — Activate "Select" tool.</ListItem>
+                    <ListItem><Key>A</Key> — Activate "Edit Nodes" tool.</ListItem>
+                    <ListItem><Key>Ctrl+G</Key> — Group selected objects.</ListItem>
+                    <ListItem><Key>Ctrl+Shift+G</Key> — Ungroup.</ListItem>
+                    <ListItem><Key>Ctrl+D</Key> — Duplicate selected object.</ListItem>
+                    <ListItem><Key>Ctrl+H</Key> — Flip Horizontal.</ListItem>
+                    <ListItem><Key>Ctrl+V</Key> — Flip Vertical.</ListItem>
+                    <ListItem><Key>Delete</Key> / <Key>Backspace</Key> — Delete selected object or node.</ListItem>
+                </ul>
+                
+                <SubTitle>Movement</SubTitle>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                     <ListItem><Key>Arrows</Key> — Move selected object by 1 pixel.</ListItem>
+                     <ListItem><Key>Shift + Arrows</Key> — Move selected object by 10 pixels.</ListItem>
+                     <ListItem><Key>Alt + Arrows</Key> — Move without snapping.</ListItem>
+                </ul>
+                
+                <SubTitle>Navigation & General</SubTitle>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem>
+                        <Key>?</Key> — Show all hotkeys.
+                    </ListItem>
+                    <ListItem>
+                        <Key>Mouse Wheel</Key> — Zoom canvas.
+                    </ListItem>
+                    <ListItem>
+                        <Key>Middle Mouse Button</Key> — Pan canvas.
+                    </ListItem>
+                     <ListItem>
+                        <Key>F11</Key> — Enter / exit fullscreen mode.
+                    </ListItem>
+                    <ListItem>
+                        <Key>Escape (Esc)</Key> — Cancel current action (drawing), deselect, or close modals.
+                    </ListItem>
+                </ul>
             </section>
         </>
     );

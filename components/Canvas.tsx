@@ -4,7 +4,7 @@ import { useLanguage } from './LanguageContext';
 import { useState, useRef, useMemo, useCallback, useEffect } from 'react';
 import { type Shape, type Tool, type CanvasAction, type RotatableShape, type RectangleShape, type EllipseShape, type PathShape, type LineShape, PolylineShape, PolygonShape, DrawMode, IsoscelesTriangleShape, RhombusShape, ParallelogramShape, TrapezoidShape, BezierCurveShape, ViewTransform, JoinStyle, ArcShape, RightTriangleShape, TransformHandle, TextShape, ImageShape, BitmapShape } from '../types';
 import { SelectionControls } from './SelectionControls';
-import { getShapeCenter, rotatePoint, getBoundingBox, getIsoscelesTrianglePoints, getPolylinePointsAsPath, getPolygonPointsAsArray, getRhombusPoints, getTrapezoidPoints, getParallelogramPoints, getSmoothedPathData, getFinalPoints, getArcPathData, getRightTrianglePoints, getTextBoundingBox, processTextLines, getVisualBoundingBox } from '../lib/geometry';
+import { getShapeCenter, rotatePoint, getBoundingBox, getIsoscelesTrianglePoints, getPolylinePointsAsPath, getPolygonPointsAsArray, getRhombusPoints, getTrapezoidPoints, getParallelogramPoints, getSmoothedPathData, getFinalPoints, getArcPathData, getRightTrianglePoints, getTextBoundingBox, processTextLines, getVisualBoundingBox, isShapeClosed, getClosestPointOnShapeContour, evaluateShapeContourPointAndTangent } from '../lib/geometry';
 import { CheckSquareIcon, ClosePathIcon, XSquareIcon } from './icons';
 import { TOOL_TYPE_TO_NAME, ROTATE_CURSOR_STYLE, ADJUST_CURSOR_STYLE, getDefaultNameForShape, getVisualFontFamily, isDefaultName, DUPLICATE_CURSOR_STYLE } from '../lib/constants';
 
@@ -62,6 +62,145 @@ interface CanvasProps {
   distributePathState?: import('../types').DistributePathState | null;
   onDistributePathChange?: (state: import('../types').DistributePathState) => void;
   onDistributePathChangeEnd?: () => void;
+  isSelectingPathShape?: boolean;
+  onSelectPathShape?: (shape: Shape) => void;
+}
+
+function translateShape(shape: Shape, dx: number, dy: number): Shape {
+    const s = JSON.parse(JSON.stringify(shape)) as any;
+    if (typeof s.x === 'number') s.x += dx;
+    if (typeof s.y === 'number') s.y += dy;
+    if (typeof s.cx === 'number') s.cx += dx;
+    if (typeof s.cy === 'number') s.cy += dy;
+    if (typeof s.x1 === 'number') { s.x1 += dx; s.y1 += dy; s.x2 += dx; s.y2 += dy; }
+    if (Array.isArray(s.points)) {
+        s.points = s.points.map((p: any) => p ? { x: p.x + dx, y: p.y + dy } : p);
+    }
+    return s as Shape;
+}
+
+function updateShapeNode(shape: Shape, nodeIdx: number, startPt: {x: number, y: number}, currentPt: {x: number, y: number}): Shape {
+    let s = JSON.parse(JSON.stringify(shape)) as any;
+    const dx = currentPt.x - startPt.x;
+    const dy = currentPt.y - startPt.y;
+
+    if (!Array.isArray(s.points) && s.type !== 'line') {
+        const finalPts = getFinalPoints(shape);
+        if (finalPts && finalPts.length > 0) {
+            const isClosed = isShapeClosed(shape);
+            s = {
+                id: shape.id,
+                type: 'polyline',
+                points: finalPts,
+                isClosed,
+                stroke: shape.stroke,
+                strokeWidth: shape.strokeWidth,
+                fill: 'fill' in shape ? shape.fill : 'none',
+            };
+        }
+    }
+
+    if (Array.isArray(s.points) && nodeIdx < s.points.length) {
+        if (s.points[nodeIdx]) {
+            s.points[nodeIdx] = { x: s.points[nodeIdx].x + dx, y: s.points[nodeIdx].y + dy };
+        }
+    } else if (s.type === 'line') {
+        if (nodeIdx === 0) { s.x1 += dx; s.y1 += dy; }
+        else if (nodeIdx === 1) { s.x2 += dx; s.y2 += dy; }
+    } else {
+        return translateShape(shape, dx, dy);
+    }
+    return s as Shape;
+}
+
+function resizeShapeFromCorner(shape: Shape, corner: string, startPt: {x: number, y: number}, currentPt: {x: number, y: number}): Shape {
+    const unrotatedShape = { ...shape, rotation: 0 };
+    const pts = getFinalPoints(unrotatedShape as any);
+    if (!pts || pts.length === 0) return shape;
+
+    const xs = pts.map(p => p.x);
+    const ys = pts.map(p => p.y);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+
+    const origWidth = Math.max(1, maxX - minX);
+    const origHeight = Math.max(1, maxY - minY);
+
+    const dx = currentPt.x - startPt.x;
+    const dy = currentPt.y - startPt.y;
+
+    let anchorX = minX;
+    let anchorY = minY;
+    let newWidth = origWidth;
+    let newHeight = origHeight;
+
+    if (corner === 'shape-resize-top-left') {
+        anchorX = maxX; anchorY = maxY;
+        newWidth = Math.max(10, origWidth - dx);
+        newHeight = Math.max(10, origHeight - dy);
+    } else if (corner === 'shape-resize-top-right') {
+        anchorX = minX; anchorY = maxY;
+        newWidth = Math.max(10, origWidth + dx);
+        newHeight = Math.max(10, origHeight - dy);
+    } else if (corner === 'shape-resize-bottom-left') {
+        anchorX = maxX; anchorY = minY;
+        newWidth = Math.max(10, origWidth - dx);
+        newHeight = Math.max(10, origHeight + dy);
+    } else if (corner === 'shape-resize-bottom-right') {
+        anchorX = minX; anchorY = minY;
+        newWidth = Math.max(10, origWidth + dx);
+        newHeight = Math.max(10, origHeight + dy);
+    } else if (corner === 'shape-resize-top-center') {
+        anchorX = minX; anchorY = maxY;
+        newWidth = origWidth;
+        newHeight = Math.max(10, origHeight - dy);
+    } else if (corner === 'shape-resize-bottom-center') {
+        anchorX = minX; anchorY = minY;
+        newWidth = origWidth;
+        newHeight = Math.max(10, origHeight + dy);
+    } else if (corner === 'shape-resize-middle-left') {
+        anchorX = maxX; anchorY = minY;
+        newWidth = Math.max(10, origWidth - dx);
+        newHeight = origHeight;
+    } else if (corner === 'shape-resize-middle-right') {
+        anchorX = minX; anchorY = minY;
+        newWidth = Math.max(10, origWidth + dx);
+        newHeight = origHeight;
+    }
+
+    const scaleX = newWidth / origWidth;
+    const scaleY = newHeight / origHeight;
+
+    const s = JSON.parse(JSON.stringify(shape)) as any;
+
+    if (Array.isArray(s.points)) {
+        s.points = s.points.map((p: any) => p ? {
+            x: anchorX + (p.x - anchorX) * scaleX,
+            y: anchorY + (p.y - anchorY) * scaleY
+        } : p);
+    } else if ('x' in s && 'y' in s && 'width' in s && 'height' in s) {
+        const newMinX = corner.includes('left') ? anchorX - newWidth : anchorX;
+        const newMinY = corner.includes('top') ? anchorY - newHeight : anchorY;
+        s.x = newMinX;
+        s.y = newMinY;
+        s.width = newWidth;
+        s.height = newHeight;
+    } else if ('cx' in s && 'cy' in s) {
+        s.cx = anchorX + (s.cx - anchorX) * scaleX;
+        s.cy = anchorY + (s.cy - anchorY) * scaleY;
+        if ('radius' in s) s.radius *= Math.min(scaleX, scaleY);
+        if ('rx' in s) s.rx *= scaleX;
+        if ('ry' in s) s.ry *= scaleY;
+    } else if ('x1' in s && 'y1' in s) {
+        s.x1 = anchorX + (s.x1 - anchorX) * scaleX;
+        s.y1 = anchorY + (s.y1 - anchorY) * scaleY;
+        s.x2 = anchorX + (s.x2 - anchorX) * scaleX;
+        s.y2 = anchorY + (s.y2 - anchorY) * scaleY;
+    }
+
+    return s as Shape;
 }
 
 const DRAG_THRESHOLD = 3;
@@ -300,7 +439,13 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 if (clickedEntity) {
                     setAction({ type: 'edit-distribute-path', handle: 'move-all', startPoint: pos, initialDistributePath: props.distributePathState });
                     return;
+                } else if (props.distributePathState.type === 'shape' || props.isSelectingPathShape) {
+                    props.onSelectPathShape?.(clickedShape);
+                    return;
                 }
+            } else if (props.isSelectingPathShape) {
+                props.onSelectPathShape?.(clickedShape);
+                return;
             }
             
             setAction({ type: 'dragging', initialShape: clickedShape, startPos: pos });
@@ -645,6 +790,41 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 const baseAngle = Math.atan2(endY - startY, endX - startX);
                 newPathState.angleOffset = (angle + Math.PI / 2 - baseAngle) * (180 / Math.PI);
             }
+        } else if (newPathState.type === 'shape' && newPathState.shapePathParams?.pathShape) {
+            const initialShape = action.initialDistributePath.shapePathParams!.pathShape;
+            let updatedShape = { ...initialShape };
+            const angleOffset = action.initialDistributePath.angleOffset || 0;
+            const center = getShapeCenter(initialShape) || { x: 0, y: 0 };
+
+            if (action.handle === 'shape-move' || action.handle === 'move-all' || action.handle === 'center') {
+                updatedShape = translateShape(initialShape, dx, dy);
+            } else if (action.handle.startsWith('shape-node-')) {
+                const nodeIdx = parseInt(action.handle.replace('shape-node-', ''), 10);
+                const localStart = rotatePoint(action.startPoint, center, -angleOffset);
+                const localPos = rotatePoint(pos, center, -angleOffset);
+                updatedShape = updateShapeNode(initialShape, nodeIdx, localStart, localPos);
+            } else if (action.handle.startsWith('shape-resize-')) {
+                const localStart = rotatePoint(action.startPoint, center, -angleOffset);
+                const localPos = rotatePoint(pos, center, -angleOffset);
+                updatedShape = resizeShapeFromCorner(initialShape, action.handle, localStart, localPos);
+            } else if (action.handle === 'rotate') {
+                const angle = Math.atan2(pos.y - center.y, pos.x - center.x);
+                const initialAngle = Math.atan2(action.startPoint.y - center.y, action.startPoint.x - center.x);
+                const deltaAngleDeg = (angle - initialAngle) * (180 / Math.PI);
+                newPathState.angleOffset = (action.initialDistributePath.angleOffset + deltaAngleDeg);
+            } else if (action.handle === 'contour-shift') {
+                const localPos = rotatePoint(pos, center, -angleOffset);
+                const res = getClosestPointOnShapeContour(initialShape, localPos);
+                newPathState.shapePathParams = {
+                    ...newPathState.shapePathParams,
+                    contourShift: Math.round(res.fraction * 100)
+                };
+            }
+
+            newPathState.shapePathParams = {
+                ...newPathState.shapePathParams,
+                pathShape: updatedShape
+            };
         }
         props.onDistributePathChange?.(newPathState);
         setSnapLines(newSnapLines);
@@ -1143,12 +1323,26 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             const mousePosLocal = rotatePoint(pos, rotationCenter, -initialShape.rotation);
             const anchorPointLocal = rotatePoint(anchorPointGlobal, rotationCenter, -initialShape.rotation);
 
+            let isCrossedH = false;
+            if (handle.includes('right')) {
+                isCrossedH = mousePosLocal.x < anchorPointLocal.x;
+            } else if (handle.includes('left')) {
+                isCrossedH = mousePosLocal.x > anchorPointLocal.x;
+            }
+
+            let isCrossedV = false;
+            if (handle.includes('bottom')) {
+                isCrossedV = mousePosLocal.y < anchorPointLocal.y;
+            } else if (handle.includes('top')) {
+                isCrossedV = mousePosLocal.y > anchorPointLocal.y;
+            }
+
             let newBbox: { x: number, y: number, width: number, height: number};
             
             const isHorizontalHandle = handle.includes('left') || handle.includes('right');
             const isVerticalHandle = handle.includes('top') || handle.includes('bottom');
             
-            const isLocked = ('isAspectRatioLocked' in initialShape && initialShape.isAspectRatioLocked) || e.shiftKey;
+            const isLocked = ('isAspectRatioLocked' in initialShape && initialShape.isAspectRatioLocked) || initialShape.type === 'text' || e.shiftKey;
 
             if (isHorizontalHandle && isVerticalHandle) { // Corner handle
                 let width = Math.abs(mousePosLocal.x - anchorPointLocal.x);
@@ -1163,8 +1357,20 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     }
                 }
                 
-                const x = handle.includes('left') ? anchorPointLocal.x - width : anchorPointLocal.x;
-                const y = handle.includes('top') ? anchorPointLocal.y - height : anchorPointLocal.y;
+                let x = anchorPointLocal.x;
+                if (handle.includes('right')) {
+                    x = isCrossedH ? anchorPointLocal.x - width : anchorPointLocal.x;
+                } else if (handle.includes('left')) {
+                    x = isCrossedH ? anchorPointLocal.x : anchorPointLocal.x - width;
+                }
+
+                let y = anchorPointLocal.y;
+                if (handle.includes('bottom')) {
+                    y = isCrossedV ? anchorPointLocal.y - height : anchorPointLocal.y;
+                } else if (handle.includes('top')) {
+                    y = isCrossedV ? anchorPointLocal.y : anchorPointLocal.y - height;
+                }
+
                 newBbox = { x, y, width, height };
                 
             } else if (isLocked) { // Locked side handle
@@ -1172,8 +1378,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 if (isHorizontalHandle) {
                     const width = Math.abs(mousePosLocal.x - anchorPointLocal.x);
                     const height = width / aspectRatio;
+                    const x = handle.includes('right')
+                        ? (isCrossedH ? anchorPointLocal.x - width : anchorPointLocal.x)
+                        : (isCrossedH ? anchorPointLocal.x : anchorPointLocal.x - width);
                     newBbox = {
-                        x: Math.min(mousePosLocal.x, anchorPointLocal.x),
+                        x,
                         y: (initialBbox.y + initialBbox.height / 2) - height / 2,
                         width,
                         height,
@@ -1181,27 +1390,38 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 } else { // Vertical handle
                     const height = Math.abs(mousePosLocal.y - anchorPointLocal.y);
                     const width = height * aspectRatio;
+                    const y = handle.includes('bottom')
+                        ? (isCrossedV ? anchorPointLocal.y - height : anchorPointLocal.y)
+                        : (isCrossedV ? anchorPointLocal.y : anchorPointLocal.y - height);
                     newBbox = {
                         x: (initialBbox.x + initialBbox.width / 2) - width / 2,
-                        y: Math.min(mousePosLocal.y, anchorPointLocal.y),
+                        y,
                         width,
                         height,
                     };
                 }
             } else { // Unlocked side handle
                 if (isHorizontalHandle) {
+                    const width = Math.abs(mousePosLocal.x - anchorPointLocal.x);
+                    const x = handle.includes('right')
+                        ? (isCrossedH ? anchorPointLocal.x - width : anchorPointLocal.x)
+                        : (isCrossedH ? anchorPointLocal.x : anchorPointLocal.x - width);
                     newBbox = {
-                        x: Math.min(mousePosLocal.x, anchorPointLocal.x),
+                        x,
                         y: initialBbox.y,
-                        width: Math.abs(mousePosLocal.x - anchorPointLocal.x),
+                        width,
                         height: initialBbox.height
                     };
                 } else { // Vertical handle
+                     const height = Math.abs(mousePosLocal.y - anchorPointLocal.y);
+                     const y = handle.includes('bottom')
+                         ? (isCrossedV ? anchorPointLocal.y - height : anchorPointLocal.y)
+                         : (isCrossedV ? anchorPointLocal.y : anchorPointLocal.y - height);
                      newBbox = {
                         x: initialBbox.x,
-                        y: Math.min(mousePosLocal.y, anchorPointLocal.y),
+                        y,
                         width: initialBbox.width,
-                        height: Math.abs(mousePosLocal.y - anchorPointLocal.y)
+                        height
                     };
                 }
             }
@@ -1230,148 +1450,91 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 y: geometricCenter.y + rotatedCenterShift.y,
             };
             
+            const initialFlipH = ('isFlippedHorizontally' in initialShape) ? !!(initialShape as any).isFlippedHorizontally : false;
+            const initialFlipV = ('isFlippedVertically' in initialShape) ? !!(initialShape as any).isFlippedVertically : false;
+
+            const targetFlipH = isCrossedH ? !initialFlipH : initialFlipH;
+            const targetFlipV = isCrossedV ? !initialFlipV : initialFlipV;
+
             switch(initialShape.type) {
                 case 'text': {
                     const oldBbox = getTextBoundingBox(initialShape)!;
-                    if (oldBbox.width <= 0) break;
-                    const scale = newWidth / oldBbox.width;
+                    if (!oldBbox || oldBbox.width <= 0 || oldBbox.height <= 0) break;
+
+                    const scale = (isVerticalHandle && !isHorizontalHandle)
+                        ? newHeight / oldBbox.height
+                        : newWidth / oldBbox.width;
                     const newFontSize = Math.max(0.1, initialShape.fontSize * scale);
 
-                    const newVisualBbox = { 
-                        x: newGlobalCenter.x - newWidth / 2, 
-                        y: newGlobalCenter.y - newHeight / 2, 
-                        width: newWidth, 
-                        height: newHeight 
+                    const anchor = initialShape.anchor || 'nw';
+                    let anchorRelX = 0;
+                    if (['n', 's', 'center'].includes(anchor)) anchorRelX = 0.5;
+                    else if (['ne', 'e', 'se'].includes(anchor)) anchorRelX = 1.0;
+
+                    let anchorRelY = 0;
+                    if (['w', 'e', 'center'].includes(anchor)) anchorRelY = 0.5;
+                    else if (['sw', 's', 'se'].includes(anchor)) anchorRelY = 1.0;
+
+                    const newAnchorLocalX = newBbox.x + anchorRelX * newWidth;
+                    const newAnchorLocalY = newBbox.y + anchorRelY * newHeight;
+
+                    const newAnchorGlobal = rotatePoint(
+                        { x: newAnchorLocalX, y: newAnchorLocalY },
+                        rotationCenter,
+                        initialShape.rotation
+                    );
+
+                    updatedShape = { 
+                        ...initialShape, 
+                        fontSize: parseFloat(newFontSize.toFixed(1)), 
+                        x: newAnchorGlobal.x, 
+                        y: newAnchorGlobal.y,
+                        isFlippedHorizontally: targetFlipH,
+                        isFlippedVertically: targetFlipV
                     };
-
-                    const anchor = initialShape.anchor;
-                    let newX = newVisualBbox.x;
-                    let newY = newVisualBbox.y;
-
-                    if (['n', 's', 'center'].includes(anchor)) newX += newVisualBbox.width / 2;
-                    if (['ne', 'e', 'se'].includes(anchor)) newX += newVisualBbox.width;
-                    if (['w', 'e', 'center'].includes(anchor)) newY += newVisualBbox.height / 2;
-                    if (['sw', 's', 'se'].includes(anchor)) newY += newVisualBbox.height;
-                    
-                    updatedShape = { ...initialShape, fontSize: parseFloat(newFontSize.toFixed(1)), x: newX, y: newY };
                     break;
                 }
                 case 'triangle': {
                     const tri = initialShape as IsoscelesTriangleShape;
-                    const initialLocalVertices = getIsoscelesTrianglePoints(tri);
-                    const visualBbox = getBoundingBox({ ...tri, rotation: 0 })!;
+                    const topVertexOffset = isCrossedH ? -(tri.topVertexOffset || 0) : (tri.topVertexOffset || 0);
+                    const finalFlipV = isCrossedV ? !tri.isFlippedVertically : !!tri.isFlippedVertically;
 
-                    const scaleX = visualBbox.width > 0 ? newWidth / visualBbox.width : 1;
-                    const scaleY = visualBbox.height > 0 ? newHeight / visualBbox.height : 1;
-
-                    const scaledVertices = initialLocalVertices.map(v => ({
-                        x: anchorPointLocal.x + (v.x - anchorPointLocal.x) * scaleX,
-                        y: anchorPointLocal.y + (v.y - anchorPointLocal.y) * scaleY,
-                    }));
-
-                    const all_x = scaledVertices.map(v => v.x);
-                    const all_y = scaledVertices.map(v => v.y);
-                    const newVisualBboxLocal = {
-                        x: Math.min(...all_x),
-                        y: Math.min(...all_y),
-                        width: Math.max(...all_x) - Math.min(...all_x),
-                        height: Math.max(...all_y) - Math.min(...all_y),
-                    };
-
-                    const topVertex = scaledVertices[0];
-                    const baseVertices = [scaledVertices[1], scaledVertices[2]];
-
-                    const newShapeWidth = Math.abs(baseVertices[0].x - baseVertices[1].x);
-                    const newShapeHeight = Math.abs(topVertex.y - baseVertices[0].y);
-                    const newShapeX_local = Math.min(baseVertices[0].x, baseVertices[1].x);
-                    const newShapeY_local = topVertex.y;
-                    const newTopVertexOffset = newShapeWidth > 0 ? (topVertex.x - (newShapeX_local + newShapeWidth / 2)) / newShapeWidth : 0;
-                    
-                    const deltaX = newShapeX_local - newVisualBboxLocal.x;
-                    const deltaY = newShapeY_local - newVisualBboxLocal.y;
-
-                    const newVisualX_global = newGlobalCenter.x - newVisualBboxLocal.width / 2;
-                    const newVisualY_global = newGlobalCenter.y - newVisualBboxLocal.height / 2;
-                
-                    const finalShapeX = newVisualX_global + deltaX;
-                    const finalShapeY = newVisualY_global + deltaY;
+                    const newVisualX_global = newGlobalCenter.x - newWidth / 2;
+                    const newVisualY_global = newGlobalCenter.y - newHeight / 2;
 
                     updatedShape = {
                         ...tri,
-                        x: finalShapeX,
-                        y: finalShapeY,
-                        width: newShapeWidth,
-                        height: newShapeHeight,
-                        topVertexOffset: newTopVertexOffset
+                        x: newVisualX_global,
+                        y: newVisualY_global,
+                        width: newWidth,
+                        height: newHeight,
+                        topVertexOffset,
+                        isFlippedVertically: finalFlipV
                     };
                     break;
                 }
                 case 'trapezoid': {
                     const trap = initialShape as TrapezoidShape;
-                    const initialLocalVertices = getTrapezoidPoints(trap);
-                    const visualBbox = getBoundingBox({ ...trap, rotation: 0 })!;
-
-                    const scaleX = visualBbox.width > 0 ? newWidth / visualBbox.width : 1;
-                    const scaleY = visualBbox.height > 0 ? newHeight / visualBbox.height : 1;
-
-                    const scaledVertices = initialLocalVertices.map(v => ({
-                        x: anchorPointLocal.x + (v.x - anchorPointLocal.x) * scaleX,
-                        y: anchorPointLocal.y + (v.y - anchorPointLocal.y) * scaleY,
-                    }));
-
-                    const all_x = scaledVertices.map(v => v.x);
-                    const all_y = scaledVertices.map(v => v.y);
-                    const newVisualBboxLocal = {
-                        x: Math.min(...all_x),
-                        y: Math.min(...all_y),
-                        width: Math.max(...all_x) - Math.min(...all_x),
-                        height: Math.max(...all_y) - Math.min(...all_y),
-                    };
-
-                    let newShapeWidth = 0;
-                    let newShapeHeight = 0;
-                    let newShapeX_local = 0;
-                    let newShapeY_local = 0;
-                    let newLeftOffsetRatio = trap.topLeftOffsetRatio;
-                    let newRightOffsetRatio = trap.topRightOffsetRatio;
-
-                    if (trap.isFlippedVertically) {
-                        newShapeY_local = scaledVertices[0].y;
-                        newShapeHeight = scaledVertices[3].y - scaledVertices[0].y;
-                        newShapeX_local = scaledVertices[0].x;
-                        newShapeWidth = scaledVertices[1].x - scaledVertices[0].x;
-                        if (newShapeWidth > 0) {
-                            newLeftOffsetRatio = (scaledVertices[3].x - scaledVertices[0].x) / newShapeWidth;
-                            newRightOffsetRatio = (scaledVertices[1].x - scaledVertices[2].x) / newShapeWidth;
-                        }
-                    } else {
-                        newShapeY_local = scaledVertices[0].y;
-                        newShapeHeight = scaledVertices[3].y - scaledVertices[0].y;
-                        newShapeX_local = scaledVertices[3].x;
-                        newShapeWidth = scaledVertices[2].x - scaledVertices[3].x;
-                        if (newShapeWidth > 0) {
-                            newLeftOffsetRatio = (scaledVertices[0].x - scaledVertices[3].x) / newShapeWidth;
-                            newRightOffsetRatio = (scaledVertices[2].x - scaledVertices[1].x) / newShapeWidth;
-                        }
+                    let leftRatio = trap.topLeftOffsetRatio;
+                    let rightRatio = trap.topRightOffsetRatio;
+                    if (isCrossedH) {
+                        leftRatio = trap.topRightOffsetRatio;
+                        rightRatio = trap.topLeftOffsetRatio;
                     }
-                    
-                    const deltaX = newShapeX_local - newVisualBboxLocal.x;
-                    const deltaY = newShapeY_local - newVisualBboxLocal.y;
+                    const finalFlipV = isCrossedV ? !trap.isFlippedVertically : !!trap.isFlippedVertically;
 
-                    const newVisualX_global = newGlobalCenter.x - newVisualBboxLocal.width / 2;
-                    const newVisualY_global = newGlobalCenter.y - newVisualBboxLocal.height / 2;
-                
-                    const finalShapeX = newVisualX_global + deltaX;
-                    const finalShapeY = newVisualY_global + deltaY;
+                    const newVisualX_global = newGlobalCenter.x - newWidth / 2;
+                    const newVisualY_global = newGlobalCenter.y - newHeight / 2;
 
                     updatedShape = {
                         ...trap,
-                        x: finalShapeX,
-                        y: finalShapeY,
-                        width: Math.abs(newShapeWidth),
-                        height: Math.abs(newShapeHeight),
-                        topLeftOffsetRatio: newLeftOffsetRatio,
-                        topRightOffsetRatio: newRightOffsetRatio
+                        x: newVisualX_global,
+                        y: newVisualY_global,
+                        width: newWidth,
+                        height: newHeight,
+                        topLeftOffsetRatio: leftRatio,
+                        topRightOffsetRatio: rightRatio,
+                        isFlippedVertically: finalFlipV
                     };
                     break;
                 }
@@ -1384,13 +1547,32 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 case 'bitmap': {
                     const newX = newGlobalCenter.x - newWidth / 2;
                     const newY = newGlobalCenter.y - newHeight / 2;
-                    updatedShape = { ...initialShape, x: newX, y: newY, width: newWidth, height: newHeight };
+                    let extraProps: any = {
+                        isFlippedHorizontally: targetFlipH,
+                        isFlippedVertically: targetFlipV,
+                    };
+
+                    if (initialShape.type === 'parallelogram') {
+                        const angle = isCrossedH ? 180 - initialShape.angle : initialShape.angle;
+                        extraProps.angle = angle;
+                        extraProps.isFlippedVertically = isCrossedV ? !initialShape.isFlippedVertically : !!initialShape.isFlippedVertically;
+                    }
+
+                    updatedShape = { ...initialShape, x: newX, y: newY, width: newWidth, height: newHeight, ...extraProps };
                     break;
                 }
                 case 'ellipse': {
                     const newRx = newWidth / 2;
                     const newRy = newHeight / 2;
-                    updatedShape = { ...initialShape, cx: newGlobalCenter.x, cy: newGlobalCenter.y, rx: newRx, ry: newRy };
+                    updatedShape = {
+                        ...initialShape,
+                        cx: newGlobalCenter.x,
+                        cy: newGlobalCenter.y,
+                        rx: newRx,
+                        ry: newRy,
+                        isFlippedHorizontally: targetFlipH,
+                        isFlippedVertically: targetFlipV,
+                    };
                     break;
                 }
                 case 'polygon':
@@ -1404,19 +1586,30 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     if (initialShape.type === 'star' && initialShape.innerRadius !== undefined) {
                         newInnerRadius = initialShape.innerRadius * scale;
                     }
-                    updatedShape = { ...initialShape, cx: newGlobalCenter.x, cy: newGlobalCenter.y, radius: newRadius, innerRadius: newInnerRadius };
+                    updatedShape = {
+                        ...initialShape,
+                        cx: newGlobalCenter.x,
+                        cy: newGlobalCenter.y,
+                        radius: newRadius,
+                        innerRadius: newInnerRadius,
+                        isFlippedHorizontally: targetFlipH,
+                        isFlippedVertically: targetFlipV,
+                    };
                     break;
                 }
-                case 'line': // Should be handled by the early exit, but as a fallback:
+                case 'line':
                 case 'bezier':
                 case 'pencil':
                 case 'polyline': {
                     const scaleX = initialBbox.width !== 0 ? newWidth / initialBbox.width : 1;
                     const scaleY = initialBbox.height !== 0 ? newHeight / initialBbox.height : 1;
-                
+
+                    const flipFactorX = isCrossedH ? -1 : 1;
+                    const flipFactorY = isCrossedV ? -1 : 1;
+
                     const scaledPoints = initialShape.points.map(p => ({
-                        x: newBbox.x + (p.x - initialBbox.x) * scaleX,
-                        y: newBbox.y + (p.y - initialBbox.y) * scaleY,
+                        x: anchorPointLocal.x + (p.x - anchorPointLocal.x) * scaleX * flipFactorX,
+                        y: anchorPointLocal.y + (p.y - anchorPointLocal.y) * scaleY * flipFactorY,
                     }));
 
                     const newGlobalUnrotatedTopLeft = {
@@ -2126,7 +2319,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
   const getTransform = (shape: Shape) => {
     let transformStr = "";
-    const isSpecialFlip = ['image', 'bitmap', 'text', 'arc'].includes(shape.type);
+    const isSpecialFlip = ['image', 'bitmap', 'arc'].includes(shape.type);
     const isFlippedH = isSpecialFlip && 'isFlippedHorizontally' in shape && (shape as any).isFlippedHorizontally;
     const isFlippedV = isSpecialFlip && 'isFlippedVertically' in shape && (shape as any).isFlippedVertically;
     const hasRotation = 'rotation' in shape && shape.rotation && shape.rotation !== 0;
@@ -2471,6 +2664,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 if (isHidden && !isSelected) return null;
 
                 const isHiddenAndSelected = isHidden && isSelected;
+                const isBeingEdited = inlineEditingShapeId === shape.id;
+                if (isBeingEdited) return null;
                 const isDisabled = shape.state === 'disabled';
                 const isDrawing = activeTool !== 'select';
                 const isDuplicationPreview = action?.type === 'duplicating' && shape.id.endsWith('-preview');
@@ -2528,6 +2723,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     pointerEvents: lockedShapeIds.has(shape.id) || isHidden || isDisabled ? 'none' : ((shape.type === 'line' || shape.type === 'pencil' || (shape.type === 'polyline' && !shape.isClosed)) ? 'stroke' : 'all'),
                 }
 
+                const renderedShape = (() => {
                 switch (shape.type) {
                     case 'rectangle': {
                         const rectProps: any = { ...finalStaticProps, x: shape.x, y: shape.y, width: shape.width, height: shape.height, fill: shape.fill, ...joinStyleProps(shape) };
@@ -2730,11 +2926,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                 y={bbox.y}
                                 fill={fill}
                                 textAnchor={textAnchor}
-                                dominantBaseline="hanging"
+                                
                                 style={{ ...staticProps.style, ...textStyles }}
                             >
                                 {lines.map((line, index) => (
-                                    <tspan key={index} data-id={shape.id} x={textBlockX} dy={index === 0 ? 0 : `${fontSize * 1.2}px`}>
+                                    <tspan key={index} data-id={shape.id} x={textBlockX} dy={index === 0 ? `${fontSize * 0.88}px` : `${fontSize * 1.2}px`}>
                                         {line}
                                     </tspan>
                                 ))}
@@ -2771,6 +2967,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     }
                     default: return null;
                 }
+                })();
+                return <g key={`g-${shape.id}`} id={`shape-render-${shape.id}`}>{renderedShape}</g>;
             })}
              {action?.type === 'selecting' && (
                  <rect 
@@ -2931,6 +3129,202 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                     }} />
                             </g>
                         </>
+                        );
+                    })()}
+                    {props.distributePathState.type === 'shape' && props.distributePathState.shapePathParams?.pathShape && (() => {
+                        const pShape = props.distributePathState.shapePathParams.pathShape;
+                        const pts = getFinalPoints(pShape);
+                        if (!pts || pts.length < 2) return null;
+                        let pathString = `M ${pts[0].x} ${pts[0].y} ` + pts.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ');
+                        const isClosed = isShapeClosed(pShape);
+                        if (isClosed) pathString += ' Z';
+
+                        const center = getShapeCenter(pShape) || { x: 0, y: 0 };
+                        const xs = pts.map(p => p.x);
+                        const ys = pts.map(p => p.y);
+                        const minX = Math.min(...xs);
+                        const maxX = Math.max(...xs);
+                        const minY = Math.min(...ys);
+                        const maxY = Math.max(...ys);
+                        const midX = (minX + maxX) / 2;
+                        const midY = (minY + maxY) / 2;
+
+                        const rotX = midX;
+                        const rotY = minY - 30 / viewTransform.scale;
+
+                        const angleOffset = props.distributePathState.angleOffset || 0;
+                        const nodePoints = (('points' in pShape && Array.isArray((pShape as any).points)) ? (pShape as any).points : pts);
+
+                        return (
+                            <g transform={`rotate(${angleOffset} ${center.x} ${center.y})`}>
+                                {/* Dashed Contour */}
+                                <path
+                                    d={pathString}
+                                    fill="none"
+                                    stroke="#00d2ff"
+                                    strokeWidth={2 / viewTransform.scale}
+                                    strokeDasharray={`${5 / viewTransform.scale},${5 / viewTransform.scale}`}
+                                    style={{ pointerEvents: 'none' }}
+                                />
+
+                                {/* Bounding Box Frame */}
+                                <rect
+                                    x={minX}
+                                    y={minY}
+                                    width={Math.max(1, maxX - minX)}
+                                    height={Math.max(1, maxY - minY)}
+                                    fill="none"
+                                    stroke="#00d2ff"
+                                    strokeWidth={1 / viewTransform.scale}
+                                    strokeDasharray={`${3 / viewTransform.scale},${3 / viewTransform.scale}`}
+                                    style={{ pointerEvents: 'none' }}
+                                />
+
+                                {/* Center Move Handle */}
+                                <circle
+                                    cx={center.x}
+                                    cy={center.y}
+                                    r={6 / viewTransform.scale}
+                                    fill="var(--bg-primary)"
+                                    stroke="#00d2ff"
+                                    strokeWidth={2 / viewTransform.scale}
+                                    style={{ cursor: 'move', pointerEvents: 'all' }}
+                                    onMouseDown={(e) => {
+                                        e.stopPropagation();
+                                        const pt = getTransformedPointerPosition(getPointerPosition(e));
+                                        setAction({ type: 'edit-distribute-path', handle: 'shape-move', startPoint: pt, initialDistributePath: props.distributePathState! });
+                                    }}
+                                    onTouchStart={(e) => {
+                                        e.stopPropagation();
+                                        const pt = getTransformedPointerPosition(getPointerPosition(e.touches[0]));
+                                        setAction({ type: 'edit-distribute-path', handle: 'shape-move', startPoint: pt, initialDistributePath: props.distributePathState! });
+                                    }}
+                                />
+
+                                {/* Bounding Box Corner & Middle Resize Handles */}
+                                {[
+                                    { x: minX, y: minY, cursor: 'nwse-resize', handle: 'shape-resize-top-left' },
+                                    { x: midX, y: minY, cursor: 'ns-resize', handle: 'shape-resize-top-center' },
+                                    { x: maxX, y: minY, cursor: 'nesw-resize', handle: 'shape-resize-top-right' },
+                                    { x: minX, y: midY, cursor: 'ew-resize', handle: 'shape-resize-middle-left' },
+                                    { x: maxX, y: midY, cursor: 'ew-resize', handle: 'shape-resize-middle-right' },
+                                    { x: minX, y: maxY, cursor: 'nesw-resize', handle: 'shape-resize-bottom-left' },
+                                    { x: midX, y: maxY, cursor: 'ns-resize', handle: 'shape-resize-bottom-center' },
+                                    { x: maxX, y: maxY, cursor: 'nwse-resize', handle: 'shape-resize-bottom-right' }
+                                ].map((h, i) => (
+                                    <rect
+                                        key={`resize-${i}`}
+                                        x={h.x - 4 / viewTransform.scale}
+                                        y={h.y - 4 / viewTransform.scale}
+                                        width={8 / viewTransform.scale}
+                                        height={8 / viewTransform.scale}
+                                        fill="var(--bg-primary)"
+                                        stroke="#00d2ff"
+                                        strokeWidth={1.5 / viewTransform.scale}
+                                        style={{ cursor: h.cursor, pointerEvents: 'all' }}
+                                        onMouseDown={(e) => {
+                                            e.stopPropagation();
+                                            const pt = getTransformedPointerPosition(getPointerPosition(e));
+                                            setAction({ type: 'edit-distribute-path', handle: h.handle, startPoint: pt, initialDistributePath: props.distributePathState! });
+                                        }}
+                                        onTouchStart={(e) => {
+                                            e.stopPropagation();
+                                            const pt = getTransformedPointerPosition(getPointerPosition(e.touches[0]));
+                                            setAction({ type: 'edit-distribute-path', handle: h.handle, startPoint: pt, initialDistributePath: props.distributePathState! });
+                                        }}
+                                    />
+                                ))}
+
+                                {/* Vertex / Node Handles */}
+                                {activeTool === 'edit-points' && nodePoints.map((pt: {x: number, y: number}, idx: number) => {
+                                    if (!pt) return null;
+                                    return (
+                                        <circle
+                                            key={`node-${idx}`}
+                                            cx={pt.x}
+                                            cy={pt.y}
+                                            r={5 / viewTransform.scale}
+                                            fill="var(--bg-primary)"
+                                            stroke="#00d2ff"
+                                            strokeWidth={1.5 / viewTransform.scale}
+                                            style={{ cursor: 'pointer', pointerEvents: 'all' }}
+                                            onMouseDown={(e) => {
+                                                e.stopPropagation();
+                                                const p = getTransformedPointerPosition(getPointerPosition(e));
+                                                setAction({ type: 'edit-distribute-path', handle: `shape-node-${idx}`, startPoint: p, initialDistributePath: props.distributePathState! });
+                                            }}
+                                            onTouchStart={(e) => {
+                                                e.stopPropagation();
+                                                const p = getTransformedPointerPosition(getPointerPosition(e.touches[0]));
+                                                setAction({ type: 'edit-distribute-path', handle: `shape-node-${idx}`, startPoint: p, initialDistributePath: props.distributePathState! });
+                                            }}
+                                        />
+                                    );
+                                })}
+
+                                {/* Rotation Handle */}
+                                <g>
+                                    <line
+                                        x1={rotX}
+                                        y1={minY}
+                                        x2={rotX}
+                                        y2={rotY}
+                                        stroke="#00d2ff"
+                                        strokeWidth={1 / viewTransform.scale}
+                                        strokeDasharray={`${3 / viewTransform.scale},${3 / viewTransform.scale}`}
+                                        style={{ pointerEvents: 'none' }}
+                                    />
+                                    <circle
+                                        cx={rotX}
+                                        cy={rotY}
+                                        r={6 / viewTransform.scale}
+                                        fill="#00d2ff"
+                                        stroke="var(--bg-primary)"
+                                        strokeWidth={2 / viewTransform.scale}
+                                        style={{ cursor: ROTATE_CURSOR_STYLE, pointerEvents: 'all' }}
+                                        onMouseDown={(e) => {
+                                            e.stopPropagation();
+                                            const pt = getTransformedPointerPosition(getPointerPosition(e));
+                                            setAction({ type: 'edit-distribute-path', handle: 'rotate', startPoint: pt, initialDistributePath: props.distributePathState! });
+                                        }}
+                                        onTouchStart={(e) => {
+                                            e.stopPropagation();
+                                            const pt = getTransformedPointerPosition(getPointerPosition(e.touches[0]));
+                                            setAction({ type: 'edit-distribute-path', handle: 'rotate', startPoint: pt, initialDistributePath: props.distributePathState! });
+                                        }}
+                                    />
+                                </g>
+
+                                {/* Contour Shift Marker Handle for Closed Shapes */}
+                                {isClosed && (() => {
+                                    const shiftPct = props.distributePathState?.shapePathParams?.contourShift || 0;
+                                    const shiftFrac = ((shiftPct % 100) + 100) % 100 / 100;
+                                    const res = evaluateShapeContourPointAndTangent(pShape, shiftFrac, 0, 0);
+                                    return (
+                                        <g key="contour-shift-handle" title={t('tool.distribute.path.contourShift') || 'Зсув'}>
+                                            <circle
+                                                cx={res.targetCX}
+                                                cy={res.targetCY}
+                                                r={7 / viewTransform.scale}
+                                                fill="#ff9800"
+                                                stroke="var(--bg-primary)"
+                                                strokeWidth={2 / viewTransform.scale}
+                                                style={{ cursor: 'grab', pointerEvents: 'all' }}
+                                                onMouseDown={(e) => {
+                                                    e.stopPropagation();
+                                                    const pt = getTransformedPointerPosition(getPointerPosition(e));
+                                                    setAction({ type: 'edit-distribute-path', handle: 'contour-shift', startPoint: pt, initialDistributePath: props.distributePathState! });
+                                                }}
+                                                onTouchStart={(e) => {
+                                                    e.stopPropagation();
+                                                    const pt = getTransformedPointerPosition(getPointerPosition(e.touches[0]));
+                                                    setAction({ type: 'edit-distribute-path', handle: 'contour-shift', startPoint: pt, initialDistributePath: props.distributePathState! });
+                                                }}
+                                            />
+                                        </g>
+                                    );
+                                })()}
+                            </g>
                         );
                     })()}
                 </g>

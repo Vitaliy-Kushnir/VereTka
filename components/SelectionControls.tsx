@@ -52,7 +52,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
     const scaledStrokeWidth = 1 / viewTransform.scale;
     const scaledRotateOffset = ROTATE_HANDLE_OFFSET / viewTransform.scale;
 
-    const center = shape.type === 'text' ? { x: shape.x, y: shape.y } : getShapeCenter(shape, allShapes);
+    const center = getShapeCenter(shape, allShapes);
     if (!center) return null;
 
     const rotation = 'rotation' in shape ? shape.rotation ?? 0 : 0;

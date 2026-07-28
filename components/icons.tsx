@@ -428,18 +428,20 @@ export const PreviewIcon: React.FC<IconProps> = ({ size = 16 }) => (
 );
 
 export const FlipHorizontalIcon: React.FC<IconProps> = ({ size = 20 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 12h18"/>
-        <path d="M8 3l-5 9h10L8 3z"/>
-        <path d="M16 21l5-9H11l5 9z"/>
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" fill="none" stroke="currentColor">
+        <path d="M28.35,10 L39.75,10 L39.75,90 L1.75,90 Z" strokeWidth="7" strokeLinecap="butt" strokeLinejoin="miter" strokeMiterlimit="10" />
+        <path d="M50,0 L50,100" strokeWidth="5" strokeLinecap="round" strokeLinejoin="miter" strokeMiterlimit="10" />
+        <path d="M60.25,10 L71.65,10 L98.25,90 L60.25,90 Z" strokeWidth="7" strokeLinecap="butt" strokeLinejoin="miter" strokeMiterlimit="10" />
     </svg>
 );
 
 export const FlipVerticalIcon: React.FC<IconProps> = ({ size = 20 }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 3v18"/>
-        <path d="M3 8l9-5v10L3 8z"/>
-        <path d="M21 16l-9 5V11l9 5z"/>
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 100 100" fill="none" stroke="currentColor">
+        <g transform="rotate(-90 50 50)">
+            <path d="M28.35,10 L39.75,10 L39.75,90 L1.75,90 Z" strokeWidth="7" strokeLinecap="butt" strokeLinejoin="miter" strokeMiterlimit="10" />
+            <path d="M50,0 L50,100" strokeWidth="5" strokeLinecap="round" strokeLinejoin="miter" strokeMiterlimit="10" />
+            <path d="M60.25,10 L71.65,10 L98.25,90 L60.25,90 Z" strokeWidth="7" strokeLinecap="butt" strokeLinejoin="miter" strokeMiterlimit="10" />
+        </g>
     </svg>
 );
 
@@ -748,6 +750,13 @@ export const LocateIcon: React.FC<IconProps> = ({ size = 20, className }) => (
         <line x1="18" y1="12" x2="22" y2="12" />
     </svg>
 );
+export const EraserIcon: React.FC<IconProps> = ({ size = 20, className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M20 20H7L3 16C2.5 15.5 2.5 14.7 3 14.2L13.2 4C13.7 3.5 14.5 3.5 15 4L20 9C20.5 9.5 20.5 10.3 20 10.8L10.5 20.3" />
+        <path d="M6 13L11 18" />
+    </svg>
+);
+
 export const DistributePathIcon: React.FC<IconProps> = ({ size = 20 }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M4 20c1.5-6 6-9 16-9" />

@@ -115,7 +115,32 @@ export const HelpContentIT: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
                 <Para>
                     Usa lo strumento <Key>Modifica Punti</Key> per alterare i vertici individuali e visualizzare i punti di controllo Bezier. Usa la lista laterale per eliminare punti specifici o cambiarne le coordinate col mouse.
                 </Para>
-            </section>
+            
+                <SubTitle>Raggruppamento di Oggetti</SubTitle>
+                <Para>
+                    È possibile combinare più forme in un <strong>Gruppo</strong> per spostare, ridimensionare e ruotare più facilmente come una singola unità.
+                    Per raggruppare gli oggetti, selezionali, fai clic destro e scegli <Key>Raggruppa</Key> (o usa il pulsante della barra degli strumenti o <Key>Ctrl+G</Key>).
+                    Per separare, seleziona il gruppo e scegli <Key>Separa</Key> (<Key>Ctrl+Shift+G</Key>).
+                    Facendo doppio clic su un gruppo puoi inserirlo per modificare singoli elementi.
+                </Para>
+                <SubTitle>Allineamento e Distribuzione</SubTitle>
+                <Para>
+                    La barra degli strumenti superiore fornisce funzioni per allineare gli oggetti selezionati (bordo sinistro/destro, centro, ecc.). Puoi allineare gli oggetti <strong>rispetto alla selezione</strong> o <strong>rispetto alla tela</strong>.
+                    <br/><br/>
+                    <strong>Distribuzione:</strong> È possibile distribuire uniformemente gli oggetti selezionati orizzontalmente o verticalmente. È disponibile anche la <strong>Distribuzione su percorso</strong>: una funzione unica per posizionare gli oggetti lungo un altro contorno selezionato (linea, curva o qualsiasi forma).
+                    Durante la distribuzione del percorso, è possibile regolare l'orientamento (radiale, tangente, parallelo) e l'angolo di rotazione degli oggetti.
+                </Para>
+                <SubTitle>Elenco Oggetti e Livelli</SubTitle>
+                <Para>
+                    Il pannello di destra contiene un elenco di tutte le forme sulla tela. Puoi rinominare le forme (doppio clic sul nome), bloccarle (per evitare modifiche accidentali) o nasconderle.
+                    <br/><br/>
+                    L'ordine nell'elenco corrisponde all'<strong>ordine z (livelli)</strong>: un oggetto più in alto nell'elenco verrà disegnato sopra quelli sotto di esso. Cambie l'ordine trascinando le forme nell'elenco.
+                </Para>
+                <SubTitle>Specchiatura (Capovolgi)</SubTitle>
+                <Para>
+                    Gli oggetti selezionati possono essere capovolti orizzontalmente o verticalmente utilizzando i pulsanti nel pannello delle proprietà o nel menu contestuale. Ciò ti consente di creare facilmente disegni simmetrici.
+                </Para>
+</section>
 
             <section>
                 <SectionTitle id="code-export">6. Codice ed Esportazione</SectionTitle>
@@ -142,32 +167,53 @@ export const HelpContentIT: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
             </section>
 
             <section>
-                <SectionTitle id="hotkeys">8. Scorciatoie da tastiera</SectionTitle>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                    <div className="bg-[var(--bg-primary)] p-3 rounded-lg border border-[var(--border-secondary)]">
-                        <h4 className="font-medium text-[var(--text-primary)] mb-2">Generali</h4>
-                        <ul className="space-y-1 text-sm">
-                            <li><Key>Ctrl + Z</Key> : Annulla</li>
-                            <li><Key>Ctrl + Shift + Z</Key> : Ripeti</li>
-                            <li><Key>Ctrl + S</Key> : Salva</li>
-                            <li><Key>Canc</Key> | <Key>Backspace</Key> : Elimina selezione</li>
-                            <li><Key>Ctrl + D</Key> : Duplica</li>
-                            <li><Key>Ctrl + A</Key> : Seleziona Tutto</li>
-                            <li><Key>F11</Key> : Schermo Intero</li>
-                        </ul>
-                    </div>
-                    <div className="bg-[var(--bg-primary)] p-3 rounded-lg border border-[var(--border-secondary)]">
-                        <h4 className="font-medium text-[var(--text-primary)] mb-2">Strumenti</h4>
-                        <ul className="space-y-1 text-sm">
-                            <li><Key>V</Key> : Seleziona</li>
-                            <li><Key>A</Key> : Modifica Punti</li>
-                            <li><Key>R</Key> : Rettangolo</li>
-                            <li><Key>C</Key> : Cerchio</li>
-                            <li><Key>L</Key> : Linea</li>
-                            <li><Key>T</Key> : Testo</li>
-                        </ul>
-                    </div>
-                </div>
+                <SectionTitle id="hotkeys">8. Scorciatoie da Tastiera</SectionTitle>
+                <Para>Usa queste combinazioni per velocizzare il tuo flusso di lavoro.</Para>
+                
+                <SubTitle>File e Cronologia</SubTitle>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem><Key>Ctrl+S</Key> — Salva progetto.</ListItem>
+                    <ListItem><Key>Ctrl+Z</Key> — Annulla l'ultima azione.</ListItem>
+                    <ListItem><Key>Ctrl+Y</Key> (o <Key>Ctrl+Shift+Z</Key>) — Ripristina azione.</ListItem>
+                </ul>
+
+                <SubTitle>Strumenti e Selezione</SubTitle> 
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem><Key>V</Key> — Attiva strumento "Seleziona".</ListItem>
+                    <ListItem><Key>A</Key> — Attiva strumento "Modifica Nodi".</ListItem>
+                    <ListItem><Key>Ctrl+G</Key> — Raggruppa oggetti selezionati.</ListItem>
+                    <ListItem><Key>Ctrl+Shift+G</Key> — Separa.</ListItem>
+                    <ListItem><Key>Ctrl+D</Key> — Duplica oggetto selezionato.</ListItem>
+                    <ListItem><Key>Ctrl+H</Key> — Capovolgi Orizzontalmente.</ListItem>
+                    <ListItem><Key>Ctrl+V</Key> — Capovolgi Verticalmente.</ListItem>
+                    <ListItem><Key>Delete</Key> / <Key>Backspace</Key> — Elimina oggetto o nodo selezionato.</ListItem>
+                </ul>
+                
+                <SubTitle>Movimento</SubTitle>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                     <ListItem><Key>Frecce</Key> — Muovi oggetto selezionato di 1 pixel.</ListItem>
+                     <ListItem><Key>Shift + Frecce</Key> — Muovi oggetto selezionato di 10 pixel.</ListItem>
+                     <ListItem><Key>Alt + Frecce</Key> — Muovi senza ancoraggio (snapping).</ListItem>
+                </ul>
+                
+                <SubTitle>Navigazione e Generale</SubTitle>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem>
+                        <Key>?</Key> — Mostra tutte le scorciatoie.
+                    </ListItem>
+                    <ListItem>
+                        <Key>Rotellina del Mouse</Key> — Zoom della tela.
+                    </ListItem>
+                    <ListItem>
+                        <Key>Tasto Centrale del Mouse</Key> — Panoramica della tela.
+                    </ListItem>
+                     <ListItem>
+                        <Key>F11</Key> — Entra / esci da schermo intero.
+                    </ListItem>
+                    <ListItem>
+                        <Key>Escape (Esc)</Key> — Annulla l'azione corrente, deseleziona o chiudi modali.
+                    </ListItem>
+                </ul>
             </section>
         </>
     );

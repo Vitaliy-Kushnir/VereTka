@@ -1,5 +1,5 @@
 import type React from 'react';
-import { Shape, RectangleShape, EllipseShape, PathShape, PolygonShape, LineShape, IsoscelesTriangleShape, PolylineShape, RhombusShape, ParallelogramShape, TrapezoidShape, BezierCurveShape, ArcShape, RightTriangleShape, JoinStyle, TextShape, ImageShape, BitmapShape } from '../types';
+import { Shape, RectangleShape, EllipseShape, PathShape, PolygonShape, LineShape, IsoscelesTriangleShape, PolylineShape, RhombusShape, ParallelogramShape, TrapezoidShape, BezierCurveShape, ArcShape, RightTriangleShape, JoinStyle, TextShape, ImageShape, BitmapShape, DistributePathState } from '../types';
 
 export const getMousePosition = (svg: SVGSVGElement, event: MouseEvent | React.MouseEvent): { x: number; y: number } => {
   const CTM = svg.getScreenCTM();
@@ -568,6 +568,9 @@ export const getShapeCenter = (shape: Shape, allShapes?: Shape[]): { x: number; 
     if ('rotationCenter' in shape && shape.rotationCenter) {
         return shape.rotationCenter;
     }
+    if (shape.type === 'text') {
+        return { x: shape.x, y: shape.y };
+    }
     // Prioritize explicit center properties for accuracy, as they are the geometric center.
     if ('cx' in shape && 'cy' in shape) {
         return { x: shape.cx, y: shape.cy };
@@ -713,7 +716,7 @@ export function getFinalPoints(shape: Shape, overrideCenter?: { x: number; y: nu
     }
 
     if (('rotation' in shape) && shape.rotation !== 0) {
-        const center = overrideCenter ?? (shape.type === 'text' ? {x: shape.x, y: shape.y} : getShapeCenter(shape));
+        const center = overrideCenter ?? (getShapeCenter(shape));
         if (!center) return points;
         return points.map(p => rotatePoint(p, center, shape.rotation));
     }
@@ -838,4 +841,186 @@ export function findClosestPointOnSegment(p: {x:number, y:number}, a: {x:number,
   };
   
   return { point: closestPoint, t: t };
+}
+
+export function isShapeClosed(shape: Shape): boolean {
+  if (!shape) return false;
+  switch (shape.type) {
+    case 'rectangle':
+    case 'ellipse':
+    case 'polygon':
+    case 'star':
+    case 'triangle':
+    case 'right-triangle':
+    case 'rhombus':
+    case 'trapezoid':
+    case 'parallelogram':
+    case 'image':
+    case 'bitmap':
+      return true;
+    case 'arc':
+      return (shape as ArcShape).style === 'pieslice' || (shape as ArcShape).style === 'chord';
+    case 'polyline':
+    case 'bezier':
+      return !!(shape as PolylineShape | BezierCurveShape).isClosed;
+    default:
+      return false;
+  }
+}
+
+export function getClosestPointOnShapeContour(
+  shape: Shape,
+  pt: { x: number; y: number }
+): { closestPoint: { x: number; y: number }; fraction: number } {
+  const pts = getFinalPoints(shape);
+  if (!pts || pts.length < 2) {
+    return { closestPoint: pt, fraction: 0 };
+  }
+
+  const closed = isShapeClosed(shape);
+  const fullPts = [...pts];
+  if (closed) {
+    const first = fullPts[0];
+    const last = fullPts[fullPts.length - 1];
+    if (Math.hypot(first.x - last.x, first.y - last.y) > 0.001) {
+      fullPts.push(first);
+    }
+  }
+
+  let totalLen = 0;
+  const segmentLens: number[] = [];
+  for (let i = 0; i < fullPts.length - 1; i++) {
+    const len = Math.hypot(fullPts[i + 1].x - fullPts[i].x, fullPts[i + 1].y - fullPts[i].y);
+    segmentLens.push(len);
+    totalLen += len;
+  }
+
+  if (totalLen <= 0.0001) {
+    return { closestPoint: fullPts[0], fraction: 0 };
+  }
+
+  let minDistanceSq = Infinity;
+  let bestFraction = 0;
+  let bestClosestPoint = fullPts[0];
+
+  let accumulatedLen = 0;
+  for (let i = 0; i < fullPts.length - 1; i++) {
+    const p1 = fullPts[i];
+    const p2 = fullPts[i + 1];
+    const segLen = segmentLens[i];
+
+    if (segLen <= 0.00001) {
+      const distSq = (pt.x - p1.x) ** 2 + (pt.y - p1.y) ** 2;
+      if (distSq < minDistanceSq) {
+        minDistanceSq = distSq;
+        bestClosestPoint = p1;
+        bestFraction = accumulatedLen / totalLen;
+      }
+      continue;
+    }
+
+    const vx = p2.x - p1.x;
+    const vy = p2.y - p1.y;
+    const tRaw = ((pt.x - p1.x) * vx + (pt.y - p1.y) * vy) / (segLen * segLen);
+    const t = Math.max(0, Math.min(1, tRaw));
+
+    const projX = p1.x + t * vx;
+    const projY = p1.y + t * vy;
+    const distSq = (pt.x - projX) ** 2 + (pt.y - projY) ** 2;
+
+    if (distSq < minDistanceSq) {
+      minDistanceSq = distSq;
+      bestClosestPoint = { x: projX, y: projY };
+      bestFraction = (accumulatedLen + t * segLen) / totalLen;
+    }
+
+    accumulatedLen += segLen;
+  }
+
+  return { closestPoint: bestClosestPoint, fraction: Math.max(0, Math.min(1, bestFraction)) };
+}
+
+export function isPathClosed(pathState: DistributePathState): boolean {
+  if (pathState.type === 'circle') return true;
+  if (pathState.type === 'line') return false;
+  if (pathState.type === 'shape' && pathState.shapePathParams?.pathShape) {
+    return isShapeClosed(pathState.shapePathParams.pathShape);
+  }
+  return false;
+}
+
+export function evaluateShapeContourPointAndTangent(
+  pathShape: Shape,
+  fraction: number,
+  angleOffsetDeg: number,
+  contourShiftPct: number = 0
+): { targetCX: number; targetCY: number; tangentAngle: number } {
+  const pts = getFinalPoints(pathShape);
+  const center = getShapeCenter(pathShape) || { x: 0, y: 0 };
+  if (!pts || pts.length < 2) {
+    return { targetCX: center.x, targetCY: center.y, tangentAngle: 0 };
+  }
+
+  const isClosed = isShapeClosed(pathShape);
+
+  const segments: { p1: { x: number; y: number }; p2: { x: number; y: number }; len: number }[] = [];
+  let totalLen = 0;
+
+  const fullPts = [...pts];
+  if (isClosed) {
+    const first = fullPts[0];
+    const last = fullPts[fullPts.length - 1];
+    if (Math.hypot(first.x - last.x, first.y - last.y) > 0.001) {
+      fullPts.push(first);
+    }
+  }
+
+  for (let i = 0; i < fullPts.length - 1; i++) {
+    const p1 = fullPts[i];
+    const p2 = fullPts[i + 1];
+    const len = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+    segments.push({ p1, p2, len });
+    totalLen += len;
+  }
+
+  if (totalLen <= 0.0001) {
+    return { targetCX: center.x, targetCY: center.y, tangentAngle: 0 };
+  }
+
+  let effectiveFraction = fraction;
+  if (isClosed) {
+    const shift = ((contourShiftPct % 100) + 100) % 100 / 100;
+    effectiveFraction = (fraction + shift) % 1;
+    if (effectiveFraction < 0) effectiveFraction += 1;
+  } else {
+    effectiveFraction = Math.max(0, Math.min(1, fraction));
+  }
+
+  const targetDist = effectiveFraction * totalLen;
+  let accumulated = 0;
+
+  let unrotatedCX = center.x;
+  let unrotatedCY = center.y;
+  let rawTangentAngle = 0;
+
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i];
+    if (accumulated + seg.len >= targetDist - 0.00001 || i === segments.length - 1) {
+      const segRatio = seg.len > 0 ? (targetDist - accumulated) / seg.len : 0;
+      const clampedRatio = Math.max(0, Math.min(1, segRatio));
+      unrotatedCX = seg.p1.x + (seg.p2.x - seg.p1.x) * clampedRatio;
+      unrotatedCY = seg.p1.y + (seg.p2.y - seg.p1.y) * clampedRatio;
+      rawTangentAngle = Math.atan2(seg.p2.y - seg.p1.y, seg.p2.x - seg.p1.x);
+      break;
+    }
+    accumulated += seg.len;
+  }
+
+  if (angleOffsetDeg !== 0) {
+    const rotatedPt = rotatePoint({ x: unrotatedCX, y: unrotatedCY }, center, -angleOffsetDeg);
+    const finalTangentAngle = rawTangentAngle + (angleOffsetDeg * Math.PI / 180);
+    return { targetCX: rotatedPt.x, targetCY: rotatedPt.y, tangentAngle: finalTangentAngle };
+  }
+
+  return { targetCX: unrotatedCX, targetCY: unrotatedCY, tangentAngle: rawTangentAngle };
 }

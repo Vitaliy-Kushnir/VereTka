@@ -1,10 +1,8 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { XIcon } from './icons';
-import { InputWrapper, Label, NumberInput, ColorInput } from './FormControls';
+import { Label, NumberInput, ColorInput } from './FormControls';
 import { type ProjectTemplate } from '../types';
 import { useLanguage } from './LanguageContext';
-import { translations } from '../lib/translations';
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -58,317 +56,269 @@ interface SettingsModalProps {
 
 type Tab = 'canvas' | 'grid' | 'appearance' | 'code' | 'templates';
 
+const TabButton: React.FC<{ tab: Tab; label: string; activeTab: Tab; onSelect: (tab: Tab) => void }> = ({ tab, label, activeTab, onSelect }) => (
+    <button
+        onClick={() => onSelect(tab)}
+        className={`w-full text-left px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+            activeTab === tab
+                ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]'
+                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
+        }`}
+    >
+        {label}
+    </button>
+);
+
+const FlagIcon: React.FC<{ lang: string }> = ({ lang }) => {
+    switch (lang) {
+        case 'uk':
+            return (
+                <svg viewBox="0 0 24 16" width="18" height="12" className="rounded-[1px] flex-shrink-0" preserveAspectRatio="none">
+                    <rect width="24" height="8" fill="#0057B7"/>
+                    <rect y="8" width="24" height="8" fill="#FFDD00"/>
+                </svg>
+            );
+        case 'en':
+            return (
+                <svg viewBox="0 0 60 30" width="18" height="12" className="rounded-[1px] flex-shrink-0 bg-[#012169]" preserveAspectRatio="none">
+                    <path d="M0,0 L60,30 M60,0 L0,30" stroke="#FFF" strokeWidth="6"/>
+                    <path d="M0,0 L60,30 M60,0 L0,30" stroke="#C8102E" strokeWidth="4"/>
+                    <path d="M30,0 L30,30 M0,15 L60,15" stroke="#FFF" strokeWidth="10"/>
+                    <path d="M30,0 L30,30 M0,15 L60,15" stroke="#C8102E" strokeWidth="6"/>
+                </svg>
+            );
+        case 'de':
+            return (
+                <svg viewBox="0 0 3 3" width="18" height="12" className="rounded-[1px] flex-shrink-0" preserveAspectRatio="none">
+                    <rect width="3" height="1" fill="#000000"/>
+                    <rect y="1" width="3" height="1" fill="#DD0000"/>
+                    <rect y="2" width="3" height="1" fill="#FFCE00"/>
+                </svg>
+            );
+        case 'fr':
+            return (
+                <svg viewBox="0 0 3 2" width="18" height="12" className="rounded-[1px] flex-shrink-0" preserveAspectRatio="none">
+                    <rect width="1" height="2" fill="#002395"/>
+                    <rect x="1" width="1" height="2" fill="#FFFFFF"/>
+                    <rect x="2" width="1" height="2" fill="#ED2939"/>
+                </svg>
+            );
+        case 'it':
+            return (
+                <svg viewBox="0 0 3 2" width="18" height="12" className="rounded-[1px] flex-shrink-0" preserveAspectRatio="none">
+                    <rect width="1" height="2" fill="#009246"/>
+                    <rect x="1" width="1" height="2" fill="#F1F2F1"/>
+                    <rect x="2" width="1" height="2" fill="#CE2B37"/>
+                </svg>
+            );
+        case 'es':
+        default:
+            return (
+                <svg viewBox="0 0 3 2" width="18" height="12" className="rounded-[1px] flex-shrink-0" preserveAspectRatio="none">
+                    <rect width="3" height="2" fill="#AA151B"/>
+                    <rect y="0.5" width="3" height="1" fill="#F1BF00"/>
+                </svg>
+            );
+    }
+};
+
 const SettingsModal: React.FC<SettingsModalProps> = (props) => {
+    const { t, language, setLanguage } = useLanguage();
+    const [isLanguageOpen, setIsLanguageOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<Tab>(props.initialTab || 'canvas');
+    
     const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
     const [editingTemplateName, setEditingTemplateName] = useState('');
-    const [isLanguageOpen, setIsLanguageOpen] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
-    const { t, language, setLanguage } = useLanguage();
-
-    useEffect(() => {
-        if (editingTemplateId && inputRef.current) {
-            inputRef.current.focus();
-            inputRef.current.select();
-        }
-    }, [editingTemplateId]);
 
     const handleStartEditing = (template: ProjectTemplate) => {
         setEditingTemplateId(template.id);
         setEditingTemplateName(template.name);
     };
 
-    const handleCancelEditing = () => {
-        setEditingTemplateId(null);
-        setEditingTemplateName('');
-    };
-
     const handleConfirmEditing = () => {
-        if (editingTemplateId && editingTemplateName.trim() !== '') {
+        if (editingTemplateId && editingTemplateName.trim()) {
             props.onRenameTemplate(editingTemplateId, editingTemplateName.trim());
         }
-        handleCancelEditing();
+        setEditingTemplateId(null);
     };
-    
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
             handleConfirmEditing();
         } else if (e.key === 'Escape') {
-            handleCancelEditing();
+            setEditingTemplateId(null);
         }
     };
 
-    const handleCanvasNameChange = (value: string) => {
-        // Remove invalid characters (allow only Latin letters, numbers, and underscore)
-        let cleanedValue = value.replace(/[^a-zA-Z0-9_]/g, '');
-        // Ensure it doesn't start with a number
-        if (/^[0-9]/.test(cleanedValue)) {
-            cleanedValue = '_' + cleanedValue;
+    useEffect(() => {
+        if (editingTemplateId && inputRef.current) {
+            inputRef.current.focus();
         }
-        props.setCanvasVarName(cleanedValue);
-    };
+    }, [editingTemplateId]);
 
     const handleGeneratorChange = (type: 'local' | 'gemini') => {
         props.setGeneratorType(type);
     };
 
-    const TabButton: React.FC<{ tab: Tab; label: string }> = ({ tab, label }) => (
-        <button 
-            onClick={() => setActiveTab(tab)}
-            className={`w-full text-left px-3 py-2 rounded-md font-semibold transition ${activeTab === tab ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'}`}
-        >
-            {label}
-        </button>
-    );
-
     return (
-        <div 
-            className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
-            onClick={props.onClose}
-        >
-            <div 
-                className="bg-[var(--bg-primary)] rounded-lg shadow-2xl w-full max-w-2xl h-[600px] flex flex-col"
-                onClick={e => e.stopPropagation()}
-            >
-                <header className="flex justify-between items-center p-4 border-b border-[var(--border-primary)] flex-shrink-0">
-                    <h2 className="text-xl font-bold text-[var(--text-primary)]">{t('settings.title')}</h2>
-                    <button onClick={props.onClose} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full">
-                        <XIcon />
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={props.onClose} aria-modal="true" role="dialog">
+            <div className="bg-[var(--bg-primary)] border border-[var(--border-secondary)] rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-fade-in" onClick={e => e.stopPropagation()}>
+                <header className="p-4 border-b border-[var(--border-secondary)] flex items-center justify-between gap-4 flex-shrink-0">
+                    <h2 className="text-lg font-bold text-[var(--text-primary)]">{t('settings.title')}</h2>
+                    <button onClick={props.onClose} className="p-1.5 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-full transition-colors" aria-label={t('settings.close')}>
+                        <XIcon size={18} />
                     </button>
                 </header>
                 
-                <div className="flex flex-grow min-h-0">
-                    <nav className="w-48 flex-shrink-0 border-r border-[var(--border-primary)] p-4 space-y-2">
-                        <TabButton tab="canvas" label={t('settings.tab.canvas')} />
-                        <TabButton tab="grid" label={t('settings.tab.grid')} />
-                        <TabButton tab="appearance" label={t('settings.tab.appearance')} />
-                        <TabButton tab="code" label={t('settings.tab.code')} />
-                        <TabButton tab="templates" label={t('settings.tab.templates')} />
-                    </nav>
+                <div className="flex flex-1 overflow-hidden">
+                    <div className="w-48 bg-[var(--bg-secondary)] border-r border-[var(--border-secondary)] flex flex-col p-2 space-y-1 overflow-y-auto">
+                        <TabButton tab="canvas" label={t('settings.tab.canvas')} activeTab={activeTab} onSelect={setActiveTab} />
+                        <TabButton tab="grid" label={t('settings.tab.grid')} activeTab={activeTab} onSelect={setActiveTab} />
+                        <TabButton tab="appearance" label={t('settings.tab.appearance')} activeTab={activeTab} onSelect={setActiveTab} />
+                        <TabButton tab="code" label={t('settings.tab.code')} activeTab={activeTab} onSelect={setActiveTab} />
+                        <TabButton tab="templates" label={t('settings.tab.templates')} activeTab={activeTab} onSelect={setActiveTab} />
+                    </div>
 
                     <div className="flex-grow p-6 space-y-4 overflow-y-auto" onClick={() => setIsLanguageOpen(false)}>
                         {activeTab === 'canvas' && (
                             <div className="space-y-4">
                                 <h3 className="text-lg font-semibold text-[var(--text-secondary)]">{t('settings.canvas.size')}</h3>
-                                <InputWrapper>
-                                    <Label htmlFor="canvasWidth">{t('settings.canvas.width')}</Label>
-                                    <NumberInput id="canvasWidth" value={props.canvasWidth} onChange={props.setCanvasWidth} min={100} step={10} />
-                                </InputWrapper>
-                                <InputWrapper>
-                                    <Label htmlFor="canvasHeight">{t('settings.canvas.height')}</Label>
-                                    <NumberInput id="canvasHeight" value={props.canvasHeight} onChange={props.setCanvasHeight} min={100} step={10} />
-                                </InputWrapper>
-                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <NumberInput label={t('settings.canvas.width')} value={props.canvasWidth} onChange={props.setCanvasWidth} min={100} max={5000} />
+                                    <NumberInput label={t('settings.canvas.height')} value={props.canvasHeight} onChange={props.setCanvasHeight} min={100} max={5000} />
+                                </div>
+
                                 <h3 className="text-lg font-semibold text-[var(--text-secondary)] pt-2">{t('settings.canvas.background')}</h3>
-                                <InputWrapper>
-                                    <Label htmlFor="canvasBgColor">{t('settings.canvas.bgColor')}</Label>
-                                    <ColorInput 
-                                        id="canvasBgColor" 
-                                        value={props.canvasBgColor} 
-                                        onChange={props.setCanvasBgColor}
-                                        onPreview={props.setPreviewCanvasBgColor}
-                                        onCancel={() => props.setPreviewCanvasBgColor(null)}
-                                    />
-                                </InputWrapper>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <ColorInput label={t('settings.canvas.bgColor')} value={props.canvasBgColor} onChange={props.setCanvasBgColor} />
+                                </div>
+
                                 <h3 className="text-lg font-semibold text-[var(--text-secondary)] pt-2">{t('settings.canvas.codeDisplay')}</h3>
-                                <InputWrapper>
-                                    <Label htmlFor="canvasVarName">{t('settings.canvas.varName')}</Label>
-                                    <input id="canvasVarName" type="text" value={props.canvasVarName} onChange={e => handleCanvasNameChange(e.target.value)} onBlur={e => { if (e.target.value.trim() === '') { props.setCanvasVarName('c'); } }} className="bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2 py-1 w-full border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none" />
-                                </InputWrapper>
-                                <div className="pl-32 -mt-3"><p className="text-xs text-[var(--text-tertiary)]">{t('settings.canvas.varNameDesc')}</p></div>
+                                <div className="grid grid-cols-1 gap-2">
+                                    <Label title={t('settings.canvas.varName')}>
+                                        <input type="text" value={props.canvasVarName} onChange={e => props.setCanvasVarName(e.target.value)} className="w-full bg-[var(--bg-app)] border border-[var(--border-secondary)] text-[var(--text-primary)] text-sm rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] transition-shadow" />
+                                    </Label>
+                                    <p className="text-xs text-[var(--text-tertiary)]">{t('settings.canvas.varNameDesc')}</p>
+                                </div>
                             </div>
                         )}
+                        
                         {activeTab === 'grid' && (
                             <div className="space-y-4">
                                 <h3 className="text-lg font-semibold text-[var(--text-secondary)]">{t('settings.grid.settings')}</h3>
-                                <InputWrapper>
-                                    <Label htmlFor="gridSize">{t('settings.grid.size')}</Label>
-                                    <NumberInput id="gridSize" value={props.gridSize} onChange={props.setGridSize} min={1} step={1} />
-                                </InputWrapper>
-                                <InputWrapper>
-                                    <Label htmlFor="gridSnapStep">{t('settings.grid.snapStep')}</Label>
-                                    <NumberInput id="gridSnapStep" value={props.gridSnapStep} onChange={props.setGridSnapStep} min={0.1} max={10} stepLogic="grid" />
-                                </InputWrapper>
-                            </div>
-                        )}
-                        {activeTab === 'appearance' && (
-                            <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-[var(--text-secondary)]">{t('settings.appearance.interface')}</h3>
-                                <div className="flex items-center justify-between py-2 border-b border-[var(--border-secondary)] mb-2">
-                                    <label className="text-sm font-medium text-[var(--text-secondary)]">{t('settings.appearance.language')}</label>
-                                    <div className="relative" onClick={(e) => e.stopPropagation()}>
-                                        <button
-                                            onClick={() => setIsLanguageOpen(!isLanguageOpen)}
-                                            className="bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-[var(--text-primary)] rounded-md pl-3 pr-8 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center gap-2 cursor-pointer hover:bg-[var(--bg-hover)] transition-colors shadow-sm"
-                                        >
-                                            {language === 'uk' ? (
-                                                <svg viewBox="0 0 24 16" width="18" height="12" className="rounded-[1px] flex-shrink-0" preserveAspectRatio="none">
-                                                    <rect width="24" height="8" fill="#0057B7"/>
-                                                    <rect y="8" width="24" height="8" fill="#FFDD00"/>
-                                                </svg>
-                                            ) : language === 'es' ? (
-                                                <svg viewBox="0 0 3 2" width="18" height="12" className="rounded-[1px] flex-shrink-0" preserveAspectRatio="none">
-                                                    <rect width="3" height="2" fill="#AA151B"/>
-                                                    <rect y="0.5" width="3" height="1" fill="#F1BF00"/>
-                                                </svg>
-                                            ) : language === 'it' ? (
-                                                <svg viewBox="0 0 3 2" width="18" height="12" className="rounded-[1px] flex-shrink-0" preserveAspectRatio="none">
-                                                    <rect width="1" height="2" fill="#009246"/>
-                                                    <rect x="1" width="1" height="2" fill="#F1F2F1"/>
-                                                    <rect x="2" width="1" height="2" fill="#CE2B37"/>
-                                                </svg>
-                                            ) : (
-                                                <svg viewBox="0 0 60 30" width="18" height="12" className="rounded-[1px] flex-shrink-0 bg-[#012169]" preserveAspectRatio="none">
-                                                    <path d="M0,0 L60,30 M60,0 L0,30" stroke="#FFF" strokeWidth="6"/>
-                                                    <path d="M0,0 L60,30 M60,0 L0,30" stroke="#C8102E" strokeWidth="4"/>
-                                                    <path d="M30,0 L30,30 M0,15 L60,15" stroke="#FFF" strokeWidth="10"/>
-                                                    <path d="M30,0 L30,30 M0,15 L60,15" stroke="#C8102E" strokeWidth="6"/>
-                                                </svg>
-                                            )}
-                                            {language === 'uk' ? 'Українська' : language === 'it' ? 'Italiano' : language === 'es' ? 'Español' : 'English'}
-                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-[var(--text-secondary)]">
-                                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                </svg>
-                                            </div>
-                                        </button>
-                                        {isLanguageOpen && (
-                                            <div className="absolute right-0 mt-1 w-36 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-md shadow-lg py-1 z-50">
-                                                <button
-                                                    onClick={() => { setLanguage('uk'); setIsLanguageOpen(false); }}
-                                                    className="w-full text-left px-3 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] flex items-center gap-2"
-                                                >
-                                                    <svg viewBox="0 0 24 16" width="18" height="12" className="rounded-[1px] flex-shrink-0" preserveAspectRatio="none">
-                                                        <rect width="24" height="8" fill="#0057B7"/>
-                                                        <rect y="8" width="24" height="8" fill="#FFDD00"/>
-                                                    </svg>
-                                                    Українська
-                                                </button>
-                                                <button
-                                                    onClick={() => { setLanguage('en'); setIsLanguageOpen(false); }}
-                                                    className="w-full text-left px-3 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] flex items-center gap-2"
-                                                >
-                                                    <svg viewBox="0 0 60 30" width="18" height="12" className="rounded-[1px] flex-shrink-0 bg-[#012169]" preserveAspectRatio="none">
-                                                        <path d="M0,0 L60,30 M60,0 L0,30" stroke="#FFF" strokeWidth="6"/>
-                                                        <path d="M0,0 L60,30 M60,0 L0,30" stroke="#C8102E" strokeWidth="4"/>
-                                                        <path d="M30,0 L30,30 M0,15 L60,15" stroke="#FFF" strokeWidth="10"/>
-                                                        <path d="M30,0 L30,30 M0,15 L60,15" stroke="#C8102E" strokeWidth="6"/>
-                                                    </svg>
-                                                    English
-                                                </button>
-                                                <button
-                                                    onClick={() => { setLanguage('it'); setIsLanguageOpen(false); }}
-                                                    className="w-full text-left px-3 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] flex items-center gap-2"
-                                                >
-                                                    <svg viewBox="0 0 3 2" width="18" height="12" className="rounded-[1px] flex-shrink-0" preserveAspectRatio="none">
-                                                        <rect width="1" height="2" fill="#009246"/>
-                                                        <rect x="1" width="1" height="2" fill="#F1F2F1"/>
-                                                        <rect x="2" width="1" height="2" fill="#CE2B37"/>
-                                                    </svg>
-                                                    Italiano
-                                                </button>
-                                                <button
-                                                    onClick={() => { setLanguage('es'); setIsLanguageOpen(false); }}
-                                                    className="w-full text-left px-3 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] flex items-center gap-2"
-                                                >
-                                                    <svg viewBox="0 0 3 2" width="18" height="12" className="rounded-[1px] flex-shrink-0" preserveAspectRatio="none">
-                                                        <rect width="3" height="2" fill="#AA151B"/>
-                                                        <rect y="0.5" width="3" height="1" fill="#F1BF00"/>
-                                                    </svg>
-                                                    Español
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="flex items-start pt-2">
-                                    <input
-                                        id="showTkinterNames"
-                                        type="checkbox"
-                                        checked={props.showTkinterNames}
-                                        onChange={e => props.setShowTkinterNames(e.target.checked)}
-                                        className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]"
-                                    />
-                                    <label htmlFor="showTkinterNames" className="ml-3 text-sm font-medium text-[var(--text-secondary)]">
-                                        {t('settings.appearance.showTkinterNames')}
-                                        <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.appearance.showTkinterNamesDesc')}</p>
-                                    </label>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <NumberInput label={t('settings.grid.size')} value={props.gridSize} onChange={props.setGridSize} min={5} max={100} />
+                                    <NumberInput label={t('settings.grid.snapStep')} value={props.gridSnapStep} onChange={props.setGridSnapStep} min={1} max={50} />
                                 </div>
                                 <div className="flex items-start pt-2">
-                                    <input
-                                        id="showAxes"
-                                        type="checkbox"
-                                        checked={props.showAxes}
-                                        onChange={e => props.setShowAxes(e.target.checked)}
-                                        className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]"
-                                    />
-                                    <label htmlFor="showAxes" className="ml-3 text-sm font-medium text-[var(--text-secondary)]">
-                                        {t('settings.appearance.showAxes')}
-                                        <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.appearance.showAxesDesc')}</p>
-                                    </label>
-                                </div>
-                                <div className="flex items-start pt-2">
-                                    <input
-                                        id="showCenterGuides"
-                                        type="checkbox"
-                                        checked={props.showCenterGuides}
-                                        onChange={e => props.setShowCenterGuides(e.target.checked)}
-                                        className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]"
-                                    />
-                                    <label htmlFor="showCenterGuides" className="ml-3 text-sm font-medium text-[var(--text-secondary)]">
-                                        {t('settings.appearance.showCenterGuides')}
-                                        <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.appearance.showCenterGuidesDesc')}</p>
-                                    </label>
-                                </div>
-                                <div className="flex items-start pt-2">
-                                    <input
-                                        id="enableSnapping"
-                                        type="checkbox"
-                                        checked={props.enableSnapping}
-                                        onChange={e => props.setEnableSnapping(e.target.checked)}
-                                        className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]"
-                                    />
-                                    <label htmlFor="enableSnapping" className="ml-3 text-sm font-medium text-[var(--text-secondary)]">
+                                    <input id="enableSnappingGrid" type="checkbox" checked={props.enableSnapping} onChange={e => props.setEnableSnapping(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)] mt-0.5" />
+                                    <label htmlFor="enableSnappingGrid" className="ml-3 text-sm font-medium text-[var(--text-secondary)] cursor-pointer">
                                         {t('settings.appearance.enableSnapping')}
                                         <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.appearance.enableSnappingDesc')}</p>
                                     </label>
                                 </div>
-                                <div className="flex items-start pt-2">
-                                    <input
-                                        id="showCursorCoords"
-                                        type="checkbox"
-                                        checked={props.showCursorCoords}
-                                        onChange={e => props.setShowCursorCoords(e.target.checked)}
-                                        className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]"
-                                    />
-                                    <label htmlFor="showCursorCoords" className="ml-3 text-sm font-medium text-[var(--text-secondary)]">
-                                        {t('settings.appearance.showCursorCoords')}
-                                        <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.appearance.showCursorCoordsDesc')}</p>
-                                    </label>
-                                </div>
-                                <div className="flex items-start pt-2">
-                                    <input
-                                        id="showRotationAngle"
-                                        type="checkbox"
-                                        checked={props.showRotationAngle}
-                                        onChange={e => props.setShowRotationAngle(e.target.checked)}
-                                        className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]"
-                                    />
-                                    <label htmlFor="showRotationAngle" className="ml-3 text-sm font-medium text-[var(--text-secondary)]">
-                                        {t('settings.appearance.showRotationAngle')}
-                                        <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.appearance.showRotationAngleDesc')}</p>
-                                    </label>
-                                </div>
-
-                                <h3 className="text-lg font-semibold text-[var(--text-secondary)] pt-4">{t('settings.appearance.homeScreen')}</h3>
-                                <InputWrapper>
-                                    <Label htmlFor="maxRecentProjects" title={t('settings.appearance.maxRecentProjectsDesc')}>{t('settings.appearance.maxRecentProjects')}</Label>
-                                    <NumberInput id="maxRecentProjects" value={props.maxRecentProjects} onChange={props.setMaxRecentProjects} min={0} max={50} step={1} />
-                                </InputWrapper>
-                                <div className="pl-32 -mt-3"><p className="text-xs text-[var(--text-tertiary)]">{t('settings.appearance.maxRecentProjectsDesc')}</p></div>
                             </div>
                         )}
+
+                        {activeTab === 'appearance' && (
+                            <div className="space-y-4">
+                                <h3 className="text-lg font-semibold text-[var(--text-secondary)]">{t('settings.appearance.interface')}</h3>
+                                
+                                <div className="space-y-3">
+                                    <div className="flex items-start">
+                                        <input id="showTkinterNames" type="checkbox" checked={props.showTkinterNames} onChange={e => props.setShowTkinterNames(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] bg-[var(--bg-secondary)] border-[var(--border-primary)] mt-0.5" />
+                                        <label htmlFor="showTkinterNames" className="ml-3 text-sm font-medium text-[var(--text-secondary)] cursor-pointer">
+                                            {t('settings.appearance.showTkinterNames')}
+                                            <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.appearance.showTkinterNamesDesc')}</p>
+                                        </label>
+                                    </div>
+                                    <div className="flex items-start pt-1">
+                                        <input id="showAxes" type="checkbox" checked={props.showAxes} onChange={e => props.setShowAxes(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] bg-[var(--bg-secondary)] border-[var(--border-primary)] mt-0.5" />
+                                        <label htmlFor="showAxes" className="ml-3 text-sm font-medium text-[var(--text-secondary)] cursor-pointer">
+                                            {t('settings.appearance.showAxes')}
+                                            <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.appearance.showAxesDesc')}</p>
+                                        </label>
+                                    </div>
+                                    <div className="flex items-start pt-1">
+                                        <input id="showCenterGuides" type="checkbox" checked={props.showCenterGuides} onChange={e => props.setShowCenterGuides(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] bg-[var(--bg-secondary)] border-[var(--border-primary)] mt-0.5" />
+                                        <label htmlFor="showCenterGuides" className="ml-3 text-sm font-medium text-[var(--text-secondary)] cursor-pointer">
+                                            {t('settings.appearance.showCenterGuides')}
+                                            <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.appearance.showCenterGuidesDesc')}</p>
+                                        </label>
+                                    </div>
+                                    <div className="flex items-start pt-1">
+                                        <input id="enableSnapping" type="checkbox" checked={props.enableSnapping} onChange={e => props.setEnableSnapping(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] bg-[var(--bg-secondary)] border-[var(--border-primary)] mt-0.5" />
+                                        <label htmlFor="enableSnapping" className="ml-3 text-sm font-medium text-[var(--text-secondary)] cursor-pointer">
+                                            {t('settings.appearance.enableSnapping')}
+                                            <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.appearance.enableSnappingDesc')}</p>
+                                        </label>
+                                    </div>
+                                    <div className="flex items-start pt-1">
+                                        <input id="showCursorCoords" type="checkbox" checked={props.showCursorCoords} onChange={e => props.setShowCursorCoords(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] bg-[var(--bg-secondary)] border-[var(--border-primary)] mt-0.5" />
+                                        <label htmlFor="showCursorCoords" className="ml-3 text-sm font-medium text-[var(--text-secondary)] cursor-pointer">
+                                            {t('settings.appearance.showCursorCoords')}
+                                            <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.appearance.showCursorCoordsDesc')}</p>
+                                        </label>
+                                    </div>
+                                    <div className="flex items-start pt-1">
+                                        <input id="showRotationAngle" type="checkbox" checked={props.showRotationAngle} onChange={e => props.setShowRotationAngle(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] bg-[var(--bg-secondary)] border-[var(--border-primary)] mt-0.5" />
+                                        <label htmlFor="showRotationAngle" className="ml-3 text-sm font-medium text-[var(--text-secondary)] cursor-pointer">
+                                            {t('settings.appearance.showRotationAngle')}
+                                            <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.appearance.showRotationAngleDesc')}</p>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <h3 className="text-lg font-semibold text-[var(--text-secondary)] pt-4 border-t border-[var(--border-secondary)]">{t('settings.appearance.homeScreen')}</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <NumberInput id="maxRecentProjects" label={t('settings.appearance.maxRecentProjects')} value={props.maxRecentProjects} onChange={props.setMaxRecentProjects} min={0} max={50} step={1} />
+                                </div>
+                                <p className="text-xs text-[var(--text-tertiary)] -mt-2">{t('settings.appearance.maxRecentProjectsDesc')}</p>
+
+                                <div className="pt-4 border-t border-[var(--border-secondary)]">
+                                    <div className="flex flex-col space-y-2 relative">
+                                        <label className="text-sm font-medium text-[var(--text-secondary)]">{t('settings.appearance.language')}</label>
+                                        <div className="relative inline-block w-48">
+                                            <button
+                                                type="button"
+                                                onClick={(e) => { e.stopPropagation(); setIsLanguageOpen(!isLanguageOpen); }}
+                                                className="w-full bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-[var(--text-primary)] rounded-md px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] flex items-center justify-between gap-2 cursor-pointer hover:bg-[var(--bg-hover)] transition-colors shadow-sm"
+                                            >
+                                                <span className="flex items-center gap-2">
+                                                    <FlagIcon lang={language} />
+                                                    {language === 'uk' ? 'Українська' : language === 'en' ? 'English' : language === 'de' ? 'Deutsch' : language === 'fr' ? 'Français' : language === 'it' ? 'Italiano' : 'Español'}
+                                                </span>
+                                                <span className="text-xs text-[var(--text-tertiary)]">▼</span>
+                                            </button>
+                                            {isLanguageOpen && (
+                                                <div className="absolute left-0 mt-1 w-full bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-md shadow-lg py-1 z-50">
+                                                    <button onClick={() => { setLanguage('uk'); setIsLanguageOpen(false); }} className="w-full text-left px-3 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] flex items-center gap-2">
+                                                        <FlagIcon lang="uk" /> Українська
+                                                    </button>
+                                                    <button onClick={() => { setLanguage('en'); setIsLanguageOpen(false); }} className="w-full text-left px-3 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] flex items-center gap-2">
+                                                        <FlagIcon lang="en" /> English
+                                                    </button>
+                                                    <button onClick={() => { setLanguage('de'); setIsLanguageOpen(false); }} className="w-full text-left px-3 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] flex items-center gap-2">
+                                                        <FlagIcon lang="de" /> Deutsch
+                                                    </button>
+                                                    <button onClick={() => { setLanguage('fr'); setIsLanguageOpen(false); }} className="w-full text-left px-3 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] flex items-center gap-2">
+                                                        <FlagIcon lang="fr" /> Français
+                                                    </button>
+                                                    <button onClick={() => { setLanguage('it'); setIsLanguageOpen(false); }} className="w-full text-left px-3 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] flex items-center gap-2">
+                                                        <FlagIcon lang="it" /> Italiano
+                                                    </button>
+                                                    <button onClick={() => { setLanguage('es'); setIsLanguageOpen(false); }} className="w-full text-left px-3 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] flex items-center gap-2">
+                                                        <FlagIcon lang="es" /> Español
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {activeTab === 'code' && (
                             <div className="space-y-4">
                                 <h3 className="text-lg font-semibold text-[var(--text-secondary)]">{t('settings.code.generatorMethod')}</h3>
@@ -397,14 +347,54 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
 
                                 <hr className="border-[var(--border-secondary)] my-4" />
                                 <h3 className="text-lg font-semibold text-[var(--text-secondary)]">{t('settings.code.settings')}</h3>
-                                <label htmlFor="outlineWithFill" className="flex items-start pt-2"><input id="outlineWithFill" type="checkbox" checked={props.outlineWithFill} onChange={e => props.setOutlineWithFill(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" /><div className="ml-3 text-sm font-medium text-[var(--text-secondary)]">{t('settings.code.outline')}<p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.code.outlineDesc')}</p></div></label>
-                                <label htmlFor="autoGenerateComments" className="flex items-start pt-2"><input id="autoGenerateComments" type="checkbox" checked={props.autoGenerateComments} onChange={e => props.setAutoGenerateComments(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" /><div className="ml-3 text-sm font-medium text-[var(--text-secondary)]">{t('settings.code.comments')}<p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.code.commentsDesc')}</p></div></label>
-                                <label htmlFor="generateTkinterTags" className="flex items-start pt-2"><input id="generateTkinterTags" type="checkbox" checked={props.generateTkinterTags} onChange={e => props.setGenerateTkinterTags(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" /><div className="ml-3 text-sm font-medium text-[var(--text-secondary)]">{t('settings.code.generateTags')}<p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.code.generateTagsDesc')}</p></div></label>
-                                <label htmlFor="showSystemTags" className="flex items-start pt-2"><input id="showSystemTags" type="checkbox" checked={props.showSystemTags} onChange={e => props.setShowSystemTags(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" /><div className="ml-3 text-sm font-medium text-[var(--text-secondary)]">Відображати системні теги<p className="text-xs text-[var(--text-tertiary)] mt-1">Додавати автоматичні ідентифікатори фігур і груп у теги.</p></div></label>
-                                <label htmlFor="showLineNumbers" className="flex items-start pt-2"><input id="showLineNumbers" type="checkbox" checked={props.showLineNumbers} onChange={e => props.setShowLineNumbers(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" /><div className="ml-3 text-sm font-medium text-[var(--text-secondary)]">{t('settings.code.lineNumbers')}<p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.code.lineNumbersDesc')}</p></div></label>
-                                <label htmlFor="highlightCodeOnSelection" className="flex items-start pt-2 has-[:disabled]:opacity-50 has-[:disabled]:cursor-not-allowed"><input id="highlightCodeOnSelection" type="checkbox" checked={props.highlightCodeOnSelection} onChange={e => props.setHighlightCodeOnSelection(e.target.checked)} disabled={props.generatorType === 'gemini'} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" /><div className="ml-3 text-sm font-medium text-[var(--text-secondary)]">{t('settings.code.highlight')}<p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.code.highlightDesc')}</p></div></label>
+                                
+                                <div className="space-y-3">
+                                    <div className="flex items-start">
+                                        <input id="outlineWithFill" type="checkbox" checked={props.outlineWithFill} onChange={e => props.setOutlineWithFill(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)] mt-0.5" />
+                                        <label htmlFor="outlineWithFill" className="ml-3 text-sm font-medium text-[var(--text-secondary)] cursor-pointer">
+                                            {t('settings.code.outline')}
+                                            <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.code.outlineDesc')}</p>
+                                        </label>
+                                    </div>
+                                    <div className="flex items-start pt-1">
+                                        <input id="autoGenerateComments" type="checkbox" checked={props.autoGenerateComments} onChange={e => props.setAutoGenerateComments(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)] mt-0.5" />
+                                        <label htmlFor="autoGenerateComments" className="ml-3 text-sm font-medium text-[var(--text-secondary)] cursor-pointer">
+                                            {t('settings.code.comments')}
+                                            <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.code.commentsDesc')}</p>
+                                        </label>
+                                    </div>
+                                    <div className="flex items-start pt-1">
+                                        <input id="generateTkinterTags" type="checkbox" checked={props.generateTkinterTags} onChange={e => props.setGenerateTkinterTags(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)] mt-0.5" />
+                                        <label htmlFor="generateTkinterTags" className="ml-3 text-sm font-medium text-[var(--text-secondary)] cursor-pointer">
+                                            {t('settings.code.generateTags')}
+                                            <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.code.generateTagsDesc')}</p>
+                                        </label>
+                                    </div>
+                                    <div className="flex items-start pt-1">
+                                        <input id="showSystemTags" type="checkbox" checked={props.showSystemTags} onChange={e => props.setShowSystemTags(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)] mt-0.5" />
+                                        <label htmlFor="showSystemTags" className="ml-3 text-sm font-medium text-[var(--text-secondary)] cursor-pointer">
+                                            Відображати системні теги
+                                            <p className="text-xs text-[var(--text-tertiary)] mt-1">Додавати автоматичні ідентифікатори фігур і груп у теги.</p>
+                                        </label>
+                                    </div>
+                                    <div className="flex items-start pt-1">
+                                        <input id="showLineNumbers" type="checkbox" checked={props.showLineNumbers} onChange={e => props.setShowLineNumbers(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)] mt-0.5" />
+                                        <label htmlFor="showLineNumbers" className="ml-3 text-sm font-medium text-[var(--text-secondary)] cursor-pointer">
+                                            {t('settings.code.lineNumbers')}
+                                            <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.code.lineNumbersDesc')}</p>
+                                        </label>
+                                    </div>
+                                    <div className="flex items-start pt-1 has-[:disabled]:opacity-50 has-[:disabled]:cursor-not-allowed">
+                                        <input id="highlightCodeOnSelection" type="checkbox" checked={props.highlightCodeOnSelection} onChange={e => props.setHighlightCodeOnSelection(e.target.checked)} disabled={props.generatorType === 'gemini'} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)] mt-0.5" />
+                                        <label htmlFor="highlightCodeOnSelection" className="ml-3 text-sm font-medium text-[var(--text-secondary)] cursor-pointer">
+                                            {t('settings.code.highlight')}
+                                            <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.code.highlightDesc')}</p>
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
                         )}
+
                         {activeTab === 'templates' && (
                             <div className="space-y-4">
                                 <h3 className="text-lg font-semibold text-[var(--text-secondary)]">{t('settings.templates.title')}</h3>
@@ -453,7 +443,7 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                 </div>
 
                 <footer className="p-4 bg-[var(--bg-app)]/50 rounded-b-lg flex justify-end flex-shrink-0 border-t border-[var(--border-primary)]">
-                     <button
+                    <button
                         onClick={props.onClose}
                         className="px-6 py-2 rounded-lg font-semibold bg-[var(--accent-primary)] text-[var(--accent-text)] hover:bg-[var(--accent-primary-hover)] transition-colors"
                     >
@@ -463,6 +453,6 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
             </div>
         </div>
     );
-}
+};
 
 export default SettingsModal;

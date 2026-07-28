@@ -280,9 +280,16 @@ export interface DistributeEntity {
 }
 
 export interface DistributePathState {
-    type: 'circle' | 'line';
+    type: 'circle' | 'line' | 'shape';
     circleParams: { cx: number, cy: number, radius: number };
     lineParams: { x1: number, y1: number, x2: number, y2: number };
+    shapePathParams?: {
+        shapeId?: string;
+        pathShape?: Shape;
+        keepShape: boolean;
+        contourShift?: number;
+        isExisting?: boolean;
+    };
     angleOffset: number;
     orientAlongPath: boolean;
     orientationType: 'radial' | 'tangent' | 'parallel' | 'perpendicular' | 'custom';

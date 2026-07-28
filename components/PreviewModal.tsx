@@ -24,14 +24,14 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
     
     const getTransform = (shape: Shape) => {
         let transformStr = "";
-        const isSpecialFlip = ['image', 'bitmap', 'text', 'arc'].includes(shape.type);
+        const isSpecialFlip = ['image', 'bitmap', 'arc'].includes(shape.type);
     const isFlippedH = isSpecialFlip && 'isFlippedHorizontally' in shape && (shape as any).isFlippedHorizontally;
         const isFlippedV = isSpecialFlip && 'isFlippedVertically' in shape && (shape as any).isFlippedVertically;
         const hasRotation = 'rotation' in shape && shape.rotation && shape.rotation !== 0;
 
         if (!isFlippedH && !isFlippedV && !hasRotation) return undefined;
 
-        const center = shape.type === 'text' ? {x: shape.x, y: shape.y} : getShapeCenter(shape);
+        const center = getShapeCenter(shape);
         if (!center) return undefined;
 
         if (center.x !== 0 || center.y !== 0) {
