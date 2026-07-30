@@ -2659,12 +2659,14 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             {itemsToRender.filter(Boolean).map(shape => {
                 const isSelected = selectedShapeIds.includes(shape.id) || (!!shape.groupId && selectedShapeIds.includes(shape.groupId));
                 const isHidden = shape.state === 'hidden';
+                const isLayerHidden = (shape as any).layerHidden;
                 
-                // User requirement: In hidden mode, display shapes (semi-transparently) ONLY if they are selected.
+                // If individually hidden and not selected, do not render at all.
                 if (isHidden && !isSelected) return null;
 
-                const isHiddenAndSelected = isHidden && isSelected;
+                const isHiddenAndSelected = (isHidden || isLayerHidden) && isSelected;
                 const isBeingEdited = inlineEditingShapeId === shape.id;
+                
                 if (isBeingEdited) return null;
                 const isDisabled = shape.state === 'disabled';
                 const isDrawing = activeTool !== 'select';
@@ -2968,6 +2970,17 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     default: return null;
                 }
                 })();
+
+                if (isLayerHidden && !isSelected) {
+                    return (
+                        <defs key={`defs-${shape.id}`}>
+                            <g id={`shape-render-${shape.id}`}>
+                                {renderedShape}
+                            </g>
+                        </defs>
+                    );
+                }
+
                 return <g key={`g-${shape.id}`} id={`shape-render-${shape.id}`}>{renderedShape}</g>;
             })}
              {action?.type === 'selecting' && (

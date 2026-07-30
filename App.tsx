@@ -1695,27 +1695,39 @@ export default function App(): React.ReactNode {
         const shapeMap = new Map(currentShapes.map((s: any) => [s.id, s]));
         const orderedShapes: Shape[] = [];
         
+        const processShape = (shapeId: string, parentHidden: boolean, targetArray: Shape[]) => {
+            let shape = shapeMap.get(shapeId);
+            if (shape) {
+                let newShape = shape;
+                if (parentHidden) {
+                    newShape = { ...shape, layerHidden: true } as any;
+                }
+                targetArray.push(newShape);
+                shapeMap.delete(shapeId);
+                
+                if (newShape.type === 'group' && (newShape as any).shapeIds) {
+                    for (const childId of (newShape as any).shapeIds) {
+                        processShape(childId, parentHidden || newShape.state === 'hidden', targetArray);
+                    }
+                }
+            }
+        };
+
         // Render from bottom layer to top layer
         for (let i = layers.length - 1; i >= 0; i--) {
             const layer = layers[i];
             for (const shapeId of layer.shapeIds || []) {
-                let shape = shapeMap.get(shapeId);
-                if (shape) {
-                    if (!layer.visible) {
-                        shape = { ...shape, state: 'hidden' };
-                    }
-                    orderedShapes.push(shape);
-                    shapeMap.delete(shapeId);
-                }
+                processShape(shapeId, !layer.visible, orderedShapes);
             }
         }
         
         // Unassigned shapes fall back to rendering at the bottom
-        for (const shape of shapeMap.values()) {
-            orderedShapes.unshift(shape);
+        const unassignedShapes: Shape[] = [];
+        for (const shapeId of shapeMap.keys()) {
+            processShape(shapeId, false, unassignedShapes);
         }
         
-        currentShapes = orderedShapes;
+        currentShapes = [...unassignedShapes, ...orderedShapes];
     }
 
     if (distributePathState) {
@@ -2798,7 +2810,7 @@ export default function App(): React.ReactNode {
         setGeneratedCodeLines(codeLines);
       }
         
-      setShapesAtGenerationTime(JSON.parse(JSON.stringify(shapes)));
+      setShapesAtGenerationTime(JSON.parse(JSON.stringify(displayedShapes)));
       showNotification(t('app.1110'), 'info');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : t('app.1111');
@@ -2821,7 +2833,7 @@ export default function App(): React.ReactNode {
             }
             const { codeLines } = await generateTkinterCodeLocally(shapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill, generateTkinterTags, showSystemTags, t);
             setGeneratedCodeLines(codeLines);
-            setShapesAtGenerationTime(JSON.parse(shapesString));
+            setShapesAtGenerationTime(JSON.parse(displayedShapesString));
         };
         generate();
     }
@@ -2938,12 +2950,12 @@ export default function App(): React.ReactNode {
         shapes: shapesToSave,
         layers: layers,
         activeLayerId: activeLayerId,
-        thumbnail: generateProjectThumbnail(shapesToSave, canvasWidth, canvasHeight, canvasBgColor),
+        thumbnail: generateProjectThumbnail(displayedShapes, canvasWidth, canvasHeight, canvasBgColor),
         canvasSettings: { width: canvasWidth, height: canvasHeight, bgColor: canvasBgColor, varName: canvasVarName },
         viewTransform,
         uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags, showSystemTags }
     };
-  }, [shapes, layers, activeLayerId, canvasWidth, canvasHeight, canvasBgColor, canvasVarName, viewTransform, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags, generateProjectThumbnail]);
+  }, [shapes, displayedShapes, layers, activeLayerId, canvasWidth, canvasHeight, canvasBgColor, canvasVarName, viewTransform, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags, generateProjectThumbnail]);
 
     const handleSaveProject = useCallback(async () => {
         if (!hasUnsavedChanges && fileHandle) {
@@ -3202,7 +3214,7 @@ export default function App(): React.ReactNode {
     setIsExportModalOpen(false);
     showNotification(t('app.1024'), 'info', 1500);
     try {
-        const shapesToExport = shapes;
+        const shapesToExport = displayedShapes;
         const svgString = generateSvg(shapesToExport, canvasWidth, canvasHeight, canvasBgColor);
         const suggestedName = `${projectName}.${settings.format}`;
 
@@ -3244,7 +3256,7 @@ export default function App(): React.ReactNode {
         console.error(t('app.1029'), err);
         showNotification(t('app.1030'), 'error');
     }
-  }, [shapes, canvasWidth, canvasHeight, canvasBgColor, projectName, showNotification]);
+  }, [displayedShapes, canvasWidth, canvasHeight, canvasBgColor, projectName, showNotification]);
 
   const handleOpenRecent = useCallback(async (project: RecentProject) => {
     try {

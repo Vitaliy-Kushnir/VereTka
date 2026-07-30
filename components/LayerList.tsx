@@ -21,7 +21,7 @@ interface LayerListProps {
     canvasBgColor?: string;
 }
 
-function LayerThumbnail({ shapes, canvasWidth, canvasHeight, layerShapes, canvasBgColor }: { shapes: Shape[], canvasWidth: number, canvasHeight: number, layerShapes: string[], canvasBgColor?: string }) {
+function LayerThumbnail({ shapes, canvasWidth, canvasHeight, layerShapes, canvasBgColor, isVisible }: { shapes: Shape[], canvasWidth: number, canvasHeight: number, layerShapes: string[], canvasBgColor?: string, isVisible: boolean }) {
     const allIdsSet = new Set<string>();
     const collect = (id: string) => {
         if (!id) return;
@@ -32,7 +32,6 @@ function LayerThumbnail({ shapes, canvasWidth, canvasHeight, layerShapes, canvas
         }
     };
     layerShapes.forEach(collect);
-
     const uniqueIds = Array.from(allIdsSet);
 
     return (
@@ -44,8 +43,8 @@ function LayerThumbnail({ shapes, canvasWidth, canvasHeight, layerShapes, canvas
             <svg 
                 viewBox={`0 0 ${canvasWidth} ${canvasHeight}`} 
                 preserveAspectRatio="xMidYMid meet" 
-                className="w-full h-full opacity-80"
-                style={{ pointerEvents: 'none' }}
+                className="w-full h-full"
+                style={{ pointerEvents: 'none', opacity: isVisible ? 1 : 0.5 }}
             >
                 {/* Use shapes rendered by the Canvas. Make sure the Canvas component has corresponding ids. */}
                 {uniqueIds.map(id => (
@@ -121,7 +120,7 @@ export default function LayerList({ layers, activeLayerId, onAddLayer, onDeleteL
                                 {layer.locked ? <LockIcon size={16} /> : <UnlockIcon size={16} />}
                             </button>
                             
-                            <LayerThumbnail shapes={shapes} canvasWidth={canvasWidth} canvasHeight={canvasHeight} layerShapes={layer.shapeIds} canvasBgColor={canvasBgColor} />
+                            <LayerThumbnail shapes={shapes} canvasWidth={canvasWidth} canvasHeight={canvasHeight} layerShapes={layer.shapeIds} canvasBgColor={canvasBgColor} isVisible={layer.visible} />
                             
                             {editingLayerId === layer.id ? (
                                 <input 
