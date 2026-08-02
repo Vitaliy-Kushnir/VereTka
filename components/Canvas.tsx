@@ -4,7 +4,7 @@ import { useLanguage } from './LanguageContext';
 import { useState, useRef, useMemo, useCallback, useEffect } from 'react';
 import { type Shape, type Tool, type CanvasAction, type RotatableShape, type RectangleShape, type EllipseShape, type PathShape, type LineShape, PolylineShape, PolygonShape, DrawMode, IsoscelesTriangleShape, RhombusShape, ParallelogramShape, TrapezoidShape, BezierCurveShape, ViewTransform, JoinStyle, ArcShape, RightTriangleShape, TransformHandle, TextShape, ImageShape, BitmapShape } from '../types';
 import { SelectionControls } from './SelectionControls';
-import { getShapeCenter, rotatePoint, getBoundingBox, getIsoscelesTrianglePoints, getPolylinePointsAsPath, getPolygonPointsAsArray, getRhombusPoints, getTrapezoidPoints, getParallelogramPoints, getSmoothedPathData, getFinalPoints, getArcPathData, getRightTrianglePoints, getTextBoundingBox, processTextLines, getVisualBoundingBox, isShapeClosed, getClosestPointOnShapeContour, evaluateShapeContourPointAndTangent } from '../lib/geometry';
+import { getShapeCenter, rotatePoint, getBoundingBox, getIsoscelesTrianglePoints, getPolylinePointsAsPath, getPolygonPointsAsArray, getRhombusPoints, getTrapezoidPoints, getParallelogramPoints, getSmoothedPathData, getFinalPoints, getArcPathData, getRightTrianglePoints, getTextBoundingBox, processTextLines, getVisualBoundingBox, isShapeClosed, getClosestPointOnShapeContour, evaluateShapeContourPointAndTangent, isShapeIntersectingRect } from '../lib/geometry';
 import { CheckSquareIcon, ClosePathIcon, XSquareIcon } from './icons';
 import { TOOL_TYPE_TO_NAME, ROTATE_CURSOR_STYLE, ADJUST_CURSOR_STYLE, getDefaultNameForShape, getVisualFontFamily, isDefaultName, DUPLICATE_CURSOR_STYLE } from '../lib/constants';
 
@@ -819,6 +819,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     ...newPathState.shapePathParams,
                     contourShift: Math.round(res.fraction * 100)
                 };
+            } else if (action.handle === 'inner-radius' && initialShape.type === 'star') {
+                const localPos = rotatePoint(pos, center, -angleOffset);
+                const distance = Math.hypot(localPos.x - initialShape.cx, localPos.y - initialShape.cy);
+                const newInnerRadius = Math.max(0, Math.min(distance, initialShape.radius));
+                updatedShape = { ...initialShape, innerRadius: newInnerRadius };
             }
 
             newPathState.shapePathParams = {
@@ -1861,35 +1866,39 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             const maxX = Math.max(action.startPos.x, action.currentPos.x);
             const maxY = Math.max(action.startPos.y, action.currentPos.y);
             
-            let selectedIds: string[] = [];
+            const rect = { minX, minY, maxX, maxY };
+            const selectedSet = new Set<string>();
+
+            const getRootId = (id: string): string => {
+                const shape = shapes.find(s => s.id === id);
+                if (shape && shape.groupId) {
+                    return getRootId(shape.groupId);
+                }
+                const groupParent = shapes.find(g => g.type === 'group' && g.shapeIds?.includes(id));
+                if (groupParent) {
+                    return getRootId(groupParent.id);
+                }
+                return id;
+            };
+
             shapes.forEach(shape => {
                 if (shape.state === 'disabled' || shape.state === 'hidden' || lockedShapeIds.has(shape.id)) return;
-                let intersect = false;
-                const bbox = getVisualBoundingBox(shape, undefined, shapes);
-                if (bbox) {
-                    if (bbox.x < maxX && bbox.x + bbox.width > minX && bbox.y < maxY && bbox.y + bbox.height > minY) {
-                        intersect = true;
+                if (shape.type === 'group') return;
+
+                if (isShapeIntersectingRect(shape, rect, shapes)) {
+                    const rootId = getRootId(shape.id);
+                    const rootShape = shapes.find(s => s.id === rootId);
+                    if (rootShape && rootShape.state !== 'disabled' && rootShape.state !== 'hidden' && !lockedShapeIds.has(rootId)) {
+                        selectedSet.add(rootId);
                     }
-                }
-                if (intersect) {
-                    selectedIds.push(shape.id);
                 }
             });
-            
-            if (!e.shiftKey) {
-                const groupIds = new Set<string>();
-                const idsToRemove = new Set<string>();
-                selectedIds.forEach(id => {
-                    const shape = shapes.find(s => s.id === id);
-                    if (shape && shape.groupId) {
-                        groupIds.add(shape.groupId);
-                        idsToRemove.add(id);
-                    }
-                });
-                selectedIds = selectedIds.filter(id => !idsToRemove.has(id));
-                selectedIds = [...selectedIds, ...Array.from(groupIds)];
+
+            let selectedIds = Array.from(selectedSet);
+            if (e.shiftKey) {
+                selectedIds = Array.from(new Set([...selectedShapeIds, ...selectedIds]));
             }
-            
+
             onSelectShape(selectedIds.length > 0 ? selectedIds : null);
         } else {
             onSelectShape(null);
@@ -3332,6 +3341,40 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                                     e.stopPropagation();
                                                     const pt = getTransformedPointerPosition(getPointerPosition(e.touches[0]));
                                                     setAction({ type: 'edit-distribute-path', handle: 'contour-shift', startPoint: pt, initialDistributePath: props.distributePathState! });
+                                                }}
+                                            />
+                                        </g>
+                                    );
+                                })()}
+
+                                {/* Inner Radius Marker Handle for Star */}
+                                {pShape.type === 'star' && (() => {
+                                    const sides = (pShape as any).sides || 5;
+                                    const innerRadius = (pShape as any).innerRadius ?? (pShape.radius / 2);
+                                    const angle = -Math.PI / 2 + Math.PI / sides;
+                                    const hx = pShape.cx + Math.cos(angle) * innerRadius;
+                                    const hy = pShape.cy + Math.sin(angle) * innerRadius;
+                                    const rotatedPoint = rotatePoint({x: hx, y: hy}, {x: pShape.cx, y: pShape.cy}, pShape.rotation || 0);
+                                    
+                                    return (
+                                        <g key="inner-radius-handle" title={t('tool.distribute.path.innerRadius') || 'Внутрішній радіус'}>
+                                            <circle
+                                                cx={rotatedPoint.x}
+                                                cy={rotatedPoint.y}
+                                                r={6 / viewTransform.scale}
+                                                fill="var(--special-handle-fill)"
+                                                stroke="var(--special-handle-stroke)"
+                                                strokeWidth={2 / viewTransform.scale}
+                                                style={{ cursor: ADJUST_CURSOR_STYLE, pointerEvents: 'all' }}
+                                                onMouseDown={(e) => {
+                                                    e.stopPropagation();
+                                                    const pt = getTransformedPointerPosition(getPointerPosition(e));
+                                                    setAction({ type: 'edit-distribute-path', handle: 'inner-radius', startPoint: pt, initialDistributePath: props.distributePathState! });
+                                                }}
+                                                onTouchStart={(e) => {
+                                                    e.stopPropagation();
+                                                    const pt = getTransformedPointerPosition(getPointerPosition(e.touches[0]));
+                                                    setAction({ type: 'edit-distribute-path', handle: 'inner-radius', startPoint: pt, initialDistributePath: props.distributePathState! });
                                                 }}
                                             />
                                         </g>

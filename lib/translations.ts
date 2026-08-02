@@ -51,6 +51,19 @@ export const translations = {
     'menu.file.importImage': 'Імпортувати зображення...',
 
     'menu.file.export': 'Експортувати як...',
+    'menu.file.shareLink': 'Поділитися посиланням...',
+
+    'share.title': 'Посилання на проєкт (GitHub Pages)',
+    'share.desc': 'Скопіюйте це посилання, щоб передати проєкт. При переході редактор Веретка на GitHub Pages (https://Vitaliy-Kushnir.github.io/VereTka/) відкриється із цим проєктом.',
+    'share.urlLabel': 'Посилання проєкту на GitHub Pages',
+    'share.copy': 'Скопіювати посилання',
+    'share.copied': 'Скопійовано!',
+    'share.size': 'Розмір посилання',
+    'share.chars': 'симв.',
+    'share.testOpen': 'Перевірити у новій вкладці',
+    'share.tooLongWarning': 'Увага: Посилання досить велике через растрові зображення в проєкті. Переконайтеся, що месенджер не обріже його.',
+    'share.loaded': 'Проєкт успішно завантажено за посиланням!',
+    'share.error': 'Не вдалося розпакувати або завантажити проєкт за посиланням.',
 
     'menu.file.generate': 'Згенерувати код...',
 
@@ -624,18 +637,19 @@ export const translations = {
 
     
     'cheat.reset': 'Усі активні чит-коди скинуто.',
-
     'cheat.activated': 'Чит-код "{code}" активовано!',
-
     'cheat.invalid': 'Невірний чит-код: "{code}"',
-
     'cheat.formatError': 'Неправильний формат коду. Очікується "#000".',
-
     'cheat.title': 'Введення чит-коду',
-
     'cheat.desc': 'Введіть код у форматі #000',
-
     'cheat.activate': 'Активувати',
+    'cheat.showList': 'Переглянути список усіх чит-кодів',
+    'cheat.hideList': 'Приховати список чит-кодів',
+    'cheat.code.000': 'Скидання всіх активних чит-кодів',
+    'cheat.code.001': 'Увімкнути інструмент «Зображення»',
+    'cheat.code.002': 'Увімкнути «Зображення» та AI-генератор',
+    'cheat.code.003': 'Увімкнути меню «Поділитися посиланням...»',
+    'cheat.active': 'Активний',
 
 
     'preview.title': 'Попередній перегляд',
@@ -809,6 +823,7 @@ export const translations = {
     'prop.width': 'Товщина',
 
     'prop.sides': 'Сторони',
+    'prop.innerRadius': 'Внутрішній радіус',
 
     'prop.color': 'Колір',
 
@@ -944,7 +959,11 @@ export const translations = {
 
     'settings.code.comments': 'Автоматичні коментарі',
 
-    'settings.code.commentsDesc': 'Додає опис для кожної фігури у коді.',
+    'settings.code.commentsDesc': 'Генерувати описи та пояснення у коді для кожного об’єкта.',
+
+    'settings.code.showComments': 'Відображати коментарі',
+
+    'settings.code.showCommentsDesc': 'Показувати або приховувати коментарі (автоматичні та ручні) у вікні коду.',
 
     'settings.code.lineNumbers': 'Номери рядків',
 
@@ -1549,6 +1568,19 @@ export const translations = {
     'menu.file.importImage': 'Import Image...',
 
     'menu.file.export': 'Export As...',
+    'menu.file.shareLink': 'Share via Link...',
+
+    'share.title': 'Project Share Link (GitHub Pages)',
+    'share.desc': 'Copy this link to share your project. Opening it will load your project directly in the VereTka editor hosted on GitHub Pages (https://Vitaliy-Kushnir.github.io/VereTka/).',
+    'share.urlLabel': 'GitHub Pages Project Link',
+    'share.copy': 'Copy Link',
+    'share.copied': 'Copied!',
+    'share.size': 'Link Size',
+    'share.chars': 'chars',
+    'share.testOpen': 'Test in New Tab',
+    'share.tooLongWarning': 'Warning: The link is large due to embedded raster images. Ensure your messaging app does not truncate long links.',
+    'share.loaded': 'Project successfully loaded from link!',
+    'share.error': 'Failed to decompress or load project from link.',
 
     'menu.file.generate': 'Generate Code...',
 
@@ -2124,18 +2156,19 @@ export const translations = {
 
     
     'cheat.reset': 'All active cheat codes have been reset.',
-
     'cheat.activated': 'Cheat code "{code}" activated!',
-
     'cheat.invalid': 'Invalid cheat code: "{code}"',
-
     'cheat.formatError': 'Invalid format. Expected "#000".',
-
     'cheat.title': 'Enter cheat code',
-
     'cheat.desc': 'Enter code in format #000',
-
     'cheat.activate': 'Activate',
+    'cheat.showList': 'View all cheat codes list',
+    'cheat.hideList': 'Hide cheat codes list',
+    'cheat.code.000': 'Reset all active cheat codes',
+    'cheat.code.001': 'Enable "Image" tool',
+    'cheat.code.002': 'Enable "Image" tool & AI generator',
+    'cheat.code.003': 'Enable "Share via link..." menu item',
+    'cheat.active': 'Active',
 
 
     'preview.title': 'Preview',
@@ -2310,6 +2343,7 @@ export const translations = {
     'prop.width': 'Width',
 
     'prop.sides': 'Sides',
+    'prop.innerRadius': 'Inner Radius',
 
     'prop.color': 'Color',
 
@@ -2448,6 +2482,10 @@ export const translations = {
     'settings.code.comments': 'Auto Comments',
 
     'settings.code.commentsDesc': 'Adds description for each shape in the code.',
+
+    'settings.code.showComments': 'Show Comments',
+
+    'settings.code.showCommentsDesc': 'Show or hide comments (automatic and manual) in the code window.',
 
     'settings.code.lineNumbers': 'Line Numbers',
 
@@ -3053,6 +3091,19 @@ export const translations = {
     'menu.file.importImage': 'Importa immagine...',
 
     'menu.file.export': 'Esporta come...',
+    'menu.file.shareLink': 'Condividi tramite link...',
+
+    'share.title': 'Link di condivisione del progetto',
+    'share.desc': 'Copia questo link per condividere il tuo progetto. Si aprirà direttamente nell\'editor VereTka.',
+    'share.urlLabel': 'Link del progetto (dati compressi)',
+    'share.copy': 'Copia link',
+    'share.copied': 'Copiato!',
+    'share.size': 'Dimensione link',
+    'share.chars': 'caratteri',
+    'share.testOpen': 'Apri in nuova scheda',
+    'share.tooLongWarning': 'Attenzione: Il link è grande a causa delle immagini raster incorporate.',
+    'share.loaded': 'Progetto caricato con successo dal link!',
+    'share.error': 'Impossibile decomprimere o caricare il progetto dal link.',
 
     'menu.file.generate': 'Genera codice...',
 
@@ -3742,6 +3793,7 @@ export const translations = {
     'prop.width': 'Larghezza',
 
     'prop.sides': 'Lati',
+    'prop.innerRadius': 'Raggio Interno',
 
     'prop.color': 'Colore',
 
@@ -4556,6 +4608,19 @@ export const translations = {
     'menu.file.importImage': 'Importar Imagen...',
 
     'menu.file.export': 'Exportar Como...',
+    'menu.file.shareLink': 'Compartir mediante enlace...',
+
+    'share.title': 'Enlace para compartir proyecto',
+    'share.desc': 'Copia este enlace para compartir tu proyecto con otros. Se abrirá directamente en el editor VereTka.',
+    'share.urlLabel': 'Enlace del proyecto (datos comprimidos)',
+    'share.copy': 'Copiar enlace',
+    'share.copied': '¡Copiado!',
+    'share.size': 'Tamaño del enlace',
+    'share.chars': 'caracteres',
+    'share.testOpen': 'Probar en nueva pestaña',
+    'share.tooLongWarning': 'Advertencia: El enlace es largo debido a imágenes incrustadas.',
+    'share.loaded': '¡Proyecto cargado con éxito desde el enlace!',
+    'share.error': 'Error al descomprimir o cargar el proyecto desde el enlace.',
 
     'menu.file.generate': 'Generar Código...',
 
@@ -5245,6 +5310,7 @@ export const translations = {
     'prop.width': 'Grosor',
 
     'prop.sides': 'Lados/Puntas',
+    'prop.innerRadius': 'Radio Interno',
 
     'prop.color': 'Color',
 
@@ -6041,6 +6107,7 @@ export const translations = {
     'menu.file.new': "Neues Projekt...",
     'menu.file.saveTemplate': "Als Vorlage speichern...",
     'menu.file.export': "Exportieren als...",
+    'menu.file.shareLink': "Freigabelink erstellen...",
     'menu.file.importImage': "Bild importieren...",
     'menu.file.load': "Projekt laden...",
     'list.layerHidden': "Versteckt",
@@ -6406,6 +6473,7 @@ export const translations = {
     'tool.parallelogram': "Parallelogramm",
     'tool.pencil': "Bleistift",
     'prop.sides': "Seiten",
+    'prop.innerRadius': 'Innenradius',
     'prop.fill': "Füllen",
     'tool.text': "Text",
     'prop.stroke': "Gliederung",
@@ -6780,6 +6848,7 @@ export const translations = {
     'menu.file.saveTemplate': "Enregistrer comme modèle...",
     'menu.file.saveAs': "Enregistrer sous...",
     'menu.file.export': "Exporter sous...",
+    'menu.file.shareLink': "Partager via un lien...",
     'menu.file.load': "Charger le projet...",
     'menu.file.importImage': "Importer une image...",
     'list.layerHidden': "Caché",
@@ -7152,6 +7221,7 @@ export const translations = {
     'prop.color': "Couleur",
     'tool.bitmap': "Bitmap",
     'prop.sides': "Côtés",
+    'prop.innerRadius': 'Rayon Interne',
     'action.generating': "Générateur...",
     'prop.font': "Fonte",
     'style.bold': "Audacieux",

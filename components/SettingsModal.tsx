@@ -42,9 +42,11 @@ interface SettingsModalProps {
   highlightCodeOnSelection: boolean;
   setHighlightCodeOnSelection: (show: boolean) => void;
   autoGenerateComments: boolean;
+  showComments: boolean;
   generateTkinterTags: boolean;
   showSystemTags: boolean;
   setAutoGenerateComments: (show: boolean) => void;
+  setShowComments: (show: boolean) => void;
   setGenerateTkinterTags: (show: boolean) => void;
   setShowSystemTags: (show: boolean) => void;
   outlineWithFill: boolean;
@@ -361,6 +363,13 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                         <label htmlFor="autoGenerateComments" className="ml-3 text-sm font-medium text-[var(--text-secondary)] cursor-pointer">
                                             {t('settings.code.comments')}
                                             <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.code.commentsDesc')}</p>
+                                        </label>
+                                    </div>
+                                    <div className="flex items-start pt-1">
+                                        <input id="showComments" type="checkbox" checked={props.showComments} onChange={e => props.setShowComments(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)] mt-0.5" />
+                                        <label htmlFor="showComments" className="ml-3 text-sm font-medium text-[var(--text-secondary)] cursor-pointer">
+                                            {t('settings.code.showComments')}
+                                            <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.code.showCommentsDesc')}</p>
                                         </label>
                                     </div>
                                     <div className="flex items-start pt-1">

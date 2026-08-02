@@ -1377,6 +1377,48 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                           </Label>
                       </div>
 
+                      {distributePathState.shapePathParams?.pathShape && (distributePathState.shapePathParams.pathShape.type === 'polygon' || distributePathState.shapePathParams.pathShape.type === 'star') && (
+                          <InputWrapper>
+                              <Label htmlFor='dist-path-sides' title={t('prop.title.sides')}>{t('prop.sides')}</Label>
+                              <NumberInput 
+                                  id='dist-path-sides' 
+                                  value={(distributePathState.shapePathParams.pathShape as PolygonShape).sides} 
+                                  min={3}
+                                  onChange={v => onDistributePathChange({
+                                      ...distributePathState,
+                                      shapePathParams: {
+                                          ...distributePathState.shapePathParams,
+                                          pathShape: {
+                                              ...distributePathState.shapePathParams!.pathShape!,
+                                              sides: v
+                                          }
+                                      }
+                                  })} 
+                              />
+                          </InputWrapper>
+                      )}
+
+                      {distributePathState.shapePathParams?.pathShape && distributePathState.shapePathParams.pathShape.type === 'star' && (
+                          <InputWrapper>
+                              <Label htmlFor='dist-path-inner-radius' title={t('prop.title.innerRadius') || 'Внутрішній радіус'}>{t('prop.innerRadius') || 'Внутрішній радіус'}</Label>
+                              <NumberInput 
+                                  id='dist-path-inner-radius' 
+                                  value={Math.round((distributePathState.shapePathParams.pathShape as PolygonShape).innerRadius ?? ((distributePathState.shapePathParams.pathShape as PolygonShape).radius / 2))} 
+                                  min={0}
+                                  onChange={v => onDistributePathChange({
+                                      ...distributePathState,
+                                      shapePathParams: {
+                                          ...distributePathState.shapePathParams,
+                                          pathShape: {
+                                              ...distributePathState.shapePathParams!.pathShape!,
+                                              innerRadius: v
+                                          }
+                                      }
+                                  })} 
+                              />
+                          </InputWrapper>
+                      )}
+
                       {distributePathState.shapePathParams?.pathShape && isShapeClosed(distributePathState.shapePathParams.pathShape) && (
                           <InputWrapper>
                               <Label htmlFor='dist-contour-shift'>{t('tool.distribute.path.contourShift') || 'Зсув вздовж шляху (%)'}</Label>

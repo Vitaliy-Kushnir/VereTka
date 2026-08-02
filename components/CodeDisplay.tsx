@@ -58,12 +58,14 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, 
   
   useClickOutside(menuRef, () => setIsMenuOpen(false));
 
-  const hasVisibleLines = useMemo(() => {
+  const visibleLines = useMemo(() => {
     if (showComments) {
-        return codeLines.length > 0;
+        return codeLines;
     }
-    return codeLines.some(line => !(line?.content?.trim() || '').startsWith('#'));
+    return codeLines.filter(line => !(line?.content?.trim() || '').startsWith('#'));
   }, [codeLines, showComments]);
+
+  const hasVisibleLines = visibleLines.length > 0;
 
   useEffect(() => {
     if (codeLines.length > 0) {
@@ -78,7 +80,7 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, 
             block: 'center',
         });
     }
-  }, [selectedShapeIds, codeLines, highlightCodeOnSelection]);
+  }, [selectedShapeIds, visibleLines, highlightCodeOnSelection]);
 
   const handleCopy = () => {
     if (codeStringForExport) {
@@ -133,12 +135,8 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, 
 
     return (
       <div className={`p-4 overflow-auto text-sm h-full font-mono allow-selection`}>
-        {codeLines.map((line, index) => {
+        {visibleLines.map((line, index) => {
             const isComment = (line?.content?.trim() || '').startsWith('#');
-            if (!showComments && isComment) {
-                return null;
-            }
-
             const isHighlighted = highlightCodeOnSelection && selectedShapeIds.length > 0 && !!line.shapeId && selectedShapeIds.includes(line.shapeId);
             const highlightClass = isHighlighted
                 ? (isComment ? 'code-line-comment-highlighted' : 'code-line-highlighted')

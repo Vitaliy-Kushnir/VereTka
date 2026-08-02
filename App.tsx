@@ -33,13 +33,15 @@ import { useRecentProjects, type RecentProject } from './hooks/useRecentProjects
 import SaveCodeModal from './components/SaveCodeModal';
 import InlineTextEditor from './components/InlineTextEditor';
 import SaveTemplateModal from './components/SaveTemplateModal';
+import ShareModal from './components/ShareModal';
+import { compressProjectToUrl, decompressProjectFromUrl } from './lib/shareUtils';
 import { useLanguage } from './components/LanguageContext';
 
 type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
 type SettingsTab = 'canvas' | 'grid' | 'appearance' | 'code' | 'templates';
 
-const APP_VERSION = '1.3.14';
+const APP_VERSION = '1.3.15';
 const RULER_THICKNESS = 24;
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 30;
@@ -109,6 +111,8 @@ const MenuBar: React.FC<{
     onLoadProject: () => void;
     onImportImage: () => void;
     onExport: () => void;
+    onShareLink?: () => void;
+    showShareLink?: boolean;
     onUndo: () => void;
     onRedo: () => void;
     canUndo: boolean;
@@ -195,6 +199,7 @@ const MenuBar: React.FC<{
                             <MenuItem onClick={() => handleMenuClick(props.onImportImage, closeFile)} disabled={!props.isProjectActive}>{t('menu.file.importImage')}</MenuItem>
                             <hr className="border-[var(--border-secondary)] my-1"/>
                             <MenuItem onClick={() => handleMenuClick(props.onExport, closeFile)} disabled={!props.isProjectActive}>{t('menu.file.export')}</MenuItem>
+                            {props.showShareLink && <MenuItem onClick={() => handleMenuClick(props.onShareLink, closeFile)} disabled={!props.isProjectActive}>{t('menu.file.shareLink')}</MenuItem>}
                             <hr className="border-[var(--border-secondary)] my-1"/>
                             {props.showGenerateButton && <MenuItem onClick={() => handleMenuClick(props.onGenerate, closeFile)} disabled={!props.isProjectActive}>{t('menu.file.generate')}</MenuItem>}
                         </div>
@@ -674,6 +679,50 @@ const DistributePathTopControls: React.FC<{
                                      : (t('tool.distribute.path.selectShapeBtn') || 'Обрати фігуру на полотні'))}
                          </span>
                      </button>
+
+                     {distributePathState.shapePathParams?.pathShape && (distributePathState.shapePathParams.pathShape.type === 'polygon' || distributePathState.shapePathParams.pathShape.type === 'star') && (
+                         <PropertyControl label={t('prop.sides') || 'Сторони'} htmlFor="dist-top-path-sides">
+                             <input 
+                                 id="dist-top-path-sides"
+                                 type="number"
+                                 className="w-16 py-1 px-2 rounded border bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-primary)] text-xs"
+                                 value={(distributePathState.shapePathParams.pathShape as any).sides}
+                                 min={3}
+                                 onChange={e => onDistributePathChange({
+                                     ...distributePathState,
+                                     shapePathParams: {
+                                         ...distributePathState.shapePathParams,
+                                         pathShape: {
+                                             ...distributePathState.shapePathParams!.pathShape!,
+                                             sides: parseInt(e.target.value) || 3
+                                         } as any
+                                     }
+                                 })}
+                             />
+                         </PropertyControl>
+                     )}
+
+                     {distributePathState.shapePathParams?.pathShape && distributePathState.shapePathParams.pathShape.type === 'star' && (
+                         <PropertyControl label={t('prop.innerRadius') || 'Внутрішній радіус'} htmlFor="dist-top-path-inner-radius">
+                             <input 
+                                 id="dist-top-path-inner-radius"
+                                 type="number"
+                                 className="w-16 py-1 px-2 rounded border bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-primary)] text-xs"
+                                 value={Math.round((distributePathState.shapePathParams.pathShape as any).innerRadius ?? ((distributePathState.shapePathParams.pathShape as any).radius / 2))}
+                                 min={0}
+                                 onChange={e => onDistributePathChange({
+                                     ...distributePathState,
+                                     shapePathParams: {
+                                         ...distributePathState.shapePathParams,
+                                         pathShape: {
+                                             ...distributePathState.shapePathParams!.pathShape!,
+                                             innerRadius: parseInt(e.target.value) || 0
+                                         } as any
+                                     }
+                                 })}
+                             />
+                         </PropertyControl>
+                     )}
                  </>
              )}
              
@@ -1202,6 +1251,8 @@ export default function App(): React.ReactNode {
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<SettingsTab>('canvas');
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
+  const [shareUrl, setShareUrl] = useState<string>('');
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState<boolean>(false);
   const [isSaveAsModalOpen, setIsSaveAsModalOpen] = useState<boolean>(false);
   const [isSaveCodeModalOpen, setIsSaveCodeModalOpen] = useState(false);
@@ -3038,6 +3089,14 @@ export default function App(): React.ReactNode {
         }
     }, [getSaveData, shapes, addRecentProject, getProjectSignature, showNotification]);
 
+    const handleShareLink = useCallback(() => {
+        if (!isProjectActive) return;
+        const projectData = getSaveData(projectName);
+        const url = compressProjectToUrl(projectData);
+        setShareUrl(url);
+        setIsShareModalOpen(true);
+    }, [isProjectActive, getSaveData, projectName]);
+
     const handleSaveTemplate = useCallback((name: string) => {
         const shapesToSave = shapes;
         const newTemplate: ProjectTemplate = {
@@ -3102,20 +3161,28 @@ export default function App(): React.ReactNode {
         });
     }, [showNotification]);
 
-  const processLoadedData = useCallback((fileContent: string, fileName?: string, handle?: FileSystemFileHandle | null) => {
+  const processLoadedData = useCallback((fileContent: string | object, fileName?: string, handle?: FileSystemFileHandle | null) => {
     try {
-        const savedData = JSON.parse(fileContent);
-        if (savedData.shapes && savedData.canvasSettings && savedData.viewTransform) {
-            const newProjectName = savedData.projectName || (fileName ? fileName.replace(/\.vec.json$/, '') : t('app.1014'));
+        const savedData = typeof fileContent === 'string' ? JSON.parse(fileContent) : fileContent;
+        if (savedData && (Array.isArray(savedData.shapes) || savedData.canvasSettings)) {
+            const shapesToLoad = Array.isArray(savedData.shapes) ? savedData.shapes : [];
+            const newProjectName = savedData.projectName || (fileName ? fileName.replace(/\.vec\.json$/, '') : t('app.1014'));
             
             performClear();
-            resetHistory(savedData.shapes, savedData.layers, savedData.activeLayerId);
+            resetHistory(shapesToLoad, savedData.layers, savedData.activeLayerId);
             setProjectName(newProjectName);
-            setCanvasWidth(savedData.canvasSettings.width);
-            setCanvasHeight(savedData.canvasSettings.height);
-            setCanvasBgColor(savedData.canvasSettings.bgColor);
-            setCanvasVarName(savedData.canvasSettings.varName || 'c');
-            setViewTransform(savedData.viewTransform);
+
+            const cs = savedData.canvasSettings || {};
+            setCanvasWidth(cs.width || 800);
+            setCanvasHeight(cs.height || 600);
+            setCanvasBgColor(cs.bgColor || '#ffffff');
+            setCanvasVarName(cs.varName || 'c');
+            
+            if (savedData.viewTransform) {
+                setViewTransform(savedData.viewTransform);
+            } else {
+                setViewTransform({ x: 0, y: 0, zoom: 1 });
+            }
 
             const ui = savedData.uiSettings || {};
             setTheme(ui.theme || 'dark');
@@ -3138,7 +3205,7 @@ export default function App(): React.ReactNode {
             setShowSystemTags(ui.showSystemTags ?? false);
             setOutlineWithFill(ui.outlineWithFill ?? true);
             
-            lastSavedSignatureRef.current = getProjectSignature(newProjectName, savedData.shapes);
+            lastSavedSignatureRef.current = getProjectSignature(newProjectName, shapesToLoad);
 
             if (activeTool === 'polyline' || activeTool === 'bezier') {
                 setActiveTool('select');
@@ -3158,7 +3225,7 @@ export default function App(): React.ReactNode {
         console.error(t('app.1017'), e);
         showNotification(t('app.1018'), 'error');
     }
-  }, [resetHistory, getProjectSignature, addRecentProject, fitCanvasToView, activeTool, showNotification]);
+  }, [resetHistory, getProjectSignature, addRecentProject, fitCanvasToView, activeTool, showNotification, t]);
 
   const loadProject = useCallback(async () => {
     let result: { handle: FileSystemFileHandle; content: string } | null = null;
@@ -4608,8 +4675,24 @@ export default function App(): React.ReactNode {
       setPreviewTextColor(null);
   }, []);
 
-    // On initial load, check for an autosaved project
+    // On initial load, check for an autosaved project or URL shared project
     useEffect(() => {
+        const fullUrl = window.location.href;
+        if (fullUrl.includes('project=') || fullUrl.includes('p=') || fullUrl.includes('%23project=')) {
+            const decompressed = decompressProjectFromUrl(fullUrl);
+            if (decompressed && decompressed.rawJson) {
+                try {
+                    processLoadedData(decompressed.rawJson, decompressed.data?.projectName);
+                    showNotification(t('share.loaded') || 'Проєкт успішно завантажено за посиланням!', 'info');
+                    window.history.replaceState(null, '', window.location.pathname);
+                    return;
+                } catch (err) {
+                    console.error("Failed to load project from URL share link:", err);
+                    showNotification(t('share.error') || 'Помилка відкриття проєкту за посиланням', 'error');
+                }
+            }
+        }
+
         try {
             const data = localStorage.getItem(AUTOSAVE_KEY);
             if (data) {
@@ -4618,7 +4701,7 @@ export default function App(): React.ReactNode {
         } catch (e) {
             console.error("Failed to read autosave from localStorage", e);
         }
-    }, []);
+    }, [processLoadedData, showNotification, t]);
 
     // Autosave interval
     useEffect(() => {
@@ -4695,6 +4778,8 @@ export default function App(): React.ReactNode {
             onLoadProject={handleLoadProject}
             onImportImage={handleImportImage}
             onExport={() => setIsExportModalOpen(true)}
+            onShareLink={handleShareLink}
+            showShareLink={activeCheats.has('003')}
             onUndo={undo}
             onRedo={redo}
             canUndo={canUndo}
@@ -5013,6 +5098,7 @@ export default function App(): React.ReactNode {
                 onClose={() => setIsCheatCodeModalOpen(false)}
                 onActivate={handleActivateCheat}
                 showNotification={showNotification}
+                activeCheats={activeCheats}
             />
           )}
 
@@ -5040,6 +5126,7 @@ export default function App(): React.ReactNode {
               generatorType={generatorType} setGeneratorType={setGeneratorType}
               highlightCodeOnSelection={highlightCodeOnSelection} setHighlightCodeOnSelection={setHighlightCodeOnSelection}
               autoGenerateComments={autoGenerateComments} setAutoGenerateComments={setAutoGenerateComments}
+              showComments={showComments} setShowComments={setShowComments}
               generateTkinterTags={generateTkinterTags} setGenerateTkinterTags={setGenerateTkinterTags}
               showSystemTags={showSystemTags} setShowSystemTags={setShowSystemTags}
               outlineWithFill={outlineWithFill} setOutlineWithFill={setOutlineWithFill}
@@ -5246,6 +5333,13 @@ export default function App(): React.ReactNode {
             <FeedbackModal
                 onClose={() => setIsFeedbackModalOpen(false)}
                 appVersion={APP_VERSION}
+            />
+          )}
+          {isShareModalOpen && (
+            <ShareModal
+                isOpen={isShareModalOpen}
+                onClose={() => setIsShareModalOpen(false)}
+                shareUrl={shareUrl}
             />
           )}
       </div>

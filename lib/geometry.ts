@@ -868,6 +868,47 @@ export function isShapeClosed(shape: Shape): boolean {
   }
 }
 
+function lineSegmentIntersection(
+  p0: { x: number; y: number },
+  p1: { x: number; y: number },
+  p2: { x: number; y: number },
+  p3: { x: number; y: number }
+): boolean {
+  const s1_x = p1.x - p0.x;
+  const s1_y = p1.y - p0.y;
+  const s2_x = p3.x - p2.x;
+  const s2_y = p3.y - p2.y;
+
+  const denom = -s2_x * s1_y + s1_x * s2_y;
+  if (Math.abs(denom) < 1e-10) return false;
+
+  const s = (-s1_y * (p0.x - p2.x) + s1_x * (p0.y - p2.y)) / denom;
+  const t = ( s2_x * (p0.y - p2.y) - s2_y * (p0.x - p2.x)) / denom;
+
+  return s >= 0 && s <= 1 && t >= 0 && t <= 1;
+}
+
+function isPointInPolygon(point: { x: number; y: number }, polygon: { x: number; y: number }[]): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x, yi = polygon[i].y;
+    const xj = polygon[j].x, yj = polygon[j].y;
+
+    const intersect = ((yi > point.y) !== (yj > point.y))
+      && (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+export function isShapeIntersectingRect(
+  shape: Shape,
+  rect: { minX: number; minY: number; maxX: number; maxY: number },
+  allShapes?: Shape[]
+): boolean {
+  return doesMarqueeIntersectShape(shape, rect, allShapes);
+}
+
 export function getClosestPointOnShapeContour(
   shape: Shape,
   pt: { x: number; y: number }
@@ -1023,4 +1064,86 @@ export function evaluateShapeContourPointAndTangent(
   }
 
   return { targetCX: unrotatedCX, targetCY: unrotatedCY, tangentAngle: rawTangentAngle };
+}
+
+export function doesMarqueeIntersectShape(
+  shape: Shape,
+  rect: { minX: number; minY: number; maxX: number; maxY: number },
+  allShapes?: Shape[]
+): boolean {
+  if (shape.state === 'disabled' || shape.state === 'hidden') {
+    return false;
+  }
+
+  // Group handling: marquee intersects group if ANY of its child shapes intersect
+  if (shape.type === 'group') {
+    if (!allShapes || !shape.shapeIds || shape.shapeIds.length === 0) return false;
+    const children = allShapes.filter(s => shape.shapeIds.includes(s.id));
+    return children.some(child => doesMarqueeIntersectShape(child, rect, allShapes));
+  }
+
+  const strokePadding = ('strokeWidth' in shape && typeof shape.strokeWidth === 'number' && shape.strokeWidth > 1)
+    ? shape.strokeWidth / 2
+    : 0;
+
+  const paddedRect = strokePadding > 0 ? {
+    minX: rect.minX - strokePadding,
+    minY: rect.minY - strokePadding,
+    maxX: rect.maxX + strokePadding,
+    maxY: rect.maxY + strokePadding,
+  } : rect;
+
+  // Fast rejection using bounding box
+  const bbox = getVisualBoundingBox(shape, undefined, allShapes);
+  if (!bbox) return false;
+  if (bbox.x > paddedRect.maxX || bbox.x + bbox.width < paddedRect.minX ||
+      bbox.y > paddedRect.maxY || bbox.y + bbox.height < paddedRect.minY) {
+    return false;
+  }
+
+  // Get contour points of the visual shape
+  const points = getFinalPoints(shape);
+  if (!points || points.length === 0) {
+    return true; // Fallback to bounding box overlap
+  }
+
+  // Check 1: Any shape contour point inside the marquee rectangle
+  for (const p of points) {
+    if (p.x >= paddedRect.minX && p.x <= paddedRect.maxX && p.y >= paddedRect.minY && p.y <= paddedRect.maxY) {
+      return true;
+    }
+  }
+
+  // Check 2: Any shape contour edge intersecting any marquee rectangle edge
+  const rectSegments = [
+    { p1: { x: paddedRect.minX, y: paddedRect.minY }, p2: { x: paddedRect.maxX, y: paddedRect.minY } },
+    { p1: { x: paddedRect.maxX, y: paddedRect.minY }, p2: { x: paddedRect.maxX, y: paddedRect.maxY } },
+    { p1: { x: paddedRect.maxX, y: paddedRect.maxY }, p2: { x: paddedRect.minX, y: paddedRect.maxY } },
+    { p1: { x: paddedRect.minX, y: paddedRect.maxY }, p2: { x: paddedRect.minX, y: paddedRect.minY } }
+  ];
+
+  const isClosed = isShapeClosed(shape);
+  const numPoints = points.length;
+  const segmentCount = isClosed ? numPoints : numPoints - 1;
+
+  for (let i = 0; i < segmentCount; i++) {
+    const p1 = points[i];
+    const p2 = points[(i + 1) % numPoints];
+
+    for (const rSeg of rectSegments) {
+      if (lineSegmentIntersection(p1, p2, rSeg.p1, rSeg.p2)) {
+        return true;
+      }
+    }
+  }
+
+  // Check 3: Marquee rectangle center/corner inside a closed shape's polygon
+  if (isClosed && points.length >= 3) {
+    const testPoint = { x: (rect.minX + rect.maxX) / 2, y: (rect.minY + rect.maxY) / 2 };
+    if (isPointInPolygon(testPoint, points)) {
+      return true;
+    }
+  }
+
+  return false;
 }
