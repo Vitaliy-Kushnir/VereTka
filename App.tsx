@@ -2892,8 +2892,8 @@ export default function App(): React.ReactNode {
   
   const hasUnsyncedChangesWithCode = useMemo(() => {
     if (!shapesAtGenerationTime) return false;
-    return JSON.stringify(shapes) !== JSON.stringify(shapesAtGenerationTime);
-  }, [shapes, shapesAtGenerationTime]);
+    return displayedShapesString !== JSON.stringify(shapesAtGenerationTime);
+  }, [displayedShapesString, shapesAtGenerationTime]);
 
   const performClear = () => {
     resetHistory([]);
