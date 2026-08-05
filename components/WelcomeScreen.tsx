@@ -13,6 +13,7 @@ interface RecentProject {
 interface WelcomeScreenProps {
     onCreateNew: () => void;
     onLoadProject: () => void;
+    onOpenCloudGallery?: (tab?: 'public' | 'personal' | 'group' | 'publish') => void;
     recentProjects: RecentProject[];
     onOpenRecent: (project: RecentProject) => void;
     onRemoveProject: (project: RecentProject) => void;
@@ -25,7 +26,7 @@ interface WelcomeScreenProps {
 }
 
 const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ 
-    onCreateNew, onLoadProject, recentProjects, onOpenRecent, onRemoveProject, 
+    onCreateNew, onLoadProject, onOpenCloudGallery, recentProjects, onOpenRecent, onRemoveProject, 
     onClearAllProjects, hasActiveProject, onReturnToProject,
     autosavedProjectData, onRestoreAutosave, onDismissAutosave 
 }) => {
@@ -249,7 +250,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                 </header>
 
                 {/* Main Actions */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16 animate-fade-in-up">
+                <div className={`grid grid-cols-1 ${onOpenCloudGallery ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6 mb-16 animate-fade-in-up`}>
                     <button 
                         onClick={onCreateNew}
                         className="group flex items-center gap-6 p-6 bg-[var(--bg-primary)] rounded-lg text-left hover:bg-[var(--bg-hover)] border border-[var(--border-primary)] hover:border-[var(--border-secondary)] transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl"
@@ -270,6 +271,25 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                             <p className="text-sm text-[var(--text-tertiary)] mt-1">{t('welcome.action.loadDesc')}</p>
                         </div>
                     </button>
+                    {onOpenCloudGallery && (
+                        <button 
+                            onClick={() => onOpenCloudGallery('public')}
+                            className="group flex items-center gap-6 p-6 bg-[var(--bg-primary)] rounded-lg text-left hover:bg-[var(--bg-hover)] border border-[var(--border-primary)] hover:border-[var(--border-secondary)] transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl"
+                        >
+                            <div className="w-9 h-9 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-xl border border-sky-500/20 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M17.5 19c2.5 0 4.5-2 4.5-4.5 0-2.3-1.7-4.1-3.9-4.5-.4-3.5-3.4-6-6.9-6-3.2 0-6 2.2-6.7 5.2C2.2 9.7 0 11.9 0 14.5 0 17 2 19 4.5 19h13z" />
+                                    <rect x="8" y="11" width="8" height="6" rx="1" />
+                                    <circle cx="10.5" cy="13" r="0.8" />
+                                    <path d="M8 16l2.5-2.5 2 2 1.5-1.5 2 2" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h2 className="text-lg font-semibold text-[var(--text-primary)]">{t('welcome.action.cloud') || 'Хмарна галерея'}</h2>
+                                <p className="text-sm text-[var(--text-tertiary)] mt-1">{t('welcome.action.cloudDesc') || 'Перегляд та відкриття спільних хмарних проєктів.'}</p>
+                            </div>
+                        </button>
+                    )}
                 </div>
 
                 {/* Return to Project Button */}

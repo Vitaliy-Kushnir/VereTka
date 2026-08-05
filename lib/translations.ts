@@ -1013,6 +1013,10 @@ export const translations = {
 
     'welcome.action.loadDesc': 'Відкрити існуючий файл .vec.json.',
 
+    'welcome.action.cloud': 'Хмарна галерея',
+
+    'welcome.action.cloudDesc': 'Перегляд та відкриття спільних та власних хмарних проєктів.',
+
     'welcome.action.return': 'Повернутися до проєкту',
 
     'welcome.action.returnDesc': 'Продовжити редагування вашого малюнка.',

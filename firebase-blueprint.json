@@ -1,0 +1,33 @@
+{
+  "entities": {
+    "projects": {
+      "title": "Projects",
+      "description": "Projects stored in Veretka public gallery, personal space, or group hub",
+      "fields": {
+        "title": { "type": "string", "description": "Project title" },
+        "authorName": { "type": "string", "description": "Author display name" },
+        "ownerNickname": { "type": "string", "description": "Owner nickname" },
+        "passcodeHash": { "type": "string", "description": "SHA-256 or salt hash of password" },
+        "visibility": { "type": "string", "description": "public, private, or group" },
+        "groupId": { "type": "string", "description": "ID/code of the group if shared to group" },
+        "groupName": { "type": "string", "description": "Name of group" },
+        "projectData": { "type": "string", "description": "JSON stringified project payload" },
+        "shapesCount": { "type": "number", "description": "Number of shapes in the project" },
+        "createdAt": { "type": "timestamp", "description": "Timestamp of creation" },
+        "updatedAt": { "type": "timestamp", "description": "Timestamp of last modification" }
+      }
+    },
+    "groups": {
+      "title": "Groups",
+      "description": "Group and Hub spaces for classes or clubs",
+      "fields": {
+        "groupCode": { "type": "string", "description": "Unique code used to join group" },
+        "name": { "type": "string", "description": "Name of group or hub" },
+        "description": { "type": "string", "description": "Description of group" },
+        "passcodeHash": { "type": "string", "description": "Hash of group password" },
+        "creatorNickname": { "type": "string", "description": "Creator nickname" },
+        "createdAt": { "type": "timestamp", "description": "Creation timestamp" }
+      }
+    }
+  }
+}

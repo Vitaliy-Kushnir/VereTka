@@ -32,6 +32,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,txt}'], // Cache these file types
         cleanupOutdatedCaches: true,
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         // Cache the Tailwind CDN script for offline use
         runtimeCaching: [
           {

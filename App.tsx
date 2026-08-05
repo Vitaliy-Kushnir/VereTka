@@ -22,7 +22,7 @@ import ApiKeyModal from './components/ApiKeyModal';
 import FeedbackModal from './components/FeedbackModal';
 import CheatCodeModal from './components/CheatCodeModal';
 import { saveFile, generateSvg, exportToRaster, openProjectFile, saveToHandle } from './lib/exportUtils';
-import { SquareIcon, CodeIcon, XIcon, AxesIcon, FitToScreenIcon, SelectIcon, EditPointsIcon, RectangleIcon, EllipseIcon, CircleIcon, LineIcon, PolylineIcon, BezierIcon, PolygonIcon, PencilIcon, TriangleIcon, RightTriangleIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, PiesliceIcon, ChordIcon, ArcIcon, StarIcon, TextIcon, ImageIcon, BitmapIcon, UndoIcon, RedoIcon, DuplicateIcon, GroupIcon, UngroupIcon, ToolsIcon, TrashIcon, GridIcon, SettingsIcon, DrawFromCornerIcon, DrawFromCenterIcon, CheckIcon, MenuIcon, SunIcon, MoonIcon, HomeIcon, BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, SadMonitorIcon, FullscreenIcon, ExitFullscreenIcon, AlignShapesLeftIcon, AlignShapesCenterHIcon, AlignShapesRightIcon, AlignShapesTopIcon, AlignShapesCenterVIcon, AlignShapesBottomIcon, DistributeHorizontalIcon, DistributeVerticalIcon, ChevronDownIcon, ChevronRightIcon, DistributePathIcon, FlipHorizontalIcon, FlipVerticalIcon, EraserIcon } from './components/icons';
+import { SquareIcon, CodeIcon, XIcon, AxesIcon, FitToScreenIcon, SelectIcon, EditPointsIcon, RectangleIcon, EllipseIcon, CircleIcon, LineIcon, PolylineIcon, BezierIcon, PolygonIcon, PencilIcon, TriangleIcon, RightTriangleIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, PiesliceIcon, ChordIcon, ArcIcon, StarIcon, TextIcon, ImageIcon, BitmapIcon, UndoIcon, RedoIcon, DuplicateIcon, GroupIcon, UngroupIcon, ToolsIcon, TrashIcon, GridIcon, SettingsIcon, DrawFromCornerIcon, DrawFromCenterIcon, CheckIcon, MenuIcon, SunIcon, MoonIcon, HomeIcon, BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, SadMonitorIcon, FullscreenIcon, ExitFullscreenIcon, AlignShapesLeftIcon, AlignShapesCenterHIcon, AlignShapesRightIcon, AlignShapesTopIcon, AlignShapesCenterVIcon, AlignShapesBottomIcon, DistributeHorizontalIcon, DistributeVerticalIcon, ChevronDownIcon, ChevronRightIcon, DistributePathIcon, FlipHorizontalIcon, FlipVerticalIcon, EraserIcon, CloudGalleryIcon } from './components/icons';
 import { getFinalPoints, getVisualBoundingBox, getBoundingBox, getEditablePoints, getShapeCenter, rotatePoint, isShapeClosed, isPathClosed, evaluateShapeContourPointAndTangent } from './lib/geometry';
 import { getDefaultNameForShape, isDefaultName } from './lib/constants';
 import Ruler from './components/Ruler';
@@ -36,12 +36,14 @@ import SaveTemplateModal from './components/SaveTemplateModal';
 import ShareModal from './components/ShareModal';
 import { compressProjectToUrl, decompressProjectFromUrl } from './lib/shareUtils';
 import { useLanguage } from './components/LanguageContext';
+import { CloudGalleryModal } from './components/CloudGalleryModal';
+import { getCloudProjectById } from './lib/firebase';
 
 type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
 type SettingsTab = 'canvas' | 'grid' | 'appearance' | 'code' | 'templates';
 
-const APP_VERSION = '1.3.15';
+const APP_VERSION = '1.3.16';
 const RULER_THICKNESS = 24;
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 30;
@@ -155,6 +157,7 @@ const MenuBar: React.FC<{
     onFlipH?: () => void;
     onFlipV?: () => void;
     canFlip?: boolean;
+    onOpenCloudGallery?: (tab?: 'public' | 'personal' | 'group' | 'publish') => void;
 }> = React.memo((props) => {
     const { isOpen: isFileOpen, toggle: toggleFile, close: closeFile, wrapperProps: fileProps } = useDropdown();
     const { isOpen: isEditOpen, toggle: toggleEdit, close: closeEdit, wrapperProps: editProps } = useDropdown();
@@ -196,6 +199,9 @@ const MenuBar: React.FC<{
                             <MenuItem onClick={() => handleMenuClick(props.onSaveProjectAs, closeFile)} disabled={!props.isProjectActive}>{t('menu.file.saveAs')}</MenuItem>
                             <MenuItem onClick={() => handleMenuClick(props.onSaveAsTemplate, closeFile)} disabled={!props.isProjectActive}>{t('menu.file.saveTemplate')}</MenuItem>
                             <MenuItem onClick={() => handleMenuClick(props.onLoadProject, closeFile)}>{t('menu.file.load')}</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(() => props.onOpenCloudGallery?.('publish'), closeFile)}>
+                                <div className="flex items-center gap-1.5"><CloudGalleryIcon size={16} /> Опублікувати в хмарі...</div>
+                            </MenuItem>
                             <MenuItem onClick={() => handleMenuClick(props.onImportImage, closeFile)} disabled={!props.isProjectActive}>{t('menu.file.importImage')}</MenuItem>
                             <hr className="border-[var(--border-secondary)] my-1"/>
                             <MenuItem onClick={() => handleMenuClick(props.onExport, closeFile)} disabled={!props.isProjectActive}>{t('menu.file.export')}</MenuItem>
@@ -276,6 +282,14 @@ const MenuBar: React.FC<{
             </div>
             
             <div className="flex items-center gap-2">
+                <button
+                    onClick={() => props.onOpenCloudGallery?.('public')}
+                    title="Хмарне сховище, персональний кабінет та галерея проєктів"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 border border-indigo-500/30 transition-colors text-xs font-semibold"
+                >
+                    <CloudGalleryIcon size={16} />
+                    <span>Галерея & Сховище</span>
+                </button>
                 <button onClick={() => props.setTheme(props.theme === 'dark' ? 'light' : 'dark')} title={t('menu.view.theme')} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]">
                     {props.theme === 'dark' ? <SunIcon size={18}/> : <MoonIcon size={18}/>}
                 </button>
@@ -1262,6 +1276,8 @@ export default function App(): React.ReactNode {
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [isCloudGalleryOpen, setIsCloudGalleryOpen] = useState(false);
+  const [cloudGalleryInitialTab, setCloudGalleryInitialTab] = useState<'public' | 'personal' | 'group' | 'publish'>('public');
   const [apiKey, setApiKey] = useState<string | null>(null);
   
   const [canvasWidth, setCanvasWidth] = useState<number>(800);
@@ -4675,8 +4691,27 @@ export default function App(): React.ReactNode {
       setPreviewTextColor(null);
   }, []);
 
-    // On initial load, check for an autosaved project or URL shared project
+    // On initial load, check for an autosaved project or URL shared project (cloud ID or hash)
     useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const cloudProjectId = urlParams.get('cloudProject') || urlParams.get('cp');
+
+        if (cloudProjectId) {
+            getCloudProjectById(cloudProjectId).then((proj) => {
+                if (proj && proj.projectData) {
+                    processLoadedData(proj.projectData, proj.title);
+                    showNotification(`Проєкт "${proj.title}" успішно завантажено з хмари!`, 'info');
+                    window.history.replaceState(null, '', window.location.pathname);
+                } else {
+                    showNotification('Проєкт не знайдено у хмарі або ID є недійсним', 'error');
+                }
+            }).catch((err) => {
+                console.error("Error loading cloud project from URL:", err);
+                showNotification('Помилка завантаження хмарного проєкту', 'error');
+            });
+            return;
+        }
+
         const fullUrl = window.location.href;
         if (fullUrl.includes('project=') || fullUrl.includes('p=') || fullUrl.includes('%23project=')) {
             const decompressed = decompressProjectFromUrl(fullUrl);
@@ -4776,6 +4811,10 @@ export default function App(): React.ReactNode {
             onSaveProjectAs={() => setIsSaveAsModalOpen(true)}
             onSaveAsTemplate={() => setIsSaveTemplateModalOpen(true)}
             onLoadProject={handleLoadProject}
+            onOpenCloudGallery={(tab) => {
+                setCloudGalleryInitialTab(tab || 'public');
+                setIsCloudGalleryOpen(true);
+            }}
             onImportImage={handleImportImage}
             onExport={() => setIsExportModalOpen(true)}
             onShareLink={handleShareLink}
@@ -4989,6 +5028,10 @@ export default function App(): React.ReactNode {
                     <WelcomeScreen 
                         onCreateNew={handleOpenNewProjectModal}
                         onLoadProject={handleLoadProject}
+                        onOpenCloudGallery={(tab) => {
+                            setCloudGalleryInitialTab(tab || 'public');
+                            setIsCloudGalleryOpen(true);
+                        }}
                         recentProjects={recentProjects}
                         onOpenRecent={handleOpenRecent}
                         onRemoveProject={handleRemoveRecentProject}
@@ -5270,6 +5313,26 @@ export default function App(): React.ReactNode {
                 onClose={() => setIsShortcutsModalOpen(false)}
             />
           )}
+          <CloudGalleryModal
+            isOpen={isCloudGalleryOpen}
+            initialTab={cloudGalleryInitialTab}
+            onClose={() => setIsCloudGalleryOpen(false)}
+            onLoadProject={(dataStr, projName) => {
+              try {
+                processLoadedData(dataStr, projName);
+                showNotification('Проєкт успішно завантажено з хмари!', 'info');
+              } catch (e) {
+                console.error(e);
+                showNotification('Помилка читання даного проєкту', 'error');
+              }
+            }}
+            currentProjectShapesCount={displayedShapes ? displayedShapes.length : shapes.length}
+            getCurrentProjectDataStr={() => {
+              const saveData = getSaveData(projectName);
+              return JSON.stringify(saveData);
+            }}
+            currentProjectName={projectName}
+          />
           {drawingWarningModal && drawingWarningModal.show && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                 <div className="bg-[var(--bg-app)] border border-[var(--border-color)] p-6 rounded-lg shadow-xl w-[400px] relative">

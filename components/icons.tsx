@@ -797,3 +797,4 @@ export const ChevronUpIcon: React.FC<IconProps> = ({ size = 20, className }) => 
         <path d="m18 15-6-6-6 6"/>
     </svg>
 );
+export const CloudGalleryIcon: React.FC<{ size?: number; className?: string }> = ({ size = 20, className }) => ( <svg className={className || 'w-6 h-6 stroke-current fill-none'} width={size} height={size} viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"> <path d="M17.5 19c2.5 0 4.5-2 4.5-4.5 0-2.3-1.7-4.1-3.9-4.5-.4-3.5-3.4-6-6.9-6-3.2 0-6 2.2-6.7 5.2C2.2 9.7 0 11.9 0 14.5 0 17 2 19 4.5 19h13z" /> <rect x="8" y="11" width="8" height="6" rx="1" /> <circle cx="10.5" cy="13" r="0.8" /> <path d="M8 16l2.5-2.5 2 2 1.5-1.5 2 2" /> </svg> );
