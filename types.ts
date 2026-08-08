@@ -313,7 +313,7 @@ export type CanvasAction =
     | { type: 'star-inner-radius-editing', initialShape: PolygonShape, center: {x: number, y: number} }
     | { type: 'trapezoid-offset-editing', handle: 'left' | 'right', initialShape: TrapezoidShape }
     | { type: 'parallelogram-angle-editing', initialShape: ParallelogramShape }
-    | { type: 'edit-distribute-path', handle: 'center' | 'radius' | 'start' | 'end' | 'rotate' | 'move-all', startPoint: { x: number, y: number }, initialDistributePath: DistributePathState }
+    | { type: 'edit-distribute-path', handle: string, startPoint: { x: number, y: number }, initialDistributePath: DistributePathState }
     | { type: 'selecting', startPos: { x: number, y: number }, currentPos: { x: number, y: number } }
     | null;
 

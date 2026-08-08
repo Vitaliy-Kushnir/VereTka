@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { XIcon } from './icons';
 import { VeretkaLoader } from './VeretkaLoader';
 import { generateSvg } from '../lib/exportUtils';
 import { 
   getPublicProjectsPaginated, 
+  searchPublicProjects,
   getPersonalProjects, 
   getGroupProjects, 
   publishProjectToCloud, 
@@ -11,16 +12,230 @@ import {
   deleteProjectFromCloud, 
   createCloudGroup, 
   verifyAndGetGroup, 
+  registerUserAccount,
+  loginUserAccount,
+  signInWithGoogleAccount,
+  recoverAccountByEmail,
+  getUserAccountProfile,
+  updateUserAccountProfile,
+  deleteUserAccount,
+  deleteCloudGroup,
   CloudProject, 
   CloudGroup, 
   ProjectVisibility 
 } from '../lib/firebase';
+
+export type SortOption = 'newest' | 'oldest' | 'title_asc' | 'title_desc' | 'shapes_desc' | 'shapes_asc';
+export type ShapesFilterOption = 'all' | 'small' | 'medium' | 'large';
+export type VisibilityFilterOption = 'all' | 'public' | 'private' | 'group';
+
+function filterAndSortProjects(
+  projects: CloudProject[],
+  query: string,
+  visFilter: VisibilityFilterOption,
+  shFilter: ShapesFilterOption,
+  sort: SortOption
+): CloudProject[] {
+  let list = [...projects];
+
+  if (query.trim()) {
+    const q = query.trim().toLowerCase();
+    list = list.filter((p) =>
+      (p.title || '').toLowerCase().includes(q) ||
+      (p.authorName || '').toLowerCase().includes(q) ||
+      (p.ownerNickname || '').toLowerCase().includes(q) ||
+      (p.groupName && p.groupName.toLowerCase().includes(q))
+    );
+  }
+
+  if (visFilter !== 'all') {
+    list = list.filter((p) => p.visibility === visFilter);
+  }
+
+  if (shFilter === 'small') {
+    list = list.filter((p) => (p.shapesCount || 0) <= 10);
+  } else if (shFilter === 'medium') {
+    list = list.filter((p) => (p.shapesCount || 0) > 10 && (p.shapesCount || 0) <= 50);
+  } else if (shFilter === 'large') {
+    list = list.filter((p) => (p.shapesCount || 0) > 50);
+  }
+
+  list.sort((a, b) => {
+    switch (sort) {
+      case 'newest':
+        return (b.createdAt || 0) - (a.createdAt || 0);
+      case 'oldest':
+        return (a.createdAt || 0) - (b.createdAt || 0);
+      case 'title_asc':
+        return (a.title || '').localeCompare(b.title || '', 'uk');
+      case 'title_desc':
+        return (b.title || '').localeCompare(a.title || '', 'uk');
+      case 'shapes_desc':
+        return (b.shapesCount || 0) - (a.shapesCount || 0);
+      case 'shapes_asc':
+        return (a.shapesCount || 0) - (b.shapesCount || 0);
+      default:
+        return 0;
+    }
+  });
+
+  return list;
+}
+
+interface FilterToolbarProps {
+  searchQuery: string;
+  onSearchChange: (val: string) => void;
+  searchPlaceholder?: string;
+  sortBy: SortOption;
+  onSortChange: (val: SortOption) => void;
+  shapesFilter: ShapesFilterOption;
+  onShapesFilterChange: (val: ShapesFilterOption) => void;
+  visibilityFilter?: VisibilityFilterOption;
+  onVisibilityFilterChange?: (val: VisibilityFilterOption) => void;
+  showVisibilityFilter?: boolean;
+  onRefresh?: () => void;
+  totalCount: number;
+  filteredCount: number;
+  onResetFilters?: () => void;
+}
+
+const FilterToolbar: React.FC<FilterToolbarProps> = ({
+  searchQuery,
+  onSearchChange,
+  searchPlaceholder = '🔍 Пошук за назвою, автором...',
+  sortBy,
+  onSortChange,
+  shapesFilter,
+  onShapesFilterChange,
+  visibilityFilter,
+  onVisibilityFilterChange,
+  showVisibilityFilter = false,
+  onRefresh,
+  totalCount,
+  filteredCount,
+  onResetFilters
+}) => {
+  const isFiltered =
+    searchQuery.trim() !== '' ||
+    shapesFilter !== 'all' ||
+    (showVisibilityFilter && visibilityFilter !== 'all') ||
+    sortBy !== 'newest';
+
+  return (
+    <div className="bg-[var(--bg-primary,#11111b)] p-3 rounded-2xl border border-[var(--border-color,#313244)] space-y-3">
+      {/* Top Row: Full width Search Input */}
+      <div className="relative w-full">
+        <input
+          type="text"
+          placeholder={searchPlaceholder}
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="w-full pl-9 pr-8 py-2.5 rounded-xl bg-black/40 border border-gray-700/80 text-sm focus:outline-none focus:border-indigo-500 text-white placeholder-gray-500 transition-colors"
+        />
+        <span className="absolute left-3 top-3 text-xs text-gray-400 pointer-events-none">🔍</span>
+        {searchQuery && (
+          <button
+            onClick={() => onSearchChange('')}
+            className="absolute right-3 top-3 text-xs text-gray-400 hover:text-white transition-colors"
+            title="Очистити пошук"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
+      {/* Second Row: Filters Group */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Sort Dropdown */}
+          <div className="flex items-center gap-1.5 bg-black/40 px-3 py-1.5 rounded-xl border border-gray-700/80 text-xs">
+            <span className="text-gray-400 font-medium whitespace-nowrap">Сортування:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => onSortChange(e.target.value as SortOption)}
+              className="bg-transparent text-gray-200 focus:outline-none cursor-pointer text-xs font-medium"
+            >
+              <option value="newest" className="bg-gray-900 text-white">🕒 Новіші спочатку</option>
+              <option value="oldest" className="bg-gray-900 text-white">⌛ Старіші спочатку</option>
+              <option value="title_asc" className="bg-gray-900 text-white">🔤 Назва (А - Я)</option>
+              <option value="title_desc" className="bg-gray-900 text-white">🔠 Назва (Я - А)</option>
+              <option value="shapes_desc" className="bg-gray-900 text-white">🧩 Більше об'єктів</option>
+              <option value="shapes_asc" className="bg-gray-900 text-white">🎯 Менше об'єктів</option>
+            </select>
+          </div>
+
+          {/* Shapes Count Filter */}
+          <div className="flex items-center gap-1.5 bg-black/40 px-3 py-1.5 rounded-xl border border-gray-700/80 text-xs">
+            <span className="text-gray-400 font-medium whitespace-nowrap">Об'єкти:</span>
+            <select
+              value={shapesFilter}
+              onChange={(e) => onShapesFilterChange(e.target.value as ShapesFilterOption)}
+              className="bg-transparent text-gray-200 focus:outline-none cursor-pointer text-xs font-medium"
+            >
+              <option value="all" className="bg-gray-900 text-white">📊 Усі розміри</option>
+              <option value="small" className="bg-gray-900 text-white">🟢 Прості (1–10)</option>
+              <option value="medium" className="bg-gray-900 text-white">🟡 Середні (11–50)</option>
+              <option value="large" className="bg-gray-900 text-white">🔴 Складні (50+)</option>
+            </select>
+          </div>
+
+          {/* Visibility Filter (if enabled) */}
+          {showVisibilityFilter && onVisibilityFilterChange && (
+            <div className="flex items-center gap-1.5 bg-black/40 px-3 py-1.5 rounded-xl border border-gray-700/80 text-xs">
+              <span className="text-gray-400 font-medium whitespace-nowrap">Тип:</span>
+              <select
+                value={visibilityFilter}
+                onChange={(e) => onVisibilityFilterChange(e.target.value as VisibilityFilterOption)}
+                className="bg-transparent text-gray-200 focus:outline-none cursor-pointer text-xs font-medium"
+              >
+                <option value="all" className="bg-gray-900 text-white">👁️ Усі типи</option>
+                <option value="public" className="bg-gray-900 text-white">🌐 Публічні</option>
+                <option value="private" className="bg-gray-900 text-white">🔒 Приватні</option>
+                <option value="group" className="bg-gray-900 text-white">🏫 Для гуртів</option>
+              </select>
+            </div>
+          )}
+
+          {/* Refresh Button */}
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              className="px-3 py-1.5 rounded-xl text-xs bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/30 border border-indigo-500/30 transition-colors flex items-center gap-1"
+              title="Оновити список"
+            >
+              🔄 Оновити
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Stats bar & Reset button */}
+      <div className="flex items-center justify-between text-xs text-gray-400 pt-1 border-t border-gray-800/60">
+        <div>
+          <span>Показано проєктів: <strong className="text-white">{filteredCount}</strong></span>
+          {totalCount > 0 && (
+            <span className="text-gray-500 ml-1">(із {totalCount})</span>
+          )}
+        </div>
+        {isFiltered && onResetFilters && (
+          <button
+            onClick={onResetFilters}
+            className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1 underline"
+          >
+            ✕ Скинути всі фільтри
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
 
 interface ProjectCardPreviewProps {
   projectData: string;
   title: string;
   onOpenLargePreview?: () => void;
   interactive?: boolean;
+  allowClickModal?: boolean;
 }
 
 const VeretkaLogoIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
@@ -47,9 +262,11 @@ const ProjectCardPreview: React.FC<ProjectCardPreviewProps> = ({
   projectData, 
   title, 
   onOpenLargePreview,
-  interactive = true 
+  interactive = true,
+  allowClickModal = true
 }) => {
   const [thumbUrl, setThumbUrl] = useState<string | null>(null);
+  const isInteractive = interactive && allowClickModal;
 
   useEffect(() => {
     if (!projectData) return;
@@ -75,13 +292,13 @@ const ProjectCardPreview: React.FC<ProjectCardPreviewProps> = ({
 
   return (
     <div
-      onClick={interactive ? onOpenLargePreview : undefined}
+      onClick={isInteractive ? onOpenLargePreview : undefined}
       className={`relative w-full h-44 bg-slate-950 rounded-xl overflow-hidden border border-gray-800 mb-3 flex items-center justify-center p-2 transition-all shrink-0 select-none group ${
-        interactive
+        isInteractive
           ? 'cursor-pointer hover:border-indigo-500/80 hover:shadow-lg hover:shadow-indigo-500/20'
           : ''
       }`}
-      title={interactive ? "Натисніть для збільшеного модального перегляду" : title}
+      title={isInteractive ? "Натисніть для збільшеного модального перегляду" : title}
     >
       <div 
         className="absolute inset-0 opacity-15 pointer-events-none"
@@ -95,7 +312,9 @@ const ProjectCardPreview: React.FC<ProjectCardPreviewProps> = ({
         <img
           src={thumbUrl}
           alt={title}
-          className="w-full h-full object-contain relative z-10 transition-transform duration-300 ease-out group-hover:scale-110"
+          className={`w-full h-full object-contain relative z-10 transition-transform duration-300 ease-out ${
+            isInteractive ? 'group-hover:scale-110' : ''
+          }`}
         />
       ) : (
         <div className="text-gray-500 text-xs text-center z-10 flex flex-col items-center gap-1">
@@ -104,7 +323,7 @@ const ProjectCardPreview: React.FC<ProjectCardPreviewProps> = ({
         </div>
       )}
 
-      {interactive && (
+      {isInteractive && (
         <div className="absolute inset-x-0 bottom-0 p-1.5 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-20 pointer-events-none">
           <span className="text-[10px] text-indigo-200 bg-indigo-950/80 px-2.5 py-0.5 rounded-full border border-indigo-500/30 font-medium shadow-sm">
             🔍 Натисніть для розгортання
@@ -267,6 +486,53 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
   const [personalProjects, setPersonalProjects] = useState<CloudProject[]>([]);
   const [isLoadingPersonal, setIsLoadingPersonal] = useState(false);
   const [personalError, setPersonalError] = useState('');
+  const [personalAuthMode, setPersonalAuthMode] = useState<'login' | 'register'>('login');
+
+  // Personal Registration State
+  const [regNickname, setRegNickname] = useState('');
+  const [regPasscode, setRegPasscode] = useState('');
+  const [regConfirmPasscode, setRegConfirmPasscode] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+
+  // Account Recovery State
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [recoveryMessage, setRecoveryMessage] = useState('');
+  const [recoverySuccess, setRecoverySuccess] = useState(false);
+  const [isRecovering, setIsRecovering] = useState(false);
+
+  // Edit Account / Profile State
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [currentAccountEmail, setCurrentAccountEmail] = useState<string | null>(null);
+  const [editEmailInput, setEditEmailInput] = useState('');
+  const [editNewPasscode, setEditNewPasscode] = useState('');
+  const [editCurrentPasscode, setEditCurrentPasscode] = useState('');
+  const [editProfileMessage, setEditProfileMessage] = useState('');
+  const [editProfileSuccess, setEditProfileSuccess] = useState(false);
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+
+  // Account Deletion State
+  const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false);
+  const [deleteAccountPasscode, setDeleteAccountPasscode] = useState('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [deleteAccountError, setDeleteAccountError] = useState('');
+
+  // Group Deletion State
+  const [showDeleteGroupModal, setShowDeleteGroupModal] = useState(false);
+  const [deleteGroupPasscode, setDeleteGroupPasscode] = useState('');
+  const [isDeletingGroup, setIsDeletingGroup] = useState(false);
+  const [deleteGroupError, setDeleteGroupError] = useState('');
+
+  // Load user profile when logged in
+  useEffect(() => {
+    if (isPersonalLoggedIn && personalNickname) {
+      getUserAccountProfile(personalNickname).then((res) => {
+        if (res.success) {
+          setCurrentAccountEmail(res.email || '');
+        }
+      });
+    }
+  }, [isPersonalLoggedIn, personalNickname]);
 
   // --- Group Space State ---
   const [groupCodeInput, setGroupCodeInput] = useState(() => localStorage.getItem('veretka_group_code') || '');
@@ -310,6 +576,25 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
   }>({ show: false, projectId: '', action: 'delete' });
   const [promptPasscode, setPromptPasscode] = useState('');
 
+  // --- Sorting & Filtering State ---
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [shapesFilter, setShapesFilter] = useState<ShapesFilterOption>('all');
+  const [visibilityFilter, setVisibilityFilter] = useState<VisibilityFilterOption>('all');
+  const [personalSearchQuery, setPersonalSearchQuery] = useState('');
+  const [groupSearchQuery, setGroupSearchQuery] = useState('');
+
+  const displayedPublicProjects = useMemo(() => {
+    return filterAndSortProjects(publicProjects, '', 'all', shapesFilter, sortBy);
+  }, [publicProjects, shapesFilter, sortBy]);
+
+  const displayedPersonalProjects = useMemo(() => {
+    return filterAndSortProjects(personalProjects, personalSearchQuery, visibilityFilter, shapesFilter, sortBy);
+  }, [personalProjects, personalSearchQuery, visibilityFilter, shapesFilter, sortBy]);
+
+  const displayedGroupProjects = useMemo(() => {
+    return filterAndSortProjects(groupProjects, groupSearchQuery, 'all', shapesFilter, sortBy);
+  }, [groupProjects, groupSearchQuery, shapesFilter, sortBy]);
+
   // Sync current project name when modal opens
   useEffect(() => {
     if (currentProjectName) {
@@ -317,21 +602,27 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
     }
   }, [currentProjectName]);
 
-  // Load public projects when tab is selected or modal opens
+  // Load public projects when tab is selected, modal opens, or searchQuery changes
   useEffect(() => {
-    if (isOpen && activeTab === 'public') {
-      loadPublicProjects();
-    }
-  }, [isOpen, activeTab]);
+    if (!isOpen || activeTab !== 'public') return;
 
-  const loadPublicProjects = async () => {
+    const timer = setTimeout(() => {
+      loadPublicProjects(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [isOpen, activeTab, searchQuery]);
+
+  const loadPublicProjects = async (queryStr = searchQuery) => {
     setIsLoadingPublic(true);
     setHasMorePublic(true);
     try {
-      const res = await getPublicProjectsPaginated(9, null);
+      const res = queryStr.trim()
+        ? await searchPublicProjects(queryStr, 12, null)
+        : await getPublicProjectsPaginated(12, null);
       setPublicProjects(res.projects);
       setPublicLastVisible(res.lastVisible);
-      if (res.projects.length < 9) {
+      if (res.projects.length < 12) {
         setHasMorePublic(false);
       }
     } catch (e) {
@@ -345,10 +636,12 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
     if (isLoadingMorePublic || !hasMorePublic || !publicLastVisible) return;
     setIsLoadingMorePublic(true);
     try {
-      const res = await getPublicProjectsPaginated(9, publicLastVisible);
+      const res = searchQuery.trim()
+        ? await searchPublicProjects(searchQuery, 12, publicLastVisible)
+        : await getPublicProjectsPaginated(12, publicLastVisible);
       setPublicProjects((prev) => [...prev, ...res.projects]);
       setPublicLastVisible(res.lastVisible);
-      if (res.projects.length < 9) {
+      if (res.projects.length < 12) {
         setHasMorePublic(false);
       }
     } catch (e) {
@@ -362,22 +655,173 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
   const handlePersonalLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!personalNickname.trim() || !personalPasscode.trim()) {
-      setPersonalError('Будь ласка, вкажіть нікнейм та пароль');
+      setPersonalError('Будь ласка, вкажіть Нікнейм та Пароль');
       return;
     }
 
     setPersonalError('');
     setIsLoadingPersonal(true);
-    const res = await getPersonalProjects(personalNickname, personalPasscode);
+    const res = await loginUserAccount(personalNickname, personalPasscode);
     setIsLoadingPersonal(false);
 
     if (res.success && res.projects) {
+      const activeNick = res.nickname || personalNickname.trim();
       setIsPersonalLoggedIn(true);
+      setPersonalNickname(activeNick);
       setPersonalProjects(res.projects);
-      localStorage.setItem('veretka_nickname', personalNickname.trim());
+      localStorage.setItem('veretka_nickname', activeNick);
       localStorage.setItem('veretka_passcode', personalPasscode.trim());
     } else {
-      setPersonalError(res.message || 'Не вдалося увійти у кабінет');
+      setPersonalError(res.message || 'Не вдалося відкрити особисту скриню');
+    }
+  };
+
+  // Personal Cabinet Registration
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!regNickname.trim()) {
+      setPersonalError('Будь ласка, вкажіть Нікнейм (Логін)');
+      return;
+    }
+    if (!regPasscode.trim()) {
+      setPersonalError('Будь ласка, вкажіть пароль до скрині');
+      return;
+    }
+    if (regPasscode !== regConfirmPasscode) {
+      setPersonalError('Введені паролі не збігаються. Будь ласка, перевірте написання.');
+      return;
+    }
+
+    setPersonalError('');
+    setIsLoadingPersonal(true);
+    const res = await registerUserAccount({
+      nickname: regNickname.trim(),
+      passcode: regPasscode.trim(),
+      email: regEmail.trim(),
+    });
+
+    if (res.success && res.nickname) {
+      setPersonalNickname(res.nickname);
+      setPersonalPasscode(regPasscode.trim());
+      localStorage.setItem('veretka_nickname', res.nickname);
+      localStorage.setItem('veretka_passcode', regPasscode.trim());
+
+      const pRes = await getPersonalProjects(res.nickname, regPasscode.trim());
+      setPersonalProjects(pRes.projects || []);
+      setIsPersonalLoggedIn(true);
+    } else {
+      setPersonalError(res.message || 'Не вдалося створити скриню');
+    }
+    setIsLoadingPersonal(false);
+  };
+
+  // Google Sign-In Handler
+  const handleGoogleSignIn = async () => {
+    setPersonalError('');
+    setIsLoadingPersonal(true);
+    const res = await signInWithGoogleAccount();
+    setIsLoadingPersonal(false);
+
+    if (res.success && res.nickname) {
+      setIsPersonalLoggedIn(true);
+      setPersonalNickname(res.nickname);
+      setPersonalProjects(res.projects || []);
+      localStorage.setItem('veretka_nickname', res.nickname);
+    } else {
+      setPersonalError(res.message || 'Не вдалося увійти через Google');
+    }
+  };
+
+  // Account Recovery Handler
+  const handleAccountRecoverySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!recoveryEmail.trim()) {
+      setRecoveryMessage('Будь ласка, вкажіть вашу електронну пошту');
+      setRecoverySuccess(false);
+      return;
+    }
+
+    setIsRecovering(true);
+    setRecoveryMessage('');
+    const res = await recoverAccountByEmail(recoveryEmail);
+    setIsRecovering(false);
+
+    setRecoverySuccess(res.success);
+    setRecoveryMessage(res.message);
+  };
+
+  // Profile Edit Handler
+  const handleEditProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditProfileMessage('');
+    setIsUpdatingProfile(true);
+
+    const res = await updateUserAccountProfile({
+      nickname: personalNickname,
+      currentPasscode: editCurrentPasscode || personalPasscode,
+      email: editEmailInput,
+      newPasscode: editNewPasscode,
+    });
+
+    setIsUpdatingProfile(false);
+    setEditProfileSuccess(res.success);
+    setEditProfileMessage(res.message);
+
+    if (res.success) {
+      setCurrentAccountEmail(res.email !== undefined ? res.email : editEmailInput.trim().toLowerCase());
+      if (editNewPasscode.trim()) {
+        setPersonalPasscode(editNewPasscode.trim());
+        localStorage.setItem('veretka_passcode', editNewPasscode.trim());
+      }
+      setEditNewPasscode('');
+      setEditCurrentPasscode('');
+    }
+  };
+
+  // Account Deletion Handler
+  const handleDeleteAccountSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDeleteAccountError('');
+    setIsDeletingAccount(true);
+
+    const res = await deleteUserAccount(personalNickname, deleteAccountPasscode || personalPasscode);
+    setIsDeletingAccount(false);
+
+    if (res.success) {
+      setIsPersonalLoggedIn(false);
+      setPersonalProjects([]);
+      setPersonalNickname('');
+      setCurrentAccountEmail(null);
+      localStorage.removeItem('veretka_nickname');
+      localStorage.removeItem('veretka_passcode');
+      setShowEditProfileModal(false);
+      setShowDeleteAccountConfirm(false);
+      alert('Вашу особисту скриню та її проекти успішно видалено.');
+    } else {
+      setDeleteAccountError(res.message);
+    }
+  };
+
+  // Group Deletion Handler
+  const handleDeleteGroupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeGroup) return;
+    setDeleteGroupError('');
+    setIsDeletingGroup(true);
+
+    const res = await deleteCloudGroup(activeGroup.id, deleteGroupPasscode);
+    setIsDeletingGroup(false);
+
+    if (res.success) {
+      setActiveGroup(null);
+      setGroupProjects([]);
+      localStorage.removeItem('veretka_group_code');
+      localStorage.removeItem('veretka_group_passcode');
+      setShowDeleteGroupModal(false);
+      setDeleteGroupPasscode('');
+      alert(`Групу "${activeGroup.name}" успішно видалено.`);
+    } else {
+      setDeleteGroupError(res.message);
     }
   };
 
@@ -607,11 +1051,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
   if (!isOpen) return null;
 
-  const filteredPublicProjects = publicProjects.filter(p => 
-    p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.authorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.ownerNickname.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredPublicProjects = publicProjects;
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
@@ -659,7 +1099,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
           >
             👤 Моя особиста скриня
           </button>
-          <button
+          {/* <button
             onClick={() => setActiveTab('group')}
             className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors flex items-center gap-2 ${
               activeTab === 'group'
@@ -668,7 +1108,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
             }`}
           >
             🏫 Скриня гурту/осередка
-          </button>
+          </button> */}
           <button
             onClick={() => setActiveTab('publish')}
             className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors flex items-center gap-2 ml-auto ${
@@ -687,35 +1127,43 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
           {/* ==================== TAB 1: PUBLIC GALLERY ==================== */}
           {activeTab === 'public' && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between gap-4">
-                <input
-                  type="text"
-                  placeholder="🔍 Пошук за назвою, автором чи нікнеймом..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full sm:w-80 px-4 py-2 rounded-xl bg-[var(--bg-primary,#11111b)] border border-[var(--border-color,#313244)] text-sm focus:outline-none focus:border-indigo-500"
-                />
-                <button
-                  onClick={loadPublicProjects}
-                  className="px-3 py-2 rounded-xl text-xs bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/30 border border-indigo-500/30 transition-colors"
-                >
-                  Оновити
-                </button>
-              </div>
+              <FilterToolbar
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                searchPlaceholder="Пошук по всій галереї (назва, автор, нікнейм)..."
+                sortBy={sortBy}
+                onSortChange={setSortBy}
+                shapesFilter={shapesFilter}
+                onShapesFilterChange={setShapesFilter}
+                onRefresh={() => loadPublicProjects(searchQuery)}
+                totalCount={publicProjects.length}
+                filteredCount={displayedPublicProjects.length}
+                onResetFilters={() => {
+                  setSearchQuery('');
+                  setSortBy('newest');
+                  setShapesFilter('all');
+                }}
+              />
 
               {isLoadingPublic ? (
                 <div className="py-12 flex flex-col items-center justify-center">
                   <VeretkaLoader className="w-24 h-24 mb-4" />
                   <div className="text-sm font-medium text-[var(--text-tertiary)] animate-pulse">Завантаження галереї...</div>
                 </div>
-              ) : filteredPublicProjects.length === 0 ? (
+              ) : displayedPublicProjects.length === 0 ? (
                 <div className="py-12 text-center text-gray-400 bg-black/20 rounded-2xl border border-dashed border-gray-700">
-                  <p className="text-base font-medium">Публічних проєктів поки немає</p>
-                  <p className="text-xs text-gray-500 mt-1">Опублікуйте свій проєкт першим за допомогою кнопки "Опублікувати поточний проєкт"</p>
+                  <p className="text-base font-medium">
+                    {publicProjects.length === 0 ? 'Публічних проєктів поки немає' : 'Жодного проєкту не знайдено за вибраними фільтрами'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {publicProjects.length === 0
+                      ? 'Опублікуйте свій проєкт першим за допомогою кнопки "Опублікувати поточний проєкт"'
+                      : 'Спробуйте змінити критерії пошуку чи фільтрації'}
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredPublicProjects.map((proj) => (
+                  {displayedPublicProjects.map((proj) => (
                     <div 
                       key={proj.id} 
                       className="bg-[var(--bg-primary,#11111b)] p-4 rounded-xl border border-[var(--border-color,#313244)] hover:border-indigo-500/50 transition-all flex flex-col justify-between"
@@ -803,83 +1251,300 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
             <div className="space-y-6">
               {!isPersonalLoggedIn ? (
                 <div className="max-w-md mx-auto bg-[var(--bg-primary,#11111b)] p-6 rounded-2xl border border-[var(--border-color,#313244)] space-y-4">
-                  <div className="text-center">
-                    <h3 className="text-lg font-bold">Вхід у Мою особисту скриню</h3>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Вкажіть свій унікальний Нікнейм та Пароль, щоб переглядати та керувати власними проєктами
-                    </p>
+                  
+                  {/* Auth Mode Toggle */}
+                  <div className="flex bg-black/40 p-1 rounded-xl border border-gray-800">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPersonalAuthMode('login');
+                        setPersonalError('');
+                      }}
+                      className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                        personalAuthMode === 'login'
+                          ? 'bg-indigo-600 text-white shadow-md'
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      🔓 Вхід (Відкрити)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPersonalAuthMode('register');
+                        setPersonalError('');
+                      }}
+                      className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                        personalAuthMode === 'register'
+                          ? 'bg-indigo-600 text-white shadow-md'
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      📝 Створення скрині
+                    </button>
                   </div>
 
-                  <form onSubmit={handlePersonalLogin} className="space-y-3">
-                    <div>
-                      <label className="block text-xs text-gray-400 mb-1">Ваш Нікнейм:</label>
-                      <input
-                        type="text"
-                        placeholder="наприклад: petro_2026"
-                        value={personalNickname}
-                        onChange={(e) => setPersonalNickname(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-gray-400 mb-1">Пароль до скрині:</label>
-                      <input
-                        type="password"
-                        placeholder="Скретч/PIN пароль"
-                        value={personalPasscode}
-                        onChange={(e) => setPersonalPasscode(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
-                        required
-                      />
-                    </div>
+                  {personalAuthMode === 'login' ? (
+                    /* LOGIN FORM */
+                    <div className="space-y-4">
+                      <div className="text-center">
+                        <h3 className="text-lg font-bold text-white">Відкрити особисту скриню</h3>
+                        <p className="text-xs text-gray-400 mt-1">
+                          Вкажіть свій унікальний Нікнейм (або Email) та Пароль від вашої скрині
+                        </p>
+                      </div>
 
-                    {personalError && (
-                      <p className="text-xs text-red-400 bg-red-500/10 p-2 rounded-lg border border-red-500/20">
-                        {personalError}
-                      </p>
-                    )}
+                      <form onSubmit={handlePersonalLogin} className="space-y-3">
+                        <div>
+                          <label className="block text-xs text-gray-300 font-medium mb-1">Ваш Нікнейм або Email:*</label>
+                          <input
+                            type="text"
+                            placeholder="наприклад: petro_2026 або user@gmail.com"
+                            value={personalNickname}
+                            onChange={(e) => setPersonalNickname(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <label className="block text-xs text-gray-300 font-medium">Пароль до скрині:*</label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowRecoveryModal(true);
+                                setRecoveryMessage('');
+                              }}
+                              className="text-[11px] text-indigo-400 hover:underline"
+                            >
+                              Забули нікнейм або пароль?
+                            </button>
+                          </div>
+                          <input
+                            type="password"
+                            placeholder="Введіть пароль"
+                            value={personalPasscode}
+                            onChange={(e) => setPersonalPasscode(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                            required
+                          />
+                        </div>
 
-                    <button
-                      type="submit"
-                      disabled={isLoadingPersonal}
-                      className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-colors"
-                    >
-                      {isLoadingPersonal ? 'Авторизація...' : 'Увійти в особисту скриню'}
-                    </button>
-                  </form>
+                        {personalError && (
+                          <p className="text-xs text-red-400 bg-red-500/10 p-2.5 rounded-xl border border-red-500/20">
+                            {personalError}
+                          </p>
+                        )}
+
+                        <button
+                          type="submit"
+                          disabled={isLoadingPersonal}
+                          className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-colors shadow-lg shadow-indigo-900/30"
+                        >
+                          {isLoadingPersonal ? 'Авторизація...' : 'Відкрити особисту скриню'}
+                        </button>
+                      </form>
+                    </div>
+                  ) : (
+                    /* REGISTRATION FORM */
+                    <div className="space-y-4">
+                      <div className="text-center">
+                        <h3 className="text-lg font-bold text-white">Створити нову особисту скриню</h3>
+                        <p className="text-xs text-gray-400 mt-1">
+                          Придумайте унікальний Нікнейм та Пароль для захисту та впорядкування ваших проєктів
+                        </p>
+                      </div>
+
+                      <form onSubmit={handleRegisterSubmit} className="space-y-3">
+                        <div>
+                          <label className="block text-xs text-gray-300 font-medium mb-1">Ваш унікальний Нікнейм (Логін):*</label>
+                          <input
+                            type="text"
+                            placeholder="наприклад: petro_2026"
+                            value={regNickname}
+                            onChange={(e) => setRegNickname(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs text-gray-300 font-medium mb-1">Пароль до скрині:*</label>
+                          <input
+                            type="password"
+                            placeholder="Придумайте пароль"
+                            value={regPasscode}
+                            onChange={(e) => setRegPasscode(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs text-gray-300 font-medium mb-1">Повторіть пароль:*</label>
+                          <input
+                            type="password"
+                            placeholder="Підтвердіть пароль"
+                            value={regConfirmPasscode}
+                            onChange={(e) => setRegConfirmPasscode(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs text-gray-300 font-medium mb-1">
+                            Електронна пошта (Email): <span className="text-gray-400 font-normal">(необов'язково)</span>
+                          </label>
+                          <input
+                            type="email"
+                            placeholder="наприклад: user@gmail.com"
+                            value={regEmail}
+                            onChange={(e) => setRegEmail(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                          />
+                          <div className="mt-1.5 p-2.5 rounded-xl bg-indigo-950/40 border border-indigo-500/20 text-[11px] text-indigo-300/90 leading-relaxed flex items-start gap-2">
+                            <span className="shrink-0 text-base">ℹ️</span>
+                            <span>
+                              <strong>Для чого пошта:</strong> Це поле не є обов'язковим. Якщо ви його заповните, пошта слугуватиме надійним способом відновити свій Нікнейм та доступ до скрині, якщо ви їх раптом забудете.
+                            </span>
+                          </div>
+                        </div>
+
+                        {personalError && (
+                          <p className="text-xs text-red-400 bg-red-500/10 p-2.5 rounded-xl border border-red-500/20">
+                            {personalError}
+                          </p>
+                        )}
+
+                        <button
+                          type="submit"
+                          disabled={isLoadingPersonal}
+                          className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-colors shadow-lg shadow-indigo-900/30"
+                        >
+                          {isLoadingPersonal ? 'Створення скрині...' : '✨ Створити та відкрити скриню'}
+                        </button>
+                      </form>
+                    </div>
+                  )}
+
+                  {/* Google Login Divider */}
+                  <div className="relative my-4 flex items-center justify-center">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-800"></div>
+                    </div>
+                    <span className="relative bg-[var(--bg-primary,#11111b)] px-3 text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+                      або
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleGoogleSignIn}
+                    disabled={isLoadingPersonal}
+                    className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs border border-slate-700 transition-all flex items-center justify-center gap-2.5 shadow-sm active:scale-[0.99]"
+                  >
+                    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                    </svg>
+                    <span>Увійти через Google</span>
+                  </button>
+
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between bg-indigo-950/40 p-4 rounded-xl border border-indigo-500/30">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-indigo-950/40 p-4 rounded-xl border border-indigo-500/30 gap-3">
                     <div>
                       <p className="text-xs text-indigo-300 font-medium">Моя особиста скриня користувача:</p>
-                      <h3 className="text-lg font-bold text-white">@{personalNickname}</h3>
+                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        @{personalNickname}
+                      </h3>
+                      <div className="mt-1 flex items-center gap-1.5 text-xs">
+                        <span className="text-gray-400">Прив'язана пошта:</span>
+                        {currentAccountEmail ? (
+                          <span className="text-emerald-300 font-medium bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-500/30 flex items-center gap-1">
+                            ✉️ {currentAccountEmail}
+                          </span>
+                        ) : (
+                          <span className="text-amber-300 font-medium bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-500/30 flex items-center gap-1">
+                            ⚠️ Не вказана
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <button
-                      onClick={() => {
-                        setIsPersonalLoggedIn(false);
-                        setPersonalProjects([]);
-                      }}
-                      className="px-3 py-1.5 rounded-lg text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors"
-                    >
-                      Вийти з особистої скрині
-                    </button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditEmailInput(currentAccountEmail || '');
+                          setEditNewPasscode('');
+                          setEditCurrentPasscode('');
+                          setEditProfileMessage('');
+                          setShowEditProfileModal(true);
+                        }}
+                        className="px-3 py-1.5 rounded-lg text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors shadow-sm flex items-center gap-1.5"
+                      >
+                        ⚙️ Редагувати акаунт
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsPersonalLoggedIn(false);
+                          setPersonalProjects([]);
+                        }}
+                        className="px-3 py-1.5 rounded-lg text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors"
+                      >
+                        Закрити скриню
+                      </button>
+                    </div>
                   </div>
+
+                  <FilterToolbar
+                    searchQuery={personalSearchQuery}
+                    onSearchChange={setPersonalSearchQuery}
+                    searchPlaceholder="Пошук у моїй скрині..."
+                    sortBy={sortBy}
+                    onSortChange={setSortBy}
+                    shapesFilter={shapesFilter}
+                    onShapesFilterChange={setShapesFilter}
+                    showVisibilityFilter={true}
+                    visibilityFilter={visibilityFilter}
+                    onVisibilityFilterChange={setVisibilityFilter}
+                    onRefresh={handlePersonalLogin}
+                    totalCount={personalProjects.length}
+                    filteredCount={displayedPersonalProjects.length}
+                    onResetFilters={() => {
+                      setPersonalSearchQuery('');
+                      setSortBy('newest');
+                      setShapesFilter('all');
+                      setVisibilityFilter('all');
+                    }}
+                  />
 
                   {isLoadingPersonal ? (
                     <div className="py-12 flex flex-col items-center justify-center">
                       <VeretkaLoader className="w-24 h-24 mb-4" />
                       <div className="text-sm font-medium text-[var(--text-tertiary)] animate-pulse">Оновлення скрині...</div>
                     </div>
-                  ) : personalProjects.length === 0 ? (
+                  ) : displayedPersonalProjects.length === 0 ? (
                     <div className="py-12 text-center text-gray-400 bg-black/20 rounded-2xl border border-dashed border-gray-700">
-                      <p className="text-base font-medium">У вашій особистій скрині ще немає збережених проєктів</p>
-                      <p className="text-xs text-gray-500 mt-1">Збережіть поточний проєкт у Мою особисту скриню за допомогою вкладки "Опублікувати"</p>
+                      <p className="text-base font-medium">
+                        {personalProjects.length === 0
+                          ? 'У вашій особистій скрині ще немає збережених проєктів'
+                          : 'Нічого не знайдено в особистій скрині за вибраними фільтрами'}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {personalProjects.length === 0
+                          ? 'Збережіть поточний проєкт у Мою особисту скриню за допомогою вкладки "Опублікувати"'
+                          : 'Спробуйте змінити критерії пошуку чи фільтрації'}
+                      </p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {personalProjects.map((proj) => (
+                      {displayedPersonalProjects.map((proj) => (
                         <div 
                           key={proj.id} 
                           className="bg-[var(--bg-primary,#11111b)] p-4 rounded-xl border border-[var(--border-color,#313244)] hover:border-indigo-500/50 transition-all flex flex-col justify-between"
@@ -942,7 +1607,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                 </button>
                               )}
 
-                              {proj.visibility !== 'group' && (
+                              {/* {proj.visibility !== 'group' && (
                                 <button
                                   onClick={() => {
                                     const code = prompt('Введіть Код групи / осередка:');
@@ -959,7 +1624,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                 >
                                   🏫 В групу
                                 </button>
-                              )}
+                              )} */}
 
                               {proj.visibility !== 'private' && (
                                 <button
@@ -1012,7 +1677,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         !isCreatingGroup ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'
                       }`}
                     >
-                      Увійти в Скриню гурту/осередка
+                      Відкрити скриню гурту/осередка
                     </button>
                     <button
                       onClick={() => setIsCreatingGroup(true)}
@@ -1060,7 +1725,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         disabled={isLoadingGroup}
                         className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-colors"
                       >
-                        {isLoadingGroup ? 'Перевірка...' : 'Увійти в скриню гурту'}
+                        {isLoadingGroup ? 'Перевірка...' : 'Відкрити скриню гурту'}
                       </button>
                     </form>
                   ) : (
@@ -1069,7 +1734,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         <label className="block text-xs text-gray-400 mb-1">Назва гурту / осередка:</label>
                         <input
                           type="text"
-                          placeholder="наприклад: Гурток робототехніки #3"
+                          placeholder="наприклад: Гурток графічного дизайну #3"
                           value={newGroupName}
                           onChange={(e) => setNewGroupName(e.target.value)}
                           className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
@@ -1080,7 +1745,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         <label className="block text-xs text-gray-400 mb-1">Унікальний Код гурту (англійською):</label>
                         <input
                           type="text"
-                          placeholder="наприклад: HUB-ROBOT3"
+                          placeholder="наприклад: HUB-GRAFDESIGN3"
                           value={newGroupCode}
                           onChange={(e) => setNewGroupCode(e.target.value.toUpperCase())}
                           className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500 uppercase"
@@ -1137,39 +1802,79 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between bg-amber-950/40 p-4 rounded-xl border border-amber-500/30">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-mono border border-amber-500/30">
-                          {activeGroup.groupCode}
-                        </span>
-                        <h3 className="text-lg font-bold text-white">{activeGroup.name}</h3>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-amber-950/40 p-4 rounded-xl border border-amber-500/30 gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-mono border border-amber-500/30">
+                            {activeGroup.groupCode}
+                          </span>
+                          <h3 className="text-lg font-bold text-white">{activeGroup.name}</h3>
+                        </div>
+                        {activeGroup.description && (
+                          <p className="text-xs text-gray-300 mt-1">{activeGroup.description}</p>
+                        )}
                       </div>
-                      {activeGroup.description && (
-                        <p className="text-xs text-gray-300 mt-1">{activeGroup.description}</p>
-                      )}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeleteGroupError('');
+                            setDeleteGroupPasscode('');
+                            setShowDeleteGroupModal(true);
+                          }}
+                          className="px-3 py-1.5 rounded-lg text-xs bg-red-600/80 hover:bg-red-600 text-white font-medium transition-colors shadow-sm flex items-center gap-1"
+                          title="Видалити всю групу"
+                        >
+                          🗑️ Видалити групу
+                        </button>
+                        <button
+                          onClick={() => setActiveGroup(null)}
+                          className="px-3 py-1.5 rounded-lg text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors"
+                        >
+                          Вийти з гурту
+                        </button>
+                      </div>
                     </div>
-                    <button
-                      onClick={() => setActiveGroup(null)}
-                      className="px-3 py-1.5 rounded-lg text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors"
-                    >
-                      Вийти з гурту
-                    </button>
-                  </div>
+
+                  <FilterToolbar
+                    searchQuery={groupSearchQuery}
+                    onSearchChange={setGroupSearchQuery}
+                    searchPlaceholder="🔍 Пошук у скрині гурту..."
+                    sortBy={sortBy}
+                    onSortChange={setSortBy}
+                    shapesFilter={shapesFilter}
+                    onShapesFilterChange={setShapesFilter}
+                    onRefresh={handleGroupLogin}
+                    totalCount={groupProjects.length}
+                    filteredCount={displayedGroupProjects.length}
+                    onResetFilters={() => {
+                      setGroupSearchQuery('');
+                      setSortBy('newest');
+                      setShapesFilter('all');
+                    }}
+                  />
 
                   {isLoadingGroup ? (
                     <div className="py-12 flex flex-col items-center justify-center">
                       <VeretkaLoader className="w-24 h-24 mb-4" />
                       <div className="text-sm font-medium text-[var(--text-tertiary)] animate-pulse">Завантаження осередку...</div>
                     </div>
-                  ) : groupProjects.length === 0 ? (
+                  ) : displayedGroupProjects.length === 0 ? (
                     <div className="py-12 text-center text-gray-400 bg-black/20 rounded-2xl border border-dashed border-gray-700">
-                      <p className="text-base font-medium">У цьому гурті ще немає опублікованих проєктів</p>
-                      <p className="text-xs text-gray-500 mt-1">Опублікуйте свій проєкт у цей гурт через вкладку "Опублікувати"</p>
+                      <p className="text-base font-medium">
+                        {groupProjects.length === 0
+                          ? 'У цьому гурті ще немає опублікованих проєктів'
+                          : 'Нічого не знайдено у гурті за вибраними фільтрами'}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {groupProjects.length === 0
+                          ? 'Опублікуйте свій проєкт у цей гурт через вкладку "Опублікувати"'
+                          : 'Спробуйте змінити критерії пошуку чи фільтрації'}
+                      </p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {groupProjects.map((proj) => (
+                      {displayedGroupProjects.map((proj) => (
                         <div 
                           key={proj.id} 
                           className="bg-[var(--bg-primary,#11111b)] p-4 rounded-xl border border-[var(--border-color,#313244)] hover:border-indigo-500/50 transition-all flex flex-col justify-between"
@@ -1323,7 +2028,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                       <span className="block text-[10px] text-gray-500 font-normal mt-1">Тільки у вашій особистій скрині</span>
                     </button>
 
-                    <button
+                    {/* <button
                       type="button"
                       onClick={() => setPubVisibility('group')}
                       className={`p-3 rounded-xl border text-xs text-left transition-all ${
@@ -1334,7 +2039,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                     >
                       🏫 3) Скриня гурту/осередка
                       <span className="block text-[10px] text-gray-500 font-normal mt-1">Доступно членам обраного осередку</span>
-                    </button>
+                    </button> */}
                   </div>
                 </div>
 
@@ -1374,6 +2079,309 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
           )}
 
         </div>
+
+        {/* Edit Profile / Account Settings Modal */}
+        {showEditProfileModal && (
+          <div className="fixed inset-0 z-[10020] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn">
+            <div className="bg-[var(--bg-secondary,#1e1e2e)] text-white p-6 rounded-2xl border border-[var(--border-color,#313244)] max-w-md w-full space-y-4 shadow-2xl relative">
+              <div className="flex justify-between items-center pb-2 border-b border-gray-800">
+                <h4 className="font-bold text-base flex items-center gap-2 text-indigo-300">
+                  ⚙️ Редагування акаунту
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditProfileModal(false);
+                    setEditProfileMessage('');
+                  }}
+                  className="p-1 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
+                >
+                  <XIcon size={20} />
+                </button>
+              </div>
+
+              <div className="text-xs text-gray-300 space-y-1">
+                <p>Нікнейм скрині: <strong className="text-white font-mono">@{personalNickname}</strong></p>
+                <p className="text-gray-400">Тут ви можете прив'язати або оновити пошту, а також змінити пароль до вашої скрині.</p>
+              </div>
+
+              <form onSubmit={handleEditProfileSubmit} className="space-y-3.5">
+                <div>
+                  <label className="block text-xs font-medium text-gray-300 mb-1">
+                    Електронна пошта (Email):
+                  </label>
+                  <input
+                    type="email"
+                    value={editEmailInput}
+                    onChange={(e) => setEditEmailInput(e.target.value)}
+                    placeholder="example@gmail.com"
+                    className="w-full px-3 py-2 rounded-xl bg-black/50 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                  />
+                  <p className="text-[11px] text-indigo-300/80 mt-1">
+                    💡 Прив'яжіть пошту, щоб не втратити доступ та мати змогу відновити Нікнейм.
+                  </p>
+                </div>
+
+                <div className="border-t border-gray-800 pt-3 space-y-3">
+                  <p className="text-xs font-semibold text-gray-300">Зміна паролю (необов'язково):</p>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-400 mb-1">
+                      Новий пароль:
+                    </label>
+                    <input
+                      type="password"
+                      value={editNewPasscode}
+                      onChange={(e) => setEditNewPasscode(e.target.value)}
+                      placeholder="Залиште порожнім, якщо не змінюєте"
+                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-400 mb-1">
+                      Поточний пароль (для підтвердження):
+                    </label>
+                    <input
+                      type="password"
+                      value={editCurrentPasscode}
+                      onChange={(e) => setEditCurrentPasscode(e.target.value)}
+                      placeholder="Введіть поточний пароль"
+                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                {editProfileMessage && (
+                  <p className={`text-xs p-3 rounded-xl border leading-relaxed ${
+                    editProfileSuccess
+                      ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+                      : 'bg-red-500/10 text-red-300 border-red-500/30'
+                  }`}>
+                    {editProfileMessage}
+                  </p>
+                )}
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEditProfileModal(false);
+                      setEditProfileMessage('');
+                      setShowDeleteAccountConfirm(false);
+                    }}
+                    className="flex-1 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors"
+                  >
+                    Скасувати
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isUpdatingProfile}
+                    className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-colors shadow-md shadow-indigo-600/30"
+                  >
+                    {isUpdatingProfile ? 'Збереження...' : 'Зберегти зміни'}
+                  </button>
+                </div>
+              </form>
+
+              {/* Account Deletion Section */}
+              <div className="border-t border-red-500/20 pt-3.5 mt-4">
+                {!showDeleteAccountConfirm ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeleteAccountError('');
+                      setDeleteAccountPasscode(personalPasscode || '');
+                      setShowDeleteAccountConfirm(true);
+                    }}
+                    className="w-full py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    🗑️ Видалити особисту скриню (акаунт)
+                  </button>
+                ) : (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3.5 space-y-3 text-left">
+                    <p className="text-xs text-red-300 leading-relaxed font-medium">
+                      ⚠️ <strong>Увага!</strong> Ви видаляєте свою скриню <span className="font-mono text-white">@{personalNickname}</span>. Усі ваші проєкти в цій скрині будуть видалені остаточно. Дія є незворотною!
+                    </p>
+                    
+                    <form onSubmit={handleDeleteAccountSubmit} className="space-y-2.5">
+                      <div>
+                        <label className="block text-[11px] text-gray-300 mb-1">Підтвердіть пароль для видалення:</label>
+                        <input
+                          type="password"
+                          value={deleteAccountPasscode}
+                          onChange={(e) => setDeleteAccountPasscode(e.target.value)}
+                          placeholder="Введіть пароль"
+                          className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-red-500/30 text-xs focus:outline-none focus:border-red-400"
+                          required
+                        />
+                      </div>
+
+                      {deleteAccountError && (
+                        <p className="text-xs text-red-300 bg-red-950/80 p-2 rounded-lg border border-red-500/30">
+                          {deleteAccountError}
+                        </p>
+                      )}
+
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setShowDeleteAccountConfirm(false)}
+                          className="flex-1 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium"
+                        >
+                          Скасувати
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isDeletingAccount}
+                          className="flex-1 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition-colors shadow-md shadow-red-900/40"
+                        >
+                          {isDeletingAccount ? 'Видалення...' : 'Підтверджую видалення'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Group Deletion Modal */}
+        {showDeleteGroupModal && activeGroup && (
+          <div className="fixed inset-0 z-[10020] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn">
+            <div className="bg-[var(--bg-secondary,#1e1e2e)] text-white p-6 rounded-2xl border border-[var(--border-color,#313244)] max-w-md w-full space-y-4 shadow-2xl relative">
+              <div className="flex justify-between items-center pb-2 border-b border-gray-800">
+                <h4 className="font-bold text-base flex items-center gap-2 text-red-400">
+                  🗑️ Видалення гурту / осередка
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteGroupModal(false)}
+                  className="p-1 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
+                >
+                  <XIcon size={20} />
+                </button>
+              </div>
+
+              <p className="text-xs text-gray-300 leading-relaxed">
+                Ви збираєтеся повністю видалити групу <strong className="text-white">{activeGroup.name}</strong> (<span className="font-mono text-amber-300">{activeGroup.groupCode}</span>).
+                Усі учасники втратять доступ до цієї групи.
+              </p>
+
+              <form onSubmit={handleDeleteGroupSubmit} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-300 mb-1">
+                    Введіть пароль гурту для підтвердження:*
+                  </label>
+                  <input
+                    type="password"
+                    value={deleteGroupPasscode}
+                    onChange={(e) => setDeleteGroupPasscode(e.target.value)}
+                    placeholder="Пароль гурту"
+                    className="w-full px-3 py-2 rounded-xl bg-black/50 border border-red-500/30 text-sm focus:outline-none focus:border-red-500"
+                    required
+                  />
+                </div>
+
+                {deleteGroupError && (
+                  <p className="text-xs p-3 rounded-xl border leading-relaxed bg-red-500/10 text-red-300 border-red-500/30">
+                    {deleteGroupError}
+                  </p>
+                )}
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteGroupModal(false)}
+                    className="flex-1 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors"
+                  >
+                    Скасувати
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isDeletingGroup}
+                    className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition-colors shadow-md shadow-red-900/40"
+                  >
+                    {isDeletingGroup ? 'Видалення...' : 'Видалити групу'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Account Recovery Modal */}
+        {showRecoveryModal && (
+          <div className="fixed inset-0 z-[10020] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn">
+            <div className="bg-[var(--bg-secondary,#1e1e2e)] text-white p-6 rounded-2xl border border-[var(--border-color,#313244)] max-w-md w-full space-y-4 shadow-2xl relative">
+              <div className="flex justify-between items-center pb-2 border-b border-gray-800">
+                <h4 className="font-bold text-base flex items-center gap-2">
+                  🔑 Відновлення Нікнейму / Доступу
+                </h4>
+                <button
+                  onClick={() => {
+                    setShowRecoveryModal(false);
+                    setRecoveryEmail('');
+                    setRecoveryMessage('');
+                  }}
+                  className="p-1 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
+                >
+                  <XIcon size={20} />
+                </button>
+              </div>
+
+              <p className="text-xs text-gray-300 leading-relaxed">
+                Вкажіть електронну пошту (Email), яку ви вказували при реєстрації скрині, щоб знайти зареєстровані Нікнейми:
+              </p>
+
+              <form onSubmit={handleAccountRecoverySubmit} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-300 mb-1">Ваша електронна пошта (Email):*</label>
+                  <input
+                    type="email"
+                    value={recoveryEmail}
+                    onChange={(e) => setRecoveryEmail(e.target.value)}
+                    placeholder="example@gmail.com"
+                    className="w-full px-3 py-2 rounded-xl bg-black/50 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                    required
+                  />
+                </div>
+
+                {recoveryMessage && (
+                  <p className={`text-xs p-3 rounded-xl border leading-relaxed ${
+                    recoverySuccess
+                      ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
+                      : 'bg-red-500/10 text-red-300 border-red-500/30'
+                  }`}>
+                    {recoveryMessage}
+                  </p>
+                )}
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowRecoveryModal(false);
+                      setRecoveryEmail('');
+                      setRecoveryMessage('');
+                    }}
+                    className="flex-1 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors"
+                  >
+                    Закрити
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isRecovering}
+                    className="flex-1 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-colors shadow-md shadow-indigo-600/30"
+                  >
+                    {isRecovering ? 'Пошук...' : 'Знайти Нікнейм'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Action Confirmation Modal (for entering passcode when deleting/updating) */}
         {actionPasscodeModal.show && (
@@ -1465,6 +2473,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 <ProjectCardPreview
                   projectData={shareModalProject.projectData}
                   title={shareModalProject.title}
+                  interactive={false}
                   allowClickModal={false}
                 />
               </div>

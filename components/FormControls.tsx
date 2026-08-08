@@ -16,7 +16,7 @@ export const Label: React.FC<{ htmlFor: string; children?: React.ReactNode; titl
 export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: number; onChange: (value: number) => void, disabled?: boolean; step?: number; min?: number; max?: number; onFocus?: React.FocusEventHandler<HTMLInputElement>; title?: string, className?: string, smartRound?: boolean, unit?: string; onBlur?: React.FocusEventHandler<HTMLInputElement>; onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>; autoFocus?: boolean, stepLogic?: 'grid'; placeholder?: string }> (
     ({ id, value, onChange, disabled, step = 1, min, max, onFocus, title, className, smartRound = true, unit, onBlur, onKeyDown, autoFocus, stepLogic, placeholder }, forwardedRef) => {
     
-    const [displayValue, setDisplayValue] = useState(String(value));
+    const [displayValue, setDisplayValue] = useState(String(isNaN(value as any) ? 0 : value));
     const internalRef = useRef<HTMLInputElement>(null);
 
     // Combine forwardedRef and internalRef
@@ -50,9 +50,10 @@ export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: num
 
         // If input is invalid or empty, revert to the last valid value from props.
         if (isNaN(num) || (displayValue?.trim() || '') === '') {
-            setDisplayValue((value as any) === '' ? '' : String(value));
-            if((value as any) !== '' && value !== Number(displayValue)) {
-                onChange(value);
+            const safeValue = isNaN(value as any) ? 0 : value;
+            setDisplayValue((safeValue as any) === '' ? '' : String(safeValue));
+            if((safeValue as any) !== '' && safeValue !== Number(displayValue)) {
+                onChange(safeValue);
             }
             return;
         }

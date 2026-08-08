@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { XIcon } from './icons';
-import { Label, NumberInput, ColorInput } from './FormControls';
+import { InputWrapper, Label, NumberInput, ColorInput } from './FormControls';
 import { type ProjectTemplate } from '../types';
 import { useLanguage } from './LanguageContext';
 
@@ -187,19 +187,28 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                             <div className="space-y-4">
                                 <h3 className="text-lg font-semibold text-[var(--text-secondary)]">{t('settings.canvas.size')}</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <NumberInput label={t('settings.canvas.width')} value={props.canvasWidth} onChange={props.setCanvasWidth} min={100} max={5000} />
-                                    <NumberInput label={t('settings.canvas.height')} value={props.canvasHeight} onChange={props.setCanvasHeight} min={100} max={5000} />
+                                    <InputWrapper>
+                                        <Label htmlFor="canvasWidth">{t('settings.canvas.width')}</Label>
+                                        <NumberInput id="canvasWidth" value={props.canvasWidth} onChange={props.setCanvasWidth} min={100} max={5000} />
+                                    </InputWrapper>
+                                    <InputWrapper>
+                                        <Label htmlFor="canvasHeight">{t('settings.canvas.height')}</Label>
+                                        <NumberInput id="canvasHeight" value={props.canvasHeight} onChange={props.setCanvasHeight} min={100} max={5000} />
+                                    </InputWrapper>
                                 </div>
 
                                 <h3 className="text-lg font-semibold text-[var(--text-secondary)] pt-2">{t('settings.canvas.background')}</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <ColorInput label={t('settings.canvas.bgColor')} value={props.canvasBgColor} onChange={props.setCanvasBgColor} />
+                                    <InputWrapper>
+                                        <Label htmlFor="canvasBgColor">{t('settings.canvas.bgColor')}</Label>
+                                        <ColorInput id="canvasBgColor" value={props.canvasBgColor} onChange={props.setCanvasBgColor} />
+                                    </InputWrapper>
                                 </div>
 
                                 <h3 className="text-lg font-semibold text-[var(--text-secondary)] pt-2">{t('settings.canvas.codeDisplay')}</h3>
                                 <div className="grid grid-cols-1 gap-2">
-                                    <Label title={t('settings.canvas.varName')}>
-                                        <input type="text" value={props.canvasVarName} onChange={e => props.setCanvasVarName(e.target.value)} className="w-full bg-[var(--bg-app)] border border-[var(--border-secondary)] text-[var(--text-primary)] text-sm rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] transition-shadow" />
+                                    <Label htmlFor="canvasVarName" title={t('settings.canvas.varName')}>
+                                        <input id="canvasVarName" type="text" value={props.canvasVarName} onChange={e => props.setCanvasVarName(e.target.value)} className="w-full bg-[var(--bg-app)] border border-[var(--border-secondary)] text-[var(--text-primary)] text-sm rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] transition-shadow" />
                                     </Label>
                                     <p className="text-xs text-[var(--text-tertiary)]">{t('settings.canvas.varNameDesc')}</p>
                                 </div>
@@ -210,8 +219,14 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                             <div className="space-y-4">
                                 <h3 className="text-lg font-semibold text-[var(--text-secondary)]">{t('settings.grid.settings')}</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <NumberInput label={t('settings.grid.size')} value={props.gridSize} onChange={props.setGridSize} min={5} max={100} />
-                                    <NumberInput label={t('settings.grid.snapStep')} value={props.gridSnapStep} onChange={props.setGridSnapStep} min={1} max={50} />
+                                    <InputWrapper>
+                                        <Label htmlFor="gridSize">{t('settings.grid.size')}</Label>
+                                        <NumberInput id="gridSize" value={props.gridSize} onChange={props.setGridSize} min={5} max={100} />
+                                    </InputWrapper>
+                                    <InputWrapper>
+                                        <Label htmlFor="gridSnapStep">{t('settings.grid.snapStep')}</Label>
+                                        <NumberInput id="gridSnapStep" value={props.gridSnapStep} onChange={props.setGridSnapStep} min={1} max={50} />
+                                    </InputWrapper>
                                 </div>
                                 <div className="flex items-start pt-2">
                                     <input id="enableSnappingGrid" type="checkbox" checked={props.enableSnapping} onChange={e => props.setEnableSnapping(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)] mt-0.5" />
@@ -274,7 +289,10 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
 
                                 <h3 className="text-lg font-semibold text-[var(--text-secondary)] pt-4 border-t border-[var(--border-secondary)]">{t('settings.appearance.homeScreen')}</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <NumberInput id="maxRecentProjects" label={t('settings.appearance.maxRecentProjects')} value={props.maxRecentProjects} onChange={props.setMaxRecentProjects} min={0} max={50} step={1} />
+                                    <InputWrapper>
+                                        <Label htmlFor="maxRecentProjects">{t('settings.appearance.maxRecentProjects')}</Label>
+                                        <NumberInput id="maxRecentProjects" value={props.maxRecentProjects} onChange={props.setMaxRecentProjects} min={0} max={50} step={1} />
+                                    </InputWrapper>
                                 </div>
                                 <p className="text-xs text-[var(--text-tertiary)] -mt-2">{t('settings.appearance.maxRecentProjectsDesc')}</p>
 

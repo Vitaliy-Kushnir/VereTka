@@ -449,7 +449,17 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             }
             
             setAction({ type: 'dragging', initialShape: clickedShape, startPos: pos });
-            if (!selectedShapeIds.includes(clickedShape.id)) onSelectShape(clickedShape.id, e.ctrlKey || e.metaKey, e.shiftKey);
+            
+            const getRootId = (id: string): string => {
+                const shape = shapes.find(s => s.id === id);
+                if (shape && shape.groupId) return getRootId(shape.groupId);
+                const groupParent = shapes.find(g => g.type === 'group' && g.shapeIds?.includes(id));
+                if (groupParent) return getRootId(groupParent.id);
+                return id;
+            };
+            const resolvedClickedId = getRootId(clickedShape.id);
+
+            if (!selectedShapeIds.includes(resolvedClickedId)) onSelectShape(clickedShape.id, e.ctrlKey || e.metaKey, e.shiftKey);
             else if (e.ctrlKey || e.metaKey || e.shiftKey) onSelectShape(clickedShape.id, e.ctrlKey || e.metaKey, e.shiftKey);
         } else {
             // Clicked on empty space, initiate selection box.
@@ -1895,7 +1905,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             });
 
             let selectedIds = Array.from(selectedSet);
-            if (e.shiftKey) {
+            if (e.shiftKey || e.ctrlKey || e.metaKey) {
                 selectedIds = Array.from(new Set([...selectedShapeIds, ...selectedIds]));
             }
 
@@ -2681,7 +2691,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 const isDrawing = activeTool !== 'select';
                 const isDuplicationPreview = action?.type === 'duplicating' && shape.id.endsWith('-preview');
                 const shapeCursor = (isDisabled || isHiddenAndSelected) ? 'default' : (isDrawing ? 'inherit' : 'move');
-                const hitboxStrokeWidth = Math.max(shape.strokeWidth, 20 / viewTransform.scale);
+                const hitboxStrokeWidth = Math.max(isNaN(shape.strokeWidth) ? 0 : shape.strokeWidth, 20 / viewTransform.scale);
                 
                 let transform = getTransform(shape);
                 const isThisShapeBeingPointEdited = action?.type === 'point-editing' && shape.id === (action as any).initialShape.id;
@@ -3323,7 +3333,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                     const shiftFrac = ((shiftPct % 100) + 100) % 100 / 100;
                                     const res = evaluateShapeContourPointAndTangent(pShape, shiftFrac, 0, 0);
                                     return (
-                                        <g key="contour-shift-handle" title={t('tool.distribute.path.contourShift') || 'Зсув'}>
+                                        <g key="contour-shift-handle">
+                                            <title>{t('tool.distribute.path.contourShift') || 'Зсув'}</title>
                                             <circle
                                                 cx={res.targetCX}
                                                 cy={res.targetCY}
@@ -3357,7 +3368,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                     const rotatedPoint = rotatePoint({x: hx, y: hy}, {x: pShape.cx, y: pShape.cy}, pShape.rotation || 0);
                                     
                                     return (
-                                        <g key="inner-radius-handle" title={t('tool.distribute.path.innerRadius') || 'Внутрішній радіус'}>
+                                        <g key="inner-radius-handle">
+                                            <title>{t('tool.distribute.path.innerRadius') || 'Внутрішній радіус'}</title>
                                             <circle
                                                 cx={rotatedPoint.x}
                                                 cy={rotatedPoint.y}

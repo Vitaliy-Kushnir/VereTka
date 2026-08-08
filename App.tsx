@@ -1128,42 +1128,34 @@ const applyDistributePathToShapes = (currentShapes: Shape[], pathState: Distribu
                 const cosA = Math.cos(screenAngleRad);
                 const sinA = Math.sin(screenAngleRad);
                 
-                let scx = 0, scy = 0;
-                switch (originalS.type) {
-                    case 'rectangle': case 'triangle': case 'right-triangle': case 'rhombus': case 'trapezoid': case 'parallelogram': case 'arc': case 'text': case 'image': case 'bitmap':
-                        scx = originalS.x + (originalS.width || 0) / 2;
-                        scy = originalS.y + ((originalS as any).height || 0) / 2;
-                        break;
-                    case 'ellipse': case 'polygon': case 'star':
-                        scx = originalS.cx;
-                        scy = originalS.cy;
-                        break;
-                }
-                
-                if (scx !== 0 || scy !== 0) {
-                    const relX = scx - currentCX;
-                    const relY = scy - currentCY;
-                    const rotRelX = relX * cosA - relY * sinA;
-                    const rotRelY = relX * sinA + relY * cosA;
-                    
-                    const finalCX = targetCX + offsetX + rotRelX;
-                    const finalCY = targetCY + offsetY + rotRelY;
+                const rotatePointCustom = (px: number, py: number) => {
+                    const prX = px - currentCX;
+                    const prY = py - currentCY;
+                    const prrX = prX * cosA - prY * sinA;
+                    const prrY = prX * sinA + prY * cosA;
+                    return { x: targetCX + offsetX + prrX, y: targetCY + offsetY + prrY };
+                };
+
+                const center = getShapeCenter(originalS, pathState.originalShapes);
+                if (center) {
+                    const rotated = rotatePointCustom(center.x, center.y);
+                    const extraDx = rotated.x - (center.x + dx);
+                    const extraDy = rotated.y - (center.y + dy);
                     
                     switch (updatedS.type) {
                         case 'rectangle': case 'triangle': case 'right-triangle': case 'rhombus': case 'trapezoid': case 'parallelogram': case 'arc': case 'text': case 'image': case 'bitmap':
-                            updatedS = { ...updatedS, x: finalCX - (updatedS.width || 0) / 2, y: finalCY - ((updatedS as any).height || 0) / 2 };
+                            updatedS = { ...updatedS, x: (updatedS as any).x + extraDx, y: (updatedS as any).y + extraDy };
                             break;
                         case 'ellipse': case 'polygon': case 'star':
-                            updatedS = { ...updatedS, cx: finalCX, cy: finalCY };
+                            updatedS = { ...updatedS, cx: (updatedS as any).cx + extraDx, cy: (updatedS as any).cy + extraDy };
                             break;
                         case 'line': case 'bezier': case 'pencil': case 'polyline':
-                            updatedS = { ...updatedS, points: (originalS as any).points.map((p: any) => {
-                                const prX = p.x - currentCX;
-                                const prY = p.y - currentCY;
-                                const prrX = prX * cosA - prY * sinA;
-                                const prrY = prX * sinA + prY * cosA;
-                                return { x: targetCX + offsetX + prrX, y: targetCY + offsetY + prrY };
-                            }) };
+                            updatedS = { ...updatedS, points: (updatedS as any).points.map((p: any) => ({ x: p.x + extraDx, y: p.y + extraDy })) };
+                            break;
+                        case 'group':
+                            if ((updatedS as any).rotationCenter) {
+                                updatedS = { ...updatedS, rotationCenter: { x: (updatedS as any).rotationCenter.x + extraDx, y: (updatedS as any).rotationCenter.y + extraDy } };
+                            }
                             break;
                     }
                 }
@@ -1193,6 +1185,9 @@ const applyDistributePathToShapes = (currentShapes: Shape[], pathState: Distribu
         }
         const keepShape = !!pathState.shapePathParams.keepShape;
         if (keepShape) {
+            if (pathState.shapePathParams.isExisting === false && 'fill' in pShape) {
+                pShape = { ...pShape, fill: 'none' } as any;
+            }
             if (!newShapes.some(s => s.id === pShape.id)) {
                 newShapes.push(pShape);
             } else {
@@ -1830,20 +1825,23 @@ export default function App(): React.ReactNode {
   }, [selectedShapeIds, cancelShapePreview]);
 
 
-    const fitCanvasToView = useCallback(() => {
+    const fitCanvasToView = useCallback((widthOverride?: number, heightOverride?: number) => {
         if (viewportSize.width === 0 || viewportSize.height === 0) return;
-        const padding = 10;
+        const targetWidth = widthOverride ?? canvasWidth;
+        const targetHeight = heightOverride ?? canvasHeight;
+        if (targetWidth <= 0 || targetHeight <= 0) return;
+        const padding = 20;
         const rulerOffset = showAxes ? RULER_THICKNESS : 0;
         const canvasContainerWidth = viewportSize.width - rulerOffset;
         const canvasContainerHeight = viewportSize.height - rulerOffset;
         if (canvasContainerWidth <= 0 || canvasContainerHeight <= 0) return;
         const availableWidth = canvasContainerWidth - padding * 2;
         const availableHeight = canvasContainerHeight - padding * 2;
-        const scaleX = availableWidth / canvasWidth;
-        const scaleY = availableHeight / canvasHeight;
+        const scaleX = availableWidth / targetWidth;
+        const scaleY = availableHeight / targetHeight;
         const newScale = Math.min(scaleX, scaleY, MAX_SCALE);
-        const scaledCanvasWidth = canvasWidth * newScale;
-        const scaledCanvasHeight = canvasHeight * newScale;
+        const scaledCanvasWidth = targetWidth * newScale;
+        const scaledCanvasHeight = targetHeight * newScale;
         const newX = (canvasContainerWidth - scaledCanvasWidth) / 2;
         const newY = (canvasContainerHeight - scaledCanvasHeight) / 2;
         setViewTransform({ scale: newScale, x: newX, y: newY });
@@ -1915,7 +1913,8 @@ export default function App(): React.ReactNode {
           shapePathParams: {
               shapeId: clickedShape.id,
               pathShape: { ...clickedShape },
-              keepShape
+              keepShape,
+              isExisting: true
           }
       });
 
@@ -1937,16 +1936,22 @@ export default function App(): React.ReactNode {
             return;
         }
         const keepShape = distributePathState.shapePathParams?.keepShape ?? true;
+        let drawnPathShape = shape;
+        if ('fill' in drawnPathShape) {
+            drawnPathShape = { ...drawnPathShape, fill: 'none' } as any;
+        }
+
         if (keepShape) {
-            setShapes(prevShapes => [...prevShapes, shape]);
+            setShapes(prevShapes => [...prevShapes, drawnPathShape]);
         }
         setDistributePathState({
             ...distributePathState,
             type: 'shape',
             shapePathParams: {
-                shapeId: shape.id,
-                pathShape: { ...shape },
-                keepShape
+                shapeId: drawnPathShape.id,
+                pathShape: { ...drawnPathShape },
+                keepShape,
+                isExisting: false
             }
         });
         setIsSelectingPathShape(false);
@@ -2074,19 +2079,23 @@ export default function App(): React.ReactNode {
     setPreviewOverrides((prev: any) => ({ ...prev, [shapeId]: overrides }));
   }, []);
 
-  const deleteShape = useCallback((id: string) => {
+  const deleteShape = useCallback((idOrIds: string | string[]) => {
+    const ids = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
     setShapes(prevShapes => {
-        const shapeToDelete = prevShapes.find((s: any) => s.id === id);
-        let idsToDelete = [id];
-        if (shapeToDelete?.type === 'group') {
-            idsToDelete = [...idsToDelete, ...(shapeToDelete as any).shapeIds];
-        }
-        return prevShapes.filter(shape => !idsToDelete.includes(shape.id));
+        let allIdsToDelete = [...ids];
+        ids.forEach(id => {
+            const shapeToDelete = prevShapes.find((s: any) => s.id === id);
+            if (shapeToDelete?.type === 'group') {
+                allIdsToDelete = [...allIdsToDelete, ...(shapeToDelete as any).shapeIds];
+            }
+        });
+        return prevShapes.filter(shape => !allIdsToDelete.includes(shape.id));
     });
     setSelectedShapeIds((prev: any) => {
-        if (prev.includes(id)) {
+        const hasSelected = ids.some(id => prev.includes(id));
+        if (hasSelected) {
             setActivePointIndex(null);
-            return prev.filter((p: any) => p !== id);
+            return prev.filter((p: any) => !ids.includes(p));
         }
         return prev;
     });
@@ -2674,7 +2683,21 @@ export default function App(): React.ReactNode {
       }
       
       const targetShape = shapes.find((s: any) => s.id === id);
-      const targetGroupId = !ignoreGroup ? targetShape?.groupId : undefined;
+      
+      let targetGroupId: string | undefined = undefined;
+      if (!ignoreGroup && id) {
+          const getRootId = (shapeId: string): string => {
+              const shape = shapes.find((s: any) => s.id === shapeId);
+              if (shape && shape.groupId) return getRootId(shape.groupId);
+              const groupParent = shapes.find((g: any) => g.type === 'group' && g.shapeIds?.includes(shapeId));
+              if (groupParent) return getRootId(groupParent.id);
+              return shapeId;
+          };
+          const rootId = getRootId(id as string);
+          if (rootId !== id) {
+              targetGroupId = rootId;
+          }
+      }
       
       const idsToToggle = targetGroupId 
         ? [targetGroupId]
@@ -2988,7 +3011,8 @@ export default function App(): React.ReactNode {
     setProjectWasEverActive(true);
     setIsNewProjectModalOpen(false);
     setIsProjectActive(true);
-    setTimeout(fitCanvasToView, 0);
+    setTimeout(() => fitCanvasToView(settings.width, settings.height), 0);
+    setTimeout(() => fitCanvasToView(settings.width, settings.height), 100);
   }, [getProjectSignature, fitCanvasToView, projectTemplates, resetHistory]);
   
   const handleOpenNewProjectModal = useCallback(() => {
@@ -3179,7 +3203,23 @@ export default function App(): React.ReactNode {
 
   const processLoadedData = useCallback((fileContent: string | object, fileName?: string, handle?: FileSystemFileHandle | null) => {
     try {
-        const savedData = typeof fileContent === 'string' ? JSON.parse(fileContent) : fileContent;
+        let savedData: any = null;
+        if (typeof fileContent === 'string') {
+            const trimmed = fileContent.trim();
+            if (trimmed.startsWith('from tkinter') || trimmed.startsWith('import tkinter') || fileName?.endsWith('.py')) {
+                showNotification('Вибраний файл є Python-скриптом (.py), а не JSON-проєктом Веретки (.vec.json)', 'error');
+                return;
+            }
+            try {
+                savedData = JSON.parse(fileContent);
+            } catch (jsonErr) {
+                showNotification('Помилка парсингу файлу проєкту: вибраний файл не містить дійсного JSON-формату (.vec.json)', 'error');
+                return;
+            }
+        } else {
+            savedData = fileContent;
+        }
+
         if (savedData && (Array.isArray(savedData.shapes) || savedData.canvasSettings)) {
             const shapesToLoad = Array.isArray(savedData.shapes) ? savedData.shapes : [];
             const newProjectName = savedData.projectName || (fileName ? fileName.replace(/\.vec\.json$/, '') : t('app.1014'));
@@ -3189,16 +3229,17 @@ export default function App(): React.ReactNode {
             setProjectName(newProjectName);
 
             const cs = savedData.canvasSettings || {};
-            setCanvasWidth(cs.width || 800);
-            setCanvasHeight(cs.height || 600);
+            const loadedWidth = cs.width || 800;
+            const loadedHeight = cs.height || 600;
+            setCanvasWidth(loadedWidth);
+            setCanvasHeight(loadedHeight);
             setCanvasBgColor(cs.bgColor || '#ffffff');
             setCanvasVarName(cs.varName || 'c');
             
-            if (savedData.viewTransform) {
-                setViewTransform(savedData.viewTransform);
-            } else {
-                setViewTransform({ x: 0, y: 0, zoom: 1 });
-            }
+            // Automatically fit canvas scale to full visible area on project open
+            setTimeout(() => fitCanvasToView(loadedWidth, loadedHeight), 0);
+            setTimeout(() => fitCanvasToView(loadedWidth, loadedHeight), 100);
+            setTimeout(() => fitCanvasToView(loadedWidth, loadedHeight), 300);
 
             const ui = savedData.uiSettings || {};
             setTheme(ui.theme || 'dark');
@@ -3233,7 +3274,7 @@ export default function App(): React.ReactNode {
             }
             showNotification(t('app.1015'), 'info');
             localStorage.removeItem(AUTOSAVE_KEY);
-            setTimeout(fitCanvasToView, 0);
+            setTimeout(() => fitCanvasToView(loadedWidth, loadedHeight), 50);
         } else {
             showNotification(t('app.1016'), 'error');
         }
@@ -3515,7 +3556,7 @@ export default function App(): React.ReactNode {
             onConfirm: () => {
                 const idsToDelete = [...selectedShapeIds];
                 setSelectedShapeIds([]);
-                idsToDelete.forEach((id: string) => deleteShape(id));
+                deleteShape(idsToDelete);
                 setConfirmationAction(null);
             },
             confirmText: t('action.confirm') || 'Підтвердити',
@@ -3531,14 +3572,18 @@ export default function App(): React.ReactNode {
         title: t('app.1125'),
         message: t('app.1126'),
         onConfirm: () => {
-            deleteShape(id);
+            if (selectedShapeIds.includes(id)) {
+                deleteShape(selectedShapeIds);
+            } else {
+                deleteShape(id);
+            }
             setConfirmationAction(null);
         },
         confirmText: t('action.confirm') || 'Підтвердити',
         cancelText: t('action.cancel') || 'Скасувати',
         variant: 'destructive'
     });
-  }, [deleteShape, t, distributePathState]);
+  }, [deleteShape, t, distributePathState, selectedShapeIds]);
 
   const handleAlignShapes = useCallback((alignment: 'left' | 'center-h' | 'right' | 'top' | 'center-v' | 'bottom' | 'distribute-h' | 'distribute-v' | 'distribute-path', relativeTo: 'selection' | 'canvas', distributeOptions?: { orientAlongPath: boolean, orientationType: 'radial' | 'tangent' | 'parallel' | 'perpendicular' | 'custom', orientationAngle: number, rotateAlongPath: boolean }) => {
       if (distributePathState) {
@@ -4571,7 +4616,7 @@ export default function App(): React.ReactNode {
                 if (activeTool === 'edit-points' && selectedShapeIds.length === 1 && activePointIndex !== null) {
                     deletePoint(selectedShapeIds[0], activePointIndex);
                 } else if (selectedShapeIds.length > 0) {
-                    selectedShapeIds.forEach((id: string) => deleteShape(id));
+                    deleteShape(selectedShapeIds);
                 }
                 return;
         }
@@ -5009,7 +5054,7 @@ export default function App(): React.ReactNode {
                                     enableSnapping={enableSnapping}
                                 />
                             </div>
-                            <button onClick={fitCanvasToView} title={t('menu.view.fit')} className="absolute bottom-4 right-4 z-10 p-2 bg-[var(--bg-primary)] text-[var(--text-secondary)] rounded-full shadow-lg hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
+                            <button onClick={() => fitCanvasToView()} title={t('menu.view.fit')} className="absolute bottom-4 right-4 z-10 p-2 bg-[var(--bg-primary)] text-[var(--text-secondary)] rounded-full shadow-lg hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
                                 <FitToScreenIcon />
                             </button>
                         </div>
@@ -5116,7 +5161,22 @@ export default function App(): React.ReactNode {
                             }
                             setHistoryState((prev: any) => {
                                 const newShapes = applyDistributePathToShapes(prev.shapes, prev.distributePathState!);
-                                return { ...prev, shapes: newShapes, distributePathState: null };
+                                const addedShapes = newShapes.filter(ns => !prev.shapes.some((ps: any) => ps.id === ns.id));
+                                const removedShapeIds = prev.shapes.filter((ps: any) => !newShapes.some(ns => ns.id === ps.id)).map((s: any) => s.id);
+                                let newLayers = prev.layers;
+                                if (addedShapes.length > 0 || removedShapeIds.length > 0) {
+                                    newLayers = newLayers.map((layer: any) => {
+                                        let updatedShapeIds = layer.shapeIds || [];
+                                        if (removedShapeIds.length > 0) {
+                                            updatedShapeIds = updatedShapeIds.filter((id: string) => !removedShapeIds.includes(id));
+                                        }
+                                        if (addedShapes.length > 0 && layer.id === (prev.activeLayerId || newLayers[0].id)) {
+                                            updatedShapeIds = [...updatedShapeIds, ...addedShapes.map((s: any) => s.id)];
+                                        }
+                                        return { ...layer, shapeIds: updatedShapeIds };
+                                    });
+                                }
+                                return { ...prev, shapes: newShapes, layers: newLayers, distributePathState: null };
                             });
                         }}
                         onCancelDistributePath={() => {

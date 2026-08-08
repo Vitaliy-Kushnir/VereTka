@@ -12,7 +12,7 @@ interface PropertyEditorProps {
   allShapes: Shape[];
   updateShape: (shape: Shape) => void;
   updateShapes?: (shapes: Shape[]) => void;
-  deleteShape: (id: string) => void;
+  deleteShape: (id: string | string[]) => void;
   duplicateShape: (id: string) => void;
   onExtractFromGroup?: () => void;
   handleFlip?: (direction: 'horizontal' | 'vertical') => void;
@@ -1391,7 +1391,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                                           pathShape: {
                                               ...distributePathState.shapePathParams!.pathShape!,
                                               sides: v
-                                          }
+                                          } as any
                                       }
                                   })} 
                               />
@@ -1412,7 +1412,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                                           pathShape: {
                                               ...distributePathState.shapePathParams!.pathShape!,
                                               innerRadius: v
-                                          }
+                                          } as any
                                       }
                                   })} 
                               />
@@ -1769,6 +1769,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                      </>
                  )}
                  {selectedShapes.some(s => s.groupId) && onExtractFromGroup && (<button onClick={onExtractFromGroup} title={t('menu.edit.extractFromGroup') || 'Вилучити із групи'} className="p-1.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><UngroupIcon size={18}/></button>)}
+                 <button onClick={() => deleteShape(selectedShapes.map(s => s.id))} title={t('menu.edit.delete')} className="p-1.5 rounded hover:bg-[var(--destructive-bg)] text-[var(--destructive-text)] hover:text-[var(--accent-text)]"><TrashIcon size={18}/></button>
               </div>
           </div>
           
