@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { XIcon } from './icons';
+import { XIcon, EyeIcon, EyeOffIcon } from './icons';
 import { VeretkaLoader } from './VeretkaLoader';
 import { generateSvg } from '../lib/exportUtils';
 import { 
@@ -8,21 +8,34 @@ import {
   getPersonalProjects, 
   getGroupProjects, 
   publishProjectToCloud, 
-  updateProjectVisibility, 
+  updateProjectVisibility,
+  updateProjectContentInCloud,
+  updateProjectDetailsInCloud,
+  copyProjectToGroup,
   deleteProjectFromCloud, 
   createCloudGroup, 
   verifyAndGetGroup, 
   registerUserAccount,
+  checkNicknameExists,
   loginUserAccount,
   signInWithGoogleAccount,
   recoverAccountByEmail,
   getUserAccountProfile,
   updateUserAccountProfile,
+  saveGroupPasscodeToAccount,
   deleteUserAccount,
   deleteCloudGroup,
+  updateCloudGroupParams,
+  getGroupMembersList,
+  getUserGroups,
+  getGroupInfoByCode,
+  checkGroupProjectDuplicate,
   CloudProject, 
   CloudGroup, 
-  ProjectVisibility 
+  ProjectVisibility,
+  GroupMode,
+  StudentUpdatePolicy,
+  GroupMember
 } from '../lib/firebase';
 
 export type SortOption = 'newest' | 'oldest' | 'title_asc' | 'title_desc' | 'shapes_desc' | 'shapes_asc';
@@ -49,7 +62,11 @@ function filterAndSortProjects(
   }
 
   if (visFilter !== 'all') {
-    list = list.filter((p) => p.visibility === visFilter);
+    if (visFilter === 'group') {
+      list = list.filter((p) => p.visibility === 'group' || (p.sentToGroups && p.sentToGroups.length > 0) || !!p.groupId);
+    } else {
+      list = list.filter((p) => p.visibility === visFilter);
+    }
   }
 
   if (shFilter === 'small') {
@@ -191,7 +208,7 @@ const FilterToolbar: React.FC<FilterToolbarProps> = ({
                 <option value="all" className="bg-gray-900 text-white">👁️ Усі типи</option>
                 <option value="public" className="bg-gray-900 text-white">🌐 Публічні</option>
                 <option value="private" className="bg-gray-900 text-white">🔒 Приватні</option>
-                <option value="group" className="bg-gray-900 text-white">🏫 Для гуртів</option>
+                <option value="group" className="bg-gray-900 text-white">🏫 Для груп</option>
               </select>
             </div>
           )}
@@ -464,6 +481,25 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
   initialTab = 'public'
 }) => {
   const [activeTab, setActiveTab] = useState<'public' | 'personal' | 'group' | 'publish'>(initialTab);
+  const [showAccountDropdown, setShowAccountDropdown] = useState(false);
+  const accountDropdownRef = useRef<HTMLDivElement>(null);
+  const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
+  const togglePassword = (key: string) => setShowPasswords(prev => ({ ...prev, [key]: !prev[key] }));
+
+  useEffect(() => {
+    if (!showAccountDropdown) return;
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (accountDropdownRef.current && !accountDropdownRef.current.contains(e.target as Node)) {
+        setShowAccountDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showAccountDropdown]);
 
   useEffect(() => {
     if (isOpen) {
@@ -490,9 +526,30 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
   // Personal Registration State
   const [regNickname, setRegNickname] = useState('');
+  const [regAuthorName, setRegAuthorName] = useState('');
   const [regPasscode, setRegPasscode] = useState('');
   const [regConfirmPasscode, setRegConfirmPasscode] = useState('');
   const [regEmail, setRegEmail] = useState('');
+  const [isCheckingNickname, setIsCheckingNickname] = useState(false);
+  const [nicknameTaken, setNicknameTaken] = useState(false);
+
+  // Real-time nickname check
+  useEffect(() => {
+    if (personalAuthMode !== 'register' || !regNickname.trim() || regNickname.trim().length < 2) {
+      setNicknameTaken(false);
+      setIsCheckingNickname(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsCheckingNickname(true);
+      const exists = await checkNicknameExists(regNickname.trim());
+      setNicknameTaken(exists);
+      setIsCheckingNickname(false);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [regNickname, personalAuthMode]);
 
   // Account Recovery State
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
@@ -504,7 +561,9 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
   // Edit Account / Profile State
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const [currentAccountEmail, setCurrentAccountEmail] = useState<string | null>(null);
+  const [currentAccountAuthorName, setCurrentAccountAuthorName] = useState<string | null>(null);
   const [editEmailInput, setEditEmailInput] = useState('');
+  const [editAuthorNameInput, setEditAuthorNameInput] = useState('');
   const [editNewPasscode, setEditNewPasscode] = useState('');
   const [editCurrentPasscode, setEditCurrentPasscode] = useState('');
   const [editProfileMessage, setEditProfileMessage] = useState('');
@@ -524,13 +583,25 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
   const [deleteGroupError, setDeleteGroupError] = useState('');
 
   // Load user profile when logged in
+  const [savedGroupPasscodes, setSavedGroupPasscodes] = useState<Record<string, string>>({});
+
   useEffect(() => {
     if (isPersonalLoggedIn && personalNickname) {
       getUserAccountProfile(personalNickname).then((res) => {
         if (res.success) {
           setCurrentAccountEmail(res.email || '');
+          setCurrentAccountAuthorName(res.authorName || '');
+          if (res.savedGroups) {
+            setSavedGroupPasscodes(res.savedGroups);
+          }
+          if (res.authorName) {
+            localStorage.setItem('veretka_author_name', res.authorName);
+            setPubAuthorName(res.authorName);
+          }
         }
       });
+    } else {
+      setSavedGroupPasscodes({});
     }
   }, [isPersonalLoggedIn, personalNickname]);
 
@@ -542,23 +613,148 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
   const [isLoadingGroup, setIsLoadingGroup] = useState(false);
   const [groupError, setGroupError] = useState('');
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
+  const [groupTabSubView, setGroupTabSubView] = useState<'open' | 'my_groups' | 'create'>('open');
+  const [myUserGroups, setMyUserGroups] = useState<CloudGroup[]>([]);
+  const [isLoadingMyGroups, setIsLoadingMyGroups] = useState(false);
 
   // New Group Form
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupCode, setNewGroupCode] = useState('');
   const [newGroupDesc, setNewGroupDesc] = useState('');
   const [newGroupPasscode, setNewGroupPasscode] = useState('');
+  const [newGroupConfirmPasscode, setNewGroupConfirmPasscode] = useState('');
   const [newGroupCreator, setNewGroupCreator] = useState(() => localStorage.getItem('veretka_nickname') || '');
+  const [newGroupMode, setNewGroupMode] = useState<'education' | 'gallery' | 'readonly'>('gallery');
+  const [newGroupStudentPolicy, setNewGroupStudentPolicy] = useState<StudentUpdatePolicy>('allow_overwrite');
+
+  // Group Settings Modal State
+  const [showGroupSettingsModal, setShowGroupSettingsModal] = useState(false);
+  const [editGroupName, setEditGroupName] = useState('');
+  const [editGroupDesc, setEditGroupDesc] = useState('');
+  const [editGroupMode, setEditGroupMode] = useState<GroupMode>('gallery');
+  const [editGroupStudentPolicy, setEditGroupStudentPolicy] = useState<StudentUpdatePolicy>('allow_overwrite');
+  const [editGroupNewPasscode, setEditGroupNewPasscode] = useState('');
+  const [isSavingGroupSettings, setIsSavingGroupSettings] = useState(false);
+  const [groupSettingsMessage, setGroupSettingsMessage] = useState('');
+  const [groupSettingsError, setGroupSettingsError] = useState('');
+  const [copyStatusText, setCopyStatusText] = useState('');
+
+  // Conflict Resolution Modal State
+  const [groupConflictModal, setGroupConflictModal] = useState<{
+    show: boolean;
+    projectToCopy?: CloudProject;
+    passcode: string;
+    groupId: string;
+    groupName: string;
+    existingProject?: CloudProject;
+    studentUpdatePolicy?: StudentUpdatePolicy;
+    groupMode?: GroupMode;
+    customTitleInput: string;
+    isEditingTitle: boolean;
+    nextSuggestedTitle?: string;
+    existingUserTitlesInGroup?: string[];
+  }>({
+    show: false,
+    passcode: '',
+    groupId: '',
+    groupName: '',
+    customTitleInput: '',
+    isEditingTitle: false,
+    nextSuggestedTitle: '',
+    existingUserTitlesInGroup: [],
+  });
+  const [isResolvingConflict, setIsResolvingConflict] = useState(false);
+  const [conflictError, setConflictError] = useState<string | null>(null);
+
+  // Group Members Modal State
+  const [showGroupMembersModal, setShowGroupMembersModal] = useState(false);
+  const [groupMembersList, setGroupMembersList] = useState<GroupMember[]>([]);
+  const [isLoadingGroupMembers, setIsLoadingGroupMembers] = useState(false);
+  const [groupMemberSearchQuery, setGroupMemberSearchQuery] = useState('');
+
+  const handleOpenGroupMembers = async (groupCode: string) => {
+    setShowGroupMembersModal(true);
+    setIsLoadingGroupMembers(true);
+    setGroupMemberSearchQuery('');
+    const list = await getGroupMembersList(groupCode);
+    setGroupMembersList(list);
+    setIsLoadingGroupMembers(false);
+  };
+
+  const handleOpenGroupSettings = (group: CloudGroup) => {
+    setEditGroupName(group.name || '');
+    setEditGroupDesc(group.description || '');
+    setEditGroupMode(group.mode || 'gallery');
+    setEditGroupStudentPolicy(group.studentUpdatePolicy || 'allow_overwrite');
+    setEditGroupNewPasscode('');
+    setGroupSettingsMessage('');
+    setGroupSettingsError('');
+    setCopyStatusText('');
+    setShowGroupSettingsModal(true);
+  };
+
+  const handleSaveGroupSettingsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeGroup) return;
+    if (!editGroupName.trim()) {
+      setGroupSettingsError('Назва групи не може бути порожньою');
+      return;
+    }
+
+    setGroupSettingsError('');
+    setGroupSettingsMessage('');
+    setIsSavingGroupSettings(true);
+
+    const storedPass = savedGroupPasscodes[activeGroup.groupCode.toUpperCase()] || localStorage.getItem('veretka_group_passcode') || '';
+
+    const res = await updateCloudGroupParams({
+      groupId: activeGroup.id,
+      passcode: storedPass,
+      name: editGroupName,
+      description: editGroupDesc,
+      mode: editGroupMode,
+      studentUpdatePolicy: editGroupStudentPolicy,
+      newPasscode: editGroupNewPasscode,
+      userNickname: isPersonalLoggedIn ? personalNickname : undefined
+    });
+
+    setIsSavingGroupSettings(false);
+    if (res.success) {
+      setGroupSettingsMessage(res.message);
+      setActiveGroup(prev => prev ? {
+        ...prev,
+        name: editGroupName.trim(),
+        description: editGroupDesc.trim(),
+        mode: editGroupMode,
+        studentUpdatePolicy: editGroupStudentPolicy
+      } : null);
+
+      if (editGroupNewPasscode.trim()) {
+        localStorage.setItem('veretka_group_passcode', editGroupNewPasscode.trim());
+        if (isPersonalLoggedIn && personalNickname) {
+          await saveGroupPasscodeToAccount(personalNickname, activeGroup.groupCode, editGroupNewPasscode.trim());
+          setSavedGroupPasscodes(prev => ({ ...prev, [activeGroup.groupCode.toUpperCase()]: editGroupNewPasscode.trim() }));
+        }
+      }
+    } else {
+      setGroupSettingsError(res.message);
+    }
+  };
 
   // --- Publish Form State ---
   const [pubTitle, setPubTitle] = useState(currentProjectName || 'Мій проєкт');
   const [pubAuthorName, setPubAuthorName] = useState(() => localStorage.getItem('veretka_author_name') || '');
   const [pubNickname, setPubNickname] = useState(() => localStorage.getItem('veretka_nickname') || '');
   const [pubPasscode, setPubPasscode] = useState(() => localStorage.getItem('veretka_passcode') || '');
-  const [pubVisibility, setPubVisibility] = useState<ProjectVisibility>('public');
+  const [pubDescription, setPubDescription] = useState('');
+  const [pubIsPublic, setPubIsPublic] = useState(true);
+  const [pubIsGroup, setPubIsGroup] = useState(false);
   const [pubGroupCode, setPubGroupCode] = useState(() => localStorage.getItem('veretka_group_code') || '');
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishStatusMessage, setPublishStatusMessage] = useState('');
+  const [returnToPublishAfterLogin, setReturnToPublishAfterLogin] = useState(false);
+  const [showGroupPicker, setShowGroupPicker] = useState(false);
+  const [fetchedGroupInfo, setFetchedGroupInfo] = useState<CloudGroup | null>(null);
 
   // Share project modal state
   const [shareModalProject, setShareModalProject] = useState<CloudProject | null>(null);
@@ -566,6 +762,10 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
   // Large preview modal state
   const [largePreviewProject, setLargePreviewProject] = useState<CloudProject | null>(null);
+
+  // Sent groups list modal state
+  const [selectedSentGroupsProject, setSelectedSentGroupsProject] = useState<CloudProject | null>(null);
+  const [sentGroupCopyStatus, setSentGroupCopyStatus] = useState<string | null>(null);
 
   // Action passcodes for deleting/updating items
   const [actionPasscodeModal, setActionPasscodeModal] = useState<{
@@ -575,6 +775,268 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
     targetGroupCode?: string;
   }>({ show: false, projectId: '', action: 'delete' });
   const [promptPasscode, setPromptPasscode] = useState('');
+
+  // Send to Group Modal state
+  const [sendToGroupModal, setSendToGroupModal] = useState<{
+    show: boolean;
+    project: CloudProject | null;
+  }>({ show: false, project: null });
+
+  const [sendGroupCodeInput, setSendGroupCodeInput] = useState('');
+  const [sendGroupInfo, setSendGroupInfo] = useState<CloudGroup | null>(null);
+  const [isSearchingSendGroup, setIsSearchingSendGroup] = useState(false);
+  const [isSendingToGroup, setIsSendingToGroup] = useState(false);
+  const [sendGroupError, setSendGroupError] = useState<string | null>(null);
+  const [sendGroupSuccess, setSendGroupSuccess] = useState<string | null>(null);
+
+  const openSendToGroupModal = async (proj: CloudProject) => {
+    setSendToGroupModal({ show: true, project: proj });
+    setSendGroupCodeInput('');
+    setSendGroupInfo(null);
+    setSendGroupError(null);
+    setSendGroupSuccess(null);
+    if (isPersonalLoggedIn && personalNickname) {
+      setIsLoadingMyGroups(true);
+      const userG = await getUserGroups(personalNickname);
+      setMyUserGroups(userG);
+      setIsLoadingMyGroups(false);
+    }
+  };
+
+  const handleSendGroupCodeChange = async (code: string) => {
+    const normCode = code.toUpperCase().trim();
+    setSendGroupCodeInput(normCode);
+    setSendGroupError(null);
+    setSendGroupSuccess(null);
+
+    if (!normCode) {
+      setSendGroupInfo(null);
+      return;
+    }
+
+    if (normCode.length >= 2) {
+      setIsSearchingSendGroup(true);
+      const gInfo = await getGroupInfoByCode(normCode);
+      setSendGroupInfo(gInfo);
+      setIsSearchingSendGroup(false);
+      if (!gInfo) {
+        setSendGroupError(`Осередок з кодом "${normCode}" не знайдено.`);
+      }
+    }
+  };
+
+  const handleSelectGroupFromList = (g: CloudGroup) => {
+    setSendGroupCodeInput(g.groupCode);
+    setSendGroupInfo(g);
+    setSendGroupError(null);
+    setSendGroupSuccess(null);
+  };
+
+  const handleConfirmSendToGroup = async () => {
+    if (!sendToGroupModal.project || !sendGroupCodeInput.trim()) return;
+    const normCode = sendGroupCodeInput.toUpperCase().trim();
+
+    let targetGroup = sendGroupInfo;
+    if (!targetGroup) {
+      setIsSearchingSendGroup(true);
+      targetGroup = await getGroupInfoByCode(normCode);
+      setSendGroupInfo(targetGroup);
+      setIsSearchingSendGroup(false);
+    }
+
+    if (!targetGroup) {
+      setSendGroupError(`Осередок з кодом "${normCode}" не знайдено.`);
+      return;
+    }
+
+    const groupMode = targetGroup.mode || 'gallery';
+    const groupCreator = (targetGroup.creatorNickname || '').trim().toLowerCase();
+    const userNick = (personalNickname || '').trim().toLowerCase();
+
+    if (groupMode === 'readonly' && groupCreator !== userNick) {
+      setSendGroupError(`Ця група працює в режимі "Дошка шаблонів" (readonly). Тільки її засновник (@${targetGroup.creatorNickname}) може публікувати сюди роботи.`);
+      return;
+    }
+
+    setIsSendingToGroup(true);
+    setSendGroupError(null);
+
+    // Pre-check for existing duplicate project in target group
+    const dupCheck = await checkGroupProjectDuplicate(
+      normCode,
+      sendToGroupModal.project.title,
+      personalNickname,
+      sendToGroupModal.project.authorName || personalNickname
+    );
+
+    setIsSendingToGroup(false);
+
+    if (dupCheck.isDuplicate && dupCheck.existingProject) {
+      const suggestedTitle = dupCheck.nextSuggestedTitle || `${sendToGroupModal.project.title} (v.2)`;
+      // Trigger conflict resolution modal
+      setGroupConflictModal({
+        show: true,
+        projectToCopy: sendToGroupModal.project,
+        passcode: personalPasscode,
+        groupId: normCode,
+        groupName: targetGroup.name || dupCheck.groupName || normCode,
+        existingProject: dupCheck.existingProject,
+        studentUpdatePolicy: dupCheck.studentUpdatePolicy || 'allow_overwrite',
+        groupMode: dupCheck.groupMode,
+        customTitleInput: suggestedTitle,
+        isEditingTitle: false,
+        nextSuggestedTitle: suggestedTitle,
+        existingUserTitlesInGroup: dupCheck.existingUserTitlesInGroup || []
+      });
+      setSendToGroupModal({ show: false, project: null });
+      return;
+    }
+
+    // Otherwise proceed with direct send
+    setIsSendingToGroup(true);
+    const res = await copyProjectToGroup(
+      sendToGroupModal.project.id,
+      personalPasscode,
+      normCode,
+      targetGroup.name || '',
+      personalNickname
+    );
+
+    setIsSendingToGroup(false);
+
+    if (res.success) {
+      setSendGroupSuccess(`✓ Копію проєкту успішно надіслано в осередок "${targetGroup.name || normCode}"!`);
+      
+      // Update local personal projects state
+      setPersonalProjects(prev => prev.map(p => {
+        if (p.id === sendToGroupModal.project?.id) {
+          const existingSent = p.sentToGroups || [];
+          const exists = existingSent.some(g => g.groupId === normCode);
+          if (!exists) {
+            return {
+              ...p,
+              sentToGroups: [
+                ...existingSent,
+                { groupId: normCode, groupName: targetGroup?.name || normCode, sentAt: Date.now() }
+              ]
+            };
+          }
+        }
+        return p;
+      }));
+
+      setTimeout(() => {
+        setSendToGroupModal({ show: false, project: null });
+        setSendGroupSuccess(null);
+        setSendGroupCodeInput('');
+        setSendGroupInfo(null);
+        if (activeGroup) {
+          getGroupProjects(activeGroup.groupCode).then(setGroupProjects);
+        }
+      }, 1200);
+    } else {
+      setSendGroupError(res.message || 'Помилка при надсиланні проєкту у групу');
+    }
+  };
+
+  const handleResolveConflictAction = async (
+    action: 'overwrite' | 'new_copy' | 'custom_title',
+    overrideTitle?: string
+  ) => {
+    if (!groupConflictModal.projectToCopy) return;
+
+    const {
+      projectToCopy,
+      passcode,
+      groupId,
+      groupName,
+      existingProject,
+      nextSuggestedTitle,
+      existingUserTitlesInGroup
+    } = groupConflictModal;
+
+    setConflictError(null);
+
+    let targetTitle = projectToCopy.title;
+    if (action === 'new_copy') {
+      targetTitle = overrideTitle || nextSuggestedTitle || `${projectToCopy.title} (v.2)`;
+    } else if (action === 'custom_title') {
+      targetTitle = (overrideTitle || groupConflictModal.customTitleInput || projectToCopy.title).trim();
+    } else if (action === 'overwrite' && existingProject) {
+      targetTitle = existingProject.title;
+    }
+
+    // Check if targetTitle already exists in the group for this user
+    if (action !== 'overwrite') {
+      const isTaken = (existingUserTitlesInGroup || []).some(
+        t => t.trim().toLowerCase() === targetTitle.trim().toLowerCase()
+      );
+      if (isTaken) {
+        setConflictError(
+          `Проєкт із назвою "${targetTitle}" вже існує в цьому осередку від вашого імені. Будь ласка, оберіть іншу версію (наприклад, ${nextSuggestedTitle || 'новшу'}).`
+        );
+        return;
+      }
+    }
+
+    setIsResolvingConflict(true);
+
+    const res = await copyProjectToGroup(
+      projectToCopy.id,
+      passcode,
+      groupId,
+      groupName,
+      personalNickname,
+      {
+        action: action === 'overwrite' ? 'overwrite' : 'new_copy',
+        existingProjectId: action === 'overwrite' ? existingProject?.id : undefined,
+        targetTitle
+      }
+    );
+
+    setIsResolvingConflict(false);
+
+    if (res.success) {
+      // Update local sentToGroups link
+      setPersonalProjects(prev => prev.map(p => {
+        if (p.id === projectToCopy.id) {
+          const existingSent = p.sentToGroups || [];
+          const exists = existingSent.some(g => g.groupId === groupId);
+          if (!exists) {
+            return {
+              ...p,
+              sentToGroups: [
+                ...existingSent,
+                { groupId: groupId, groupName: groupName || groupId, sentAt: Date.now() }
+              ]
+            };
+          }
+        }
+        return p;
+      }));
+
+      setGroupConflictModal(prev => ({ ...prev, show: false }));
+      if (activeGroup && activeGroup.groupCode === groupId) {
+        getGroupProjects(groupId).then(setGroupProjects);
+      }
+    } else {
+      setConflictError(res.message || 'Помилка при виконанні дії');
+    }
+  };
+  
+  // Inline Project Editing
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [editProjectTitle, setEditProjectTitle] = useState('');
+  const [editProjectDesc, setEditProjectDesc] = useState('');
+  const [isSavingProjectDetails, setIsSavingProjectDetails] = useState(false);
+
+  const [publishConflictModal, setPublishConflictModal] = useState<{
+    show: boolean;
+    existingId: string;
+    projectData: string;
+    finalGroupId: string;
+    personalVisibility: ProjectVisibility;
+  } | null>(null);
 
   // --- Sorting & Filtering State ---
   const [sortBy, setSortBy] = useState<SortOption>('newest');
@@ -592,8 +1054,21 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
   }, [personalProjects, personalSearchQuery, visibilityFilter, shapesFilter, sortBy]);
 
   const displayedGroupProjects = useMemo(() => {
-    return filterAndSortProjects(groupProjects, groupSearchQuery, 'all', shapesFilter, sortBy);
-  }, [groupProjects, groupSearchQuery, shapesFilter, sortBy]);
+    let allowedProjects = groupProjects;
+
+    if (activeGroup) {
+      const isCreator = isPersonalLoggedIn && personalNickname === activeGroup.creatorNickname;
+      if (!isCreator && activeGroup.mode === 'education') {
+        allowedProjects = groupProjects.filter(p => 
+          p.ownerNickname === activeGroup.creatorNickname ||
+          (isPersonalLoggedIn && p.ownerNickname === personalNickname) ||
+          (!isPersonalLoggedIn && p.authorName === pubAuthorName)
+        );
+      }
+    }
+
+    return filterAndSortProjects(allowedProjects, groupSearchQuery, 'all', shapesFilter, sortBy);
+  }, [groupProjects, groupSearchQuery, shapesFilter, sortBy, activeGroup, isPersonalLoggedIn, personalNickname, pubAuthorName]);
 
   // Sync current project name when modal opens
   useEffect(() => {
@@ -601,6 +1076,33 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
       setPubTitle(currentProjectName);
     }
   }, [currentProjectName]);
+
+  // Auto-fill publish fields when logged in
+  useEffect(() => {
+    if (isPersonalLoggedIn) {
+      if (personalNickname) {
+        setPubNickname(personalNickname);
+      }
+      if (personalPasscode) {
+        setPubPasscode(personalPasscode);
+      }
+      const savedAuthor = localStorage.getItem('veretka_author_name');
+      if (savedAuthor) {
+        setPubAuthorName(savedAuthor);
+      } else if (personalNickname && !pubAuthorName) {
+        setPubAuthorName(personalNickname);
+      }
+    }
+  }, [isPersonalLoggedIn, personalNickname, personalPasscode]);
+
+  // Load group metadata when pubGroupCode changes
+  useEffect(() => {
+    if (pubIsGroup && pubGroupCode.trim()) {
+      getGroupInfoByCode(pubGroupCode.trim()).then(setFetchedGroupInfo);
+    } else if (!pubGroupCode.trim()) {
+      setFetchedGroupInfo(null);
+    }
+  }, [pubIsGroup, pubGroupCode]);
 
   // Load public projects when tab is selected, modal opens, or searchQuery changes
   useEffect(() => {
@@ -671,6 +1173,11 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
       setPersonalProjects(res.projects);
       localStorage.setItem('veretka_nickname', activeNick);
       localStorage.setItem('veretka_passcode', personalPasscode.trim());
+
+      if (returnToPublishAfterLogin) {
+        setReturnToPublishAfterLogin(false);
+        setActiveTab('publish');
+      }
     } else {
       setPersonalError(res.message || 'Не вдалося відкрити особисту скриню');
     }
@@ -681,6 +1188,10 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
     e.preventDefault();
     if (!regNickname.trim()) {
       setPersonalError('Будь ласка, вкажіть Нікнейм (Логін)');
+      return;
+    }
+    if (nicknameTaken) {
+      setPersonalError('Такий Нікнейм вже зайнятий у спільноті. Будь ласка, оберіть інший.');
       return;
     }
     if (!regPasscode.trim()) {
@@ -696,6 +1207,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
     setIsLoadingPersonal(true);
     const res = await registerUserAccount({
       nickname: regNickname.trim(),
+      authorName: regAuthorName.trim(),
       passcode: regPasscode.trim(),
       email: regEmail.trim(),
     });
@@ -705,30 +1217,81 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
       setPersonalPasscode(regPasscode.trim());
       localStorage.setItem('veretka_nickname', res.nickname);
       localStorage.setItem('veretka_passcode', regPasscode.trim());
+      if (regAuthorName.trim()) {
+        localStorage.setItem('veretka_author_name', regAuthorName.trim());
+      }
 
       const pRes = await getPersonalProjects(res.nickname, regPasscode.trim());
       setPersonalProjects(pRes.projects || []);
       setIsPersonalLoggedIn(true);
+
+      if (returnToPublishAfterLogin) {
+        setReturnToPublishAfterLogin(false);
+        setActiveTab('publish');
+      }
     } else {
       setPersonalError(res.message || 'Не вдалося створити скриню');
     }
     setIsLoadingPersonal(false);
   };
 
-  // Google Sign-In Handler
+  // Google Sign-In / Register Handler
   const handleGoogleSignIn = async () => {
     setPersonalError('');
     setIsLoadingPersonal(true);
-    const res = await signInWithGoogleAccount();
-    setIsLoadingPersonal(false);
 
-    if (res.success && res.nickname) {
-      setIsPersonalLoggedIn(true);
-      setPersonalNickname(res.nickname);
-      setPersonalProjects(res.projects || []);
-      localStorage.setItem('veretka_nickname', res.nickname);
+    if (personalAuthMode === 'register') {
+      let passcodeToUse = regPasscode.trim();
+      if (!passcodeToUse) {
+        const promptPass = prompt('Увага: Пароль є обов’язковим для захисту вашої скрині!\nБудь ласка, введіть пароль (щонайменше 3 символи):');
+        if (!promptPass || promptPass.trim().length < 3) {
+          setPersonalError('Для створення скрині через Google обов’язково вкажіть пароль (щонайменше 3 символи)');
+          setIsLoadingPersonal(false);
+          return;
+        }
+        passcodeToUse = promptPass.trim();
+        setRegPasscode(passcodeToUse);
+      }
+
+      const res = await signInWithGoogleAccount(regNickname.trim(), passcodeToUse);
+      setIsLoadingPersonal(false);
+
+      if (res.success && res.nickname) {
+        setIsPersonalLoggedIn(true);
+        setPersonalNickname(res.nickname);
+        setPersonalPasscode(res.passcode || passcodeToUse);
+        setPersonalProjects(res.projects || []);
+        localStorage.setItem('veretka_nickname', res.nickname);
+        localStorage.setItem('veretka_passcode', res.passcode || passcodeToUse);
+
+        if (returnToPublishAfterLogin) {
+          setReturnToPublishAfterLogin(false);
+          setActiveTab('publish');
+        }
+      } else {
+        setPersonalError(res.message || 'Не вдалося створити скриню через Google');
+      }
     } else {
-      setPersonalError(res.message || 'Не вдалося увійти через Google');
+      const res = await signInWithGoogleAccount();
+      setIsLoadingPersonal(false);
+
+      if (res.success && res.nickname) {
+        setIsPersonalLoggedIn(true);
+        setPersonalNickname(res.nickname);
+        setPersonalProjects(res.projects || []);
+        localStorage.setItem('veretka_nickname', res.nickname);
+        if (res.passcode) {
+          setPersonalPasscode(res.passcode);
+          localStorage.setItem('veretka_passcode', res.passcode);
+        }
+
+        if (returnToPublishAfterLogin) {
+          setReturnToPublishAfterLogin(false);
+          setActiveTab('publish');
+        }
+      } else {
+        setPersonalError(res.message || 'Не вдалося увійти через Google');
+      }
     }
   };
 
@@ -758,6 +1321,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
     const res = await updateUserAccountProfile({
       nickname: personalNickname,
+      authorName: editAuthorNameInput,
       currentPasscode: editCurrentPasscode || personalPasscode,
       email: editEmailInput,
       newPasscode: editNewPasscode,
@@ -769,22 +1333,28 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
     if (res.success) {
       setCurrentAccountEmail(res.email !== undefined ? res.email : editEmailInput.trim().toLowerCase());
+      setCurrentAccountAuthorName(res.authorName !== undefined ? res.authorName : editAuthorNameInput.trim());
+      if (res.authorName) {
+        localStorage.setItem('veretka_author_name', res.authorName);
+        setPubAuthorName(res.authorName);
+      }
       if (editNewPasscode.trim()) {
         setPersonalPasscode(editNewPasscode.trim());
         localStorage.setItem('veretka_passcode', editNewPasscode.trim());
       }
       setEditNewPasscode('');
       setEditCurrentPasscode('');
+      setShowEditProfileModal(false);
     }
   };
 
   // Account Deletion Handler
-  const handleDeleteAccountSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleDeleteAccountSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setDeleteAccountError('');
     setIsDeletingAccount(true);
 
-    const res = await deleteUserAccount(personalNickname, deleteAccountPasscode || personalPasscode);
+    const res = await deleteUserAccount(personalNickname);
     setIsDeletingAccount(false);
 
     if (res.success) {
@@ -796,7 +1366,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
       localStorage.removeItem('veretka_passcode');
       setShowEditProfileModal(false);
       setShowDeleteAccountConfirm(false);
-      alert('Вашу особисту скриню та її проекти успішно видалено.');
+      alert('Вашу особисту скриню та її проєкти успішно видалено.');
     } else {
       setDeleteAccountError(res.message);
     }
@@ -826,21 +1396,47 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
   };
 
   // Group Login
-  const handleGroupLogin = async (e?: React.FormEvent) => {
+  const handleGroupLogin = async (e?: React.FormEvent, bypassPasscode?: string) => {
     if (e) e.preventDefault();
-    if (!groupCodeInput.trim() || !groupPasscodeInput.trim()) {
-      setGroupError('Вкажіть код групи та пароль');
+    
+    const code = groupCodeInput.trim();
+    const isCreatorBypass = isPersonalLoggedIn && personalNickname;
+    let passcodeToUse = bypassPasscode || groupPasscodeInput.trim();
+
+    if (!code) {
+      setGroupError('Вкажіть код групи');
+      return;
+    }
+    
+    // If no explicit passcode and we have a saved one for this group, use it
+    if (!passcodeToUse && savedGroupPasscodes[code.toUpperCase()]) {
+      passcodeToUse = savedGroupPasscodes[code.toUpperCase()];
+    }
+
+    if (!passcodeToUse && !isCreatorBypass) {
+      setGroupError('Вкажіть пароль');
       return;
     }
 
     setGroupError('');
     setIsLoadingGroup(true);
-    const res = await verifyAndGetGroup(groupCodeInput, groupPasscodeInput);
+    const res = await verifyAndGetGroup(code, passcodeToUse, isPersonalLoggedIn ? personalNickname : undefined);
 
     if (res.success && res.group) {
       setActiveGroup(res.group);
       localStorage.setItem('veretka_group_code', res.group.groupCode);
-      localStorage.setItem('veretka_group_passcode', groupPasscodeInput.trim());
+      if (passcodeToUse) {
+        localStorage.setItem('veretka_group_passcode', passcodeToUse);
+        
+        // Save to user account if logged in
+        if (isPersonalLoggedIn && personalNickname) {
+          saveGroupPasscodeToAccount(personalNickname, res.group.groupCode, passcodeToUse).then((saved) => {
+             if (saved) {
+               setSavedGroupPasscodes(prev => ({ ...prev, [res.group!.groupCode]: passcodeToUse }));
+             }
+          });
+        }
+      }
 
       // Fetch projects for this group
       const projs = await getGroupProjects(res.group.groupCode);
@@ -858,6 +1454,10 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
       setGroupError('Заповніть назву, код та пароль для нової групи');
       return;
     }
+    if (newGroupPasscode !== newGroupConfirmPasscode) {
+      setGroupError('Паролі не збігаються. Перевірте правильність введення.');
+      return;
+    }
 
     setGroupError('');
     setIsLoadingGroup(true);
@@ -866,7 +1466,9 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
       description: newGroupDesc,
       groupCode: newGroupCode,
       passcode: newGroupPasscode,
-      creatorNickname: newGroupCreator || 'Анонім'
+      creatorNickname: newGroupCreator || 'Анонім',
+      mode: newGroupMode,
+      studentUpdatePolicy: newGroupStudentPolicy
     });
 
     setIsLoadingGroup(false);
@@ -877,6 +1479,14 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
       setGroupPasscodeInput(newGroupPasscode);
       localStorage.setItem('veretka_group_code', res.group.groupCode);
       localStorage.setItem('veretka_group_passcode', newGroupPasscode);
+      
+      if (isPersonalLoggedIn && personalNickname) {
+        saveGroupPasscodeToAccount(personalNickname, res.group.groupCode, newGroupPasscode).then((saved) => {
+           if (saved) {
+             setSavedGroupPasscodes(prev => ({ ...prev, [res.group!.groupCode]: newGroupPasscode }));
+           }
+        });
+      }
 
       const projs = await getGroupProjects(res.group.groupCode);
       setGroupProjects(projs);
@@ -885,48 +1495,45 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
     }
   };
 
-  // Publish Form Handler
-  const handlePublishSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!pubTitle.trim()) {
-      setPublishStatusMessage('Вкажіть назву проєкту');
-      return;
-    }
-    if (!pubNickname.trim() || !pubPasscode.trim()) {
-      setPublishStatusMessage('Вкажіть ваш нікнейм та пароль для можливості керування проєкту');
-      return;
-    }
-
-    const projectData = getCurrentProjectDataStr();
-    if (!projectData || projectData === '[]') {
-      setPublishStatusMessage('Полотно порожнє! Створіть фігури перед публікацією.');
-      return;
-    }
-
+  const executePublish = async (titleToUse: string, isUpdate: boolean, existingId?: string, projectDataStr?: string, finalGroupId?: string, personalVisibility?: ProjectVisibility) => {
     setIsPublishing(true);
     setPublishStatusMessage('Збереження у хмару...');
-
+    
     try {
-      let finalGroupId = '';
-      if (pubVisibility === 'group') {
-        finalGroupId = pubGroupCode.trim().toUpperCase();
-        if (!finalGroupId) {
-          setPublishStatusMessage('Вкажіть код групи для публікації');
-          setIsPublishing(false);
-          return;
+      let newDocId = existingId || '';
+      
+      if (isUpdate && existingId) {
+        await updateProjectContentInCloud(existingId, pubPasscode || personalPasscode, projectDataStr || '', titleToUse, currentProjectShapesCount);
+        if (personalVisibility) {
+          await updateProjectVisibility(existingId, pubPasscode || personalPasscode, personalVisibility);
         }
+      } else {
+        newDocId = await publishProjectToCloud({
+          title: titleToUse,
+          description: pubDescription,
+          authorName: pubAuthorName || personalNickname || 'Анонім',
+          ownerNickname: pubNickname || personalNickname,
+          passcode: pubPasscode || personalPasscode,
+          visibility: personalVisibility || 'private',
+          projectData: projectDataStr || '',
+          shapesCount: currentProjectShapesCount
+        });
       }
 
-      const newDocId = await publishProjectToCloud({
-        title: pubTitle,
-        authorName: pubAuthorName || 'Анонім',
-        ownerNickname: pubNickname,
-        passcode: pubPasscode,
-        visibility: pubVisibility,
-        groupId: finalGroupId,
-        projectData,
-        shapesCount: currentProjectShapesCount
-      });
+      if (pubIsGroup && finalGroupId) {
+        await publishProjectToCloud({
+          title: titleToUse,
+          description: pubDescription,
+          authorName: pubAuthorName || personalNickname || 'Анонім',
+          ownerNickname: pubNickname || personalNickname,
+          passcode: pubPasscode || personalPasscode,
+          visibility: 'group',
+          groupId: finalGroupId,
+          projectData: projectDataStr || '',
+          shapesCount: currentProjectShapesCount,
+          isGroupCopy: true
+        });
+      }
 
       // Save credentials locally for convenience
       localStorage.setItem('veretka_author_name', pubAuthorName);
@@ -942,33 +1549,110 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
       // Open share modal automatically with generated cloud link
       setShareModalProject({
         id: newDocId,
-        title: pubTitle,
+        title: titleToUse,
         authorName: pubAuthorName || 'Анонім',
         ownerNickname: pubNickname,
         passcodeHash: '',
-        visibility: pubVisibility,
-        groupId: finalGroupId,
-        projectData,
+        visibility: personalVisibility || 'private',
+        groupId: '',
+        projectData: projectDataStr || '',
         shapesCount: currentProjectShapesCount,
         createdAt: Date.now(),
         updatedAt: Date.now()
       });
 
       // Refresh corresponding tabs
-      if (pubVisibility === 'public') {
-        loadPublicProjects();
-        setTimeout(() => setActiveTab('public'), 800);
-      } else if (pubVisibility === 'private') {
-        if (isPersonalLoggedIn) {
-          handlePersonalLogin();
-        }
-        setTimeout(() => setActiveTab('personal'), 800);
-      } else if (pubVisibility === 'group') {
-        if (activeGroup && activeGroup.groupCode === finalGroupId) {
-          getGroupProjects(finalGroupId).then(setGroupProjects);
-        }
-        setTimeout(() => setActiveTab('group'), 800);
+      if (isPersonalLoggedIn) {
+        handlePersonalLogin();
       }
+      
+      if (pubIsPublic || personalVisibility === 'public') {
+        loadPublicProjects();
+      }
+
+      if (pubIsGroup && finalGroupId && activeGroup && activeGroup.groupCode === finalGroupId) {
+        getGroupProjects(finalGroupId).then(setGroupProjects);
+      }
+
+      setTimeout(() => setActiveTab('personal'), 800);
+    } catch (err: any) {
+      setIsPublishing(false);
+      setPublishStatusMessage(err.message || 'Помилка зберігання');
+    }
+  };
+
+  // Publish Form Handler
+  const handlePublishSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pubTitle.trim()) {
+      setPublishStatusMessage('Вкажіть назву проєкту');
+      return;
+    }
+
+    if (!isPersonalLoggedIn) {
+      setPublishStatusMessage('Будь ласка, спочатку відкрийте свою особисту скриню');
+      setReturnToPublishAfterLogin(true);
+      setActiveTab('personal');
+      setPersonalAuthMode('login');
+      return;
+    }
+
+    const activeNick = personalNickname.trim() || pubNickname.trim();
+    const activePass = personalPasscode.trim() || pubPasscode.trim();
+
+    if (!activeNick || !activePass) {
+      setPublishStatusMessage('Помилка авторизації. Відкрийте скриню знову.');
+      return;
+    }
+
+    const projectData = getCurrentProjectDataStr();
+    if (!projectData || projectData === '[]') {
+      setPublishStatusMessage('Полотно порожнє! Створіть фігури перед публікацією.');
+      return;
+    }
+
+    setIsPublishing(true);
+    setPublishStatusMessage('Збереження у хмару...');
+
+    try {
+      let finalGroupId = '';
+      if (pubIsGroup) {
+        finalGroupId = pubGroupCode.trim().toUpperCase();
+        if (!finalGroupId) {
+          setPublishStatusMessage('Вкажіть код групи для публікації');
+          setIsPublishing(false);
+          return;
+        }
+      }
+
+      const personalVisibility = pubIsPublic ? 'public' : 'private';
+
+      let existingId = '';
+      if (isPersonalLoggedIn && personalNickname === pubNickname.trim().toLowerCase()) {
+        const existing = personalProjects.find(p => p.title.toLowerCase() === pubTitle.trim().toLowerCase() && !p.isGroupCopy && p.visibility !== 'group');
+        if (existing) existingId = existing.id;
+      } else {
+        const res = await getPersonalProjects(pubNickname, pubPasscode);
+        if (res.success && res.projects) {
+          const existing = res.projects.find(p => p.title.toLowerCase() === pubTitle.trim().toLowerCase() && !p.isGroupCopy && p.visibility !== 'group');
+          if (existing) existingId = existing.id;
+        }
+      }
+
+      if (existingId) {
+        setIsPublishing(false);
+        setPublishStatusMessage('');
+        setPublishConflictModal({
+          show: true,
+          existingId,
+          projectData,
+          finalGroupId,
+          personalVisibility
+        });
+        return;
+      }
+
+      await executePublish(pubTitle.trim(), false, undefined, projectData, finalGroupId, personalVisibility);
     } catch (err: any) {
       setIsPublishing(false);
       setPublishStatusMessage(err.message || 'Помилка зберігання');
@@ -978,10 +1662,10 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
   // Handle Project Passcode Actions (Delete, Change Visibility)
   const handleConfirmAction = async () => {
     const { projectId, action, targetGroupCode } = actionPasscodeModal;
-    if (!projectId || !promptPasscode.trim()) return;
+    if (!projectId) return;
 
     if (action === 'delete') {
-      const res = await deleteProjectFromCloud(projectId, promptPasscode);
+      const res = await deleteProjectFromCloud(projectId);
       if (res.success) {
         setActionPasscodeModal({ show: false, projectId: '', action: 'delete' });
         setPromptPasscode('');
@@ -990,39 +1674,39 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
         if (isPersonalLoggedIn) handlePersonalLogin();
         if (activeGroup) getGroupProjects(activeGroup.groupCode).then(setGroupProjects);
       } else {
-        alert(res.message || 'Невірний пароль');
+        alert(res.message || 'Не вдалося видалити проєкт');
       }
-    } else if (action === 'make_public') {
-      const res = await updateProjectVisibility(projectId, promptPasscode, 'public');
-      if (res.success) {
-        setActionPasscodeModal({ show: false, projectId: '', action: 'delete' });
-        setPromptPasscode('');
-        loadPublicProjects();
-        if (isPersonalLoggedIn) handlePersonalLogin();
-      } else {
-        alert(res.message || 'Невірний пароль');
+    } else {
+      const passToUse = promptPasscode.trim() || personalPasscode;
+      if (!passToUse) {
+        alert('Вкажіть пароль для виконання дії');
+        return;
       }
-    } else if (action === 'make_group') {
-      const code = targetGroupCode || prompt('Введіть код групи / осередка:');
-      if (!code) return;
-      const res = await updateProjectVisibility(projectId, promptPasscode, 'group', code.toUpperCase());
-      if (res.success) {
-        setActionPasscodeModal({ show: false, projectId: '', action: 'delete' });
-        setPromptPasscode('');
-        if (isPersonalLoggedIn) handlePersonalLogin();
-        if (activeGroup) getGroupProjects(activeGroup.groupCode).then(setGroupProjects);
-      } else {
-        alert(res.message || 'Невірний пароль');
-      }
-    } else if (action === 'make_private') {
-      const res = await updateProjectVisibility(projectId, promptPasscode, 'private');
-      if (res.success) {
-        setActionPasscodeModal({ show: false, projectId: '', action: 'delete' });
-        setPromptPasscode('');
-        loadPublicProjects();
-        if (isPersonalLoggedIn) handlePersonalLogin();
-      } else {
-        alert(res.message || 'Невірний пароль');
+      if (action === 'make_public' || action === 'make_private') {
+        const passToUse = personalPasscode || promptPasscode.trim();
+        const newVis = action === 'make_public' ? 'public' : 'private';
+        const res = await updateProjectVisibility(projectId, passToUse, newVis, '', '', isPersonalLoggedIn ? personalNickname : '');
+        if (res.success) {
+          setActionPasscodeModal({ show: false, projectId: '', action: 'delete' });
+          setPromptPasscode('');
+          loadPublicProjects();
+          if (isPersonalLoggedIn) handlePersonalLogin();
+        } else {
+          alert(res.message || 'Помилка виконання дії');
+        }
+      } else if (action === 'make_group') {
+        const passToUse = promptPasscode.trim() || personalPasscode;
+        const code = targetGroupCode || prompt('Введіть код групи / осередка:');
+        if (!code) return;
+        const res = await copyProjectToGroup(projectId, passToUse, code.toUpperCase(), '', personalNickname);
+        if (res.success) {
+          setActionPasscodeModal({ show: false, projectId: '', action: 'delete' });
+          setPromptPasscode('');
+          if (isPersonalLoggedIn) handlePersonalLogin();
+          if (activeGroup) getGroupProjects(activeGroup.groupCode).then(setGroupProjects);
+        } else {
+          alert(res.message || 'Не вдалося надіслати у групу');
+        }
       }
     }
   };
@@ -1032,7 +1716,9 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (shareModalProject) {
+        if (sendToGroupModal.show) {
+          setSendToGroupModal({ show: false, project: null });
+        } else if (shareModalProject) {
           setShareModalProject(null);
           setCopiedLink(false);
         } else if (largePreviewProject) {
@@ -1047,7 +1733,36 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, shareModalProject, largePreviewProject, actionPasscodeModal.show, onClose]);
+  }, [isOpen, sendToGroupModal.show, shareModalProject, largePreviewProject, actionPasscodeModal.show, onClose]);
+
+  const handleSaveProjectDetails = async (projectId: string, projPasscode: string) => {
+    if (!editProjectTitle.trim()) {
+      alert('Назва проєкту не може бути порожньою');
+      return;
+    }
+    
+    setIsSavingProjectDetails(true);
+    const res = await updateProjectDetailsInCloud(
+      projectId,
+      projPasscode,
+      editProjectTitle.trim(),
+      editProjectDesc.trim()
+    );
+    setIsSavingProjectDetails(false);
+
+    if (res.success) {
+      // Update local states
+      const updateList = (list: CloudProject[]) => 
+        list.map(p => p.id === projectId ? { ...p, title: editProjectTitle.trim(), description: editProjectDesc.trim() } : p);
+      
+      setPersonalProjects(updateList);
+      setGroupProjects(updateList);
+      setPublicProjects(updateList);
+      setEditingProjectId(null);
+    } else {
+      alert(res.message || 'Помилка збереження');
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -1068,13 +1783,103 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
               <p className="text-xs text-gray-400">Хмарний простір проєктів, осередків та галереї</p>
             </div>
           </div>
-          <button 
-            onClick={onClose}
-            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-            title="Закрити"
-          >
-            <XIcon size={20} />
-          </button>
+          <div className="flex items-center gap-3 relative">
+            {isPersonalLoggedIn ? (
+              <div className="relative mr-2" ref={accountDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowAccountDropdown(!showAccountDropdown)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 hover:bg-slate-700 transition-colors text-left"
+                  title="Мій акаунт"
+                >
+                  <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm border border-indigo-400/30">
+                    {personalNickname ? personalNickname.charAt(0).toUpperCase() : '👤'}
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-xs font-bold text-gray-200 truncate max-w-[120px]">@{personalNickname}</span>
+                    {(currentAccountAuthorName || pubAuthorName) && (
+                      <span className="text-[10px] text-gray-400 truncate max-w-[120px] -mt-0.5 font-normal">
+                        {currentAccountAuthorName || pubAuthorName}
+                      </span>
+                    )}
+                  </div>
+                </button>
+
+                {showAccountDropdown && (
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-gray-900 border border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                    <div className="p-3 border-b border-gray-800 bg-black/30">
+                      <p className="text-xs text-gray-400 font-medium">Ваш акаунт</p>
+                      <p className="text-sm font-bold text-white truncate">@{personalNickname}</p>
+                      {currentAccountAuthorName && (
+                        <p className="text-xs text-gray-300 mt-1 truncate">Підпис: {currentAccountAuthorName}</p>
+                      )}
+                      {currentAccountEmail && (
+                        <p className="text-[10px] text-gray-500 mt-0.5 truncate">{currentAccountEmail}</p>
+                      )}
+                    </div>
+                    <div className="p-2 space-y-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditEmailInput(currentAccountEmail || '');
+                          setEditAuthorNameInput(currentAccountAuthorName || '');
+                          setEditNewPasscode('');
+                          setEditCurrentPasscode('');
+                          setEditProfileMessage('');
+                          setShowEditProfileModal(true);
+                          setShowAccountDropdown(false);
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-lg text-xs bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-200 transition-colors flex items-center gap-2"
+                      >
+                        ⚙️ Редагувати акаунт
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsPersonalLoggedIn(false);
+                          setPersonalProjects([]);
+                          setShowAccountDropdown(false);
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-gray-800 text-gray-300 transition-colors flex items-center gap-2"
+                      >
+                        🚪 Закрити скриню
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 mr-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('personal');
+                    setPersonalAuthMode('login');
+                  }}
+                  className="px-4 py-1.5 rounded-full text-xs font-semibold bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition-colors"
+                >
+                  Вхід
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('personal');
+                    setPersonalAuthMode('register');
+                  }}
+                  className="px-4 py-1.5 rounded-full text-xs font-semibold bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition-colors"
+                >
+                  Реєстрація
+                </button>
+              </div>
+            )}
+            <button 
+              onClick={onClose}
+              className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+              title="Закрити"
+            >
+              <XIcon size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Navigation Tabs */}
@@ -1099,7 +1904,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
           >
             👤 Моя особиста скриня
           </button>
-          {/* <button
+          <button
             onClick={() => setActiveTab('group')}
             className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors flex items-center gap-2 ${
               activeTab === 'group'
@@ -1107,8 +1912,8 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 : 'border-transparent text-gray-400 hover:text-gray-200'
             }`}
           >
-            🏫 Скриня гурту/осередка
-          </button> */}
+            🏫 Скриня групи/осередку
+          </button>
           <button
             onClick={() => setActiveTab('publish')}
             className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors flex items-center gap-2 ml-auto ${
@@ -1182,6 +1987,9 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                             Публічний
                           </span>
                         </div>
+                        {proj.description && (
+                          <p className="text-xs text-gray-300 mb-2 line-clamp-2" title={proj.description}>{proj.description}</p>
+                        )}
                         <p className="text-xs text-gray-400 mb-1">
                           Автор: <span className="text-gray-200">{proj.authorName}</span> (@{proj.ownerNickname})
                         </p>
@@ -1206,19 +2014,6 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           title="Поділитися посиланням"
                         >
                           🔗
-                        </button>
-                        <button
-                          onClick={() => {
-                            setActionPasscodeModal({
-                              show: true,
-                              projectId: proj.id,
-                              action: 'delete'
-                            });
-                          }}
-                          className="py-1.5 px-2.5 rounded-lg text-xs font-medium bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors"
-                          title="Видалити (потрібен пароль авторів)"
-                        >
-                          🗑️
                         </button>
                       </div>
                     </div>
@@ -1266,7 +2061,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           : 'text-gray-400 hover:text-white'
                       }`}
                     >
-                      🔓 Вхід (Відкрити)
+                      🔓 Вхід (Відкрити скриню)
                     </button>
                     <button
                       type="button"
@@ -1280,7 +2075,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           : 'text-gray-400 hover:text-white'
                       }`}
                     >
-                      📝 Створення скрині
+                      📝 Реєстрація (Отримати скриню)
                     </button>
                   </div>
 
@@ -1320,14 +2115,23 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                               Забули нікнейм або пароль?
                             </button>
                           </div>
-                          <input
-                            type="password"
-                            placeholder="Введіть пароль"
-                            value={personalPasscode}
-                            onChange={(e) => setPersonalPasscode(e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
-                            required
-                          />
+                          <div className="relative">
+                            <input
+                              type={showPasswords['login'] ? "text" : "password"}
+                              placeholder="Введіть пароль"
+                              value={personalPasscode}
+                              onChange={(e) => setPersonalPasscode(e.target.value)}
+                              className="w-full px-3 py-2 pr-10 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                              required
+                            />
+                            <button
+                              type="button"
+                              onClick={() => togglePassword('login')}
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white"
+                            >
+                              {showPasswords['login'] ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
+                            </button>
+                          </div>
                         </div>
 
                         {personalError && (
@@ -1358,38 +2162,90 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                       <form onSubmit={handleRegisterSubmit} className="space-y-3">
                         <div>
                           <label className="block text-xs text-gray-300 font-medium mb-1">Ваш унікальний Нікнейм (Логін):*</label>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              placeholder="наприклад: petro_2026"
+                              value={regNickname}
+                              onChange={(e) => setRegNickname(e.target.value)}
+                              className={`w-full px-3 py-2 pr-9 rounded-xl bg-black/40 border text-sm focus:outline-none text-white transition-colors ${
+                                nicknameTaken
+                                  ? 'border-red-500 focus:border-red-500'
+                                  : regNickname.trim().length >= 2 && !isCheckingNickname
+                                  ? 'border-emerald-500 focus:border-emerald-500'
+                                  : 'border-gray-700 focus:border-indigo-500'
+                              }`}
+                              required
+                            />
+                            {isCheckingNickname && (
+                              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <div className="w-3.5 h-3.5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                              </div>
+                            )}
+                          </div>
+                          {nicknameTaken && (
+                            <p className="text-[11px] text-red-400 mt-1 flex items-center gap-1 font-medium">
+                              ⚠️ Такий нікнейм вже зайнятий у спільноті. Оберіть інший.
+                            </p>
+                          )}
+                          {!nicknameTaken && regNickname.trim().length >= 2 && !isCheckingNickname && (
+                            <p className="text-[11px] text-emerald-400 mt-1 flex items-center gap-1 font-medium">
+                              ✓ Нікнейм вільний
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-xs text-gray-300 font-medium mb-1">Ім'я (підпис) <span className="text-gray-400 font-normal">(необов'язково)</span>:</label>
                           <input
                             type="text"
-                            placeholder="наприклад: petro_2026"
-                            value={regNickname}
-                            onChange={(e) => setRegNickname(e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
-                            required
+                            placeholder="Олена К."
+                            value={regAuthorName}
+                            onChange={(e) => setRegAuthorName(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500 text-white"
                           />
                         </div>
 
                         <div>
                           <label className="block text-xs text-gray-300 font-medium mb-1">Пароль до скрині:*</label>
-                          <input
-                            type="password"
-                            placeholder="Придумайте пароль"
-                            value={regPasscode}
-                            onChange={(e) => setRegPasscode(e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
-                            required
-                          />
+                          <div className="relative">
+                            <input
+                              type={showPasswords['reg'] ? "text" : "password"}
+                              placeholder="Придумайте пароль"
+                              value={regPasscode}
+                              onChange={(e) => setRegPasscode(e.target.value)}
+                              className="w-full px-3 py-2 pr-10 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                              required
+                            />
+                            <button
+                              type="button"
+                              onClick={() => togglePassword('reg')}
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white"
+                            >
+                              {showPasswords['reg'] ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
+                            </button>
+                          </div>
                         </div>
 
                         <div>
                           <label className="block text-xs text-gray-300 font-medium mb-1">Повторіть пароль:*</label>
-                          <input
-                            type="password"
-                            placeholder="Підтвердіть пароль"
-                            value={regConfirmPasscode}
-                            onChange={(e) => setRegConfirmPasscode(e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
-                            required
-                          />
+                          <div className="relative">
+                            <input
+                              type={showPasswords['regConfirm'] ? "text" : "password"}
+                              placeholder="Підтвердіть пароль"
+                              value={regConfirmPasscode}
+                              onChange={(e) => setRegConfirmPasscode(e.target.value)}
+                              className="w-full px-3 py-2 pr-10 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                              required
+                            />
+                            <button
+                              type="button"
+                              onClick={() => togglePassword('regConfirm')}
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white"
+                            >
+                              {showPasswords['regConfirm'] ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
+                            </button>
+                          </div>
                         </div>
 
                         <div>
@@ -1422,7 +2278,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           disabled={isLoadingPersonal}
                           className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-colors shadow-lg shadow-indigo-900/30"
                         >
-                          {isLoadingPersonal ? 'Створення скрині...' : '✨ Створити та відкрити скриню'}
+                          {isLoadingPersonal ? 'Створення скрині...' : '✨ Отримати та відкрити скриню'}
                         </button>
                       </form>
                     </div>
@@ -1450,58 +2306,20 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                       <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
                       <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                     </svg>
-                    <span>Увійти через Google</span>
+                    <span>
+                      {personalAuthMode === 'register' ? 'Отримати через Google' : 'Увійти через Google'}
+                    </span>
                   </button>
+
+                  {personalAuthMode === 'register' && (
+                    <p className="text-[10px] text-gray-400 text-center mt-2 leading-relaxed">
+                      💡 При отримані через Google Нікнеймом за замовчуванням стане частина пошти (до @), а пароль вказується у полі вище або запитується при створенні.
+                    </p>
+                  )}
 
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-indigo-950/40 p-4 rounded-xl border border-indigo-500/30 gap-3">
-                    <div>
-                      <p className="text-xs text-indigo-300 font-medium">Моя особиста скриня користувача:</p>
-                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                        @{personalNickname}
-                      </h3>
-                      <div className="mt-1 flex items-center gap-1.5 text-xs">
-                        <span className="text-gray-400">Прив'язана пошта:</span>
-                        {currentAccountEmail ? (
-                          <span className="text-emerald-300 font-medium bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-500/30 flex items-center gap-1">
-                            ✉️ {currentAccountEmail}
-                          </span>
-                        ) : (
-                          <span className="text-amber-300 font-medium bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-500/30 flex items-center gap-1">
-                            ⚠️ Не вказана
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditEmailInput(currentAccountEmail || '');
-                          setEditNewPasscode('');
-                          setEditCurrentPasscode('');
-                          setEditProfileMessage('');
-                          setShowEditProfileModal(true);
-                        }}
-                        className="px-3 py-1.5 rounded-lg text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors shadow-sm flex items-center gap-1.5"
-                      >
-                        ⚙️ Редагувати акаунт
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsPersonalLoggedIn(false);
-                          setPersonalProjects([]);
-                        }}
-                        className="px-3 py-1.5 rounded-lg text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors"
-                      >
-                        Закрити скриню
-                      </button>
-                    </div>
-                  </div>
-
                   <FilterToolbar
                     searchQuery={personalSearchQuery}
                     onSearchChange={setPersonalSearchQuery}
@@ -1555,18 +2373,83 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                               title={proj.title}
                               onOpenLargePreview={() => setLargePreviewProject(proj)}
                             />
-                            <div className="flex justify-between items-start mb-2">
-                              <h3 className="font-bold text-base text-white truncate max-w-[180px]" title={proj.title}>{proj.title}</h3>
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full border ${
-                                proj.visibility === 'public'
-                                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                                  : proj.visibility === 'group'
-                                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                                  : 'bg-gray-500/20 text-gray-300 border-gray-500/30'
-                              }`}>
-                                {proj.visibility === 'public' ? 'Публічний' : proj.visibility === 'group' ? `Група: ${proj.groupId}` : 'Приватний'}
-                              </span>
-                            </div>
+                            {editingProjectId === proj.id ? (
+                              <div className="mb-3 space-y-2">
+                                <input
+                                  type="text"
+                                  value={editProjectTitle}
+                                  onChange={(e) => setEditProjectTitle(e.target.value)}
+                                  className="w-full px-2 py-1 bg-black/40 border border-indigo-500 rounded text-sm text-white focus:outline-none"
+                                />
+                                <textarea
+                                  value={editProjectDesc}
+                                  onChange={(e) => setEditProjectDesc(e.target.value)}
+                                  placeholder="Опис проєкту..."
+                                  className="w-full px-2 py-1 bg-black/40 border border-gray-700 rounded text-xs text-gray-300 focus:outline-none focus:border-indigo-500 min-h-[60px]"
+                                />
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleSaveProjectDetails(proj.id, personalPasscode)}
+                                    disabled={isSavingProjectDetails}
+                                    className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] rounded"
+                                  >
+                                    Зберегти
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingProjectId(null)}
+                                    className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white text-[10px] rounded"
+                                  >
+                                    Скасувати
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="flex justify-between items-start mb-2 group">
+                                  <h3 className="font-bold text-base text-white truncate max-w-[150px]" title={proj.title}>
+                                    {proj.title}
+                                  </h3>
+                                  <div className="flex items-center gap-1 flex-wrap justify-end">
+                                    <button
+                                      onClick={() => {
+                                        setEditingProjectId(proj.id);
+                                        setEditProjectTitle(proj.title);
+                                        setEditProjectDesc(proj.description || '');
+                                      }}
+                                      className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-white transition-opacity"
+                                      title="Редагувати назву/опис"
+                                    >
+                                      ✏️
+                                    </button>
+                                    <span className={`text-[10px] px-2 py-0.5 rounded-full border ${
+                                      proj.visibility === 'public'
+                                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                                        : proj.visibility === 'group'
+                                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                                        : 'bg-gray-500/20 text-gray-300 border-gray-500/30'
+                                    }`}>
+                                      {proj.visibility === 'public' ? 'Публічний' : proj.visibility === 'group' ? `Група: ${proj.groupId}` : 'Приватний'}
+                                    </span>
+                                    {((proj.sentToGroups && proj.sentToGroups.length > 0) || (proj.visibility === 'group' && proj.groupId)) && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setSelectedSentGroupsProject(proj);
+                                        }}
+                                        className="text-[10px] px-2 py-0.5 rounded-full border bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/40 transition-colors flex items-center gap-1 cursor-pointer font-medium shadow-sm"
+                                        title="Натисніть, щоб переглянути список груп, куди надіслано копію проєкту"
+                                      >
+                                        🏫 {proj.sentToGroups && proj.sentToGroups.length > 0 ? `У групах (${proj.sentToGroups.length})` : `Група: ${proj.groupId}`}
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                                {proj.description && (
+                                  <p className="text-xs text-gray-300 mb-2 line-clamp-2" title={proj.description}>{proj.description}</p>
+                                )}
+                              </>
+                            )}
                             <p className="text-xs text-gray-400 mb-1">Підпис: {proj.authorName}</p>
                             <p className="text-[11px] text-gray-500 mb-3">Об'єктів: {proj.shapesCount}</p>
                           </div>
@@ -1592,7 +2475,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                             </div>
 
                             <div className="flex items-center gap-1.5">
-                              {proj.visibility !== 'public' && (
+                              {proj.visibility !== 'public' ? (
                                 <button
                                   onClick={() => {
                                     setActionPasscodeModal({
@@ -1603,30 +2486,9 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                   }}
                                   className="flex-1 py-1 px-2 rounded text-[11px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/20 transition-colors"
                                 >
-                                  🌐 У галерею
+                                  🌐 Виставити у галереї
                                 </button>
-                              )}
-
-                              {/* {proj.visibility !== 'group' && (
-                                <button
-                                  onClick={() => {
-                                    const code = prompt('Введіть Код групи / осередка:');
-                                    if (code) {
-                                      setActionPasscodeModal({
-                                        show: true,
-                                        projectId: proj.id,
-                                        action: 'make_group',
-                                        targetGroupCode: code
-                                      });
-                                    }
-                                  }}
-                                  className="flex-1 py-1 px-2 rounded text-[11px] bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/20 transition-colors"
-                                >
-                                  🏫 В групу
-                                </button>
-                              )} */}
-
-                              {proj.visibility !== 'private' && (
+                              ) : (
                                 <button
                                   onClick={() => {
                                     setActionPasscodeModal({
@@ -1637,9 +2499,16 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                   }}
                                   className="flex-1 py-1 px-2 rounded text-[11px] bg-gray-500/10 hover:bg-gray-500/20 text-gray-300 border border-gray-500/20 transition-colors"
                                 >
-                                  🔒 Приватизувати
+                                  🔒 Прибрати з галереї
                                 </button>
                               )}
+
+                              <button
+                                onClick={() => openSendToGroupModal(proj)}
+                                className="flex-1 py-1 px-2 rounded text-[11px] bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/20 transition-colors"
+                              >
+                                🏫 Надіслати копію у групу
+                              </button>
 
                               <button
                                 onClick={() => {
@@ -1669,30 +2538,68 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
           {activeTab === 'group' && (
             <div className="space-y-6">
               {!activeGroup ? (
-                <div className="max-w-md mx-auto bg-[var(--bg-primary,#11111b)] p-6 rounded-2xl border border-[var(--border-color,#313244)] space-y-4">
-                  <div className="flex rounded-xl bg-black/40 p-1 border border-gray-800">
+                <div className="max-w-xl mx-auto bg-[var(--bg-primary,#11111b)] p-6 rounded-2xl border border-[var(--border-color,#313244)] space-y-5">
+                  <div className="flex flex-wrap rounded-xl bg-black/40 p-1 border border-gray-800 gap-1">
                     <button
-                      onClick={() => setIsCreatingGroup(false)}
-                      className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                        !isCreatingGroup ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'
+                      type="button"
+                      onClick={() => {
+                        setGroupTabSubView('open');
+                        setIsCreatingGroup(false);
+                      }}
+                      className={`flex-1 min-w-[120px] py-1.5 px-2 text-xs font-medium rounded-lg transition-colors text-center ${
+                        groupTabSubView === 'open' && !isCreatingGroup ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
                       }`}
                     >
-                      Відкрити скриню гурту/осередка
+                      🔑 Вхід за кодом
                     </button>
-                    <button
-                      onClick={() => setIsCreatingGroup(true)}
-                      className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                        isCreatingGroup ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'
-                      }`}
-                    >
-                      Створити новий гурт/осередок
-                    </button>
-                  </div>
 
-                  {!isCreatingGroup ? (
+                    {isPersonalLoggedIn && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setGroupTabSubView('my_groups');
+                          setIsCreatingGroup(false);
+                          setIsLoadingMyGroups(true);
+                          const userG = await getUserGroups(personalNickname);
+                          setMyUserGroups(userG);
+                          setIsLoadingMyGroups(false);
+                        }}
+                        className={`flex-1 min-w-[140px] py-1.5 px-2 text-xs font-medium rounded-lg transition-colors text-center flex items-center justify-center gap-1 ${
+                          groupTabSubView === 'my_groups' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        <span>📋</span> Мої групи/осередки
+                      </button>
+                    )}
+
+                    {isPersonalLoggedIn && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setGroupTabSubView('create');
+                          setIsCreatingGroup(true);
+                          setNewGroupCreator(personalNickname);
+                        }}
+                        className={`flex-1 min-w-[130px] py-1.5 px-2 text-xs font-medium rounded-lg transition-colors text-center ${
+                          isCreatingGroup ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        ➕ Створити осередок
+                      </button>
+                    )}
+                  </div>
+                  
+                  {!isPersonalLoggedIn && groupTabSubView === 'open' && (
+                    <div className="text-center p-3 text-xs text-amber-500 bg-amber-500/10 rounded-xl">
+                      💡 Створювати нові групи та переглядати власні осередки можуть лише авторизовані користувачі. Але ви можете приєднатися за кодом доступу та паролем.
+                    </div>
+                  )}
+
+                  {/* Sub-view 1: Login by Code */}
+                  {groupTabSubView === 'open' && !isCreatingGroup && (
                     <form onSubmit={handleGroupLogin} className="space-y-3">
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1">Код гурту / осередка:</label>
+                        <label className="block text-xs text-gray-400 mb-1">Код групи / осередку:*</label>
                         <input
                           type="text"
                           placeholder="наприклад: HUB-CLASS8A"
@@ -1703,15 +2610,26 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1">Пароль доступу до гурту:</label>
-                        <input
-                          type="password"
-                          placeholder="Пароль гурту"
-                          value={groupPasscodeInput}
-                          onChange={(e) => setGroupPasscodeInput(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
-                          required
-                        />
+                        <label className="block text-xs text-gray-400 mb-1">
+                          Пароль доступу до групи:
+                          <span className="text-[10px] text-gray-500 block">Необов'язково для власників та збережених груп</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showPasswords['groupJoin'] ? "text" : "password"}
+                            placeholder="Залиште порожнім, якщо збережено"
+                            value={groupPasscodeInput}
+                            onChange={(e) => setGroupPasscodeInput(e.target.value)}
+                            className="w-full px-3 py-2 pr-10 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => togglePassword('groupJoin')}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white"
+                          >
+                            {showPasswords['groupJoin'] ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
+                          </button>
+                        </div>
                       </div>
 
                       {groupError && (
@@ -1725,62 +2643,390 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         disabled={isLoadingGroup}
                         className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-colors"
                       >
-                        {isLoadingGroup ? 'Перевірка...' : 'Відкрити скриню гурту'}
+                        {isLoadingGroup ? 'Перевірка...' : 'Відкрити скриню групи'}
                       </button>
                     </form>
-                  ) : (
-                    <form onSubmit={handleCreateGroupSubmit} className="space-y-3">
+                  )}
+
+                  {/* Sub-view 2: My Groups */}
+                  {groupTabSubView === 'my_groups' && !isCreatingGroup && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between border-b border-gray-800 pb-2">
+                        <div>
+                          <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
+                            📋 Мої групи та осередки
+                          </h3>
+                          <p className="text-[10px] text-gray-400">
+                            Засновані вами осередки або класи, де ви є учасником
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setIsLoadingMyGroups(true);
+                            const userG = await getUserGroups(personalNickname);
+                            setMyUserGroups(userG);
+                            setIsLoadingMyGroups(false);
+                          }}
+                          className="text-[11px] px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors flex items-center gap-1"
+                        >
+                          🔄 Оновити
+                        </button>
+                      </div>
+
+                      {isLoadingMyGroups ? (
+                        <div className="text-center py-8 text-xs text-gray-400 flex items-center justify-center gap-2">
+                          <VeretkaLoader size="sm" />
+                          <span>Завантаження ваших груп...</span>
+                        </div>
+                      ) : myUserGroups.length === 0 ? (
+                        <div className="text-center py-8 bg-black/30 rounded-xl border border-gray-800/80 p-5 space-y-3">
+                          <p className="text-xs text-gray-400 leading-relaxed">
+                            У вас поки немає збережених груп або опублікованих робіт в осередках.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setGroupTabSubView('create');
+                              setIsCreatingGroup(true);
+                              setNewGroupCreator(personalNickname);
+                            }}
+                            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors"
+                          >
+                            ➕ Створити перший осередок
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 gap-3 max-h-[380px] overflow-y-auto pr-1">
+                          {myUserGroups.map((g) => {
+                            const isCreator = g.creatorNickname?.toLowerCase() === personalNickname.toLowerCase();
+                            return (
+                              <div
+                                key={g.id || g.groupCode}
+                                className="bg-black/40 border border-gray-800 hover:border-indigo-500/50 p-3.5 rounded-xl transition-all space-y-2 flex flex-col justify-between"
+                              >
+                                <div className="space-y-1.5">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <h4 className="text-xs font-bold text-white">{g.name}</h4>
+                                      <span className="text-[10px] bg-indigo-500/20 text-indigo-300 font-mono px-2 py-0.5 rounded border border-indigo-500/30">
+                                        {g.groupCode}
+                                      </span>
+                                    </div>
+                                    <span className={`text-[9px] px-2 py-0.5 rounded font-medium shrink-0 ${
+                                      isCreator ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                                    }`}>
+                                      {isCreator ? '👑 Засновник' : '👤 Учасник'}
+                                    </span>
+                                  </div>
+
+                                  {g.description && (
+                                    <p className="text-[11px] text-gray-400 line-clamp-2">{g.description}</p>
+                                  )}
+
+                                  <div className="text-[10px] text-gray-400 flex items-center gap-1.5 pt-0.5">
+                                    <span>Режим:</span>
+                                    <span className="font-medium text-gray-300">
+                                      {g.mode === 'education' ? '🏫 Освітній клас' : g.mode === 'readonly' ? '📢 Дошка шаблонів' : '🎨 Спільна майстерня'}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    setGroupCodeInput(g.groupCode);
+                                    setGroupTabSubView('open');
+                                    setIsCreatingGroup(false);
+                                    
+                                    const codeUpper = g.groupCode.toUpperCase();
+                                    const savedPass = savedGroupPasscodes[codeUpper];
+                                    
+                                    if (isCreator || savedPass) {
+                                      // Bypass prompt
+                                      await handleGroupLogin({ preventDefault: () => {} } as any, savedPass || '');
+                                    } else {
+                                      const pass = prompt(`Вкажіть пароль доступу для осередка "${g.name}" (${g.groupCode}):`);
+                                      if (pass) {
+                                        setGroupPasscodeInput(pass);
+                                        await handleGroupLogin({ preventDefault: () => {} } as any, pass);
+                                      }
+                                    }
+                                  }}
+                                  className="w-full py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white text-xs font-medium border border-indigo-500/30 transition-all text-center mt-2"
+                                >
+                                  🚀 Увійти в цей осередок
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Sub-view 3: Create Group Form */}
+                  {isCreatingGroup && (
+                    <form onSubmit={handleCreateGroupSubmit} className="space-y-4">
+                      {/* Scenario Selector Cards */}
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1">Назва гурту / осередка:</label>
+                        <label className="block text-xs font-semibold text-gray-300 mb-2">
+                          Оберіть режим (сценарій використання):
+                        </label>
+                        <div className="grid grid-cols-3 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setNewGroupMode('gallery')}
+                            className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                              newGroupMode === 'gallery'
+                                ? 'bg-indigo-600/20 border-indigo-500 text-white'
+                                : 'bg-black/30 border-gray-800 text-gray-400 hover:border-gray-700'
+                            }`}
+                          >
+                            <span className="text-lg mb-1">🎨</span>
+                            <div>
+                              <div className="text-xs font-bold leading-tight">Спільна майстерня</div>
+                              <div className="text-[9px] text-gray-400 mt-0.5">Всі бачать все</div>
+                            </div>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setNewGroupMode('education')}
+                            className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                              newGroupMode === 'education'
+                                ? 'bg-amber-600/20 border-amber-500 text-white'
+                                : 'bg-black/30 border-gray-800 text-gray-400 hover:border-gray-700'
+                            }`}
+                          >
+                            <span className="text-lg mb-1">🏫</span>
+                            <div>
+                              <div className="text-xs font-bold leading-tight">Освітній клас</div>
+                              <div className="text-[9px] text-gray-400 mt-0.5">Приватна здача</div>
+                            </div>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setNewGroupMode('readonly')}
+                            className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                              newGroupMode === 'readonly'
+                                ? 'bg-purple-600/20 border-purple-500 text-white'
+                                : 'bg-black/30 border-gray-800 text-gray-400 hover:border-gray-700'
+                            }`}
+                          >
+                            <span className="text-lg mb-1">📢</span>
+                            <div>
+                              <div className="text-xs font-bold leading-tight">Дошка шаблонів</div>
+                              <div className="text-[9px] text-gray-400 mt-0.5">Публікує засновник</div>
+                            </div>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Dynamic Scenario Context Info */}
+                      <div className={`p-3 rounded-xl border text-xs leading-relaxed ${
+                        newGroupMode === 'education'
+                          ? 'bg-amber-500/10 border-amber-500/30 text-amber-200'
+                          : newGroupMode === 'readonly'
+                          ? 'bg-purple-500/10 border-purple-500/30 text-purple-200'
+                          : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-200'
+                      }`}>
+                        {newGroupMode === 'education' && (
+                          <div className="space-y-2">
+                            <strong className="font-semibold block text-amber-300">🏫 Особливості Освітнього Класу:</strong>
+                            <p className="text-[11px] text-gray-300">
+                              • Учні повідомляють цей Код та Пароль і надсилають сюди виконані завдання.<br />
+                              • <span className="text-amber-300 font-medium">Захист від списування:</span> Учні бачать лише свої роботи та ваші шаблони.<br />
+                              • Ви як засновник маєте повний доступ до перевірки робіт усіх учнів.
+                            </p>
+
+                            <div className="mt-3 pt-2 border-t border-amber-500/20 space-y-1.5">
+                              <label className="block text-xs font-semibold text-amber-200">
+                                🎓 Правило повторного надсилання робіт учнями:
+                              </label>
+                              <div className="space-y-1 text-[11px]">
+                                <label className="flex items-start gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-amber-500/10 transition-colors">
+                                  <input
+                                    type="radio"
+                                    name="newStudentPolicy"
+                                    value="allow_overwrite"
+                                    checked={newGroupStudentPolicy === 'allow_overwrite'}
+                                    onChange={() => setNewGroupStudentPolicy('allow_overwrite')}
+                                    className="mt-0.5 accent-amber-500"
+                                  />
+                                  <div>
+                                    <span className="font-semibold text-white">🟢 Вільне оновлення (дозволити перезапис)</span>
+                                    <p className="text-[10px] text-gray-400">Учень може оновлювати існуючу здану роботу — стара версія перезаписується.</p>
+                                  </div>
+                                </label>
+
+                                <label className="flex items-start gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-amber-500/10 transition-colors">
+                                  <input
+                                    type="radio"
+                                    name="newStudentPolicy"
+                                    value="create_versions"
+                                    checked={newGroupStudentPolicy === 'create_versions'}
+                                    onChange={() => setNewGroupStudentPolicy('create_versions')}
+                                    className="mt-0.5 accent-amber-500"
+                                  />
+                                  <div>
+                                    <span className="font-semibold text-white">🔵 Авто-версіонування (зберігати v2, v3...)</span>
+                                    <p className="text-[10px] text-gray-400">Кожне повторне надсилання створює окрему нову версію роботи для відстеження прогресу.</p>
+                                  </div>
+                                </label>
+
+                                <label className="flex items-start gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-amber-500/10 transition-colors">
+                                  <input
+                                    type="radio"
+                                    name="newStudentPolicy"
+                                    value="freeze_after_submit"
+                                    checked={newGroupStudentPolicy === 'freeze_after_submit'}
+                                    onChange={() => setNewGroupStudentPolicy('freeze_after_submit')}
+                                    className="mt-0.5 accent-amber-500"
+                                  />
+                                  <div>
+                                    <span className="font-semibold text-white">🔒 Фіксація здачі (заборона повторного оновлення)</span>
+                                    <p className="text-[10px] text-gray-400">Після здачі учень не може оновити цей же проєкт (ідеально для контрольних робіт).</p>
+                                  </div>
+                                </label>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {newGroupMode === 'gallery' && (
+                          <div className="space-y-1">
+                            <strong className="font-semibold block text-indigo-300">🎨 Особливості Спільної Майстерні:</strong>
+                            <p className="text-[11px] text-gray-300">
+                              • Відкрита колекція для команди, студії чи групи за інтересами.<br />
+                              • Усі учасники з кодом та паролем можуть публікувати та переглядати роботи один одного.<br />
+                              • Чудовий вибір для хакатонів, обміну досвідом та спільної творчості.
+                            </p>
+                          </div>
+                        )}
+                        {newGroupMode === 'readonly' && (
+                          <div className="space-y-1">
+                            <strong className="font-semibold block text-purple-300">📢 Особливості Дошки Шаблонів:</strong>
+                            <p className="text-[11px] text-gray-300">
+                              • Каталог готових заготовок, векторних шрифтів та векторних узорів.<br />
+                              • Учасники можуть заходити й завантажувати копії у свій редактор.<br />
+                              • <span className="text-purple-300 font-medium">Обмеження публікації:</span> Надсилати нові проєкти сюди може ТІЛЬКИ засновник (ви).
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Dynamic Form Fields */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-300 mb-1">
+                          {newGroupMode === 'education' ? 'Назва класу / групи:*' :
+                           newGroupMode === 'readonly' ? 'Назва колекції шаблонів:*' :
+                           'Назва групи / осередку:*'}
+                        </label>
                         <input
                           type="text"
-                          placeholder="наприклад: Гурток графічного дизайну #3"
+                          placeholder={
+                            newGroupMode === 'education' ? 'наприклад: 8-А клас (Графічний дизайн)' :
+                            newGroupMode === 'readonly' ? 'наприклад: Офіційні шаблони Веретка' :
+                            'наприклад: Клуб вектористів "Палітра"'
+                          }
                           value={newGroupName}
                           onChange={(e) => setNewGroupName(e.target.value)}
                           className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
                           required
                         />
                       </div>
+
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1">Унікальний Код гурту (англійською):</label>
+                        <label className="block text-xs font-medium text-gray-300 mb-1">
+                          Унікальний Код (англійськими літерами):*
+                        </label>
                         <input
                           type="text"
-                          placeholder="наприклад: HUB-GRAFDESIGN3"
+                          placeholder={
+                            newGroupMode === 'education' ? 'HUB-CLASS8A' :
+                            newGroupMode === 'readonly' ? 'HUB-PATTERNS' :
+                            'HUB-DESIGNCLUB'
+                          }
                           value={newGroupCode}
                           onChange={(e) => setNewGroupCode(e.target.value.toUpperCase())}
                           className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500 uppercase"
                           required
                         />
                       </div>
+
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1">Опис (опціонально):</label>
+                        <label className="block text-xs font-medium text-gray-300 mb-1">Опис (опціонально):</label>
                         <input
                           type="text"
-                          placeholder="Короткий опис осередка"
+                          placeholder={
+                            newGroupMode === 'education' ? 'наприклад: Здача практичних робіт з теми "Векторні форми"' :
+                            'Короткий опис осередка'
+                          }
                           value={newGroupDesc}
                           onChange={(e) => setNewGroupDesc(e.target.value)}
                           className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
                         />
                       </div>
+
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1">Пароль гурту:</label>
-                        <input
-                          type="password"
-                          placeholder="Пароль для учасників"
-                          value={newGroupPasscode}
-                          onChange={(e) => setNewGroupPasscode(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
-                          required
-                        />
+                        <label className="block text-xs font-medium text-gray-300 mb-1">
+                          {newGroupMode === 'education' ? 'Пароль класу (для учнів):*' :
+                           newGroupMode === 'readonly' ? 'Пароль доступу до шаблонів:*' :
+                           'Пароль групи:*'}
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showPasswords['newGroup'] ? "text" : "password"}
+                            placeholder="Придумайте пароль доступу"
+                            value={newGroupPasscode}
+                            onChange={(e) => setNewGroupPasscode(e.target.value)}
+                            className="w-full px-3 py-2 pr-10 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                            required
+                          />
+                          <button
+                            type="button"
+                            onClick={() => togglePassword('newGroup')}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white"
+                          >
+                            {showPasswords['newGroup'] ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
+                          </button>
+                        </div>
+                        <p className="text-[10px] text-gray-500 mt-1">
+                          {newGroupMode === 'education'
+                            ? '💡 Повідомте цей пароль та код учням для входу в клас.'
+                            : '💡 Знаючи цей пароль та код, учасники зможуть увійти в осередок.'}
+                        </p>
                       </div>
+
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1">Ваш нікнейм (засновник):</label>
+                        <label className="block text-xs font-medium text-gray-300 mb-1">Повторіть пароль:*</label>
+                        <div className="relative">
+                          <input
+                            type={showPasswords['newGroupConfirm'] ? "text" : "password"}
+                            placeholder="Підтвердіть пароль"
+                            value={newGroupConfirmPasscode}
+                            onChange={(e) => setNewGroupConfirmPasscode(e.target.value)}
+                            className="w-full px-3 py-2 pr-10 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                            required
+                          />
+                          <button
+                            type="button"
+                            onClick={() => togglePassword('newGroupConfirm')}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white"
+                          >
+                            {showPasswords['newGroupConfirm'] ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-gray-400 mb-1">Засновник (Адміністратор):</label>
                         <input
                           type="text"
-                          placeholder="Ваш нікнейм"
                           value={newGroupCreator}
-                          onChange={(e) => setNewGroupCreator(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                          disabled
+                          className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm text-gray-400 cursor-not-allowed"
                         />
                       </div>
 
@@ -1793,7 +3039,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                       <button
                         type="submit"
                         disabled={isLoadingGroup}
-                        className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm transition-colors"
+                        className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm transition-colors shadow-lg shadow-emerald-900/20"
                       >
                         {isLoadingGroup ? 'Створення...' : 'Створити осередок'}
                       </button>
@@ -1804,42 +3050,84 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 <div className="space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-amber-950/40 p-4 rounded-xl border border-amber-500/30 gap-3">
                       <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-mono border border-amber-500/30">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs bg-amber-500/20 text-amber-300 px-2.5 py-0.5 rounded font-mono border border-amber-500/30 font-bold">
                             {activeGroup.groupCode}
                           </span>
                           <h3 className="text-lg font-bold text-white">{activeGroup.name}</h3>
+
+                          {/* USER ROLE BADGE IN GROUP HEADER */}
+                          {(() => {
+                            const isCreator = isPersonalLoggedIn && activeGroup.creatorNickname?.trim().toLowerCase() === personalNickname.trim().toLowerCase();
+                            return (
+                              <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-semibold border flex items-center gap-1 ${
+                                isCreator ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' :
+                                isPersonalLoggedIn ? 'bg-blue-500/20 text-blue-300 border-blue-500/40' :
+                                'bg-gray-500/20 text-gray-400 border-gray-500/40'
+                              }`}>
+                                {isCreator ? '👑 Засновник групи' : isPersonalLoggedIn ? '👤 Учасник групи' : '👀 Гість'}
+                              </span>
+                            );
+                          })()}
                         </div>
+
                         {activeGroup.description && (
                           <p className="text-xs text-gray-300 mt-1">{activeGroup.description}</p>
                         )}
+
+                        <div className="mt-2 text-[11px] flex items-center gap-2">
+                          <span className="text-gray-400">Режим роботи:</span>
+                          <span className="px-2 py-0.5 rounded bg-gray-800 text-gray-200 border border-gray-700 font-medium">
+                            {activeGroup.mode === 'education' ? '🏫 Освітній клас (Учні бачать лише свої роботи)' : 
+                             activeGroup.mode === 'readonly' ? '🔒 Дошка шаблонів (Публікує лише засновник)' : 
+                             '🎨 Спільна майстерня (Всі бачать все)'}
+                          </span>
+                        </div>
                       </div>
+
                       <div className="flex items-center gap-2 shrink-0">
                         <button
                           type="button"
-                          onClick={() => {
-                            setDeleteGroupError('');
-                            setDeleteGroupPasscode('');
-                            setShowDeleteGroupModal(true);
-                          }}
-                          className="px-3 py-1.5 rounded-lg text-xs bg-red-600/80 hover:bg-red-600 text-white font-medium transition-colors shadow-sm flex items-center gap-1"
-                          title="Видалити всю групу"
+                          onClick={() => handleOpenGroupMembers(activeGroup.groupCode)}
+                          className="px-3 py-1.5 rounded-lg text-xs bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white font-semibold border border-indigo-500/40 transition-colors flex items-center gap-1.5 shadow-sm"
+                          title="Переглянути всіх учасників цієї групи"
                         >
-                          🗑️ Видалити групу
+                          👥 Учасники
                         </button>
+
                         <button
-                          onClick={() => setActiveGroup(null)}
-                          className="px-3 py-1.5 rounded-lg text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors"
+                          type="button"
+                          onClick={() => handleOpenGroupSettings(activeGroup)}
+                          className="px-3 py-1.5 rounded-lg text-xs bg-gray-800 hover:bg-gray-700 text-gray-200 font-semibold border border-gray-700 transition-colors flex items-center gap-1.5 shadow-sm"
+                          title="Налаштування цієї групи"
                         >
-                          Вийти з гурту
+                          ⚙️ Налаштування
                         </button>
+
+                        {isPersonalLoggedIn && (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              setActiveGroup(null);
+                              setGroupTabSubView('my_groups');
+                              setIsLoadingMyGroups(true);
+                              const userG = await getUserGroups(personalNickname);
+                              setMyUserGroups(userG);
+                              setIsLoadingMyGroups(false);
+                            }}
+                            className="px-3 py-1.5 rounded-lg text-xs bg-black/40 hover:bg-gray-800 text-gray-300 font-medium border border-gray-800 transition-colors flex items-center gap-1"
+                            title="Повернутися до моїх груп"
+                          >
+                            📋 Мої групи
+                          </button>
+                        )}
                       </div>
                     </div>
 
                   <FilterToolbar
                     searchQuery={groupSearchQuery}
                     onSearchChange={setGroupSearchQuery}
-                    searchPlaceholder="🔍 Пошук у скрині гурту..."
+                    searchPlaceholder="🔍 Пошук у скрині групи..."
                     sortBy={sortBy}
                     onSortChange={setSortBy}
                     shapesFilter={shapesFilter}
@@ -1863,12 +3151,12 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                     <div className="py-12 text-center text-gray-400 bg-black/20 rounded-2xl border border-dashed border-gray-700">
                       <p className="text-base font-medium">
                         {groupProjects.length === 0
-                          ? 'У цьому гурті ще немає опублікованих проєктів'
-                          : 'Нічого не знайдено у гурті за вибраними фільтрами'}
+                          ? 'У цій групі ще немає опублікованих проєктів'
+                          : 'Нічого не знайдено у групі за вибраними фільтрами'}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
                         {groupProjects.length === 0
-                          ? 'Опублікуйте свій проєкт у цей гурт через вкладку "Опублікувати"'
+                          ? 'Опублікуйте свій проєкт у цю групу через вкладку "Опублікувати"'
                           : 'Спробуйте змінити критерії пошуку чи фільтрації'}
                       </p>
                     </div>
@@ -1885,12 +3173,66 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                               title={proj.title}
                               onOpenLargePreview={() => setLargePreviewProject(proj)}
                             />
-                            <div className="flex justify-between items-start mb-2">
-                              <h3 className="font-bold text-base text-white truncate max-w-[180px]" title={proj.title}>{proj.title}</h3>
-                              <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">
-                                Гурт
-                              </span>
-                            </div>
+                            {editingProjectId === proj.id ? (
+                              <div className="mb-3 space-y-2">
+                                <input
+                                  type="text"
+                                  value={editProjectTitle}
+                                  onChange={(e) => setEditProjectTitle(e.target.value)}
+                                  className="w-full px-2 py-1 bg-black/40 border border-indigo-500 rounded text-sm text-white focus:outline-none"
+                                />
+                                <textarea
+                                  value={editProjectDesc}
+                                  onChange={(e) => setEditProjectDesc(e.target.value)}
+                                  placeholder="Опис проєкту..."
+                                  className="w-full px-2 py-1 bg-black/40 border border-gray-700 rounded text-xs text-gray-300 focus:outline-none focus:border-indigo-500 min-h-[60px]"
+                                />
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleSaveProjectDetails(proj.id, personalPasscode)}
+                                    disabled={isSavingProjectDetails}
+                                    className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] rounded"
+                                  >
+                                    Зберегти
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingProjectId(null)}
+                                    className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white text-[10px] rounded"
+                                  >
+                                    Скасувати
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="flex justify-between items-start mb-2 group">
+                                  <h3 className="font-bold text-base text-white truncate max-w-[150px]" title={proj.title}>
+                                    {proj.title}
+                                  </h3>
+                                  <div className="flex items-center gap-1">
+                                    {(isPersonalLoggedIn && proj.ownerNickname === personalNickname) && (
+                                      <button
+                                        onClick={() => {
+                                          setEditingProjectId(proj.id);
+                                          setEditProjectTitle(proj.title);
+                                          setEditProjectDesc(proj.description || '');
+                                        }}
+                                        className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-white transition-opacity"
+                                        title="Редагувати назву/опис"
+                                      >
+                                        ✏️
+                                      </button>
+                                    )}
+                                    <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">
+                                      Група
+                                    </span>
+                                  </div>
+                                </div>
+                                {proj.description && (
+                                  <p className="text-xs text-gray-300 mb-2 line-clamp-2" title={proj.description}>{proj.description}</p>
+                                )}
+                              </>
+                            )}
                             <p className="text-xs text-gray-400 mb-1">Автор: {proj.authorName} (@{proj.ownerNickname})</p>
                             <p className="text-[11px] text-gray-500 mb-3">Об'єктів: {proj.shapesCount}</p>
                           </div>
@@ -1953,109 +3295,236 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                     value={pubTitle}
                     onChange={(e) => setPubTitle(e.target.value)}
                     placeholder="наприклад: Моє сонечко"
-                    className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500 text-white"
                     required
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1">Ім'я автора (підпис):</label>
-                    <input
-                      type="text"
-                      value={pubAuthorName}
-                      onChange={(e) => setPubAuthorName(e.target.value)}
-                      placeholder="Олена К."
-                      className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
-                    />
+                {!isPersonalLoggedIn ? (
+                  <div className="bg-gradient-to-r from-amber-500/10 via-indigo-500/10 to-amber-500/10 p-4 rounded-xl border border-amber-500/30 text-center space-y-3">
+                    <p className="text-xs text-amber-200/90 leading-relaxed">
+                      Для публікації та збереження проєкту у вашій особистій скрині, будь ласка, відкрийте свою скриню.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReturnToPublishAfterLogin(true);
+                        setActiveTab('personal');
+                        setPersonalAuthMode('login');
+                      }}
+                      className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2"
+                    >
+                      <span>🔓</span>
+                      <span>Увійти (Відкрити власну скриню)</span>
+                    </button>
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1">Ваш Нікнейм:*</label>
-                    <input
-                      type="text"
-                      value={pubNickname}
-                      onChange={(e) => setPubNickname(e.target.value)}
-                      placeholder="olena_2026"
-                      className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
-                      required
-                    />
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-300 mb-1">Ім'я автора (підпис):</label>
+                      <input
+                        type="text"
+                        value={pubAuthorName}
+                        onChange={(e) => {
+                          setPubAuthorName(e.target.value);
+                          localStorage.setItem('veretka_author_name', e.target.value);
+                        }}
+                        placeholder="Олена К."
+                        className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500 text-white"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-medium text-gray-300">Ваш Нікнейм:*</label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTab('personal');
+                            setPersonalAuthMode('login');
+                          }}
+                          className="text-[11px] text-indigo-400 hover:text-indigo-300 underline underline-offset-2 flex items-center gap-1 font-medium"
+                          title="Перейти до входу для зміни акаунту"
+                        >
+                          🔄 Змінити
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        value={pubNickname}
+                        readOnly
+                        disabled
+                        className="w-full px-3 py-2 rounded-xl bg-gray-900/80 border border-gray-700 text-sm text-gray-400 cursor-not-allowed select-none font-mono"
+                        required
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div>
                   <label className="block text-xs font-medium text-gray-300 mb-1">
-                    Пароль проєкту (для керування/видалення):*
+                    Опис проєкту (необов'язково):
                   </label>
-                  <input
-                    type="password"
-                    value={pubPasscode}
-                    onChange={(e) => setPubPasscode(e.target.value)}
-                    placeholder="Придумайте пароль"
-                    className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
-                    required
+                  <textarea
+                    value={pubDescription}
+                    onChange={(e) => setPubDescription(e.target.value)}
+                    placeholder="Короткий опис вашого проєкту, використаних орнаментів або коментар..."
+                    rows={2}
+                    className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500 text-white placeholder:text-gray-600 resize-none"
                   />
-                  <p className="text-[11px] text-gray-500 mt-0.5">
-                    Цей пароль потрібен для підтвердження видалення або зміни статусу
-                  </p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-300 mb-2">Варіант публікації / призначення:*</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setPubVisibility('public')}
-                      className={`p-3 rounded-xl border text-xs text-left transition-all ${
-                        pubVisibility === 'public'
-                          ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300 font-semibold'
-                          : 'border-gray-800 bg-black/20 text-gray-400 hover:text-white'
-                      }`}
-                    >
-                      🌐 1) Публічно
-                      <span className="block text-[10px] text-gray-500 font-normal mt-1">Доступно всім користувачам у галереї</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setPubVisibility('private')}
-                      className={`p-3 rounded-xl border text-xs text-left transition-all ${
-                        pubVisibility === 'private'
-                          ? 'border-indigo-500 bg-indigo-500/10 text-indigo-300 font-semibold'
-                          : 'border-gray-800 bg-black/20 text-gray-400 hover:text-white'
-                      }`}
-                    >
-                      👤 2) Моя особиста скриня
-                      <span className="block text-[10px] text-gray-500 font-normal mt-1">Тільки у вашій особистій скрині</span>
-                    </button>
-
-                    {/* <button
-                      type="button"
-                      onClick={() => setPubVisibility('group')}
-                      className={`p-3 rounded-xl border text-xs text-left transition-all ${
-                        pubVisibility === 'group'
-                          ? 'border-amber-500 bg-amber-500/10 text-amber-300 font-semibold'
-                          : 'border-gray-800 bg-black/20 text-gray-400 hover:text-white'
-                      }`}
-                    >
-                      🏫 3) Скриня гурту/осередка
-                      <span className="block text-[10px] text-gray-500 font-normal mt-1">Доступно членам обраного осередку</span>
-                    </button> */}
+                  <label className="block text-xs font-medium text-gray-300 mb-2">Налаштування публікації:</label>
+                  <div className="text-xs text-gray-400 mb-3 p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
+                    ℹ️ Ваш проєкт завжди автоматично зберігається у Вашу <b>Особисту скриню</b>. Нижче Ви можете обрати додаткові місця для публікації.
                   </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                    <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                      pubIsPublic ? 'border-emerald-500 bg-emerald-500/10' : 'border-gray-800 bg-black/20 hover:border-gray-600'
+                    }`}>
+                      <div className="mt-0.5">
+                        <input
+                          type="checkbox"
+                          checked={pubIsPublic}
+                          onChange={(e) => setPubIsPublic(e.target.checked)}
+                          className="w-4 h-4 rounded bg-black/50 border-gray-600 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-gray-900"
+                        />
+                      </div>
+                      <div>
+                        <div className={`font-semibold ${pubIsPublic ? 'text-emerald-400' : 'text-gray-300'}`}>🌐 Загальна галерея</div>
+                        <div className="text-[10px] text-gray-500 mt-0.5">Проєкт буде видно всім у вкладці "Публічна галерея".</div>
+                      </div>
+                    </label>
+
+                    <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                      pubIsGroup ? 'border-amber-500 bg-amber-500/10' : 'border-gray-800 bg-black/20 hover:border-gray-600'
+                    }`}>
+                      <div className="mt-0.5">
+                        <input
+                          type="checkbox"
+                          checked={pubIsGroup}
+                          onChange={(e) => setPubIsGroup(e.target.checked)}
+                          className="w-4 h-4 rounded bg-black/50 border-gray-600 text-amber-500 focus:ring-amber-500 focus:ring-offset-gray-900"
+                        />
+                      </div>
+                      <div>
+                        <div className={`font-semibold ${pubIsGroup ? 'text-amber-400' : 'text-gray-300'}`}>🏫 Скриня групи</div>
+                        <div className="text-[10px] text-gray-500 mt-0.5">Створити копію у групі.</div>
+                      </div>
+                    </label>
+                  </div>
+
+                  {pubIsGroup && (
+                    <div className="bg-amber-950/20 p-3.5 rounded-xl border border-amber-500/30 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-medium text-amber-300">Код групи / осередка:*</label>
+                        {isPersonalLoggedIn && (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              setShowGroupPicker(!showGroupPicker);
+                              if (!myUserGroups.length && personalNickname) {
+                                setIsLoadingMyGroups(true);
+                                const userG = await getUserGroups(personalNickname);
+                                setMyUserGroups(userG);
+                                setIsLoadingMyGroups(false);
+                              }
+                            }}
+                            className="text-[11px] px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition-colors font-medium flex items-center gap-1"
+                          >
+                            📋 Ваші групи
+                          </button>
+                        )}
+                      </div>
+
+                      {showGroupPicker && (
+                        <div className="bg-black/80 border border-amber-500/40 rounded-xl p-3 space-y-2 max-h-48 overflow-y-auto">
+                          <div className="text-[11px] font-semibold text-gray-400 mb-1">Оберіть вашу групу:</div>
+                          {isLoadingMyGroups ? (
+                            <p className="text-xs text-gray-400 animate-pulse py-2 text-center">Завантаження вашої групи...</p>
+                          ) : myUserGroups.length === 0 ? (
+                            <p className="text-xs text-gray-400 py-2 text-center">У вас ще немає збережених груп</p>
+                          ) : (
+                            myUserGroups.map((g) => (
+                              <button
+                                key={g.id}
+                                type="button"
+                                onClick={() => {
+                                  setPubGroupCode(g.groupCode);
+                                  setFetchedGroupInfo(g);
+                                  setShowGroupPicker(false);
+                                }}
+                                className={`w-full text-left p-2 rounded-lg border text-xs transition-colors flex items-center justify-between ${
+                                  pubGroupCode.toUpperCase() === g.groupCode
+                                    ? 'bg-amber-500/20 border-amber-500 text-amber-200'
+                                    : 'bg-gray-900/60 border-gray-800 text-gray-300 hover:border-amber-500/40 hover:bg-black/50'
+                                }`}
+                              >
+                                <div>
+                                  <div className="font-bold flex items-center gap-1.5">
+                                    <span className="font-mono text-[10px] bg-amber-500/30 text-amber-300 px-1.5 py-0.5 rounded">
+                                      {g.groupCode}
+                                    </span>
+                                    <span>{g.name}</span>
+                                  </div>
+                                  <div className="text-[10px] text-gray-400 mt-0.5">
+                                    Режим: {g.mode === 'education' ? '🏫 Освітній' : g.mode === 'readonly' ? '🔒 Дошка шаблонів' : '🎨 Галерея'}
+                                  </div>
+                                </div>
+                                <span className="text-xs text-amber-400">Обрати ➔</span>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      )}
+
+                      <input
+                        type="text"
+                        value={pubGroupCode}
+                        onChange={(e) => {
+                          const code = e.target.value.toUpperCase();
+                          setPubGroupCode(code);
+                          if (code.trim()) {
+                            getGroupInfoByCode(code).then(setFetchedGroupInfo);
+                          } else {
+                            setFetchedGroupInfo(null);
+                          }
+                        }}
+                        placeholder="наприклад: HUB-ROBOT3"
+                        className="w-full px-3 py-2 rounded-lg bg-black/50 border border-amber-500/40 text-sm uppercase focus:outline-none focus:border-amber-400 text-white font-mono"
+                        required={pubIsGroup}
+                      />
+
+                      {fetchedGroupInfo && (
+                        <div className="bg-black/40 p-3 rounded-lg border border-amber-500/20 text-xs space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-amber-300">{fetchedGroupInfo.name}</span>
+                            <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-mono">
+                              {fetchedGroupInfo.mode === 'education' ? '🏫 Освітній режим' : 
+                               fetchedGroupInfo.mode === 'readonly' ? '🔒 Дошка шаблонів' : 
+                               '🎨 Галерея'}
+                            </span>
+                          </div>
+                          {fetchedGroupInfo.description && (
+                            <p className="text-gray-400 text-[11px]">{fetchedGroupInfo.description}</p>
+                          )}
+                          <div className="text-[10px] text-gray-400 pt-1 border-t border-gray-800">
+                            {fetchedGroupInfo.mode === 'education' && (
+                              <p className="text-amber-200/90">💡 В освітньому режимі учні бачать тільки свої опубліковані роботи.</p>
+                            )}
+                            {fetchedGroupInfo.mode === 'readonly' && (
+                              <p className="text-amber-200/90">⚠️ Режим шаблонів: публікація дозволена засновникy (@{fetchedGroupInfo.creatorNickname}).</p>
+                            )}
+                            {fetchedGroupInfo.mode === 'gallery' && (
+                              <p className="text-emerald-300/90">✓ Відкрита галерея: всі учасники групи можуть публікувати роботи.</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-
-                {pubVisibility === 'group' && (
-                  <div className="bg-amber-950/20 p-3 rounded-xl border border-amber-500/30">
-                    <label className="block text-xs font-medium text-amber-300 mb-1">Код групи / осередка:*</label>
-                    <input
-                      type="text"
-                      value={pubGroupCode}
-                      onChange={(e) => setPubGroupCode(e.target.value.toUpperCase())}
-                      placeholder="наприклад: HUB-ROBOT3"
-                      className="w-full px-3 py-1.5 rounded-lg bg-black/50 border border-amber-500/40 text-sm uppercase focus:outline-none"
-                      required={pubVisibility === 'group'}
-                    />
-                  </div>
-                )}
 
                 {publishStatusMessage && (
                   <p className={`text-xs p-2.5 rounded-xl border ${
@@ -2070,9 +3539,9 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 <button
                   type="submit"
                   disabled={isPublishing}
-                  className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition-colors shadow-lg shadow-emerald-900/30"
+                  className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition-colors shadow-lg shadow-emerald-900/30 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isPublishing ? 'Збереження...' : 'Зберегти у хмару'}
+                  {isPublishing ? 'Збереження...' : '🚀 Опублікувати проєкт'}
                 </button>
               </form>
             </div>
@@ -2108,6 +3577,19 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
               <form onSubmit={handleEditProfileSubmit} className="space-y-3.5">
                 <div>
                   <label className="block text-xs font-medium text-gray-300 mb-1">
+                    Ім'я (підпис):
+                  </label>
+                  <input
+                    type="text"
+                    value={editAuthorNameInput}
+                    onChange={(e) => setEditAuthorNameInput(e.target.value)}
+                    placeholder="Олена К."
+                    className="w-full px-3 py-2 rounded-xl bg-black/50 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500 text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-300 mb-1">
                     Електронна пошта (Email):
                   </label>
                   <input
@@ -2129,26 +3611,44 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                     <label className="block text-xs font-medium text-gray-400 mb-1">
                       Новий пароль:
                     </label>
-                    <input
-                      type="password"
-                      value={editNewPasscode}
-                      onChange={(e) => setEditNewPasscode(e.target.value)}
-                      placeholder="Залиште порожнім, якщо не змінюєте"
-                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPasswords['editNew'] ? "text" : "password"}
+                        value={editNewPasscode}
+                        onChange={(e) => setEditNewPasscode(e.target.value)}
+                        placeholder="Залиште порожнім, якщо не змінюєте"
+                        className="w-full px-3 py-2 pr-10 rounded-xl bg-black/50 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => togglePassword('editNew')}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white"
+                      >
+                        {showPasswords['editNew'] ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
+                      </button>
+                    </div>
                   </div>
 
                   <div>
                     <label className="block text-xs font-medium text-gray-400 mb-1">
                       Поточний пароль (для підтвердження):
                     </label>
-                    <input
-                      type="password"
-                      value={editCurrentPasscode}
-                      onChange={(e) => setEditCurrentPasscode(e.target.value)}
-                      placeholder="Введіть поточний пароль"
-                      className="w-full px-3 py-2 rounded-xl bg-black/50 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPasswords['editCurrent'] ? "text" : "password"}
+                        value={editCurrentPasscode}
+                        onChange={(e) => setEditCurrentPasscode(e.target.value)}
+                        placeholder="Введіть поточний пароль"
+                        className="w-full px-3 py-2 pr-10 rounded-xl bg-black/50 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => togglePassword('editCurrent')}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white"
+                      >
+                        {showPasswords['editCurrent'] ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -2191,7 +3691,6 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                     type="button"
                     onClick={() => {
                       setDeleteAccountError('');
-                      setDeleteAccountPasscode(personalPasscode || '');
                       setShowDeleteAccountConfirm(true);
                     }}
                     className="w-full py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
@@ -2201,45 +3700,32 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 ) : (
                   <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3.5 space-y-3 text-left">
                     <p className="text-xs text-red-300 leading-relaxed font-medium">
-                      ⚠️ <strong>Увага!</strong> Ви видаляєте свою скриню <span className="font-mono text-white">@{personalNickname}</span>. Усі ваші проєкти в цій скрині будуть видалені остаточно. Дія є незворотною!
+                      ⚠️ <strong>Увага! Незворотна дія!</strong> Ви збираєтеся остаточно видалити вашу особисту скриню <span className="font-mono text-white">@{personalNickname}</span>. Усі ваші проєкти в цій скрині будуть видалені безповоротно.
                     </p>
-                    
-                    <form onSubmit={handleDeleteAccountSubmit} className="space-y-2.5">
-                      <div>
-                        <label className="block text-[11px] text-gray-300 mb-1">Підтвердіть пароль для видалення:</label>
-                        <input
-                          type="password"
-                          value={deleteAccountPasscode}
-                          onChange={(e) => setDeleteAccountPasscode(e.target.value)}
-                          placeholder="Введіть пароль"
-                          className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-red-500/30 text-xs focus:outline-none focus:border-red-400"
-                          required
-                        />
-                      </div>
 
-                      {deleteAccountError && (
-                        <p className="text-xs text-red-300 bg-red-950/80 p-2 rounded-lg border border-red-500/30">
-                          {deleteAccountError}
-                        </p>
-                      )}
+                    {deleteAccountError && (
+                      <p className="text-xs text-red-300 bg-red-950/80 p-2 rounded-lg border border-red-500/30">
+                        {deleteAccountError}
+                      </p>
+                    )}
 
-                      <div className="flex gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => setShowDeleteAccountConfirm(false)}
-                          className="flex-1 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium"
-                        >
-                          Скасувати
-                        </button>
-                        <button
-                          type="submit"
-                          disabled={isDeletingAccount}
-                          className="flex-1 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition-colors shadow-md shadow-red-900/40"
-                        >
-                          {isDeletingAccount ? 'Видалення...' : 'Підтверджую видалення'}
-                        </button>
-                      </div>
-                    </form>
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowDeleteAccountConfirm(false)}
+                        className="flex-1 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors"
+                      >
+                        Скасувати
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteAccountSubmit()}
+                        disabled={isDeletingAccount}
+                        className="flex-1 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition-colors shadow-md shadow-red-900/40 flex items-center justify-center gap-1"
+                      >
+                        {isDeletingAccount ? 'Видалення...' : '🗑️ Так, видалити скриню'}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -2253,7 +3739,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
             <div className="bg-[var(--bg-secondary,#1e1e2e)] text-white p-6 rounded-2xl border border-[var(--border-color,#313244)] max-w-md w-full space-y-4 shadow-2xl relative">
               <div className="flex justify-between items-center pb-2 border-b border-gray-800">
                 <h4 className="font-bold text-base flex items-center gap-2 text-red-400">
-                  🗑️ Видалення гурту / осередка
+                  🗑️ Видалення групи / осередку
                 </h4>
                 <button
                   type="button"
@@ -2272,16 +3758,25 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
               <form onSubmit={handleDeleteGroupSubmit} className="space-y-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-300 mb-1">
-                    Введіть пароль гурту для підтвердження:*
+                    Введіть пароль групи для підтвердження:*
                   </label>
-                  <input
-                    type="password"
-                    value={deleteGroupPasscode}
-                    onChange={(e) => setDeleteGroupPasscode(e.target.value)}
-                    placeholder="Пароль гурту"
-                    className="w-full px-3 py-2 rounded-xl bg-black/50 border border-red-500/30 text-sm focus:outline-none focus:border-red-500"
-                    required
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPasswords['deleteGroup'] ? "text" : "password"}
+                      value={deleteGroupPasscode}
+                      onChange={(e) => setDeleteGroupPasscode(e.target.value)}
+                      placeholder="Пароль групи"
+                      className="w-full px-3 py-2 pr-10 rounded-xl bg-black/50 border border-red-500/30 text-sm focus:outline-none focus:border-red-500"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => togglePassword('deleteGroup')}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white"
+                    >
+                      {showPasswords['deleteGroup'] ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
+                    </button>
+                  </div>
                 </div>
 
                 {deleteGroupError && (
@@ -2324,6 +3819,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                     setShowRecoveryModal(false);
                     setRecoveryEmail('');
                     setRecoveryMessage('');
+                    setRecoverySuccess(false);
                   }}
                   className="p-1 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
                 >
@@ -2332,7 +3828,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
               </div>
 
               <p className="text-xs text-gray-300 leading-relaxed">
-                Вкажіть електронну пошту (Email), яку ви вказували при реєстрації скрині, щоб знайти зареєстровані Нікнейми:
+                Вкажіть вашу зареєстровану електронну пошту (Email). На цю пошту буде надіслано лист із вашим прив'язаним Нікнеймом та паролем доступу:
               </p>
 
               <form onSubmit={handleAccountRecoverySubmit} className="space-y-3">
@@ -2341,7 +3837,11 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   <input
                     type="email"
                     value={recoveryEmail}
-                    onChange={(e) => setRecoveryEmail(e.target.value)}
+                    onChange={(e) => {
+                      setRecoveryEmail(e.target.value);
+                      setRecoverySuccess(false);
+                      setRecoveryMessage('');
+                    }}
                     placeholder="example@gmail.com"
                     className="w-full px-3 py-2 rounded-xl bg-black/50 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
                     required
@@ -2349,13 +3849,13 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 </div>
 
                 {recoveryMessage && (
-                  <p className={`text-xs p-3 rounded-xl border leading-relaxed ${
+                  <div className={`text-xs p-3 rounded-xl border leading-relaxed whitespace-pre-line ${
                     recoverySuccess
                       ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
                       : 'bg-red-500/10 text-red-300 border-red-500/30'
                   }`}>
                     {recoveryMessage}
-                  </p>
+                  </div>
                 )}
 
                 <div className="flex gap-2 pt-2">
@@ -2365,6 +3865,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                       setShowRecoveryModal(false);
                       setRecoveryEmail('');
                       setRecoveryMessage('');
+                      setRecoverySuccess(false);
                     }}
                     className="flex-1 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors"
                   >
@@ -2372,10 +3873,10 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   </button>
                   <button
                     type="submit"
-                    disabled={isRecovering}
-                    className="flex-1 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-colors shadow-md shadow-indigo-600/30"
+                    disabled={isRecovering || recoverySuccess}
+                    className="flex-1 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-600 text-white text-xs font-bold transition-colors shadow-md shadow-indigo-600/30 flex items-center justify-center gap-1"
                   >
-                    {isRecovering ? 'Пошук...' : 'Знайти Нікнейм'}
+                    {isRecovering ? 'Надсилання...' : recoverySuccess ? '✓ Лист надіслано' : '📧 Відновити та надіслати'}
                   </button>
                 </div>
               </form>
@@ -2383,37 +3884,399 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
           </div>
         )}
 
-        {/* Action Confirmation Modal (for entering passcode when deleting/updating) */}
-        {actionPasscodeModal.show && (
+        {/* Publish Conflict Modal */}
+        {publishConflictModal?.show && (
           <div className="fixed inset-0 z-[10020] flex items-center justify-center bg-black/80 p-4">
-            <div className="bg-[var(--bg-secondary,#1e1e2e)] text-white p-6 rounded-2xl border border-[var(--border-color,#313244)] max-w-sm w-full space-y-4">
-              <h4 className="font-bold text-base">Підтвердження дії</h4>
-              <p className="text-xs text-gray-300">
-                {actionPasscodeModal.action === 'delete' ? 'Вкажіть пароль проєкту/автора для підтвердження видалення:' : 'Вкажіть пароль проєкту/автора для підтвердження:'}
+            <div className="bg-[var(--bg-secondary,#1e1e2e)] text-white p-6 rounded-2xl border border-[var(--border-color,#313244)] max-w-md w-full space-y-4">
+              <h4 className="font-bold text-base text-amber-400">Проєкт вже існує</h4>
+              <p className="text-sm text-gray-300">
+                У вашій скрині вже є проєкт з назвою <b>{pubTitle}</b>. Бажаєте оновити існуючий проєкт чи створити новий?
               </p>
-              <input
-                type="password"
-                placeholder="Введіть пароль"
-                value={promptPasscode}
-                onChange={(e) => setPromptPasscode(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-black/50 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
-                autoFocus
-              />
-              <div className="flex justify-end gap-2">
+              <div className="flex flex-col sm:flex-row justify-end gap-3 mt-4">
                 <button
-                  onClick={() => {
-                    setActionPasscodeModal({ show: false, projectId: '', action: 'delete' });
-                    setPromptPasscode('');
-                  }}
-                  className="px-3 py-1.5 text-xs rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700"
+                  onClick={() => setPublishConflictModal(null)}
+                  className="px-4 py-2 text-xs rounded-xl bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors"
                 >
                   Скасувати
                 </button>
                 <button
-                  onClick={handleConfirmAction}
-                  className="px-3 py-1.5 text-xs rounded-lg bg-red-600 text-white hover:bg-red-500 font-medium"
+                  onClick={async () => {
+                    const { existingId, projectData, finalGroupId, personalVisibility } = publishConflictModal;
+                    setPublishConflictModal(null);
+                    await executePublish(pubTitle.trim(), true, existingId, projectData, finalGroupId, personalVisibility);
+                  }}
+                  className="px-4 py-2 text-xs rounded-xl bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/30 transition-colors font-medium"
                 >
-                  Підтвердити
+                  Оновити існуючий
+                </button>
+                <button
+                  onClick={async () => {
+                    const { projectData, finalGroupId, personalVisibility } = publishConflictModal;
+                    const newTitle = pubTitle.trim() + ' (Копія)';
+                    setPubTitle(newTitle); // Update the title field if needed, but not required since we pass it directly
+                    setPublishConflictModal(null);
+                    await executePublish(newTitle, false, undefined, projectData, finalGroupId, personalVisibility);
+                  }}
+                  className="px-4 py-2 text-xs rounded-xl bg-emerald-600 text-white hover:bg-emerald-500 transition-colors font-medium"
+                >
+                  Створити новий
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Action Confirmation Modal (for deleting/updating) */}
+        {actionPasscodeModal.show && (
+          <div className="fixed inset-0 z-[10020] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn">
+            <div className="bg-[var(--bg-secondary,#1e1e2e)] text-white p-6 rounded-2xl border border-[var(--border-color,#313244)] max-w-sm w-full space-y-4 shadow-2xl relative">
+              <h4 className={`font-bold text-base flex items-center gap-2 ${
+                actionPasscodeModal.action === 'delete' ? 'text-red-400' :
+                actionPasscodeModal.action === 'make_public' ? 'text-emerald-400' :
+                actionPasscodeModal.action === 'make_private' ? 'text-amber-400' :
+                'text-white'
+              }`}>
+                {actionPasscodeModal.action === 'delete' ? '🗑️ Видалення проєкту' :
+                 actionPasscodeModal.action === 'make_public' ? '🌐 Публікація у Загальну галерею' :
+                 actionPasscodeModal.action === 'make_private' ? '🔒 Прибрання із Загальної галереї' :
+                 '🔐 Підтвердження дії'}
+              </h4>
+
+              {actionPasscodeModal.action === 'delete' ? (
+                <p className="text-xs text-gray-300 leading-relaxed font-medium">
+                  ⚠️ <strong>Увага!</strong> Ви збираєтеся остаточно видалити цей проєкт. Цю дію неможливо скасувати. Ви дійсно бажаєте продовжити?
+                </p>
+              ) : actionPasscodeModal.action === 'make_public' ? (
+                <p className="text-xs text-gray-300 leading-relaxed font-medium bg-emerald-950/30 p-3 rounded-xl border border-emerald-500/30">
+                  🌐 <strong>Публікація у Загальну галерею:</strong><br />
+                  Ви збираєтеся опублікувати цей проєкт у Загальній галереї. Він стане доступним для перегляду та завантаження усією спільнотою ВереTkа. Ви зможете прибрати його назад у будь-який момент.
+                </p>
+              ) : actionPasscodeModal.action === 'make_private' ? (
+                <p className="text-xs text-gray-300 leading-relaxed font-medium bg-amber-950/30 p-3 rounded-xl border border-amber-500/30">
+                  🔒 <strong>Прибрання із Загальної галереї:</strong><br />
+                  Ви збираєтеся прибрати цей проєкт із Загальної галереї. Він залишиться збереженим у вашій особистій скрині і більше не буде доступний іншим користувачам.
+                </p>
+              ) : (
+                <>
+                  <p className="text-xs text-gray-300">
+                    Вкажіть пароль проєкту/автора для підтвердження:
+                  </p>
+                  <div className="relative mt-2">
+                    <input
+                      type={showPasswords['actionPasscode'] ? "text" : "password"}
+                      placeholder="Введіть пароль"
+                      value={promptPasscode}
+                      onChange={(e) => setPromptPasscode(e.target.value)}
+                      className="w-full px-3 py-2 pr-10 rounded-xl bg-black/50 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => togglePassword('actionPasscode')}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white"
+                    >
+                      {showPasswords['actionPasscode'] ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
+                    </button>
+                  </div>
+                </>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActionPasscodeModal({ show: false, projectId: '', action: 'delete' });
+                    setPromptPasscode('');
+                  }}
+                  className="px-3.5 py-2 text-xs rounded-xl bg-gray-800 text-gray-300 hover:bg-gray-700 font-medium transition-colors"
+                >
+                  Скасувати
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmAction}
+                  className={`px-4 py-2 text-xs rounded-xl text-white font-bold transition-colors shadow-md ${
+                    actionPasscodeModal.action === 'delete'
+                      ? 'bg-red-600 hover:bg-red-500 shadow-red-600/30'
+                      : actionPasscodeModal.action === 'make_public'
+                      ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/30'
+                      : actionPasscodeModal.action === 'make_private'
+                      ? 'bg-amber-600 hover:bg-amber-500 shadow-amber-600/30'
+                      : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/30'
+                  }`}
+                >
+                  {actionPasscodeModal.action === 'delete' ? '🗑️ Так, видалити' :
+                   actionPasscodeModal.action === 'make_public' ? '🌐 Так, опублікувати' :
+                   actionPasscodeModal.action === 'make_private' ? '🔒 Так, прибрати' :
+                   'Підтвердити'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Send to Group Modal */}
+        {sendToGroupModal.show && sendToGroupModal.project && (
+          <div className="fixed inset-0 z-[10020] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn">
+            <div className="bg-[var(--bg-secondary,#1e1e2e)] text-white p-6 rounded-2xl border border-[var(--border-color,#313244)] max-w-md w-full space-y-4 shadow-2xl relative">
+              <button
+                onClick={() => {
+                  setSendToGroupModal({ show: false, project: null });
+                  setSendGroupError(null);
+                  setSendGroupSuccess(null);
+                }}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white p-1 rounded-lg bg-black/30 hover:bg-black/50 transition-colors"
+              >
+                <XIcon size={18} />
+              </button>
+
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-300 flex items-center justify-center text-lg">
+                  🏫
+                </div>
+                <div>
+                  <h4 className="font-bold text-base text-white">Надіслати у групу / осередок</h4>
+                  <p className="text-xs text-amber-300/80 truncate max-w-[280px]">
+                    Проєкт: "{sendToGroupModal.project.title}"
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3 pt-1">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-300 mb-1">
+                    Код групи або осередка:
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Введіть код (наприклад: UA-8392)"
+                      value={sendGroupCodeInput}
+                      onChange={(e) => handleSendGroupCodeChange(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-amber-500/30 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 uppercase tracking-wider font-mono"
+                      autoFocus
+                    />
+                    {isSearchingSendGroup && (
+                      <div className="absolute right-3 top-2.5 text-xs text-amber-400 animate-spin">
+                        ⏳
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Found group preview card */}
+                {sendGroupInfo && (
+                  <div className="p-3 bg-amber-950/20 rounded-xl border border-amber-500/30 space-y-1.5 animate-fadeIn">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sm text-amber-200">
+                        {sendGroupInfo.name || 'Осередок спільноти'}
+                      </span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${
+                        sendGroupInfo.mode === 'education'
+                          ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                          : sendGroupInfo.mode === 'readonly'
+                          ? 'bg-red-500/20 text-red-300 border-red-500/30'
+                          : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                      }`}>
+                        {sendGroupInfo.mode === 'education' ? '🎓 Освітня' :
+                         sendGroupInfo.mode === 'readonly' ? '🔒 Дошка шаблонів' :
+                         '🖼️ Галерея'}
+                      </span>
+                    </div>
+                    {sendGroupInfo.description && (
+                      <p className="text-xs text-gray-300 line-clamp-2">{sendGroupInfo.description}</p>
+                    )}
+                    <div className="text-[11px] text-gray-400 flex justify-between pt-1 border-t border-amber-500/10">
+                      <span>Засновник: @{sendGroupInfo.creatorNickname || 'анонім'}</span>
+                      <span>Код: {sendGroupInfo.groupCode}</span>
+                    </div>
+
+                    {sendGroupInfo.mode === 'readonly' && 
+                     (sendGroupInfo.creatorNickname || '').trim().toLowerCase() !== (personalNickname || '').trim().toLowerCase() && (
+                      <div className="p-2 bg-red-950/40 rounded-lg border border-red-500/30 text-[11px] text-red-300 leading-relaxed mt-1">
+                        ⚠️ Ця група працює у режимі "Дошка шаблонів" (readonly). Публікувати нові роботи сюди дозволено лише її засновнику (@{sendGroupInfo.creatorNickname}).
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Quick selection from My Groups */}
+                {myUserGroups.length > 0 && (
+                  <div>
+                    <span className="block text-[11px] font-semibold text-gray-400 mb-1.5">
+                      Або оберіть зі своїх осередків:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
+                      {myUserGroups.map((g) => (
+                        <button
+                          key={g.groupCode}
+                          type="button"
+                          onClick={() => handleSelectGroupFromList(g)}
+                          className={`px-2.5 py-1.5 rounded-xl text-xs border transition-all text-left flex items-center gap-1.5 ${
+                            sendGroupCodeInput === g.groupCode
+                              ? 'bg-amber-500/20 text-amber-200 border-amber-400 font-semibold'
+                              : 'bg-black/30 text-gray-300 border-gray-800 hover:border-gray-600 hover:text-white'
+                          }`}
+                        >
+                          <span>🏫</span>
+                          <span className="truncate max-w-[130px]">{g.name || g.groupCode}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Status Messages */}
+                {sendGroupError && (
+                  <div className="p-2.5 bg-red-950/40 border border-red-500/30 rounded-xl text-xs text-red-300 font-medium">
+                    {sendGroupError}
+                  </div>
+                )}
+                {sendGroupSuccess && (
+                  <div className="p-2.5 bg-emerald-950/40 border border-emerald-500/30 rounded-xl text-xs text-emerald-300 font-medium">
+                    {sendGroupSuccess}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-gray-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSendToGroupModal({ show: false, project: null });
+                    setSendGroupError(null);
+                    setSendGroupSuccess(null);
+                  }}
+                  className="px-3.5 py-2 text-xs rounded-xl bg-gray-800 text-gray-300 hover:bg-gray-700 font-medium transition-colors"
+                >
+                  Скасувати
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmSendToGroup}
+                  disabled={!sendGroupCodeInput.trim() || isSendingToGroup}
+                  className="px-4 py-2 text-xs rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-bold transition-colors shadow-md shadow-amber-600/30 flex items-center gap-1.5"
+                >
+                  {isSendingToGroup ? (
+                    <>
+                      <span className="animate-spin">⏳</span> Надсилання...
+                    </>
+                  ) : (
+                    <>🏫 Надіслати у групу</>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Sent Groups List Modal */}
+        {selectedSentGroupsProject && (
+          <div 
+            className="fixed inset-0 z-[10025] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn cursor-pointer"
+            onClick={() => setSelectedSentGroupsProject(null)}
+          >
+            <div 
+              className="bg-[var(--bg-secondary,#1e1e2e)] text-white p-6 rounded-2xl border border-[var(--border-color,#313244)] max-w-md w-full space-y-4 relative shadow-2xl overflow-hidden cursor-default max-h-[85vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setSelectedSentGroupsProject(null)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white p-1.5 rounded-xl bg-black/40 hover:bg-black/60 border border-gray-700 transition-colors z-10"
+                title="Закрити"
+              >
+                <XIcon size={18} />
+              </button>
+
+              <div className="flex items-center gap-3 border-b border-gray-800 pb-3 pr-8">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xl border border-amber-500/30 shrink-0">
+                  🏫
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-bold text-base text-white">Групи з копією проєкту</h3>
+                  <p className="text-xs text-amber-300/90 truncate max-w-[240px]">"{selectedSentGroupsProject.title}"</p>
+                </div>
+              </div>
+
+              <p className="text-xs text-gray-300 leading-relaxed bg-black/30 p-3 rounded-xl border border-gray-800">
+                Копію цього проєкту збережено/надіслано у такі групи та осередки:
+              </p>
+
+              <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[120px] max-h-[300px]">
+                {(() => {
+                  const groups = selectedSentGroupsProject.sentToGroups && selectedSentGroupsProject.sentToGroups.length > 0
+                    ? selectedSentGroupsProject.sentToGroups
+                    : selectedSentGroupsProject.groupId
+                    ? [{ groupId: selectedSentGroupsProject.groupId, groupName: selectedSentGroupsProject.groupName || selectedSentGroupsProject.groupId }]
+                    : [];
+
+                  if (groups.length === 0) {
+                    return (
+                      <div className="py-6 text-center text-xs text-gray-400">
+                        Інформація про групи відсутня
+                      </div>
+                    );
+                  }
+
+                  return groups.map((g, idx) => (
+                    <div 
+                      key={g.groupId + '_' + idx}
+                      className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-amber-500/20 hover:border-amber-500/40 transition-colors gap-3"
+                    >
+                      <div className="space-y-0.5 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold text-white truncate">{g.groupName || g.groupId}</span>
+                          <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-mono border border-amber-500/30 font-bold shrink-0">
+                            {g.groupId}
+                          </span>
+                        </div>
+                        {g.sentAt && (
+                          <p className="text-[10px] text-gray-500">
+                            Надіслано: {new Date(g.sentAt).toLocaleDateString('uk-UA')}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(g.groupId);
+                            setSentGroupCopyStatus(g.groupId);
+                            setTimeout(() => setSentGroupCopyStatus(null), 2000);
+                          }}
+                          className="px-2.5 py-1 rounded bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white text-[11px] font-medium border border-indigo-500/30 transition-colors"
+                        >
+                          {sentGroupCopyStatus === g.groupId ? '✓ Скопійовано' : '📋 Код'}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setSelectedSentGroupsProject(null);
+                            setActiveTab('group');
+                            setGroupCodeInput(g.groupId);
+                            const savedPass = savedGroupPasscodes[g.groupId] || '';
+                            setGroupPasscodeInput(savedPass);
+                            handleGroupLogin(undefined, savedPass);
+                          }}
+                          className="px-2.5 py-1 rounded bg-amber-600/30 hover:bg-amber-600 text-amber-200 hover:text-white text-[11px] font-medium border border-amber-500/30 transition-colors"
+                        >
+                          🏫 Перейти
+                        </button>
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+
+              <div className="pt-2 border-t border-gray-800 text-right">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSentGroupsProject(null)}
+                  className="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-xs font-medium text-gray-200 transition-colors"
+                >
+                  Закрити
                 </button>
               </div>
             </div>
@@ -2622,6 +4485,469 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                     Email
                   </a>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Group Settings Modal */}
+        {showGroupSettingsModal && activeGroup && (
+          <div 
+            className="fixed inset-0 z-[10008] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn"
+            onClick={() => setShowGroupSettingsModal(false)}
+          >
+            <div 
+              className="bg-[var(--bg-secondary,#1e1e2e)] text-[var(--text-primary,#ffffff)] p-6 rounded-2xl border border-[var(--border-color,#313244)] max-w-lg w-full space-y-5 relative shadow-2xl overflow-hidden cursor-default max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setShowGroupSettingsModal(false)}
+                className="absolute top-4 right-4 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] p-1.5 rounded-xl bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)] transition-colors"
+                title="Закрити"
+              >
+                <XIcon size={20} />
+              </button>
+
+              <div className="flex items-center gap-3 border-b border-gray-800 pb-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-bold text-xl border border-indigo-500/30 shrink-0">
+                  ⚙️
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-white">Налаштування групи</h3>
+                  <p className="text-xs text-gray-400">"{activeGroup.name}" ({activeGroup.groupCode})</p>
+                </div>
+              </div>
+
+              {/* Quick Copy Links */}
+              <div className="bg-black/40 p-3 rounded-xl border border-gray-800 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-400">Код групи: <strong className="text-amber-300 font-mono">{activeGroup.groupCode}</strong></span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(activeGroup.groupCode);
+                      setCopyStatusText('Код скопійовано!');
+                      setTimeout(() => setCopyStatusText(''), 2000);
+                    }}
+                    className="px-2.5 py-1 rounded bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 text-[11px] font-medium transition-colors"
+                  >
+                    📋 Скопіювати код
+                  </button>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-400">Пряме посилання:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const link = `${window.location.origin}/?group=${activeGroup.groupCode}`;
+                      navigator.clipboard.writeText(link);
+                      setCopyStatusText('Посилання скопійовано!');
+                      setTimeout(() => setCopyStatusText(''), 2000);
+                    }}
+                    className="px-2.5 py-1 rounded bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 text-[11px] font-medium transition-colors"
+                  >
+                    🔗 Скопіювати посилання
+                  </button>
+                </div>
+                {copyStatusText && (
+                  <p className="text-[11px] text-emerald-400 text-right font-medium">{copyStatusText}</p>
+                )}
+              </div>
+
+              {/* Info Block */}
+              <div className="text-xs text-gray-400 space-y-1 bg-black/20 p-3 rounded-xl border border-gray-800">
+                <div>Засновник: <strong className="text-gray-200">@{activeGroup.creatorNickname || 'Анонім'}</strong></div>
+                <div>Ваша роль: <strong className="text-indigo-300">
+                  {isPersonalLoggedIn && activeGroup.creatorNickname?.trim().toLowerCase() === personalNickname.trim().toLowerCase()
+                    ? '👑 Засновник групи (Повний доступ)'
+                    : '👤 Учасник групи'}
+                </strong></div>
+              </div>
+
+              {/* Editable parameters for creator */}
+              {isPersonalLoggedIn && activeGroup.creatorNickname?.trim().toLowerCase() === personalNickname.trim().toLowerCase() ? (
+                <form onSubmit={handleSaveGroupSettingsSubmit} className="space-y-3 pt-2 border-t border-gray-800">
+                  <h4 className="text-xs font-bold text-indigo-300 uppercase tracking-wider">Редагування даних групи (Засновник):</h4>
+                  
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1">Назва групи:*</label>
+                    <input
+                      type="text"
+                      value={editGroupName}
+                      onChange={(e) => setEditGroupName(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1">Опис групи:</label>
+                    <input
+                      type="text"
+                      value={editGroupDesc}
+                      onChange={(e) => setEditGroupDesc(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1">Режим роботи групи:</label>
+                    <select
+                      value={editGroupMode}
+                      onChange={(e) => setEditGroupMode(e.target.value as GroupMode)}
+                      className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500 text-white"
+                    >
+                      <option value="gallery" className="bg-gray-900">🎨 Спільна майстерня (Всі бачать все)</option>
+                      <option value="education" className="bg-gray-900">🏫 Освітній клас (Учні бачать лише свої роботи)</option>
+                      <option value="readonly" className="bg-gray-900">🔒 Дошка шаблонів (Публікує лише засновник)</option>
+                    </select>
+                  </div>
+
+                  {editGroupMode === 'education' && (
+                    <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-1.5">
+                      <label className="block text-xs font-semibold text-amber-200">
+                        🎓 Правило повторного надсилання робіт учнями:
+                      </label>
+                      <div className="space-y-1 text-[11px]">
+                        <label className="flex items-start gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-amber-500/10 transition-colors">
+                          <input
+                            type="radio"
+                            name="editStudentPolicy"
+                            value="allow_overwrite"
+                            checked={editGroupStudentPolicy === 'allow_overwrite'}
+                            onChange={() => setEditGroupStudentPolicy('allow_overwrite')}
+                            className="mt-0.5 accent-amber-500"
+                          />
+                          <div>
+                            <span className="font-semibold text-white">🟢 Вільне оновлення (дозволити перезапис)</span>
+                            <p className="text-[10px] text-gray-400">Учень може оновлювати існуючу здану роботу — стара версія перезаписується.</p>
+                          </div>
+                        </label>
+
+                        <label className="flex items-start gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-amber-500/10 transition-colors">
+                          <input
+                            type="radio"
+                            name="editStudentPolicy"
+                            value="create_versions"
+                            checked={editGroupStudentPolicy === 'create_versions'}
+                            onChange={() => setEditGroupStudentPolicy('create_versions')}
+                            className="mt-0.5 accent-amber-500"
+                          />
+                          <div>
+                            <span className="font-semibold text-white">🔵 Авто-версіонування (зберігати v2, v3...)</span>
+                            <p className="text-[10px] text-gray-400">Кожне повторне надсилання створює окрему нову версію роботи для відстеження прогресу.</p>
+                          </div>
+                        </label>
+
+                        <label className="flex items-start gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-amber-500/10 transition-colors">
+                          <input
+                            type="radio"
+                            name="editStudentPolicy"
+                            value="freeze_after_submit"
+                            checked={editGroupStudentPolicy === 'freeze_after_submit'}
+                            onChange={() => setEditGroupStudentPolicy('freeze_after_submit')}
+                            className="mt-0.5 accent-amber-500"
+                          />
+                          <div>
+                            <span className="font-semibold text-white">🔒 Фіксація здачі (заборона повторного оновлення)</span>
+                            <p className="text-[10px] text-gray-400">Після здачі учень не може оновити цей же проєкт (ідеально для контрольних робіт).</p>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1">Новий пароль групи (залиште порожнім, якщо не змінюєте):</label>
+                    <input
+                      type="password"
+                      value={editGroupNewPasscode}
+                      onChange={(e) => setEditGroupNewPasscode(e.target.value)}
+                      placeholder="Новий пароль"
+                      className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  {groupSettingsError && (
+                    <p className="text-xs text-red-400 bg-red-500/10 p-2 rounded-lg border border-red-500/20">{groupSettingsError}</p>
+                  )}
+                  {groupSettingsMessage && (
+                    <p className="text-xs text-emerald-400 bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20">{groupSettingsMessage}</p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isSavingGroupSettings}
+                    className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-colors shadow-lg shadow-indigo-900/30"
+                  >
+                    {isSavingGroupSettings ? 'Збереження...' : '💾 Зберегти зміни в групі'}
+                  </button>
+                </form>
+              ) : (
+                <p className="text-xs text-gray-400 italic bg-black/30 p-3 rounded-xl border border-gray-800">
+                  Змінювати назву, режим та пароль групи має право лише її Засновник.
+                </p>
+              )}
+
+              {/* Action buttons transferred here: Leave & Delete */}
+              <div className="pt-3 border-t border-gray-800 space-y-2">
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Дії з групою:</h4>
+                
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowGroupSettingsModal(false);
+                      setActiveGroup(null);
+                    }}
+                    className="w-full py-2 px-3 rounded-xl text-xs bg-gray-800 hover:bg-gray-700 text-gray-200 font-medium transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    🚪 Вийти з групи
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowGroupSettingsModal(false);
+                      setDeleteGroupError('');
+                      setDeleteGroupPasscode('');
+                      setShowDeleteGroupModal(true);
+                    }}
+                    className="w-full py-2 px-3 rounded-xl text-xs bg-red-600/80 hover:bg-red-600 text-white font-medium transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    🗑️ Видалити групу
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Group Members Modal */}
+        {showGroupMembersModal && activeGroup && (
+          <div 
+            className="fixed inset-0 z-[10008] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn"
+            onClick={() => setShowGroupMembersModal(false)}
+          >
+            <div 
+              className="bg-[var(--bg-secondary,#1e1e2e)] text-[var(--text-primary,#ffffff)] p-6 rounded-2xl border border-[var(--border-color,#313244)] max-w-md w-full space-y-4 relative shadow-2xl overflow-hidden cursor-default max-h-[85vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setShowGroupMembersModal(false)}
+                className="absolute top-4 right-4 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] p-1.5 rounded-xl bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)] transition-colors"
+                title="Закрити"
+              >
+                <XIcon size={20} />
+              </button>
+
+              <div className="flex items-center gap-3 border-b border-gray-800 pb-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-bold text-xl border border-indigo-500/30 shrink-0">
+                  👥
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-white">Учасники групи</h3>
+                  <p className="text-xs text-gray-400">
+                    "{activeGroup.name}" • Всього: <strong className="text-indigo-300">{groupMembersList.length}</strong>
+                  </p>
+                </div>
+              </div>
+
+              {/* Member search input */}
+              <div>
+                <input
+                  type="text"
+                  placeholder="🔍 Пошук учасника за ім'ям або нікнеймом..."
+                  value={groupMemberSearchQuery}
+                  onChange={(e) => setGroupMemberSearchQuery(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-xs focus:outline-none focus:border-indigo-500 text-white"
+                />
+              </div>
+
+              {/* Members List */}
+              <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[200px]">
+                {isLoadingGroupMembers ? (
+                  <div className="py-10 flex items-center justify-center gap-2 text-xs text-gray-400">
+                    <VeretkaLoader size="sm" />
+                    <span>Завантаження списку учасників...</span>
+                  </div>
+                ) : groupMembersList.length === 0 ? (
+                  <div className="py-10 text-center text-xs text-gray-400">
+                    У цій групі ще немає зареєстрованих учасників
+                  </div>
+                ) : (
+                  groupMembersList
+                    .filter(m => 
+                      !groupMemberSearchQuery.trim() ||
+                      m.nickname.toLowerCase().includes(groupMemberSearchQuery.toLowerCase()) ||
+                      (m.authorName && m.authorName.toLowerCase().includes(groupMemberSearchQuery.toLowerCase()))
+                    )
+                    .map((m) => {
+                      const displayName = m.authorName || m.nickname;
+                      const initials = displayName.slice(0, 2).toUpperCase();
+                      const isCreator = m.role === 'creator';
+                      
+                      return (
+                        <div 
+                          key={m.nickname}
+                          className="flex items-center justify-between p-3 rounded-xl bg-black/30 border border-gray-800/80 hover:border-gray-700 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0 ${
+                              isCreator ? 'bg-gradient-to-br from-amber-500 to-orange-600 shadow-sm shadow-amber-900/40' : 'bg-gradient-to-br from-indigo-500 to-purple-600'
+                            }`}>
+                              {initials}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-bold text-white">{displayName}</span>
+                                {m.authorName && (
+                                  <span className="text-[10px] text-gray-400 font-mono">(@{m.nickname})</span>
+                                )}
+                              </div>
+                              <div className="text-[10px] text-gray-400 flex items-center gap-2 mt-0.5">
+                                <span>🎨 {m.projectsCount} {m.projectsCount === 1 ? 'проєкт' : (m.projectsCount >= 2 && m.projectsCount <= 4) ? 'проєкти' : 'проєктів'} у групі</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-medium shrink-0 border ${
+                            isCreator 
+                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' 
+                              : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30'
+                          }`}>
+                            {isCreator ? '👑 Засновник' : '👤 Учасник'}
+                          </span>
+                        </div>
+                      );
+                    })
+                )}
+              </div>
+
+              <div className="pt-2 border-t border-gray-800 text-right">
+                <button
+                  type="button"
+                  onClick={() => setShowGroupMembersModal(false)}
+                  className="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-xs font-medium text-gray-200 transition-colors"
+                >
+                  Закрити
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Group Conflict Resolution Modal */}
+        {groupConflictModal.show && groupConflictModal.projectToCopy && (
+          <div className="fixed inset-0 z-[10025] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn">
+            <div className="bg-[var(--bg-secondary,#1e1e2e)] text-white p-6 rounded-2xl border border-[var(--border-color,#313244)] max-w-lg w-full space-y-4 shadow-2xl relative">
+              <div className="flex justify-between items-center pb-2 border-b border-gray-800">
+                <h4 className="font-bold text-base text-amber-400 flex items-center gap-2">
+                  ⚠️ Виявлено дублікат проєкту
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => setGroupConflictModal(prev => ({ ...prev, show: false }))}
+                  className="p-1 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
+                >
+                  <XIcon size={20} />
+                </button>
+              </div>
+
+              <div className="bg-amber-500/10 border border-amber-500/30 p-3.5 rounded-xl space-y-2 text-xs">
+                <p className="text-amber-200">
+                  У групі <strong className="text-white">"{groupConflictModal.groupName}"</strong> вже є проєкт з назвою <strong className="text-amber-300 font-semibold">"{groupConflictModal.existingProject?.title || groupConflictModal.projectToCopy.title}"</strong> від цього ж автора (<span className="text-indigo-300">@{personalNickname}</span>).
+                </p>
+                {groupConflictModal.studentUpdatePolicy === 'freeze_after_submit' && (
+                  <p className="p-2 rounded-lg bg-red-500/20 text-red-200 border border-red-500/30 font-medium">
+                    🔒 <strong>Правило групи: Фіксація здачі.</strong> Оновлення існуючого проєкту заборонено автором групи. Ви можете опублікувати його як нову копію з іншою назвою.
+                  </p>
+                )}
+                {groupConflictModal.studentUpdatePolicy === 'create_versions' && (
+                  <p className="p-2 rounded-lg bg-indigo-500/20 text-indigo-200 border border-indigo-500/30 font-medium">
+                    🔵 <strong>Правило групи: Авто-версіонування.</strong> Для відстеження вашого навчального прогресу рекомендується створити нову версію.
+                  </p>
+                )}
+              </div>
+
+              {/* Options */}
+              <div className="space-y-2.5 pt-1">
+                {/* Option 1: Update Existing */}
+                <button
+                  type="button"
+                  disabled={isResolvingConflict || groupConflictModal.studentUpdatePolicy === 'freeze_after_submit'}
+                  onClick={() => handleResolveConflictAction('overwrite')}
+                  className={`w-full p-3 rounded-xl border text-left transition-all flex items-start gap-3 ${
+                    groupConflictModal.studentUpdatePolicy === 'freeze_after_submit'
+                      ? 'opacity-40 cursor-not-allowed bg-black/20 border-gray-800 text-gray-500'
+                      : 'bg-amber-600/10 hover:bg-amber-600/20 border-amber-500/40 text-amber-100 hover:border-amber-400'
+                  }`}
+                >
+                  <span className="text-xl shrink-0">🔄</span>
+                  <div>
+                    <div className="font-bold text-xs text-white">Оновити існуючий проєкт у групі</div>
+                    <div className="text-[11px] text-gray-300 mt-0.5">
+                      Перезаписати вміст існуючого проєкту новою версією. Зручно для доопрацювання завдання.
+                    </div>
+                  </div>
+                </button>
+
+                {/* Option 2: Publish as New Copy */}
+                <button
+                  type="button"
+                  disabled={isResolvingConflict}
+                  onClick={() => handleResolveConflictAction('new_copy', groupConflictModal.nextSuggestedTitle)}
+                  className="w-full p-3 rounded-xl border border-indigo-500/40 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-100 hover:border-indigo-400 text-left transition-all flex items-start gap-3"
+                >
+                  <span className="text-xl shrink-0">📄</span>
+                  <div>
+                    <div className="font-bold text-xs text-white">Опублікувати як окрему копію (автоверсія)</div>
+                    <div className="text-[11px] text-gray-300 mt-0.5">
+                      Створити копію з автоматичною наступною вільною версією: <span className="text-indigo-300 font-mono font-bold">"{groupConflictModal.nextSuggestedTitle || `${groupConflictModal.projectToCopy.title} (v.2)`}"</span>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Option 3: Custom Rename */}
+                <div className="p-3 rounded-xl border border-gray-700 bg-black/30 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">✏️</span>
+                    <span className="font-bold text-xs text-white">Вказати власну назву чи версію для копії</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={groupConflictModal.customTitleInput}
+                      onChange={(e) => setGroupConflictModal(prev => ({ ...prev, customTitleInput: e.target.value }))}
+                      placeholder={`Наприклад, ${groupConflictModal.nextSuggestedTitle || 'Проєкт (v.5)'}`}
+                      className="flex-1 px-3 py-1.5 rounded-lg bg-black/50 border border-gray-700 text-xs text-white focus:outline-none focus:border-indigo-500"
+                    />
+                    <button
+                      type="button"
+                      disabled={isResolvingConflict || !groupConflictModal.customTitleInput.trim()}
+                      onClick={() => handleResolveConflictAction('custom_title')}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors disabled:opacity-50 shrink-0"
+                    >
+                      Зберегти
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {conflictError && (
+                <p className="text-xs p-3 rounded-xl bg-red-500/10 text-red-300 border border-red-500/30">
+                  {conflictError}
+                </p>
+              )}
+
+              <div className="pt-2 border-t border-gray-800 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setGroupConflictModal(prev => ({ ...prev, show: false }))}
+                  className="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors"
+                >
+                  ❌ Скасувати надсилання
+                </button>
               </div>
             </div>
           </div>
