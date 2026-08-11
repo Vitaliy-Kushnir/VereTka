@@ -3127,7 +3127,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   <FilterToolbar
                     searchQuery={groupSearchQuery}
                     onSearchChange={setGroupSearchQuery}
-                    searchPlaceholder="🔍 Пошук у скрині групи..."
+                    searchPlaceholder="Пошук у скрині групи..."
                     sortBy={sortBy}
                     onSortChange={setSortBy}
                     shapesFilter={shapesFilter}
