@@ -200,7 +200,7 @@ const MenuBar: React.FC<{
                             <MenuItem onClick={() => handleMenuClick(props.onSaveAsTemplate, closeFile)} disabled={!props.isProjectActive}>{t('menu.file.saveTemplate')}</MenuItem>
                             <MenuItem onClick={() => handleMenuClick(props.onLoadProject, closeFile)}>{t('menu.file.load')}</MenuItem>
                             <MenuItem onClick={() => handleMenuClick(() => props.onOpenCloudGallery?.('publish'), closeFile)}>
-                                <div className="flex items-center gap-1.5"><CloudGalleryIcon size={16} /> Опублікувати в хмарі...</div>
+                                <div className="flex items-center gap-1.5"><CloudGalleryIcon size={16} /> {t('menu.file.publishCloud')}</div>
                             </MenuItem>
                             <MenuItem onClick={() => handleMenuClick(props.onImportImage, closeFile)} disabled={!props.isProjectActive}>{t('menu.file.importImage')}</MenuItem>
                             <hr className="border-[var(--border-secondary)] my-1"/>
@@ -284,11 +284,11 @@ const MenuBar: React.FC<{
             <div className="flex items-center gap-2">
                 <button
                     onClick={() => props.onOpenCloudGallery?.('public')}
-                    title="Хмарне сховище, персональний кабінет та галерея проєктів"
+                    title={t('toolbar.cloudGalleryDesc')}
                     className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600/30 border border-indigo-500/30 transition-colors text-xs font-semibold"
                 >
                     <CloudGalleryIcon size={16} />
-                    <span>Галерея & Сховище</span>
+                    <span>{t('toolbar.cloudGallery')}</span>
                 </button>
                 <button onClick={() => props.setTheme(props.theme === 'dark' ? 'light' : 'dark')} title={t('menu.view.theme')} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]">
                     {props.theme === 'dark' ? <SunIcon size={18}/> : <MoonIcon size={18}/>}

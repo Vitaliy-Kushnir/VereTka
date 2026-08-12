@@ -1415,6 +1415,12 @@ export async function recoverAccountByEmail(emailInput: string): Promise<{
 }
 
 // Get all groups associated with a user (created or participated)
+
+
+import { CloudGroup } from '../types';
+export type GroupData = CloudGroup;
+
+
 export async function getUserGroups(userNickname: string): Promise<GroupData[]> {
   const normNick = userNickname.trim().toLowerCase();
   if (!normNick) return [];

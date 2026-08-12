@@ -11,9 +11,48 @@ export const HelpContentFR: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
                     Veretka est conçu pour le prototypage rapide et la conception de formes géométriques et de diagrammes précis.
                 </Para>
             </section>
-            
-            <section>
-                <SectionTitle id="hotkeys">8. Raccourcis Clavier</SectionTitle>
+
+                        <section>
+                <SectionTitle id="cloud-storage">8. Stockage Cloud et Galerie</SectionTitle>
+                <SubTitle>Aperçu des Fonctionnalités</SubTitle>
+                <Para>
+                    Le <strong className="text-[var(--text-primary)]">Stockage Cloud et Galerie</strong> est un écosystème en ligne intégré qui vous permet de sauvegarder vos projets en ligne, d'y accéder depuis n'importe quel appareil, de les partager dans la galerie publique et de collaborer dans des espaces de groupe (Cellules/Groupes).
+                </Para>
+                <Para>
+                    Vous pouvez ouvrir le stockage Cloud de plusieurs manières:
+                </Para>
+                <ul className="list-disc list-inside space-y-1 pl-2">
+                    <ListItem>Depuis le menu principal: <Key>Fichier</Key> → <Key>Publier sur le cloud...</Key></ListItem>
+                    <ListItem>Cliquez sur le bouton <Key>Galerie & Stockage</Key> dans la barre d'outils supérieure.</ListItem>
+                    <ListItem>Cliquez sur le bouton <Key>Galerie Cloud</Key> sur l'écran d'accueil.</ListItem>
+                </ul>
+
+                <SubTitle>Coffre Personnel (Espace Privé)</SubTitle>
+                <Para>
+                    Votre <strong className="text-[var(--text-primary)]">Coffre</strong> est votre espace personnel privé. Les projets enregistrés dans votre Coffre ne sont visibles que par vous.
+                </Para>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Accès et Sécurité:</strong> Connectez-vous avec votre pseudo et mot de passe ou via votre compte Google.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Enregistrement et Ouverture:</strong> Enregistrez vos dessins vectoriels sous n'importe quel nom. Les cartes d'aperçu affichent la date de création et le nombre de formes. Cliquez sur une carte pour charger le projet dans l'éditeur.
+                    </ListItem>
+                </ul>
+
+                <SubTitle>Galerie Publique</SubTitle>
+                <Para>
+                    La <strong className="text-[var(--text-primary)]">Galerie Publique</strong> est un catalogue partagé accessible à tous les utilisateurs de Veretka.
+                </Para>
+
+                <SubTitle>Cellules et Groupes (Éducation & Équipes)</SubTitle>
+                <Para>
+                    Les <strong className="text-[var(--text-primary)]">Cellules / Groupes</strong> sont des espaces dédiés aux classes, cours, équipes de design ou ateliers.
+                </Para>
+            </section>
+
+                        <section>
+                <SectionTitle id="hotkeys">9. Raccourcis Clavier</SectionTitle>
                 <Para>Utilisez ces combinaisons pour accélérer votre flux de travail.</Para>
                 
                 <SubTitle>Fichier & Historique</SubTitle>

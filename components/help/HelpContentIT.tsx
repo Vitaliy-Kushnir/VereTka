@@ -14,7 +14,7 @@ export const HelpContentIT: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
                 </Para>
             </section>
 
-            <section>
+                        <section>
                 <SectionTitle id="interface">2. Panoramica dell'interfaccia</SectionTitle>
                 <Para>L'interfaccia dell'editor è suddivisa logicamente in zone funzionali per la massima comodità:</Para>
                 <ul className="list-decimal list-inside space-y-3 pl-2">
@@ -54,7 +54,7 @@ export const HelpContentIT: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
                 </Para>
             </section>
 
-            <section>
+                        <section>
                 <SectionTitle id="projects">3. Progetti</SectionTitle>
                 <SubTitle>Creare un Nuovo Progetto</SubTitle>
                 <Para>
@@ -79,7 +79,7 @@ export const HelpContentIT: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
                 </Para>
             </section>
 
-            <section>
+                        <section>
                 <SectionTitle id="templates">4. Modelli (Templates)</SectionTitle>
                 <SubTitle>Scopo e Vantaggi</SubTitle>
                 <Para>
@@ -96,7 +96,7 @@ export const HelpContentIT: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
                 </Para>
             </section>
 
-            <section>
+                        <section>
                 <SectionTitle id="shapes">5. Oggetti</SectionTitle>
                 <SubTitle>Creare Oggetti</SubTitle>
                 <Para>
@@ -142,7 +142,7 @@ export const HelpContentIT: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
                 </Para>
 </section>
 
-            <section>
+                        <section>
                 <SectionTitle id="code-export">6. Codice ed Esportazione</SectionTitle>
                 <SubTitle>Generazione del Codice</SubTitle>
                 <Para>
@@ -159,15 +159,84 @@ export const HelpContentIT: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
                 </ul>
             </section>
 
-            <section>
+                        <section>
                 <SectionTitle id="feedback">7. Feedback</SectionTitle>
                 <Para>
                     Aiuta a migliorare VereTka! Se trovi un bug, usa <Key>Aiuto</Key> → <Key>Invia feedback</Key>.
                 </Para>
             </section>
 
-            <section>
-                <SectionTitle id="hotkeys">8. Scorciatoie da Tastiera</SectionTitle>
+                        <section>
+                <SectionTitle id="cloud-storage">8. Archiviazione Cloud e Galleria</SectionTitle>
+                <SubTitle>Panoramica delle Funzionalità</SubTitle>
+                <Para>
+                    <strong className="text-[var(--text-primary)]">Archiviazione Cloud e Galleria</strong> è un ecosistema online integrato che ti consente di salvare i tuoi progetti online, accedervi da qualsiasi dispositivo, condividerli nella galleria pubblica e collaborare in spazi di gruppo (Gruppi/Celle).
+                </Para>
+                <Para>
+                    Puoi aprire l'Archiviazione Cloud in diversi modi:
+                </Para>
+                <ul className="list-disc list-inside space-y-1 pl-2">
+                    <ListItem>Dal menu principale: <Key>File</Key> → <Key>Pubblica sul cloud...</Key></ListItem>
+                    <ListItem>Fai clic sul pulsante <Key>Galleria & Archiviazione</Key> nella barra degli strumenti superiore.</ListItem>
+                    <ListItem>Fai clic sul pulsante <Key>Galleria cloud</Key> nella schermata di benvenuto.</ListItem>
+                </ul>
+
+                <SubTitle>Baule Personale (Area Riservata)</SubTitle>
+                <Para>
+                    Il tuo <strong className="text-[var(--text-primary)]">Baule</strong> è il tuo spazio personale privato. I progetti salvati nel tuo Baule sono visibili solo a te.
+                </Para>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Accesso e Protezione:</strong> Accedi con il tuo Username e Password o tramite il tuo account Google.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Salvataggio e Apertura:</strong> Salva disegni vettoriali con qualsiasi nome. Le schede di anteprima mostrano la data di creazione e il numero di elementi. Clicca su una scheda per caricare istantaneamente il progetto nell'editor.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Gestione delle Versioni:</strong> Quando risalvi, puoi aggiornare il progetto esistente o salvarlo come nuova versione distinta.
+                    </ListItem>
+                </ul>
+
+                <SubTitle>Galleria Pubblica</SubTitle>
+                <Para>
+                    La <strong className="text-[var(--text-primary)]">Galleria Pubblica</strong> è una vetrina condivisa accessibile a tutti gli utenti di Veretka.
+                </Para>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Esplora e Apri:</strong> Sfoglia le creazioni pubbliche, cerca per titolo o autore e apri i progetti nel tuo editor per studiarli o personalizzarli.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Pubblicazione:</strong> Condividi le tue opere con la community per ispirare altri utenti!
+                    </ListItem>
+                </ul>
+
+                <SubTitle>Celle e Gruppi (Didattica e Lavoro di Squadra)</SubTitle>
+                <Para>
+                    Le <strong className="text-[var(--text-primary)]">Celle / Gruppi</strong> sono spazi dedicati a classi, corsi, team di progettazione o laboratori.
+                </Para>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Creazione di un Gruppo:</strong> Un insegnante o capogruppo può creare un nuovo spazio di lavoro impostando nome, regole e password di accesso.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Partecipazione:</strong> I membri devono solo inserire il nome del gruppo e la password per accedere allo spazio condiviso.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Galleria di Gruppo:</strong> Tutti i progetti inviati al gruppo compaiono in una bacheca condivisa, rendendo facilissimo per gli insegnanti verificare e revisionare i compiti.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Regole del Gruppo:</strong> Chi crea la cella può impostare regole di versione per garantire il rispetto dei diritti d'autore e dell'ordine dei progetti.
+                    </ListItem>
+                </ul>
+
+                <SubTitle>Pubblicazione e Aggiornamento dei Progetti</SubTitle>
+                <Para>
+                    Quando invii un disegno al cloud, scegli la destinazione (Galleria Pubblica, Baule Personale o Gruppo). Se viene rilevato un nome duplicato, il sistema ti permetterà di scegliere se aggiornare il progetto esistente o pubblicare una copia separata.
+                </Para>
+            </section>
+
+                        <section>
+                <SectionTitle id="hotkeys">9. Scorciatoie da Tastiera</SectionTitle>
                 <Para>Usa queste combinazioni per velocizzare il tuo flusso di lavoro.</Para>
                 
                 <SubTitle>File e Cronologia</SubTitle>

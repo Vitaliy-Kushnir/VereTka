@@ -53,6 +53,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
         { id: 'shapes', title: t('help.shapes') },
         { id: 'code-export', title: t('help.codeExport') },
         { id: 'feedback', title: t('help.feedback') },
+        { id: 'cloud-storage', title: t('help.cloudStorage') },
         { id: 'hotkeys', title: t('help.hotkeys') },
     ];
 

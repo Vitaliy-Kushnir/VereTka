@@ -137,7 +137,7 @@ export const HelpContentUK: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
                                 <strong className="text-[var(--destructive-text)]">Увага:</strong> Якщо ви очистите дані сайту (кеш, cookies) у налаштуваннях браузера, ваші шаблони буде видалено.
                             </Para>
                         </section>
-                        
+
                         <section>
                             <SectionTitle id="shapes">5. Робота з об'єктами</SectionTitle>
                             <SubTitle>Створення об'єктів</SubTitle>
@@ -278,7 +278,7 @@ export const HelpContentUK: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
                                 Виділені об'єкти можна віддзеркалити по горизонталі чи вертикалі, використовуючи кнопки на панелі властивостей або контекстне меню. Це дозволяє легко створювати симетричні малюнки.
                             </Para>
 </section>
-                        
+
                         <section>
                             <SectionTitle id="code-export">6. Код та експорт</SectionTitle>
                             <SubTitle>Генерація коду</SubTitle>
@@ -344,7 +344,80 @@ export const HelpContentUK: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
                         </section>
 
                         <section>
-                            <SectionTitle id="hotkeys">8. Гарячі клавіші</SectionTitle>
+                            <SectionTitle id="cloud-storage">8. Хмарне сховище і галерея</SectionTitle>
+                            <SubTitle>Огляд можливостей</SubTitle>
+                            <Para>
+                                <strong className="text-[var(--text-primary)]">Хмарне сховище і галерея</strong> — це інтегрований онлайн-сервіс, який дозволяє зберігати свої проєкти в Інтернеті, отримувати до них доступ з будь-якого пристрою, публікувати їх у спільній галереї та працювати разом у групових осередках.
+                            </Para>
+                            <Para>
+                                Відкрити хмарне сховище можна декількома шляхами:
+                            </Para>
+                            <ul className="list-disc list-inside space-y-1 pl-2">
+                                <ListItem>З головного меню: <Key>Файл</Key> → <Key>Опублікувати у хмарі...</Key></ListItem>
+                                <ListItem>Кнопка <Key>Галерея та Сховище</Key> на верхній панелі інструментів.</ListItem>
+                                <ListItem>Кнопка <Key>Хмарна галерея</Key> на вітальному екрані при запуску застосунку.</ListItem>
+                            </ul>
+
+                            <SubTitle>Особиста Скриня (Персональний кабінет)</SubTitle>
+                            <Para>
+                                Ваша <strong className="text-[var(--text-primary)]">Скриня</strong> — це приватний персональний простір. Усі проєкти, збережені у Скрині, бачите лише ви.
+                            </Para>
+                            <ul className="list-disc list-inside space-y-2 pl-2">
+                                <ListItem>
+                                    <strong className="text-[var(--text-primary)]">Вхід та захист:</strong> Ви можете увійти у Скриню за допомогою власного нікнейму та паролю або за допомогою облікового запису Google.
+                                </ListItem>
+                                <ListItem>
+                                    <strong className="text-[var(--text-primary)]">Збереження та відкриття:</strong> Зберігайте ваші векторні малюнки під довільною назвою. Всі збережені роботи відображаються у зручному списку із картками попереднього перегляду, де видно дату збереження та кількість елементів. Натиснувши на картку, ви миттєво відкриваєте проєкт у редакторі.
+                                </ListItem>
+                                <ListItem>
+                                    <strong className="text-[var(--text-primary)]">Управління версіями:</strong> При повторному збереженні ви можете оновити існуючий проєкт або зберегти його як нову окрему версію.
+                                </ListItem>
+                            </ul>
+
+                            <SubTitle>Публічна галерея</SubTitle>
+                            <Para>
+                                <strong className="text-[var(--text-primary)]">Публічна галерея</strong> — це спільний каталог робіт, відкритий для всіх користувачів Веретки.
+                            </Para>
+                            <ul className="list-disc list-inside space-y-2 pl-2">
+                                <ListItem>
+                                    <strong className="text-[var(--text-primary)]">Перегляд та запозичення:</strong> Ви можете переглядати роботи інших авторів, шукати проєкти за назвою чи нікнеймом автора та відкривати їх у своєму редакторі для вивчення чи допрацювання.
+                                </ListItem>
+                                <ListItem>
+                                    <strong className="text-[var(--text-primary)]">Публікація робіт:</strong> Поділіться своїм малюнком із спільнотою! Опублікований проєкт стане доступним для перегляду та натхнення інших користувачів.
+                                </ListItem>
+                            </ul>
+
+                            <SubTitle>Осередки та Групи (Навчання та Командна робота)</SubTitle>
+                            <Para>
+                                <strong className="text-[var(--text-primary)]">Осередки (Групи)</strong> призначені для спільної роботи гуртків, класів, навчальних груп або дизайнерських команд.
+                            </Para>
+                            <ul className="list-disc list-inside space-y-2 pl-2">
+                                <ListItem>
+                                    <strong className="text-[var(--text-primary)]">Створення осередку:</strong> Викладач чи керівник команди може створити новий Осередок, задавши йому назву, описове правило та пароль доступу.
+                                </ListItem>
+                                <ListItem>
+                                    <strong className="text-[var(--text-primary)]">Приєднання:</strong> Учасникам достатньо ввести назву осередку та груповий пароль, щоб увійти у спільний простір.
+                                </ListItem>
+                                <ListItem>
+                                    <strong className="text-[var(--text-primary)]">Групова галерея:</strong> Усі проєкти, відправлені в осередок, відображаються на спільній дошці групи. Це дуже зручно для викладачів: учні надсилають виконані роботи у свій осередок, де їх можна легко перевірити, відкрити в редакторі або прокоментувати.
+                                </ListItem>
+                                <ListItem>
+                                    <strong className="text-[var(--text-primary)]">Правила осередку:</strong> Автор осередку може встановити правила оновлення робіт (наприклад, дозволяти оновлення існуючого проєкту чи вимагати створення нових версій), що гарантує збереження авторських версій та порядку.
+                                </ListItem>
+                            </ul>
+
+                            <SubTitle>Публікація та Оновлення проєктів</SubTitle>
+                            <Para>
+                                При відправці малюнка у хмару ви обираєте призначення (Публічна галерея, Персональна Скриня чи Осередок). Якщо у вибраному місці вже є проєкт із такою назвою, система повідомить про це і запропонує вибір:
+                            </Para>
+                            <ul className="list-disc list-inside space-y-1 pl-2">
+                                <ListItem>Оновити існуючий проєкт (створити нову актуальну версію).</ListItem>
+                                <ListItem>Опублікувати як нову окрему копію із вказанням власного номера версії або назви.</ListItem>
+                            </ul>
+                        </section>
+
+                        <section>
+                            <SectionTitle id="hotkeys">9. Гарячі клавіші</SectionTitle>
                             <Para>Використовуйте ці комбінації для прискорення робочого процесу.</Para>
                             
                             <SubTitle>Робота з файлами та історією</SubTitle>

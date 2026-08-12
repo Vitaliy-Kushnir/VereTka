@@ -1,3 +1,4 @@
+import { useLanguage } from "./LanguageContext";
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { XIcon, EyeIcon, EyeOffIcon } from './icons';
 import { VeretkaLoader } from './VeretkaLoader';
@@ -119,7 +120,7 @@ interface FilterToolbarProps {
 const FilterToolbar: React.FC<FilterToolbarProps> = ({
   searchQuery,
   onSearchChange,
-  searchPlaceholder = '🔍 Пошук за назвою, автором...',
+  searchPlaceholder,
   sortBy,
   onSortChange,
   shapesFilter,
@@ -132,6 +133,8 @@ const FilterToolbar: React.FC<FilterToolbarProps> = ({
   filteredCount,
   onResetFilters
 }) => {
+  const { t } = useLanguage();
+  searchPlaceholder = searchPlaceholder || t("cloud.gallery.001");
   const isFiltered =
     searchQuery.trim() !== '' ||
     shapesFilter !== 'all' ||
@@ -154,7 +157,7 @@ const FilterToolbar: React.FC<FilterToolbarProps> = ({
           <button
             onClick={() => onSearchChange('')}
             className="absolute right-3 top-3 text-xs text-gray-400 hover:text-white transition-colors"
-            title="Очистити пошук"
+            title={t('cloud.gallery.002')}
           >
             ✕
           </button>
@@ -166,49 +169,49 @@ const FilterToolbar: React.FC<FilterToolbarProps> = ({
         <div className="flex flex-wrap items-center gap-2">
           {/* Sort Dropdown */}
           <div className="flex items-center gap-1.5 bg-black/40 px-3 py-1.5 rounded-xl border border-gray-700/80 text-xs">
-            <span className="text-gray-400 font-medium whitespace-nowrap">Сортування:</span>
+            <span className="text-gray-400 font-medium whitespace-nowrap">{t('cloud.gallery.003')}</span>
             <select
               value={sortBy}
               onChange={(e) => onSortChange(e.target.value as SortOption)}
               className="bg-transparent text-gray-200 focus:outline-none cursor-pointer text-xs font-medium"
             >
-              <option value="newest" className="bg-gray-900 text-white">🕒 Новіші спочатку</option>
-              <option value="oldest" className="bg-gray-900 text-white">⌛ Старіші спочатку</option>
-              <option value="title_asc" className="bg-gray-900 text-white">🔤 Назва (А - Я)</option>
-              <option value="title_desc" className="bg-gray-900 text-white">🔠 Назва (Я - А)</option>
-              <option value="shapes_desc" className="bg-gray-900 text-white">🧩 Більше об'єктів</option>
-              <option value="shapes_asc" className="bg-gray-900 text-white">🎯 Менше об'єктів</option>
+              <option value="newest" className="bg-gray-900 text-white">{t('cloud.gallery.004')}</option>
+              <option value="oldest" className="bg-gray-900 text-white">{t('cloud.gallery.005')}</option>
+              <option value="title_asc" className="bg-gray-900 text-white">{t('cloud.gallery.006')}</option>
+              <option value="title_desc" className="bg-gray-900 text-white">{t('cloud.gallery.007')}</option>
+              <option value="shapes_desc" className="bg-gray-900 text-white">{t('cloud.gallery.008')}</option>
+              <option value="shapes_asc" className="bg-gray-900 text-white">{t('cloud.gallery.009')}</option>
             </select>
           </div>
 
           {/* Shapes Count Filter */}
           <div className="flex items-center gap-1.5 bg-black/40 px-3 py-1.5 rounded-xl border border-gray-700/80 text-xs">
-            <span className="text-gray-400 font-medium whitespace-nowrap">Об'єкти:</span>
+            <span className="text-gray-400 font-medium whitespace-nowrap">{t('cloud.gallery.010')}</span>
             <select
               value={shapesFilter}
               onChange={(e) => onShapesFilterChange(e.target.value as ShapesFilterOption)}
               className="bg-transparent text-gray-200 focus:outline-none cursor-pointer text-xs font-medium"
             >
-              <option value="all" className="bg-gray-900 text-white">📊 Усі розміри</option>
-              <option value="small" className="bg-gray-900 text-white">🟢 Прості (1–10)</option>
-              <option value="medium" className="bg-gray-900 text-white">🟡 Середні (11–50)</option>
-              <option value="large" className="bg-gray-900 text-white">🔴 Складні (50+)</option>
+              <option value="all" className="bg-gray-900 text-white">{t('cloud.gallery.011')}</option>
+              <option value="small" className="bg-gray-900 text-white">{t('cloud.gallery.012')}</option>
+              <option value="medium" className="bg-gray-900 text-white">{t('cloud.gallery.013')}</option>
+              <option value="large" className="bg-gray-900 text-white">{t('cloud.gallery.014')}</option>
             </select>
           </div>
 
           {/* Visibility Filter (if enabled) */}
           {showVisibilityFilter && onVisibilityFilterChange && (
             <div className="flex items-center gap-1.5 bg-black/40 px-3 py-1.5 rounded-xl border border-gray-700/80 text-xs">
-              <span className="text-gray-400 font-medium whitespace-nowrap">Тип:</span>
+              <span className="text-gray-400 font-medium whitespace-nowrap">{t('cloud.gallery.015')}</span>
               <select
                 value={visibilityFilter}
                 onChange={(e) => onVisibilityFilterChange(e.target.value as VisibilityFilterOption)}
                 className="bg-transparent text-gray-200 focus:outline-none cursor-pointer text-xs font-medium"
               >
-                <option value="all" className="bg-gray-900 text-white">👁️ Усі типи</option>
-                <option value="public" className="bg-gray-900 text-white">🌐 Публічні</option>
-                <option value="private" className="bg-gray-900 text-white">🔒 Приватні</option>
-                <option value="group" className="bg-gray-900 text-white">🏫 Для груп</option>
+                <option value="all" className="bg-gray-900 text-white">{t('cloud.gallery.016')}</option>
+                <option value="public" className="bg-gray-900 text-white">{t('cloud.gallery.017')}</option>
+                <option value="private" className="bg-gray-900 text-white">{t('cloud.gallery.018')}</option>
+                <option value="group" className="bg-gray-900 text-white">{t('cloud.gallery.019')}</option>
               </select>
             </div>
           )}
@@ -218,9 +221,9 @@ const FilterToolbar: React.FC<FilterToolbarProps> = ({
             <button
               onClick={onRefresh}
               className="px-3 py-1.5 rounded-xl text-xs bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/30 border border-indigo-500/30 transition-colors flex items-center gap-1"
-              title="Оновити список"
+              title={t('cloud.gallery.020')}
             >
-              🔄 Оновити
+              {t('cloud.gallery.021')}
             </button>
           )}
         </div>
@@ -229,9 +232,9 @@ const FilterToolbar: React.FC<FilterToolbarProps> = ({
       {/* Stats bar & Reset button */}
       <div className="flex items-center justify-between text-xs text-gray-400 pt-1 border-t border-gray-800/60">
         <div>
-          <span>Показано проєктів: <strong className="text-white">{filteredCount}</strong></span>
+          <span>{t('cloud.gallery.022')} <strong className="text-white">{filteredCount}</strong></span>
           {totalCount > 0 && (
-            <span className="text-gray-500 ml-1">(із {totalCount})</span>
+            <span className="text-gray-500 ml-1">{t('cloud.gallery.023')} {totalCount})</span>
           )}
         </div>
         {isFiltered && onResetFilters && (
@@ -239,7 +242,7 @@ const FilterToolbar: React.FC<FilterToolbarProps> = ({
             onClick={onResetFilters}
             className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1 underline"
           >
-            ✕ Скинути всі фільтри
+            {t('cloud.gallery.024')}
           </button>
         )}
       </div>
@@ -275,13 +278,14 @@ const VeretkaLogoIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-
   </svg>
 );
 
-const ProjectCardPreview: React.FC<ProjectCardPreviewProps> = ({ 
+const ProjectCardPreview: React.FC<ProjectCardPreviewProps> = ({
   projectData, 
   title, 
   onOpenLargePreview,
   interactive = true,
   allowClickModal = true
 }) => {
+  const { t } = useLanguage();
   const [thumbUrl, setThumbUrl] = useState<string | null>(null);
   const isInteractive = interactive && allowClickModal;
 
@@ -315,7 +319,7 @@ const ProjectCardPreview: React.FC<ProjectCardPreviewProps> = ({
           ? 'cursor-pointer hover:border-indigo-500/80 hover:shadow-lg hover:shadow-indigo-500/20'
           : ''
       }`}
-      title={isInteractive ? "Натисніть для збільшеного модального перегляду" : title}
+      title={isInteractive ? t('cloud.gallery.025') : title}
     >
       <div 
         className="absolute inset-0 opacity-15 pointer-events-none"
@@ -336,14 +340,14 @@ const ProjectCardPreview: React.FC<ProjectCardPreviewProps> = ({
       ) : (
         <div className="text-gray-500 text-xs text-center z-10 flex flex-col items-center gap-1">
           <span className="text-2xl">🖼️</span>
-          <span>Без зображення</span>
+          <span>{t('cloud.gallery.026')}</span>
         </div>
       )}
 
       {isInteractive && (
         <div className="absolute inset-x-0 bottom-0 p-1.5 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-20 pointer-events-none">
           <span className="text-[10px] text-indigo-200 bg-indigo-950/80 px-2.5 py-0.5 rounded-full border border-indigo-500/30 font-medium shadow-sm">
-            🔍 Натисніть для розгортання
+            {t('cloud.gallery.027')}
           </span>
         </div>
       )}
@@ -357,6 +361,7 @@ const ProjectLargePreviewModal: React.FC<{
   onLoadProject: (data: string, name: string) => void;
   onShare: (project: CloudProject) => void;
 }> = ({ project, onClose, onLoadProject, onShare }) => {
+  const { t } = useLanguage();
   const [largeThumbUrl, setLargeThumbUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -395,7 +400,7 @@ const ProjectLargePreviewModal: React.FC<{
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] p-1.5 rounded-xl bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)] transition-colors z-10"
-          title="Закрити"
+          title={t('cloud.gallery.028')}
         >
           <XIcon size={20} />
         </button>
@@ -407,7 +412,7 @@ const ProjectLargePreviewModal: React.FC<{
           <div>
             <h3 className="font-bold text-lg text-[var(--text-primary)]">{project.title}</h3>
             <p className="text-xs text-[var(--text-tertiary)]">
-              Автор: <span className="text-[var(--text-secondary)]">{project.authorName}</span> (@{project.ownerNickname}) • Об'єктів: <span className="text-indigo-600 dark:text-indigo-300 font-semibold">{project.shapesCount}</span>
+              {t('cloud.gallery.029')} <span className="text-[var(--text-secondary)]">{project.authorName}</span> (@{project.ownerNickname}{t('cloud.gallery.030')} <span className="text-indigo-600 dark:text-indigo-300 font-semibold">{project.shapesCount}</span>
             </p>
           </div>
         </div>
@@ -429,14 +434,14 @@ const ProjectLargePreviewModal: React.FC<{
           ) : (
             <div className="text-gray-500 text-sm z-10 flex flex-col items-center gap-2">
               <span className="text-3xl">🖼️</span>
-              <span>Не вдалося згенерувати перегляд</span>
+              <span>{t('cloud.gallery.031')}</span>
             </div>
           )}
         </div>
 
         <div className="flex items-center justify-between pt-2 border-t border-[var(--border-color)]">
           <div className="text-xs text-[var(--text-tertiary)]">
-            Створено: {new Date(project.createdAt).toLocaleDateString('uk-UA')}
+            {t('cloud.gallery.032')} {new Date(project.createdAt).toLocaleDateString('uk-UA')}
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -446,13 +451,13 @@ const ProjectLargePreviewModal: React.FC<{
               }}
               className="py-2 px-4 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors flex items-center gap-1.5 shadow-lg shadow-indigo-600/20"
             >
-              🚀 Відкрити в редакторі
+              {t('cloud.gallery.033')}
             </button>
             <button
               onClick={() => onShare(project)}
               className="py-2 px-3 rounded-xl text-xs font-medium bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 transition-colors flex items-center gap-1"
             >
-              🔗 Поділитися
+              {t('cloud.gallery.034')}
             </button>
           </div>
         </div>
@@ -481,6 +486,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
   initialTab = 'public'
 }) => {
   const [activeTab, setActiveTab] = useState<'public' | 'personal' | 'group' | 'publish'>(initialTab);
+  const { t } = useLanguage();
   const [showAccountDropdown, setShowAccountDropdown] = useState(false);
   const accountDropdownRef = useRef<HTMLDivElement>(null);
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
@@ -697,7 +703,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
     e.preventDefault();
     if (!activeGroup) return;
     if (!editGroupName.trim()) {
-      setGroupSettingsError('Назва групи не може бути порожньою');
+      setGroupSettingsError(t('cloud.gallery.035'));
       return;
     }
 
@@ -742,7 +748,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
   };
 
   // --- Publish Form State ---
-  const [pubTitle, setPubTitle] = useState(currentProjectName || 'Мій проєкт');
+  const [pubTitle, setPubTitle] = useState(currentProjectName || t('cloud.gallery.036'));
   const [pubAuthorName, setPubAuthorName] = useState(() => localStorage.getItem('veretka_author_name') || '');
   const [pubNickname, setPubNickname] = useState(() => localStorage.getItem('veretka_nickname') || '');
   const [pubPasscode, setPubPasscode] = useState(() => localStorage.getItem('veretka_passcode') || '');
@@ -935,7 +941,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
         }
       }, 1200);
     } else {
-      setSendGroupError(res.message || 'Помилка при надсиланні проєкту у групу');
+      setSendGroupError(res.message || t('cloud.gallery.037'));
     }
   };
 
@@ -973,7 +979,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
       );
       if (isTaken) {
         setConflictError(
-          `Проєкт із назвою "${targetTitle}" вже існує в цьому осередку від вашого імені. Будь ласка, оберіть іншу версію (наприклад, ${nextSuggestedTitle || 'новшу'}).`
+          `Проєкт із назвою "${targetTitle}" вже існує в цьому осередку від вашого імені. Будь ласка, оберіть іншу версію (наприклад, ${nextSuggestedTitle || t('cloud.gallery.038')}).`
         );
         return;
       }
@@ -1020,7 +1026,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
         getGroupProjects(groupId).then(setGroupProjects);
       }
     } else {
-      setConflictError(res.message || 'Помилка при виконанні дії');
+      setConflictError(res.message || t('cloud.gallery.039'));
     }
   };
   
@@ -1157,7 +1163,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
   const handlePersonalLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!personalNickname.trim() || !personalPasscode.trim()) {
-      setPersonalError('Будь ласка, вкажіть Нікнейм та Пароль');
+      setPersonalError(t('cloud.gallery.040'));
       return;
     }
 
@@ -1179,7 +1185,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
         setActiveTab('publish');
       }
     } else {
-      setPersonalError(res.message || 'Не вдалося відкрити особисту скриню');
+      setPersonalError(res.message || t('cloud.gallery.041'));
     }
   };
 
@@ -1187,19 +1193,19 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!regNickname.trim()) {
-      setPersonalError('Будь ласка, вкажіть Нікнейм (Логін)');
+      setPersonalError(t('cloud.gallery.042'));
       return;
     }
     if (nicknameTaken) {
-      setPersonalError('Такий Нікнейм вже зайнятий у спільноті. Будь ласка, оберіть інший.');
+      setPersonalError(t('cloud.gallery.043'));
       return;
     }
     if (!regPasscode.trim()) {
-      setPersonalError('Будь ласка, вкажіть пароль до скрині');
+      setPersonalError(t('cloud.gallery.044'));
       return;
     }
     if (regPasscode !== regConfirmPasscode) {
-      setPersonalError('Введені паролі не збігаються. Будь ласка, перевірте написання.');
+      setPersonalError(t('cloud.gallery.045'));
       return;
     }
 
@@ -1230,7 +1236,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
         setActiveTab('publish');
       }
     } else {
-      setPersonalError(res.message || 'Не вдалося створити скриню');
+      setPersonalError(res.message || t('cloud.gallery.046'));
     }
     setIsLoadingPersonal(false);
   };
@@ -1243,9 +1249,9 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
     if (personalAuthMode === 'register') {
       let passcodeToUse = regPasscode.trim();
       if (!passcodeToUse) {
-        const promptPass = prompt('Увага: Пароль є обов’язковим для захисту вашої скрині!\nБудь ласка, введіть пароль (щонайменше 3 символи):');
+        const promptPass = prompt(t('cloud.gallery.047'));
         if (!promptPass || promptPass.trim().length < 3) {
-          setPersonalError('Для створення скрині через Google обов’язково вкажіть пароль (щонайменше 3 символи)');
+          setPersonalError(t('cloud.gallery.048'));
           setIsLoadingPersonal(false);
           return;
         }
@@ -1269,7 +1275,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
           setActiveTab('publish');
         }
       } else {
-        setPersonalError(res.message || 'Не вдалося створити скриню через Google');
+        setPersonalError(res.message || t('cloud.gallery.049'));
       }
     } else {
       const res = await signInWithGoogleAccount();
@@ -1290,7 +1296,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
           setActiveTab('publish');
         }
       } else {
-        setPersonalError(res.message || 'Не вдалося увійти через Google');
+        setPersonalError(res.message || t('cloud.gallery.050'));
       }
     }
   };
@@ -1299,7 +1305,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
   const handleAccountRecoverySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!recoveryEmail.trim()) {
-      setRecoveryMessage('Будь ласка, вкажіть вашу електронну пошту');
+      setRecoveryMessage(t('cloud.gallery.051'));
       setRecoverySuccess(false);
       return;
     }
@@ -1366,7 +1372,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
       localStorage.removeItem('veretka_passcode');
       setShowEditProfileModal(false);
       setShowDeleteAccountConfirm(false);
-      alert('Вашу особисту скриню та її проєкти успішно видалено.');
+      alert(t('cloud.gallery.052'));
     } else {
       setDeleteAccountError(res.message);
     }
@@ -1404,7 +1410,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
     let passcodeToUse = bypassPasscode || groupPasscodeInput.trim();
 
     if (!code) {
-      setGroupError('Вкажіть код групи');
+      setGroupError(t('cloud.gallery.053'));
       return;
     }
     
@@ -1414,7 +1420,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
     }
 
     if (!passcodeToUse && !isCreatorBypass) {
-      setGroupError('Вкажіть пароль');
+      setGroupError(t('cloud.gallery.054'));
       return;
     }
 
@@ -1442,7 +1448,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
       const projs = await getGroupProjects(res.group.groupCode);
       setGroupProjects(projs);
     } else {
-      setGroupError(res.message || 'Не вдалося увійти в осередку/групу');
+      setGroupError(res.message || t('cloud.gallery.055'));
     }
     setIsLoadingGroup(false);
   };
@@ -1451,11 +1457,11 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
   const handleCreateGroupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newGroupName.trim() || !newGroupCode.trim() || !newGroupPasscode.trim()) {
-      setGroupError('Заповніть назву, код та пароль для нової групи');
+      setGroupError(t('cloud.gallery.056'));
       return;
     }
     if (newGroupPasscode !== newGroupConfirmPasscode) {
-      setGroupError('Паролі не збігаються. Перевірте правильність введення.');
+      setGroupError(t('cloud.gallery.057'));
       return;
     }
 
@@ -1466,7 +1472,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
       description: newGroupDesc,
       groupCode: newGroupCode,
       passcode: newGroupPasscode,
-      creatorNickname: newGroupCreator || 'Анонім',
+      creatorNickname: newGroupCreator || t('cloud.gallery.058'),
       mode: newGroupMode,
       studentUpdatePolicy: newGroupStudentPolicy
     });
@@ -1491,13 +1497,13 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
       const projs = await getGroupProjects(res.group.groupCode);
       setGroupProjects(projs);
     } else {
-      setGroupError(res.message || 'Помилка створення групи');
+      setGroupError(res.message || t('cloud.gallery.059'));
     }
   };
 
   const executePublish = async (titleToUse: string, isUpdate: boolean, existingId?: string, projectDataStr?: string, finalGroupId?: string, personalVisibility?: ProjectVisibility) => {
     setIsPublishing(true);
-    setPublishStatusMessage('Збереження у хмару...');
+    setPublishStatusMessage(t('cloud.gallery.060'));
     
     try {
       let newDocId = existingId || '';
@@ -1511,7 +1517,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
         newDocId = await publishProjectToCloud({
           title: titleToUse,
           description: pubDescription,
-          authorName: pubAuthorName || personalNickname || 'Анонім',
+          authorName: pubAuthorName || personalNickname || t('cloud.gallery.061'),
           ownerNickname: pubNickname || personalNickname,
           passcode: pubPasscode || personalPasscode,
           visibility: personalVisibility || 'private',
@@ -1524,7 +1530,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
         await publishProjectToCloud({
           title: titleToUse,
           description: pubDescription,
-          authorName: pubAuthorName || personalNickname || 'Анонім',
+          authorName: pubAuthorName || personalNickname || t('cloud.gallery.062'),
           ownerNickname: pubNickname || personalNickname,
           passcode: pubPasscode || personalPasscode,
           visibility: 'group',
@@ -1543,14 +1549,14 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
         localStorage.setItem('veretka_group_code', finalGroupId);
       }
 
-      setPublishStatusMessage('Проєкт успішно збережено в хмарі!');
+      setPublishStatusMessage(t('cloud.gallery.063'));
       setIsPublishing(false);
 
       // Open share modal automatically with generated cloud link
       setShareModalProject({
         id: newDocId,
         title: titleToUse,
-        authorName: pubAuthorName || 'Анонім',
+        authorName: pubAuthorName || t('cloud.gallery.064'),
         ownerNickname: pubNickname,
         passcodeHash: '',
         visibility: personalVisibility || 'private',
@@ -1577,7 +1583,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
       setTimeout(() => setActiveTab('personal'), 800);
     } catch (err: any) {
       setIsPublishing(false);
-      setPublishStatusMessage(err.message || 'Помилка зберігання');
+      setPublishStatusMessage(err.message || t('cloud.gallery.065'));
     }
   };
 
@@ -1585,12 +1591,12 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
   const handlePublishSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pubTitle.trim()) {
-      setPublishStatusMessage('Вкажіть назву проєкту');
+      setPublishStatusMessage(t('cloud.gallery.066'));
       return;
     }
 
     if (!isPersonalLoggedIn) {
-      setPublishStatusMessage('Будь ласка, спочатку відкрийте свою особисту скриню');
+      setPublishStatusMessage(t('cloud.gallery.067'));
       setReturnToPublishAfterLogin(true);
       setActiveTab('personal');
       setPersonalAuthMode('login');
@@ -1601,25 +1607,25 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
     const activePass = personalPasscode.trim() || pubPasscode.trim();
 
     if (!activeNick || !activePass) {
-      setPublishStatusMessage('Помилка авторизації. Відкрийте скриню знову.');
+      setPublishStatusMessage(t('cloud.gallery.068'));
       return;
     }
 
     const projectData = getCurrentProjectDataStr();
     if (!projectData || projectData === '[]') {
-      setPublishStatusMessage('Полотно порожнє! Створіть фігури перед публікацією.');
+      setPublishStatusMessage(t('cloud.gallery.069'));
       return;
     }
 
     setIsPublishing(true);
-    setPublishStatusMessage('Збереження у хмару...');
+    setPublishStatusMessage(t('cloud.gallery.070'));
 
     try {
       let finalGroupId = '';
       if (pubIsGroup) {
         finalGroupId = pubGroupCode.trim().toUpperCase();
         if (!finalGroupId) {
-          setPublishStatusMessage('Вкажіть код групи для публікації');
+          setPublishStatusMessage(t('cloud.gallery.071'));
           setIsPublishing(false);
           return;
         }
@@ -1655,7 +1661,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
       await executePublish(pubTitle.trim(), false, undefined, projectData, finalGroupId, personalVisibility);
     } catch (err: any) {
       setIsPublishing(false);
-      setPublishStatusMessage(err.message || 'Помилка зберігання');
+      setPublishStatusMessage(err.message || t('cloud.gallery.072'));
     }
   };
 
@@ -1674,12 +1680,12 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
         if (isPersonalLoggedIn) handlePersonalLogin();
         if (activeGroup) getGroupProjects(activeGroup.groupCode).then(setGroupProjects);
       } else {
-        alert(res.message || 'Не вдалося видалити проєкт');
+        alert(res.message || t('cloud.gallery.073'));
       }
     } else {
       const passToUse = promptPasscode.trim() || personalPasscode;
       if (!passToUse) {
-        alert('Вкажіть пароль для виконання дії');
+        alert(t('cloud.gallery.074'));
         return;
       }
       if (action === 'make_public' || action === 'make_private') {
@@ -1692,11 +1698,11 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
           loadPublicProjects();
           if (isPersonalLoggedIn) handlePersonalLogin();
         } else {
-          alert(res.message || 'Помилка виконання дії');
+          alert(res.message || t('cloud.gallery.075'));
         }
       } else if (action === 'make_group') {
         const passToUse = promptPasscode.trim() || personalPasscode;
-        const code = targetGroupCode || prompt('Введіть код групи / осередка:');
+        const code = targetGroupCode || prompt(t('cloud.gallery.076'));
         if (!code) return;
         const res = await copyProjectToGroup(projectId, passToUse, code.toUpperCase(), '', personalNickname);
         if (res.success) {
@@ -1705,7 +1711,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
           if (isPersonalLoggedIn) handlePersonalLogin();
           if (activeGroup) getGroupProjects(activeGroup.groupCode).then(setGroupProjects);
         } else {
-          alert(res.message || 'Не вдалося надіслати у групу');
+          alert(res.message || t('cloud.gallery.077'));
         }
       }
     }
@@ -1737,7 +1743,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
   const handleSaveProjectDetails = async (projectId: string, projPasscode: string) => {
     if (!editProjectTitle.trim()) {
-      alert('Назва проєкту не може бути порожньою');
+      alert(t('cloud.gallery.078'));
       return;
     }
     
@@ -1760,7 +1766,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
       setPublicProjects(updateList);
       setEditingProjectId(null);
     } else {
-      alert(res.message || 'Помилка збереження');
+      alert(res.message || t('cloud.gallery.079'));
     }
   };
 
@@ -1779,8 +1785,8 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
               <VeretkaLogoIcon className="w-7 h-7" />
             </div>
             <div>
-              <h2 className="text-xl font-bold tracking-wide">Сховище проєктів ВереTkа</h2>
-              <p className="text-xs text-gray-400">Хмарний простір проєктів, осередків та галереї</p>
+              <h2 className="text-xl font-bold tracking-wide">{t('cloud.gallery.080')}</h2>
+              <p className="text-xs text-gray-400">{t('cloud.gallery.081')}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 relative">
@@ -1790,7 +1796,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   type="button"
                   onClick={() => setShowAccountDropdown(!showAccountDropdown)}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 hover:bg-slate-700 transition-colors text-left"
-                  title="Мій акаунт"
+                  title={t('cloud.gallery.082')}
                 >
                   <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm border border-indigo-400/30">
                     {personalNickname ? personalNickname.charAt(0).toUpperCase() : '👤'}
@@ -1808,10 +1814,10 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 {showAccountDropdown && (
                   <div className="absolute right-0 top-full mt-2 w-56 bg-gray-900 border border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
                     <div className="p-3 border-b border-gray-800 bg-black/30">
-                      <p className="text-xs text-gray-400 font-medium">Ваш акаунт</p>
+                      <p className="text-xs text-gray-400 font-medium">{t('cloud.gallery.083')}</p>
                       <p className="text-sm font-bold text-white truncate">@{personalNickname}</p>
                       {currentAccountAuthorName && (
-                        <p className="text-xs text-gray-300 mt-1 truncate">Підпис: {currentAccountAuthorName}</p>
+                        <p className="text-xs text-gray-300 mt-1 truncate">{t('cloud.gallery.084')} {currentAccountAuthorName}</p>
                       )}
                       {currentAccountEmail && (
                         <p className="text-[10px] text-gray-500 mt-0.5 truncate">{currentAccountEmail}</p>
@@ -1831,7 +1837,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         }}
                         className="w-full text-left px-3 py-2 rounded-lg text-xs bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-200 transition-colors flex items-center gap-2"
                       >
-                        ⚙️ Редагувати акаунт
+                        {t('cloud.gallery.085')}
                       </button>
                       <button
                         type="button"
@@ -1842,7 +1848,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         }}
                         className="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-gray-800 text-gray-300 transition-colors flex items-center gap-2"
                       >
-                        🚪 Закрити скриню
+                        {t('cloud.gallery.086')}
                       </button>
                     </div>
                   </div>
@@ -1858,7 +1864,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   }}
                   className="px-4 py-1.5 rounded-full text-xs font-semibold bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition-colors"
                 >
-                  Вхід
+                  {t('cloud.gallery.087')}
                 </button>
                 <button
                   type="button"
@@ -1868,14 +1874,14 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   }}
                   className="px-4 py-1.5 rounded-full text-xs font-semibold bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition-colors"
                 >
-                  Реєстрація
+                  {t('cloud.gallery.088')}
                 </button>
               </div>
             )}
             <button 
               onClick={onClose}
               className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
-              title="Закрити"
+              title={t('cloud.gallery.089')}
             >
               <XIcon size={20} />
             </button>
@@ -1892,7 +1898,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 : 'border-transparent text-gray-400 hover:text-gray-200'
             }`}
           >
-            🌐 Загальна галерея
+            {t('cloud.gallery.090')}
           </button>
           <button
             onClick={() => setActiveTab('personal')}
@@ -1902,7 +1908,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 : 'border-transparent text-gray-400 hover:text-gray-200'
             }`}
           >
-            👤 Моя особиста скриня
+            {t('cloud.gallery.091')}
           </button>
           <button
             onClick={() => setActiveTab('group')}
@@ -1912,7 +1918,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 : 'border-transparent text-gray-400 hover:text-gray-200'
             }`}
           >
-            🏫 Скриня групи/осередку
+            {t('cloud.gallery.092')}
           </button>
           <button
             onClick={() => setActiveTab('publish')}
@@ -1922,7 +1928,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 : 'border-transparent text-emerald-500/80 hover:text-emerald-300'
             }`}
           >
-            ☁️ Опублікувати поточний проєкт
+            {t('cloud.gallery.093')}
           </button>
         </div>
 
@@ -1935,7 +1941,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
               <FilterToolbar
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
-                searchPlaceholder="Пошук по всій галереї (назва, автор, нікнейм)..."
+                searchPlaceholder={t('cloud.gallery.094')}
                 sortBy={sortBy}
                 onSortChange={setSortBy}
                 shapesFilter={shapesFilter}
@@ -1953,17 +1959,17 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
               {isLoadingPublic ? (
                 <div className="py-12 flex flex-col items-center justify-center">
                   <VeretkaLoader className="w-24 h-24 mb-4" />
-                  <div className="text-sm font-medium text-[var(--text-tertiary)] animate-pulse">Завантаження галереї...</div>
+                  <div className="text-sm font-medium text-[var(--text-tertiary)] animate-pulse">{t('cloud.gallery.095')}</div>
                 </div>
               ) : displayedPublicProjects.length === 0 ? (
                 <div className="py-12 text-center text-gray-400 bg-black/20 rounded-2xl border border-dashed border-gray-700">
                   <p className="text-base font-medium">
-                    {publicProjects.length === 0 ? 'Публічних проєктів поки немає' : 'Жодного проєкту не знайдено за вибраними фільтрами'}
+                    {publicProjects.length === 0 ? t('cloud.gallery.096') : t('cloud.gallery.097')}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
                     {publicProjects.length === 0
-                      ? 'Опублікуйте свій проєкт першим за допомогою кнопки "Опублікувати поточний проєкт"'
-                      : 'Спробуйте змінити критерії пошуку чи фільтрації'}
+                      ? t('cloud.gallery.098')
+                      : t('cloud.gallery.099')}
                   </p>
                 </div>
               ) : (
@@ -1984,17 +1990,17 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                             {proj.title}
                           </h3>
                           <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                            Публічний
+                            {t('cloud.gallery.100')}
                           </span>
                         </div>
                         {proj.description && (
                           <p className="text-xs text-gray-300 mb-2 line-clamp-2" title={proj.description}>{proj.description}</p>
                         )}
                         <p className="text-xs text-gray-400 mb-1">
-                          Автор: <span className="text-gray-200">{proj.authorName}</span> (@{proj.ownerNickname})
+                          {t('cloud.gallery.101')} <span className="text-gray-200">{proj.authorName}</span> (@{proj.ownerNickname})
                         </p>
                         <p className="text-[11px] text-gray-500 mb-3">
-                          Об'єктів: {proj.shapesCount} | {new Date(proj.createdAt).toLocaleDateString('uk-UA')}
+                          {t('cloud.gallery.102')} {proj.shapesCount} | {new Date(proj.createdAt).toLocaleDateString('uk-UA')}
                         </p>
                       </div>
 
@@ -2006,12 +2012,12 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           }}
                           className="flex-1 py-1.5 px-3 rounded-lg text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"
                         >
-                          Відкрити в редакторі
+                          {t('cloud.gallery.103')}
                         </button>
                         <button
                           onClick={() => setShareModalProject(proj)}
                           className="py-1.5 px-2.5 rounded-lg text-xs font-medium bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition-colors"
-                          title="Поділитися посиланням"
+                          title={t('cloud.gallery.104')}
                         >
                           🔗
                         </button>
@@ -2030,10 +2036,10 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                     {isLoadingMorePublic ? (
                        <>
                          <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                         Завантаження...
+                         {t('cloud.gallery.105')}
                        </>
                     ) : (
-                      'Завантажити ще'
+                      t('cloud.gallery.106')
                     )}
                   </button>
                 </div>
@@ -2061,7 +2067,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           : 'text-gray-400 hover:text-white'
                       }`}
                     >
-                      🔓 Вхід (Відкрити скриню)
+                      {t('cloud.gallery.107')}
                     </button>
                     <button
                       type="button"
@@ -2075,7 +2081,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           : 'text-gray-400 hover:text-white'
                       }`}
                     >
-                      📝 Реєстрація (Отримати скриню)
+                      {t('cloud.gallery.108')}
                     </button>
                   </div>
 
@@ -2083,18 +2089,18 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                     /* LOGIN FORM */
                     <div className="space-y-4">
                       <div className="text-center">
-                        <h3 className="text-lg font-bold text-white">Відкрити особисту скриню</h3>
+                        <h3 className="text-lg font-bold text-white">{t('cloud.gallery.109')}</h3>
                         <p className="text-xs text-gray-400 mt-1">
-                          Вкажіть свій унікальний Нікнейм (або Email) та Пароль від вашої скрині
+                          {t('cloud.gallery.110')}
                         </p>
                       </div>
 
                       <form onSubmit={handlePersonalLogin} className="space-y-3">
                         <div>
-                          <label className="block text-xs text-gray-300 font-medium mb-1">Ваш Нікнейм або Email:*</label>
+                          <label className="block text-xs text-gray-300 font-medium mb-1">{t('cloud.gallery.111')}</label>
                           <input
                             type="text"
-                            placeholder="наприклад: petro_2026 або user@gmail.com"
+                            placeholder={t('cloud.gallery.112')}
                             value={personalNickname}
                             onChange={(e) => setPersonalNickname(e.target.value)}
                             className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
@@ -2103,7 +2109,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         </div>
                         <div>
                           <div className="flex justify-between items-center mb-1">
-                            <label className="block text-xs text-gray-300 font-medium">Пароль до скрині:*</label>
+                            <label className="block text-xs text-gray-300 font-medium">{t('cloud.gallery.113')}</label>
                             <button
                               type="button"
                               onClick={() => {
@@ -2112,13 +2118,13 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                               }}
                               className="text-[11px] text-indigo-400 hover:underline"
                             >
-                              Забули нікнейм або пароль?
+                              {t('cloud.gallery.114')}
                             </button>
                           </div>
                           <div className="relative">
                             <input
                               type={showPasswords['login'] ? "text" : "password"}
-                              placeholder="Введіть пароль"
+                              placeholder={t('cloud.gallery.115')}
                               value={personalPasscode}
                               onChange={(e) => setPersonalPasscode(e.target.value)}
                               className="w-full px-3 py-2 pr-10 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
@@ -2145,7 +2151,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           disabled={isLoadingPersonal}
                           className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-colors shadow-lg shadow-indigo-900/30"
                         >
-                          {isLoadingPersonal ? 'Авторизація...' : 'Відкрити особисту скриню'}
+                          {isLoadingPersonal ? t('cloud.gallery.116') : t('cloud.gallery.117')}
                         </button>
                       </form>
                     </div>
@@ -2153,19 +2159,19 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                     /* REGISTRATION FORM */
                     <div className="space-y-4">
                       <div className="text-center">
-                        <h3 className="text-lg font-bold text-white">Створити нову особисту скриню</h3>
+                        <h3 className="text-lg font-bold text-white">{t('cloud.gallery.118')}</h3>
                         <p className="text-xs text-gray-400 mt-1">
-                          Придумайте унікальний Нікнейм та Пароль для захисту та впорядкування ваших проєктів
+                          {t('cloud.gallery.119')}
                         </p>
                       </div>
 
                       <form onSubmit={handleRegisterSubmit} className="space-y-3">
                         <div>
-                          <label className="block text-xs text-gray-300 font-medium mb-1">Ваш унікальний Нікнейм (Логін):*</label>
+                          <label className="block text-xs text-gray-300 font-medium mb-1">{t('cloud.gallery.120')}</label>
                           <div className="relative">
                             <input
                               type="text"
-                              placeholder="наприклад: petro_2026"
+                              placeholder={t('cloud.gallery.121')}
                               value={regNickname}
                               onChange={(e) => setRegNickname(e.target.value)}
                               className={`w-full px-3 py-2 pr-9 rounded-xl bg-black/40 border text-sm focus:outline-none text-white transition-colors ${
@@ -2185,21 +2191,21 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           </div>
                           {nicknameTaken && (
                             <p className="text-[11px] text-red-400 mt-1 flex items-center gap-1 font-medium">
-                              ⚠️ Такий нікнейм вже зайнятий у спільноті. Оберіть інший.
+                              {t('cloud.gallery.122')}
                             </p>
                           )}
                           {!nicknameTaken && regNickname.trim().length >= 2 && !isCheckingNickname && (
                             <p className="text-[11px] text-emerald-400 mt-1 flex items-center gap-1 font-medium">
-                              ✓ Нікнейм вільний
+                              {t('cloud.gallery.123')}
                             </p>
                           )}
                         </div>
 
                         <div>
-                          <label className="block text-xs text-gray-300 font-medium mb-1">Ім'я (підпис) <span className="text-gray-400 font-normal">(необов'язково)</span>:</label>
+                          <label className="block text-xs text-gray-300 font-medium mb-1">{t('cloud.gallery.124')} <span className="text-gray-400 font-normal">{t('cloud.gallery.125')}</span>:</label>
                           <input
                             type="text"
-                            placeholder="Олена К."
+                            placeholder={t('cloud.gallery.126')}
                             value={regAuthorName}
                             onChange={(e) => setRegAuthorName(e.target.value)}
                             className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500 text-white"
@@ -2207,11 +2213,11 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         </div>
 
                         <div>
-                          <label className="block text-xs text-gray-300 font-medium mb-1">Пароль до скрині:*</label>
+                          <label className="block text-xs text-gray-300 font-medium mb-1">{t('cloud.gallery.127')}</label>
                           <div className="relative">
                             <input
                               type={showPasswords['reg'] ? "text" : "password"}
-                              placeholder="Придумайте пароль"
+                              placeholder={t('cloud.gallery.128')}
                               value={regPasscode}
                               onChange={(e) => setRegPasscode(e.target.value)}
                               className="w-full px-3 py-2 pr-10 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
@@ -2228,11 +2234,11 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         </div>
 
                         <div>
-                          <label className="block text-xs text-gray-300 font-medium mb-1">Повторіть пароль:*</label>
+                          <label className="block text-xs text-gray-300 font-medium mb-1">{t('cloud.gallery.129')}</label>
                           <div className="relative">
                             <input
                               type={showPasswords['regConfirm'] ? "text" : "password"}
-                              placeholder="Підтвердіть пароль"
+                              placeholder={t('cloud.gallery.130')}
                               value={regConfirmPasscode}
                               onChange={(e) => setRegConfirmPasscode(e.target.value)}
                               className="w-full px-3 py-2 pr-10 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
@@ -2250,11 +2256,11 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
                         <div>
                           <label className="block text-xs text-gray-300 font-medium mb-1">
-                            Електронна пошта (Email): <span className="text-gray-400 font-normal">(необов'язково)</span>
+                            {t('cloud.gallery.131')} <span className="text-gray-400 font-normal">{t('cloud.gallery.132')}</span>
                           </label>
                           <input
                             type="email"
-                            placeholder="наприклад: user@gmail.com"
+                            placeholder={t('cloud.gallery.133')}
                             value={regEmail}
                             onChange={(e) => setRegEmail(e.target.value)}
                             className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
@@ -2262,7 +2268,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           <div className="mt-1.5 p-2.5 rounded-xl bg-indigo-950/40 border border-indigo-500/20 text-[11px] text-indigo-300/90 leading-relaxed flex items-start gap-2">
                             <span className="shrink-0 text-base">ℹ️</span>
                             <span>
-                              <strong>Для чого пошта:</strong> Це поле не є обов'язковим. Якщо ви його заповните, пошта слугуватиме надійним способом відновити свій Нікнейм та доступ до скрині, якщо ви їх раптом забудете.
+                              <strong>{t('cloud.gallery.134')}</strong> {t('cloud.gallery.135')}
                             </span>
                           </div>
                         </div>
@@ -2278,7 +2284,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           disabled={isLoadingPersonal}
                           className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-colors shadow-lg shadow-indigo-900/30"
                         >
-                          {isLoadingPersonal ? 'Створення скрині...' : '✨ Отримати та відкрити скриню'}
+                          {isLoadingPersonal ? t('cloud.gallery.136') : t('cloud.gallery.137')}
                         </button>
                       </form>
                     </div>
@@ -2290,7 +2296,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                       <div className="w-full border-t border-gray-800"></div>
                     </div>
                     <span className="relative bg-[var(--bg-primary,#11111b)] px-3 text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
-                      або
+                      {t('cloud.gallery.138')}
                     </span>
                   </div>
 
@@ -2307,13 +2313,13 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                       <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                     </svg>
                     <span>
-                      {personalAuthMode === 'register' ? 'Отримати через Google' : 'Увійти через Google'}
+                      {personalAuthMode === 'register' ? t('cloud.gallery.139') : t('cloud.gallery.140')}
                     </span>
                   </button>
 
                   {personalAuthMode === 'register' && (
                     <p className="text-[10px] text-gray-400 text-center mt-2 leading-relaxed">
-                      💡 При отримані через Google Нікнеймом за замовчуванням стане частина пошти (до @), а пароль вказується у полі вище або запитується при створенні.
+                      {t('cloud.gallery.141')}
                     </p>
                   )}
 
@@ -2323,7 +2329,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   <FilterToolbar
                     searchQuery={personalSearchQuery}
                     onSearchChange={setPersonalSearchQuery}
-                    searchPlaceholder="Пошук у моїй скрині..."
+                    searchPlaceholder={t('cloud.gallery.142')}
                     sortBy={sortBy}
                     onSortChange={setSortBy}
                     shapesFilter={shapesFilter}
@@ -2345,19 +2351,19 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   {isLoadingPersonal ? (
                     <div className="py-12 flex flex-col items-center justify-center">
                       <VeretkaLoader className="w-24 h-24 mb-4" />
-                      <div className="text-sm font-medium text-[var(--text-tertiary)] animate-pulse">Оновлення скрині...</div>
+                      <div className="text-sm font-medium text-[var(--text-tertiary)] animate-pulse">{t('cloud.gallery.143')}</div>
                     </div>
                   ) : displayedPersonalProjects.length === 0 ? (
                     <div className="py-12 text-center text-gray-400 bg-black/20 rounded-2xl border border-dashed border-gray-700">
                       <p className="text-base font-medium">
                         {personalProjects.length === 0
-                          ? 'У вашій особистій скрині ще немає збережених проєктів'
-                          : 'Нічого не знайдено в особистій скрині за вибраними фільтрами'}
+                          ? t('cloud.gallery.144')
+                          : t('cloud.gallery.145')}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
                         {personalProjects.length === 0
-                          ? 'Збережіть поточний проєкт у Мою особисту скриню за допомогою вкладки "Опублікувати"'
-                          : 'Спробуйте змінити критерії пошуку чи фільтрації'}
+                          ? t('cloud.gallery.146')
+                          : t('cloud.gallery.147')}
                       </p>
                     </div>
                   ) : (
@@ -2384,7 +2390,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                 <textarea
                                   value={editProjectDesc}
                                   onChange={(e) => setEditProjectDesc(e.target.value)}
-                                  placeholder="Опис проєкту..."
+                                  placeholder={t('cloud.gallery.148')}
                                   className="w-full px-2 py-1 bg-black/40 border border-gray-700 rounded text-xs text-gray-300 focus:outline-none focus:border-indigo-500 min-h-[60px]"
                                 />
                                 <div className="flex gap-2">
@@ -2393,13 +2399,13 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                     disabled={isSavingProjectDetails}
                                     className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] rounded"
                                   >
-                                    Зберегти
+                                    {t('cloud.gallery.149')}
                                   </button>
                                   <button
                                     onClick={() => setEditingProjectId(null)}
                                     className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white text-[10px] rounded"
                                   >
-                                    Скасувати
+                                    {t('cloud.gallery.150')}
                                   </button>
                                 </div>
                               </div>
@@ -2417,7 +2423,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                         setEditProjectDesc(proj.description || '');
                                       }}
                                       className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-white transition-opacity"
-                                      title="Редагувати назву/опис"
+                                      title={t('cloud.gallery.151')}
                                     >
                                       ✏️
                                     </button>
@@ -2428,7 +2434,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                         ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
                                         : 'bg-gray-500/20 text-gray-300 border-gray-500/30'
                                     }`}>
-                                      {proj.visibility === 'public' ? 'Публічний' : proj.visibility === 'group' ? `Група: ${proj.groupId}` : 'Приватний'}
+                                      {proj.visibility === 'public' ? t('cloud.gallery.152') : proj.visibility === 'group' ? `Група: ${proj.groupId}` : t('cloud.gallery.153')}
                                     </span>
                                     {((proj.sentToGroups && proj.sentToGroups.length > 0) || (proj.visibility === 'group' && proj.groupId)) && (
                                       <button
@@ -2438,7 +2444,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                           setSelectedSentGroupsProject(proj);
                                         }}
                                         className="text-[10px] px-2 py-0.5 rounded-full border bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/40 transition-colors flex items-center gap-1 cursor-pointer font-medium shadow-sm"
-                                        title="Натисніть, щоб переглянути список груп, куди надіслано копію проєкту"
+                                        title={t('cloud.gallery.154')}
                                       >
                                         🏫 {proj.sentToGroups && proj.sentToGroups.length > 0 ? `У групах (${proj.sentToGroups.length})` : `Група: ${proj.groupId}`}
                                       </button>
@@ -2450,8 +2456,8 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                 )}
                               </>
                             )}
-                            <p className="text-xs text-gray-400 mb-1">Підпис: {proj.authorName}</p>
-                            <p className="text-[11px] text-gray-500 mb-3">Об'єктів: {proj.shapesCount}</p>
+                            <p className="text-xs text-gray-400 mb-1">{t('cloud.gallery.155')} {proj.authorName}</p>
+                            <p className="text-[11px] text-gray-500 mb-3">{t('cloud.gallery.156')} {proj.shapesCount}</p>
                           </div>
 
                           <div className="space-y-2 pt-2 border-t border-gray-800">
@@ -2463,14 +2469,14 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                 }}
                                 className="flex-1 py-1.5 px-3 rounded-lg text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"
                               >
-                                Відкрити в редакторі
+                                {t('cloud.gallery.157')}
                               </button>
                               <button
                                 onClick={() => setShareModalProject(proj)}
                                 className="py-1.5 px-2.5 rounded-lg text-xs font-medium bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition-colors flex items-center gap-1 shrink-0"
-                                title="Поділитися посиланням"
+                                title={t('cloud.gallery.158')}
                               >
-                                🔗 Поділитися
+                                {t('cloud.gallery.159')}
                               </button>
                             </div>
 
@@ -2486,7 +2492,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                   }}
                                   className="flex-1 py-1 px-2 rounded text-[11px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/20 transition-colors"
                                 >
-                                  🌐 Виставити у галереї
+                                  {t('cloud.gallery.160')}
                                 </button>
                               ) : (
                                 <button
@@ -2499,7 +2505,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                   }}
                                   className="flex-1 py-1 px-2 rounded text-[11px] bg-gray-500/10 hover:bg-gray-500/20 text-gray-300 border border-gray-500/20 transition-colors"
                                 >
-                                  🔒 Прибрати з галереї
+                                  {t('cloud.gallery.161')}
                                 </button>
                               )}
 
@@ -2507,7 +2513,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                 onClick={() => openSendToGroupModal(proj)}
                                 className="flex-1 py-1 px-2 rounded text-[11px] bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/20 transition-colors"
                               >
-                                🏫 Надіслати копію у групу
+                                {t('cloud.gallery.162')}
                               </button>
 
                               <button
@@ -2519,7 +2525,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                   });
                                 }}
                                 className="py-1 px-2 rounded text-[11px] bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors"
-                                title="Видалити"
+                                title={t('cloud.gallery.163')}
                               >
                                 🗑️
                               </button>
@@ -2550,7 +2556,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         groupTabSubView === 'open' && !isCreatingGroup ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
                       }`}
                     >
-                      🔑 Вхід за кодом
+                      {t('cloud.gallery.164')}
                     </button>
 
                     {isPersonalLoggedIn && (
@@ -2568,7 +2574,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           groupTabSubView === 'my_groups' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
                         }`}
                       >
-                        <span>📋</span> Мої групи/осередки
+                        <span>📋</span> {t('cloud.gallery.165')}
                       </button>
                     )}
 
@@ -2584,14 +2590,14 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           isCreatingGroup ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
                         }`}
                       >
-                        ➕ Створити осередок
+                        {t('cloud.gallery.166')}
                       </button>
                     )}
                   </div>
                   
                   {!isPersonalLoggedIn && groupTabSubView === 'open' && (
                     <div className="text-center p-3 text-xs text-amber-500 bg-amber-500/10 rounded-xl">
-                      💡 Створювати нові групи та переглядати власні осередки можуть лише авторизовані користувачі. Але ви можете приєднатися за кодом доступу та паролем.
+                      {t('cloud.gallery.167')}
                     </div>
                   )}
 
@@ -2599,10 +2605,10 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   {groupTabSubView === 'open' && !isCreatingGroup && (
                     <form onSubmit={handleGroupLogin} className="space-y-3">
                       <div>
-                        <label className="block text-xs text-gray-400 mb-1">Код групи / осередку:*</label>
+                        <label className="block text-xs text-gray-400 mb-1">{t('cloud.gallery.168')}</label>
                         <input
                           type="text"
-                          placeholder="наприклад: HUB-CLASS8A"
+                          placeholder={t('cloud.gallery.169')}
                           value={groupCodeInput}
                           onChange={(e) => setGroupCodeInput(e.target.value.toUpperCase())}
                           className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500 uppercase"
@@ -2611,13 +2617,13 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                       </div>
                       <div>
                         <label className="block text-xs text-gray-400 mb-1">
-                          Пароль доступу до групи:
-                          <span className="text-[10px] text-gray-500 block">Необов'язково для власників та збережених груп</span>
+                          {t('cloud.gallery.170')}
+                          <span className="text-[10px] text-gray-500 block">{t('cloud.gallery.171')}</span>
                         </label>
                         <div className="relative">
                           <input
                             type={showPasswords['groupJoin'] ? "text" : "password"}
-                            placeholder="Залиште порожнім, якщо збережено"
+                            placeholder={t('cloud.gallery.172')}
                             value={groupPasscodeInput}
                             onChange={(e) => setGroupPasscodeInput(e.target.value)}
                             className="w-full px-3 py-2 pr-10 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
@@ -2643,7 +2649,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         disabled={isLoadingGroup}
                         className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-colors"
                       >
-                        {isLoadingGroup ? 'Перевірка...' : 'Відкрити скриню групи'}
+                        {isLoadingGroup ? t('cloud.gallery.173') : t('cloud.gallery.174')}
                       </button>
                     </form>
                   )}
@@ -2654,10 +2660,10 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                       <div className="flex items-center justify-between border-b border-gray-800 pb-2">
                         <div>
                           <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
-                            📋 Мої групи та осередки
+                            {t('cloud.gallery.175')}
                           </h3>
                           <p className="text-[10px] text-gray-400">
-                            Засновані вами осередки або класи, де ви є учасником
+                            {t('cloud.gallery.176')}
                           </p>
                         </div>
                         <button
@@ -2670,19 +2676,19 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           }}
                           className="text-[11px] px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors flex items-center gap-1"
                         >
-                          🔄 Оновити
+                          {t('cloud.gallery.177')}
                         </button>
                       </div>
 
                       {isLoadingMyGroups ? (
                         <div className="text-center py-8 text-xs text-gray-400 flex items-center justify-center gap-2">
                           <VeretkaLoader size="sm" />
-                          <span>Завантаження ваших груп...</span>
+                          <span>{t('cloud.gallery.178')}</span>
                         </div>
                       ) : myUserGroups.length === 0 ? (
                         <div className="text-center py-8 bg-black/30 rounded-xl border border-gray-800/80 p-5 space-y-3">
                           <p className="text-xs text-gray-400 leading-relaxed">
-                            У вас поки немає збережених груп або опублікованих робіт в осередках.
+                            {t('cloud.gallery.179')}
                           </p>
                           <button
                             type="button"
@@ -2693,7 +2699,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                             }}
                             className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors"
                           >
-                            ➕ Створити перший осередок
+                            {t('cloud.gallery.180')}
                           </button>
                         </div>
                       ) : (
@@ -2716,7 +2722,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                     <span className={`text-[9px] px-2 py-0.5 rounded font-medium shrink-0 ${
                                       isCreator ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
                                     }`}>
-                                      {isCreator ? '👑 Засновник' : '👤 Учасник'}
+                                      {isCreator ? t('cloud.gallery.181') : t('cloud.gallery.182')}
                                     </span>
                                   </div>
 
@@ -2725,9 +2731,9 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                   )}
 
                                   <div className="text-[10px] text-gray-400 flex items-center gap-1.5 pt-0.5">
-                                    <span>Режим:</span>
+                                    <span>{t('cloud.gallery.183')}</span>
                                     <span className="font-medium text-gray-300">
-                                      {g.mode === 'education' ? '🏫 Освітній клас' : g.mode === 'readonly' ? '📢 Дошка шаблонів' : '🎨 Спільна майстерня'}
+                                      {g.mode === 'education' ? t('cloud.gallery.184') : g.mode === 'readonly' ? t('cloud.gallery.185') : t('cloud.gallery.186')}
                                     </span>
                                   </div>
                                 </div>
@@ -2755,7 +2761,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                   }}
                                   className="w-full py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white text-xs font-medium border border-indigo-500/30 transition-all text-center mt-2"
                                 >
-                                  🚀 Увійти в цей осередок
+                                  {t('cloud.gallery.187')}
                                 </button>
                               </div>
                             );
@@ -2771,7 +2777,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                       {/* Scenario Selector Cards */}
                       <div>
                         <label className="block text-xs font-semibold text-gray-300 mb-2">
-                          Оберіть режим (сценарій використання):
+                          {t('cloud.gallery.188')}
                         </label>
                         <div className="grid grid-cols-3 gap-2">
                           <button
@@ -2785,8 +2791,8 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           >
                             <span className="text-lg mb-1">🎨</span>
                             <div>
-                              <div className="text-xs font-bold leading-tight">Спільна майстерня</div>
-                              <div className="text-[9px] text-gray-400 mt-0.5">Всі бачать все</div>
+                              <div className="text-xs font-bold leading-tight">{t('cloud.gallery.189')}</div>
+                              <div className="text-[9px] text-gray-400 mt-0.5">{t('cloud.gallery.190')}</div>
                             </div>
                           </button>
 
@@ -2801,8 +2807,8 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           >
                             <span className="text-lg mb-1">🏫</span>
                             <div>
-                              <div className="text-xs font-bold leading-tight">Освітній клас</div>
-                              <div className="text-[9px] text-gray-400 mt-0.5">Приватна здача</div>
+                              <div className="text-xs font-bold leading-tight">{t('cloud.gallery.191')}</div>
+                              <div className="text-[9px] text-gray-400 mt-0.5">{t('cloud.gallery.192')}</div>
                             </div>
                           </button>
 
@@ -2817,8 +2823,8 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           >
                             <span className="text-lg mb-1">📢</span>
                             <div>
-                              <div className="text-xs font-bold leading-tight">Дошка шаблонів</div>
-                              <div className="text-[9px] text-gray-400 mt-0.5">Публікує засновник</div>
+                              <div className="text-xs font-bold leading-tight">{t('cloud.gallery.193')}</div>
+                              <div className="text-[9px] text-gray-400 mt-0.5">{t('cloud.gallery.194')}</div>
                             </div>
                           </button>
                         </div>
@@ -2834,16 +2840,16 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                       }`}>
                         {newGroupMode === 'education' && (
                           <div className="space-y-2">
-                            <strong className="font-semibold block text-amber-300">🏫 Особливості Освітнього Класу:</strong>
+                            <strong className="font-semibold block text-amber-300">{t('cloud.gallery.195')}</strong>
                             <p className="text-[11px] text-gray-300">
-                              • Учні повідомляють цей Код та Пароль і надсилають сюди виконані завдання.<br />
-                              • <span className="text-amber-300 font-medium">Захист від списування:</span> Учні бачать лише свої роботи та ваші шаблони.<br />
-                              • Ви як засновник маєте повний доступ до перевірки робіт усіх учнів.
+                              {t('cloud.gallery.196')}<br />
+                              • <span className="text-amber-300 font-medium">{t('cloud.gallery.197')}</span> {t('cloud.gallery.198')}<br />
+                              {t('cloud.gallery.199')}
                             </p>
 
                             <div className="mt-3 pt-2 border-t border-amber-500/20 space-y-1.5">
                               <label className="block text-xs font-semibold text-amber-200">
-                                🎓 Правило повторного надсилання робіт учнями:
+                                {t('cloud.gallery.200')}
                               </label>
                               <div className="space-y-1 text-[11px]">
                                 <label className="flex items-start gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-amber-500/10 transition-colors">
@@ -2856,8 +2862,8 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                     className="mt-0.5 accent-amber-500"
                                   />
                                   <div>
-                                    <span className="font-semibold text-white">🟢 Вільне оновлення (дозволити перезапис)</span>
-                                    <p className="text-[10px] text-gray-400">Учень може оновлювати існуючу здану роботу — стара версія перезаписується.</p>
+                                    <span className="font-semibold text-white">{t('cloud.gallery.201')}</span>
+                                    <p className="text-[10px] text-gray-400">{t('cloud.gallery.202')}</p>
                                   </div>
                                 </label>
 
@@ -2871,8 +2877,8 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                     className="mt-0.5 accent-amber-500"
                                   />
                                   <div>
-                                    <span className="font-semibold text-white">🔵 Авто-версіонування (зберігати v2, v3...)</span>
-                                    <p className="text-[10px] text-gray-400">Кожне повторне надсилання створює окрему нову версію роботи для відстеження прогресу.</p>
+                                    <span className="font-semibold text-white">{t('cloud.gallery.203')}</span>
+                                    <p className="text-[10px] text-gray-400">{t('cloud.gallery.204')}</p>
                                   </div>
                                 </label>
 
@@ -2886,8 +2892,8 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                     className="mt-0.5 accent-amber-500"
                                   />
                                   <div>
-                                    <span className="font-semibold text-white">🔒 Фіксація здачі (заборона повторного оновлення)</span>
-                                    <p className="text-[10px] text-gray-400">Після здачі учень не може оновити цей же проєкт (ідеально для контрольних робіт).</p>
+                                    <span className="font-semibold text-white">{t('cloud.gallery.205')}</span>
+                                    <p className="text-[10px] text-gray-400">{t('cloud.gallery.206')}</p>
                                   </div>
                                 </label>
                               </div>
@@ -2896,21 +2902,21 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         )}
                         {newGroupMode === 'gallery' && (
                           <div className="space-y-1">
-                            <strong className="font-semibold block text-indigo-300">🎨 Особливості Спільної Майстерні:</strong>
+                            <strong className="font-semibold block text-indigo-300">{t('cloud.gallery.207')}</strong>
                             <p className="text-[11px] text-gray-300">
-                              • Відкрита колекція для команди, студії чи групи за інтересами.<br />
-                              • Усі учасники з кодом та паролем можуть публікувати та переглядати роботи один одного.<br />
-                              • Чудовий вибір для хакатонів, обміну досвідом та спільної творчості.
+                              {t('cloud.gallery.208')}<br />
+                              {t('cloud.gallery.209')}<br />
+                              {t('cloud.gallery.210')}
                             </p>
                           </div>
                         )}
                         {newGroupMode === 'readonly' && (
                           <div className="space-y-1">
-                            <strong className="font-semibold block text-purple-300">📢 Особливості Дошки Шаблонів:</strong>
+                            <strong className="font-semibold block text-purple-300">{t('cloud.gallery.211')}</strong>
                             <p className="text-[11px] text-gray-300">
-                              • Каталог готових заготовок, векторних шрифтів та векторних узорів.<br />
-                              • Учасники можуть заходити й завантажувати копії у свій редактор.<br />
-                              • <span className="text-purple-300 font-medium">Обмеження публікації:</span> Надсилати нові проєкти сюди може ТІЛЬКИ засновник (ви).
+                              {t('cloud.gallery.212')}<br />
+                              {t('cloud.gallery.213')}<br />
+                              • <span className="text-purple-300 font-medium">{t('cloud.gallery.214')}</span> {t('cloud.gallery.215')}
                             </p>
                           </div>
                         )}
@@ -2919,16 +2925,16 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                       {/* Dynamic Form Fields */}
                       <div>
                         <label className="block text-xs font-medium text-gray-300 mb-1">
-                          {newGroupMode === 'education' ? 'Назва класу / групи:*' :
-                           newGroupMode === 'readonly' ? 'Назва колекції шаблонів:*' :
-                           'Назва групи / осередку:*'}
+                          {newGroupMode === 'education' ? t('cloud.gallery.216') :
+                           newGroupMode === 'readonly' ? t('cloud.gallery.217') :
+                           t('cloud.gallery.218')}
                         </label>
                         <input
                           type="text"
                           placeholder={
-                            newGroupMode === 'education' ? 'наприклад: 8-А клас (Графічний дизайн)' :
-                            newGroupMode === 'readonly' ? 'наприклад: Офіційні шаблони Веретка' :
-                            'наприклад: Клуб вектористів "Палітра"'
+                            newGroupMode === 'education' ? t('cloud.gallery.219') :
+                            newGroupMode === 'readonly' ? t('cloud.gallery.220') :
+                            t('cloud.gallery.221')
                           }
                           value={newGroupName}
                           onChange={(e) => setNewGroupName(e.target.value)}
@@ -2939,7 +2945,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
                       <div>
                         <label className="block text-xs font-medium text-gray-300 mb-1">
-                          Унікальний Код (англійськими літерами):*
+                          {t('cloud.gallery.222')}
                         </label>
                         <input
                           type="text"
@@ -2956,12 +2962,12 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-gray-300 mb-1">Опис (опціонально):</label>
+                        <label className="block text-xs font-medium text-gray-300 mb-1">{t('cloud.gallery.223')}</label>
                         <input
                           type="text"
                           placeholder={
-                            newGroupMode === 'education' ? 'наприклад: Здача практичних робіт з теми "Векторні форми"' :
-                            'Короткий опис осередка'
+                            newGroupMode === 'education' ? t('cloud.gallery.224') :
+                            t('cloud.gallery.225')
                           }
                           value={newGroupDesc}
                           onChange={(e) => setNewGroupDesc(e.target.value)}
@@ -2971,14 +2977,14 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
                       <div>
                         <label className="block text-xs font-medium text-gray-300 mb-1">
-                          {newGroupMode === 'education' ? 'Пароль класу (для учнів):*' :
-                           newGroupMode === 'readonly' ? 'Пароль доступу до шаблонів:*' :
-                           'Пароль групи:*'}
+                          {newGroupMode === 'education' ? t('cloud.gallery.226') :
+                           newGroupMode === 'readonly' ? t('cloud.gallery.227') :
+                           t('cloud.gallery.228')}
                         </label>
                         <div className="relative">
                           <input
                             type={showPasswords['newGroup'] ? "text" : "password"}
-                            placeholder="Придумайте пароль доступу"
+                            placeholder={t('cloud.gallery.229')}
                             value={newGroupPasscode}
                             onChange={(e) => setNewGroupPasscode(e.target.value)}
                             className="w-full px-3 py-2 pr-10 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
@@ -2994,17 +3000,17 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         </div>
                         <p className="text-[10px] text-gray-500 mt-1">
                           {newGroupMode === 'education'
-                            ? '💡 Повідомте цей пароль та код учням для входу в клас.'
-                            : '💡 Знаючи цей пароль та код, учасники зможуть увійти в осередок.'}
+                            ? t('cloud.gallery.230')
+                            : t('cloud.gallery.231')}
                         </p>
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-gray-300 mb-1">Повторіть пароль:*</label>
+                        <label className="block text-xs font-medium text-gray-300 mb-1">{t('cloud.gallery.232')}</label>
                         <div className="relative">
                           <input
                             type={showPasswords['newGroupConfirm'] ? "text" : "password"}
-                            placeholder="Підтвердіть пароль"
+                            placeholder={t('cloud.gallery.233')}
                             value={newGroupConfirmPasscode}
                             onChange={(e) => setNewGroupConfirmPasscode(e.target.value)}
                             className="w-full px-3 py-2 pr-10 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
@@ -3021,7 +3027,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-gray-400 mb-1">Засновник (Адміністратор):</label>
+                        <label className="block text-xs font-medium text-gray-400 mb-1">{t('cloud.gallery.234')}</label>
                         <input
                           type="text"
                           value={newGroupCreator}
@@ -3041,7 +3047,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         disabled={isLoadingGroup}
                         className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm transition-colors shadow-lg shadow-emerald-900/20"
                       >
-                        {isLoadingGroup ? 'Створення...' : 'Створити осередок'}
+                        {isLoadingGroup ? t('cloud.gallery.235') : t('cloud.gallery.236')}
                       </button>
                     </form>
                   )}
@@ -3065,7 +3071,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                 isPersonalLoggedIn ? 'bg-blue-500/20 text-blue-300 border-blue-500/40' :
                                 'bg-gray-500/20 text-gray-400 border-gray-500/40'
                               }`}>
-                                {isCreator ? '👑 Засновник групи' : isPersonalLoggedIn ? '👤 Учасник групи' : '👀 Гість'}
+                                {isCreator ? t('cloud.gallery.237') : isPersonalLoggedIn ? t('cloud.gallery.238') : t('cloud.gallery.239')}
                               </span>
                             );
                           })()}
@@ -3076,11 +3082,11 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         )}
 
                         <div className="mt-2 text-[11px] flex items-center gap-2">
-                          <span className="text-gray-400">Режим роботи:</span>
+                          <span className="text-gray-400">{t('cloud.gallery.240')}</span>
                           <span className="px-2 py-0.5 rounded bg-gray-800 text-gray-200 border border-gray-700 font-medium">
-                            {activeGroup.mode === 'education' ? '🏫 Освітній клас (Учні бачать лише свої роботи)' : 
-                             activeGroup.mode === 'readonly' ? '🔒 Дошка шаблонів (Публікує лише засновник)' : 
-                             '🎨 Спільна майстерня (Всі бачать все)'}
+                            {activeGroup.mode === 'education' ? t('cloud.gallery.241') : 
+                             activeGroup.mode === 'readonly' ? t('cloud.gallery.242') : 
+                             t('cloud.gallery.243')}
                           </span>
                         </div>
                       </div>
@@ -3090,18 +3096,18 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           type="button"
                           onClick={() => handleOpenGroupMembers(activeGroup.groupCode)}
                           className="px-3 py-1.5 rounded-lg text-xs bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white font-semibold border border-indigo-500/40 transition-colors flex items-center gap-1.5 shadow-sm"
-                          title="Переглянути всіх учасників цієї групи"
+                          title={t('cloud.gallery.244')}
                         >
-                          👥 Учасники
+                          {t('cloud.gallery.245')}
                         </button>
 
                         <button
                           type="button"
                           onClick={() => handleOpenGroupSettings(activeGroup)}
                           className="px-3 py-1.5 rounded-lg text-xs bg-gray-800 hover:bg-gray-700 text-gray-200 font-semibold border border-gray-700 transition-colors flex items-center gap-1.5 shadow-sm"
-                          title="Налаштування цієї групи"
+                          title={t('cloud.gallery.246')}
                         >
-                          ⚙️ Налаштування
+                          {t('cloud.gallery.247')}
                         </button>
 
                         {isPersonalLoggedIn && (
@@ -3116,9 +3122,9 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                               setIsLoadingMyGroups(false);
                             }}
                             className="px-3 py-1.5 rounded-lg text-xs bg-black/40 hover:bg-gray-800 text-gray-300 font-medium border border-gray-800 transition-colors flex items-center gap-1"
-                            title="Повернутися до моїх груп"
+                            title={t('cloud.gallery.248')}
                           >
-                            📋 Мої групи
+                            {t('cloud.gallery.249')}
                           </button>
                         )}
                       </div>
@@ -3127,7 +3133,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   <FilterToolbar
                     searchQuery={groupSearchQuery}
                     onSearchChange={setGroupSearchQuery}
-                    searchPlaceholder="Пошук у скрині групи..."
+                    searchPlaceholder={t('cloud.gallery.250')}
                     sortBy={sortBy}
                     onSortChange={setSortBy}
                     shapesFilter={shapesFilter}
@@ -3145,19 +3151,19 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   {isLoadingGroup ? (
                     <div className="py-12 flex flex-col items-center justify-center">
                       <VeretkaLoader className="w-24 h-24 mb-4" />
-                      <div className="text-sm font-medium text-[var(--text-tertiary)] animate-pulse">Завантаження осередку...</div>
+                      <div className="text-sm font-medium text-[var(--text-tertiary)] animate-pulse">{t('cloud.gallery.251')}</div>
                     </div>
                   ) : displayedGroupProjects.length === 0 ? (
                     <div className="py-12 text-center text-gray-400 bg-black/20 rounded-2xl border border-dashed border-gray-700">
                       <p className="text-base font-medium">
                         {groupProjects.length === 0
-                          ? 'У цій групі ще немає опублікованих проєктів'
-                          : 'Нічого не знайдено у групі за вибраними фільтрами'}
+                          ? t('cloud.gallery.252')
+                          : t('cloud.gallery.253')}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
                         {groupProjects.length === 0
-                          ? 'Опублікуйте свій проєкт у цю групу через вкладку "Опублікувати"'
-                          : 'Спробуйте змінити критерії пошуку чи фільтрації'}
+                          ? t('cloud.gallery.254')
+                          : t('cloud.gallery.255')}
                       </p>
                     </div>
                   ) : (
@@ -3184,7 +3190,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                 <textarea
                                   value={editProjectDesc}
                                   onChange={(e) => setEditProjectDesc(e.target.value)}
-                                  placeholder="Опис проєкту..."
+                                  placeholder={t('cloud.gallery.256')}
                                   className="w-full px-2 py-1 bg-black/40 border border-gray-700 rounded text-xs text-gray-300 focus:outline-none focus:border-indigo-500 min-h-[60px]"
                                 />
                                 <div className="flex gap-2">
@@ -3193,13 +3199,13 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                     disabled={isSavingProjectDetails}
                                     className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] rounded"
                                   >
-                                    Зберегти
+                                    {t('cloud.gallery.257')}
                                   </button>
                                   <button
                                     onClick={() => setEditingProjectId(null)}
                                     className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white text-[10px] rounded"
                                   >
-                                    Скасувати
+                                    {t('cloud.gallery.258')}
                                   </button>
                                 </div>
                               </div>
@@ -3218,13 +3224,13 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                           setEditProjectDesc(proj.description || '');
                                         }}
                                         className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-white transition-opacity"
-                                        title="Редагувати назву/опис"
+                                        title={t('cloud.gallery.259')}
                                       >
                                         ✏️
                                       </button>
                                     )}
                                     <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">
-                                      Група
+                                      {t('cloud.gallery.260')}
                                     </span>
                                   </div>
                                 </div>
@@ -3233,8 +3239,8 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                 )}
                               </>
                             )}
-                            <p className="text-xs text-gray-400 mb-1">Автор: {proj.authorName} (@{proj.ownerNickname})</p>
-                            <p className="text-[11px] text-gray-500 mb-3">Об'єктів: {proj.shapesCount}</p>
+                            <p className="text-xs text-gray-400 mb-1">{t('cloud.gallery.261')} {proj.authorName} (@{proj.ownerNickname})</p>
+                            <p className="text-[11px] text-gray-500 mb-3">{t('cloud.gallery.262')} {proj.shapesCount}</p>
                           </div>
 
                           <div className="flex items-center gap-2 pt-2 border-t border-gray-800">
@@ -3245,12 +3251,12 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                               }}
                               className="flex-1 py-1.5 px-3 rounded-lg text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"
                             >
-                              Відкрити в редакторі
+                              {t('cloud.gallery.263')}
                             </button>
                             <button
                               onClick={() => setShareModalProject(proj)}
                               className="py-1.5 px-2.5 rounded-lg text-xs font-medium bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition-colors"
-                              title="Поділитися посиланням"
+                              title={t('cloud.gallery.264')}
                             >
                               🔗
                             </button>
@@ -3263,7 +3269,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                 });
                               }}
                               className="py-1.5 px-2.5 rounded-lg text-xs font-medium bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors"
-                              title="Видалити з групи"
+                              title={t('cloud.gallery.265')}
                             >
                               🗑️
                             </button>
@@ -3281,20 +3287,20 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
           {activeTab === 'publish' && (
             <div className="max-w-xl mx-auto bg-[var(--bg-primary,#11111b)] p-6 rounded-2xl border border-[var(--border-color,#313244)] space-y-4">
               <div className="text-center">
-                <h3 className="text-lg font-bold">Опублікувати / Зберегти поточний проєкт</h3>
+                <h3 className="text-lg font-bold">{t('cloud.gallery.266')}</h3>
                 <p className="text-xs text-gray-400 mt-1">
-                  На полотні зараз: <span className="text-indigo-400 font-semibold">{currentProjectShapesCount} об'єктів</span>
+                  {t('cloud.gallery.267')} <span className="text-indigo-400 font-semibold">{currentProjectShapesCount} {t('cloud.gallery.268')}</span>
                 </p>
               </div>
 
               <form onSubmit={handlePublishSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-300 mb-1">Назва проєкту:*</label>
+                  <label className="block text-xs font-medium text-gray-300 mb-1">{t('cloud.gallery.269')}</label>
                   <input
                     type="text"
                     value={pubTitle}
                     onChange={(e) => setPubTitle(e.target.value)}
-                    placeholder="наприклад: Моє сонечко"
+                    placeholder={t('cloud.gallery.270')}
                     className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500 text-white"
                     required
                   />
@@ -3303,7 +3309,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 {!isPersonalLoggedIn ? (
                   <div className="bg-gradient-to-r from-amber-500/10 via-indigo-500/10 to-amber-500/10 p-4 rounded-xl border border-amber-500/30 text-center space-y-3">
                     <p className="text-xs text-amber-200/90 leading-relaxed">
-                      Для публікації та збереження проєкту у вашій особистій скрині, будь ласка, відкрийте свою скриню.
+                      {t('cloud.gallery.271')}
                     </p>
                     <button
                       type="button"
@@ -3315,13 +3321,13 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                       className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2"
                     >
                       <span>🔓</span>
-                      <span>Увійти (Відкрити власну скриню)</span>
+                      <span>{t('cloud.gallery.272')}</span>
                     </button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-medium text-gray-300 mb-1">Ім'я автора (підпис):</label>
+                      <label className="block text-xs font-medium text-gray-300 mb-1">{t('cloud.gallery.273')}</label>
                       <input
                         type="text"
                         value={pubAuthorName}
@@ -3329,13 +3335,13 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           setPubAuthorName(e.target.value);
                           localStorage.setItem('veretka_author_name', e.target.value);
                         }}
-                        placeholder="Олена К."
+                        placeholder={t('cloud.gallery.274')}
                         className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500 text-white"
                       />
                     </div>
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="text-xs font-medium text-gray-300">Ваш Нікнейм:*</label>
+                        <label className="text-xs font-medium text-gray-300">{t('cloud.gallery.275')}</label>
                         <button
                           type="button"
                           onClick={() => {
@@ -3343,9 +3349,9 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                             setPersonalAuthMode('login');
                           }}
                           className="text-[11px] text-indigo-400 hover:text-indigo-300 underline underline-offset-2 flex items-center gap-1 font-medium"
-                          title="Перейти до входу для зміни акаунту"
+                          title={t('cloud.gallery.276')}
                         >
-                          🔄 Змінити
+                          {t('cloud.gallery.277')}
                         </button>
                       </div>
                       <input
@@ -3362,21 +3368,21 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
                 <div>
                   <label className="block text-xs font-medium text-gray-300 mb-1">
-                    Опис проєкту (необов'язково):
+                    {t('cloud.gallery.278')}
                   </label>
                   <textarea
                     value={pubDescription}
                     onChange={(e) => setPubDescription(e.target.value)}
-                    placeholder="Короткий опис вашого проєкту, використаних орнаментів або коментар..."
+                    placeholder={t('cloud.gallery.279')}
                     rows={2}
                     className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500 text-white placeholder:text-gray-600 resize-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-300 mb-2">Налаштування публікації:</label>
+                  <label className="block text-xs font-medium text-gray-300 mb-2">{t('cloud.gallery.280')}</label>
                   <div className="text-xs text-gray-400 mb-3 p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
-                    ℹ️ Ваш проєкт завжди автоматично зберігається у Вашу <b>Особисту скриню</b>. Нижче Ви можете обрати додаткові місця для публікації.
+                    {t('cloud.gallery.281')} <b>{t('cloud.gallery.282')}</b>{t('cloud.gallery.283')}
                   </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
@@ -3392,8 +3398,8 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         />
                       </div>
                       <div>
-                        <div className={`font-semibold ${pubIsPublic ? 'text-emerald-400' : 'text-gray-300'}`}>🌐 Загальна галерея</div>
-                        <div className="text-[10px] text-gray-500 mt-0.5">Проєкт буде видно всім у вкладці "Публічна галерея".</div>
+                        <div className={`font-semibold ${pubIsPublic ? 'text-emerald-400' : 'text-gray-300'}`}>{t('cloud.gallery.284')}</div>
+                        <div className="text-[10px] text-gray-500 mt-0.5">{t('cloud.gallery.285')}</div>
                       </div>
                     </label>
 
@@ -3409,8 +3415,8 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         />
                       </div>
                       <div>
-                        <div className={`font-semibold ${pubIsGroup ? 'text-amber-400' : 'text-gray-300'}`}>🏫 Скриня групи</div>
-                        <div className="text-[10px] text-gray-500 mt-0.5">Створити копію у групі.</div>
+                        <div className={`font-semibold ${pubIsGroup ? 'text-amber-400' : 'text-gray-300'}`}>{t('cloud.gallery.286')}</div>
+                        <div className="text-[10px] text-gray-500 mt-0.5">{t('cloud.gallery.287')}</div>
                       </div>
                     </label>
                   </div>
@@ -3418,7 +3424,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   {pubIsGroup && (
                     <div className="bg-amber-950/20 p-3.5 rounded-xl border border-amber-500/30 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
                       <div className="flex items-center justify-between">
-                        <label className="block text-xs font-medium text-amber-300">Код групи / осередка:*</label>
+                        <label className="block text-xs font-medium text-amber-300">{t('cloud.gallery.288')}</label>
                         {isPersonalLoggedIn && (
                           <button
                             type="button"
@@ -3433,18 +3439,18 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                             }}
                             className="text-[11px] px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition-colors font-medium flex items-center gap-1"
                           >
-                            📋 Ваші групи
+                            {t('cloud.gallery.289')}
                           </button>
                         )}
                       </div>
 
                       {showGroupPicker && (
                         <div className="bg-black/80 border border-amber-500/40 rounded-xl p-3 space-y-2 max-h-48 overflow-y-auto">
-                          <div className="text-[11px] font-semibold text-gray-400 mb-1">Оберіть вашу групу:</div>
+                          <div className="text-[11px] font-semibold text-gray-400 mb-1">{t('cloud.gallery.290')}</div>
                           {isLoadingMyGroups ? (
-                            <p className="text-xs text-gray-400 animate-pulse py-2 text-center">Завантаження вашої групи...</p>
+                            <p className="text-xs text-gray-400 animate-pulse py-2 text-center">{t('cloud.gallery.291')}</p>
                           ) : myUserGroups.length === 0 ? (
-                            <p className="text-xs text-gray-400 py-2 text-center">У вас ще немає збережених груп</p>
+                            <p className="text-xs text-gray-400 py-2 text-center">{t('cloud.gallery.292')}</p>
                           ) : (
                             myUserGroups.map((g) => (
                               <button
@@ -3469,10 +3475,10 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                     <span>{g.name}</span>
                                   </div>
                                   <div className="text-[10px] text-gray-400 mt-0.5">
-                                    Режим: {g.mode === 'education' ? '🏫 Освітній' : g.mode === 'readonly' ? '🔒 Дошка шаблонів' : '🎨 Галерея'}
+                                    {t('cloud.gallery.293')} {g.mode === 'education' ? t('cloud.gallery.294') : g.mode === 'readonly' ? t('cloud.gallery.295') : t('cloud.gallery.296')}
                                   </div>
                                 </div>
-                                <span className="text-xs text-amber-400">Обрати ➔</span>
+                                <span className="text-xs text-amber-400">{t('cloud.gallery.297')}</span>
                               </button>
                             ))
                           )}
@@ -3491,7 +3497,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                             setFetchedGroupInfo(null);
                           }
                         }}
-                        placeholder="наприклад: HUB-ROBOT3"
+                        placeholder={t('cloud.gallery.298')}
                         className="w-full px-3 py-2 rounded-lg bg-black/50 border border-amber-500/40 text-sm uppercase focus:outline-none focus:border-amber-400 text-white font-mono"
                         required={pubIsGroup}
                       />
@@ -3501,9 +3507,9 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-amber-300">{fetchedGroupInfo.name}</span>
                             <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-mono">
-                              {fetchedGroupInfo.mode === 'education' ? '🏫 Освітній режим' : 
-                               fetchedGroupInfo.mode === 'readonly' ? '🔒 Дошка шаблонів' : 
-                               '🎨 Галерея'}
+                              {fetchedGroupInfo.mode === 'education' ? t('cloud.gallery.299') : 
+                               fetchedGroupInfo.mode === 'readonly' ? t('cloud.gallery.300') : 
+                               t('cloud.gallery.301')}
                             </span>
                           </div>
                           {fetchedGroupInfo.description && (
@@ -3511,13 +3517,13 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           )}
                           <div className="text-[10px] text-gray-400 pt-1 border-t border-gray-800">
                             {fetchedGroupInfo.mode === 'education' && (
-                              <p className="text-amber-200/90">💡 В освітньому режимі учні бачать тільки свої опубліковані роботи.</p>
+                              <p className="text-amber-200/90">{t('cloud.gallery.302')}</p>
                             )}
                             {fetchedGroupInfo.mode === 'readonly' && (
-                              <p className="text-amber-200/90">⚠️ Режим шаблонів: публікація дозволена засновникy (@{fetchedGroupInfo.creatorNickname}).</p>
+                              <p className="text-amber-200/90">{t('cloud.gallery.303')}{fetchedGroupInfo.creatorNickname}).</p>
                             )}
                             {fetchedGroupInfo.mode === 'gallery' && (
-                              <p className="text-emerald-300/90">✓ Відкрита галерея: всі учасники групи можуть публікувати роботи.</p>
+                              <p className="text-emerald-300/90">{t('cloud.gallery.304')}</p>
                             )}
                           </div>
                         </div>
@@ -3528,7 +3534,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
                 {publishStatusMessage && (
                   <p className={`text-xs p-2.5 rounded-xl border ${
-                    publishStatusMessage.includes('успішно')
+                    publishStatusMessage.includes(t('cloud.gallery.305'))
                       ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
                       : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
                   }`}>
@@ -3541,7 +3547,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   disabled={isPublishing}
                   className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition-colors shadow-lg shadow-emerald-900/30 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isPublishing ? 'Збереження...' : '🚀 Опублікувати проєкт'}
+                  {isPublishing ? t('cloud.gallery.306') : t('cloud.gallery.307')}
                 </button>
               </form>
             </div>
@@ -3555,7 +3561,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
             <div className="bg-[var(--bg-secondary,#1e1e2e)] text-white p-6 rounded-2xl border border-[var(--border-color,#313244)] max-w-md w-full space-y-4 shadow-2xl relative">
               <div className="flex justify-between items-center pb-2 border-b border-gray-800">
                 <h4 className="font-bold text-base flex items-center gap-2 text-indigo-300">
-                  ⚙️ Редагування акаунту
+                  {t('cloud.gallery.308')}
                 </h4>
                 <button
                   type="button"
@@ -3570,27 +3576,27 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
               </div>
 
               <div className="text-xs text-gray-300 space-y-1">
-                <p>Нікнейм скрині: <strong className="text-white font-mono">@{personalNickname}</strong></p>
-                <p className="text-gray-400">Тут ви можете прив'язати або оновити пошту, а також змінити пароль до вашої скрині.</p>
+                <p>{t('cloud.gallery.309')} <strong className="text-white font-mono">@{personalNickname}</strong></p>
+                <p className="text-gray-400">{t('cloud.gallery.310')}</p>
               </div>
 
               <form onSubmit={handleEditProfileSubmit} className="space-y-3.5">
                 <div>
                   <label className="block text-xs font-medium text-gray-300 mb-1">
-                    Ім'я (підпис):
+                    {t('cloud.gallery.311')}
                   </label>
                   <input
                     type="text"
                     value={editAuthorNameInput}
                     onChange={(e) => setEditAuthorNameInput(e.target.value)}
-                    placeholder="Олена К."
+                    placeholder={t('cloud.gallery.312')}
                     className="w-full px-3 py-2 rounded-xl bg-black/50 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500 text-white"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-gray-300 mb-1">
-                    Електронна пошта (Email):
+                    {t('cloud.gallery.313')}
                   </label>
                   <input
                     type="email"
@@ -3600,23 +3606,23 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                     className="w-full px-3 py-2 rounded-xl bg-black/50 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
                   />
                   <p className="text-[11px] text-indigo-300/80 mt-1">
-                    💡 Прив'яжіть пошту, щоб не втратити доступ та мати змогу відновити Нікнейм.
+                    {t('cloud.gallery.314')}
                   </p>
                 </div>
 
                 <div className="border-t border-gray-800 pt-3 space-y-3">
-                  <p className="text-xs font-semibold text-gray-300">Зміна паролю (необов'язково):</p>
+                  <p className="text-xs font-semibold text-gray-300">{t('cloud.gallery.315')}</p>
 
                   <div>
                     <label className="block text-xs font-medium text-gray-400 mb-1">
-                      Новий пароль:
+                      {t('cloud.gallery.316')}
                     </label>
                     <div className="relative">
                       <input
                         type={showPasswords['editNew'] ? "text" : "password"}
                         value={editNewPasscode}
                         onChange={(e) => setEditNewPasscode(e.target.value)}
-                        placeholder="Залиште порожнім, якщо не змінюєте"
+                        placeholder={t('cloud.gallery.317')}
                         className="w-full px-3 py-2 pr-10 rounded-xl bg-black/50 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
                       />
                       <button
@@ -3631,14 +3637,14 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
                   <div>
                     <label className="block text-xs font-medium text-gray-400 mb-1">
-                      Поточний пароль (для підтвердження):
+                      {t('cloud.gallery.318')}
                     </label>
                     <div className="relative">
                       <input
                         type={showPasswords['editCurrent'] ? "text" : "password"}
                         value={editCurrentPasscode}
                         onChange={(e) => setEditCurrentPasscode(e.target.value)}
-                        placeholder="Введіть поточний пароль"
+                        placeholder={t('cloud.gallery.319')}
                         className="w-full px-3 py-2 pr-10 rounded-xl bg-black/50 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
                       />
                       <button
@@ -3672,14 +3678,14 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                     }}
                     className="flex-1 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors"
                   >
-                    Скасувати
+                    {t('cloud.gallery.320')}
                   </button>
                   <button
                     type="submit"
                     disabled={isUpdatingProfile}
                     className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-colors shadow-md shadow-indigo-600/30"
                   >
-                    {isUpdatingProfile ? 'Збереження...' : 'Зберегти зміни'}
+                    {isUpdatingProfile ? t('cloud.gallery.321') : t('cloud.gallery.322')}
                   </button>
                 </div>
               </form>
@@ -3695,12 +3701,12 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                     }}
                     className="w-full py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
                   >
-                    🗑️ Видалити особисту скриню (акаунт)
+                    {t('cloud.gallery.323')}
                   </button>
                 ) : (
                   <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3.5 space-y-3 text-left">
                     <p className="text-xs text-red-300 leading-relaxed font-medium">
-                      ⚠️ <strong>Увага! Незворотна дія!</strong> Ви збираєтеся остаточно видалити вашу особисту скриню <span className="font-mono text-white">@{personalNickname}</span>. Усі ваші проєкти в цій скрині будуть видалені безповоротно.
+                      ⚠️ <strong>{t('cloud.gallery.324')}</strong> {t('cloud.gallery.325')} <span className="font-mono text-white">@{personalNickname}</span>{t('cloud.gallery.326')}
                     </p>
 
                     {deleteAccountError && (
@@ -3715,7 +3721,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         onClick={() => setShowDeleteAccountConfirm(false)}
                         className="flex-1 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors"
                       >
-                        Скасувати
+                        {t('cloud.gallery.327')}
                       </button>
                       <button
                         type="button"
@@ -3723,7 +3729,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         disabled={isDeletingAccount}
                         className="flex-1 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition-colors shadow-md shadow-red-900/40 flex items-center justify-center gap-1"
                       >
-                        {isDeletingAccount ? 'Видалення...' : '🗑️ Так, видалити скриню'}
+                        {isDeletingAccount ? t('cloud.gallery.328') : t('cloud.gallery.329')}
                       </button>
                     </div>
                   </div>
@@ -3739,7 +3745,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
             <div className="bg-[var(--bg-secondary,#1e1e2e)] text-white p-6 rounded-2xl border border-[var(--border-color,#313244)] max-w-md w-full space-y-4 shadow-2xl relative">
               <div className="flex justify-between items-center pb-2 border-b border-gray-800">
                 <h4 className="font-bold text-base flex items-center gap-2 text-red-400">
-                  🗑️ Видалення групи / осередку
+                  {t('cloud.gallery.330')}
                 </h4>
                 <button
                   type="button"
@@ -3751,21 +3757,20 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
               </div>
 
               <p className="text-xs text-gray-300 leading-relaxed">
-                Ви збираєтеся повністю видалити групу <strong className="text-white">{activeGroup.name}</strong> (<span className="font-mono text-amber-300">{activeGroup.groupCode}</span>).
-                Усі учасники втратять доступ до цієї групи.
+                {t('cloud.gallery.331')} <strong className="text-white">{activeGroup.name}</strong> (<span className="font-mono text-amber-300">{activeGroup.groupCode}</span>{t('cloud.gallery.332')}
               </p>
 
               <form onSubmit={handleDeleteGroupSubmit} className="space-y-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-300 mb-1">
-                    Введіть пароль групи для підтвердження:*
+                    {t('cloud.gallery.333')}
                   </label>
                   <div className="relative">
                     <input
                       type={showPasswords['deleteGroup'] ? "text" : "password"}
                       value={deleteGroupPasscode}
                       onChange={(e) => setDeleteGroupPasscode(e.target.value)}
-                      placeholder="Пароль групи"
+                      placeholder={t('cloud.gallery.334')}
                       className="w-full px-3 py-2 pr-10 rounded-xl bg-black/50 border border-red-500/30 text-sm focus:outline-none focus:border-red-500"
                       required
                     />
@@ -3791,14 +3796,14 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                     onClick={() => setShowDeleteGroupModal(false)}
                     className="flex-1 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors"
                   >
-                    Скасувати
+                    {t('cloud.gallery.335')}
                   </button>
                   <button
                     type="submit"
                     disabled={isDeletingGroup}
                     className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition-colors shadow-md shadow-red-900/40"
                   >
-                    {isDeletingGroup ? 'Видалення...' : 'Видалити групу'}
+                    {isDeletingGroup ? t('cloud.gallery.336') : t('cloud.gallery.337')}
                   </button>
                 </div>
               </form>
@@ -3812,7 +3817,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
             <div className="bg-[var(--bg-secondary,#1e1e2e)] text-white p-6 rounded-2xl border border-[var(--border-color,#313244)] max-w-md w-full space-y-4 shadow-2xl relative">
               <div className="flex justify-between items-center pb-2 border-b border-gray-800">
                 <h4 className="font-bold text-base flex items-center gap-2">
-                  🔑 Відновлення Нікнейму / Доступу
+                  {t('cloud.gallery.338')}
                 </h4>
                 <button
                   onClick={() => {
@@ -3828,12 +3833,12 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
               </div>
 
               <p className="text-xs text-gray-300 leading-relaxed">
-                Вкажіть вашу зареєстровану електронну пошту (Email). На цю пошту буде надіслано лист із вашим прив'язаним Нікнеймом та паролем доступу:
+                {t('cloud.gallery.339')}
               </p>
 
               <form onSubmit={handleAccountRecoverySubmit} className="space-y-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-300 mb-1">Ваша електронна пошта (Email):*</label>
+                  <label className="block text-xs font-medium text-gray-300 mb-1">{t('cloud.gallery.340')}</label>
                   <input
                     type="email"
                     value={recoveryEmail}
@@ -3869,14 +3874,14 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                     }}
                     className="flex-1 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors"
                   >
-                    Закрити
+                    {t('cloud.gallery.341')}
                   </button>
                   <button
                     type="submit"
                     disabled={isRecovering || recoverySuccess}
                     className="flex-1 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-600 text-white text-xs font-bold transition-colors shadow-md shadow-indigo-600/30 flex items-center justify-center gap-1"
                   >
-                    {isRecovering ? 'Надсилання...' : recoverySuccess ? '✓ Лист надіслано' : '📧 Відновити та надіслати'}
+                    {isRecovering ? t('cloud.gallery.342') : recoverySuccess ? t('cloud.gallery.343') : t('cloud.gallery.344')}
                   </button>
                 </div>
               </form>
@@ -3888,16 +3893,16 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
         {publishConflictModal?.show && (
           <div className="fixed inset-0 z-[10020] flex items-center justify-center bg-black/80 p-4">
             <div className="bg-[var(--bg-secondary,#1e1e2e)] text-white p-6 rounded-2xl border border-[var(--border-color,#313244)] max-w-md w-full space-y-4">
-              <h4 className="font-bold text-base text-amber-400">Проєкт вже існує</h4>
+              <h4 className="font-bold text-base text-amber-400">{t('cloud.gallery.345')}</h4>
               <p className="text-sm text-gray-300">
-                У вашій скрині вже є проєкт з назвою <b>{pubTitle}</b>. Бажаєте оновити існуючий проєкт чи створити новий?
+                {t('cloud.gallery.346')} <b>{pubTitle}</b>{t('cloud.gallery.347')}
               </p>
               <div className="flex flex-col sm:flex-row justify-end gap-3 mt-4">
                 <button
                   onClick={() => setPublishConflictModal(null)}
                   className="px-4 py-2 text-xs rounded-xl bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors"
                 >
-                  Скасувати
+                  {t('cloud.gallery.348')}
                 </button>
                 <button
                   onClick={async () => {
@@ -3907,19 +3912,19 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   }}
                   className="px-4 py-2 text-xs rounded-xl bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/30 transition-colors font-medium"
                 >
-                  Оновити існуючий
+                  {t('cloud.gallery.349')}
                 </button>
                 <button
                   onClick={async () => {
                     const { projectData, finalGroupId, personalVisibility } = publishConflictModal;
-                    const newTitle = pubTitle.trim() + ' (Копія)';
+                    const newTitle = pubTitle.trim() + t('cloud.gallery.350');
                     setPubTitle(newTitle); // Update the title field if needed, but not required since we pass it directly
                     setPublishConflictModal(null);
                     await executePublish(newTitle, false, undefined, projectData, finalGroupId, personalVisibility);
                   }}
                   className="px-4 py-2 text-xs rounded-xl bg-emerald-600 text-white hover:bg-emerald-500 transition-colors font-medium"
                 >
-                  Створити новий
+                  {t('cloud.gallery.351')}
                 </button>
               </div>
             </div>
@@ -3936,35 +3941,35 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 actionPasscodeModal.action === 'make_private' ? 'text-amber-400' :
                 'text-white'
               }`}>
-                {actionPasscodeModal.action === 'delete' ? '🗑️ Видалення проєкту' :
-                 actionPasscodeModal.action === 'make_public' ? '🌐 Публікація у Загальну галерею' :
-                 actionPasscodeModal.action === 'make_private' ? '🔒 Прибрання із Загальної галереї' :
-                 '🔐 Підтвердження дії'}
+                {actionPasscodeModal.action === 'delete' ? t('cloud.gallery.352') :
+                 actionPasscodeModal.action === 'make_public' ? t('cloud.gallery.353') :
+                 actionPasscodeModal.action === 'make_private' ? t('cloud.gallery.354') :
+                 t('cloud.gallery.355')}
               </h4>
 
               {actionPasscodeModal.action === 'delete' ? (
                 <p className="text-xs text-gray-300 leading-relaxed font-medium">
-                  ⚠️ <strong>Увага!</strong> Ви збираєтеся остаточно видалити цей проєкт. Цю дію неможливо скасувати. Ви дійсно бажаєте продовжити?
+                  ⚠️ <strong>{t('cloud.gallery.356')}</strong> {t('cloud.gallery.357')}
                 </p>
               ) : actionPasscodeModal.action === 'make_public' ? (
                 <p className="text-xs text-gray-300 leading-relaxed font-medium bg-emerald-950/30 p-3 rounded-xl border border-emerald-500/30">
-                  🌐 <strong>Публікація у Загальну галерею:</strong><br />
-                  Ви збираєтеся опублікувати цей проєкт у Загальній галереї. Він стане доступним для перегляду та завантаження усією спільнотою ВереTkа. Ви зможете прибрати його назад у будь-який момент.
+                  🌐 <strong>{t('cloud.gallery.358')}</strong><br />
+                  {t('cloud.gallery.359')}
                 </p>
               ) : actionPasscodeModal.action === 'make_private' ? (
                 <p className="text-xs text-gray-300 leading-relaxed font-medium bg-amber-950/30 p-3 rounded-xl border border-amber-500/30">
-                  🔒 <strong>Прибрання із Загальної галереї:</strong><br />
-                  Ви збираєтеся прибрати цей проєкт із Загальної галереї. Він залишиться збереженим у вашій особистій скрині і більше не буде доступний іншим користувачам.
+                  🔒 <strong>{t('cloud.gallery.360')}</strong><br />
+                  {t('cloud.gallery.361')}
                 </p>
               ) : (
                 <>
                   <p className="text-xs text-gray-300">
-                    Вкажіть пароль проєкту/автора для підтвердження:
+                    {t('cloud.gallery.362')}
                   </p>
                   <div className="relative mt-2">
                     <input
                       type={showPasswords['actionPasscode'] ? "text" : "password"}
-                      placeholder="Введіть пароль"
+                      placeholder={t('cloud.gallery.363')}
                       value={promptPasscode}
                       onChange={(e) => setPromptPasscode(e.target.value)}
                       className="w-full px-3 py-2 pr-10 rounded-xl bg-black/50 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
@@ -3990,7 +3995,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   }}
                   className="px-3.5 py-2 text-xs rounded-xl bg-gray-800 text-gray-300 hover:bg-gray-700 font-medium transition-colors"
                 >
-                  Скасувати
+                  {t('cloud.gallery.364')}
                 </button>
                 <button
                   type="button"
@@ -4005,10 +4010,10 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                       : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/30'
                   }`}
                 >
-                  {actionPasscodeModal.action === 'delete' ? '🗑️ Так, видалити' :
-                   actionPasscodeModal.action === 'make_public' ? '🌐 Так, опублікувати' :
-                   actionPasscodeModal.action === 'make_private' ? '🔒 Так, прибрати' :
-                   'Підтвердити'}
+                  {actionPasscodeModal.action === 'delete' ? t('cloud.gallery.365') :
+                   actionPasscodeModal.action === 'make_public' ? t('cloud.gallery.366') :
+                   actionPasscodeModal.action === 'make_private' ? t('cloud.gallery.367') :
+                   t('cloud.gallery.368')}
                 </button>
               </div>
             </div>
@@ -4035,9 +4040,9 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   🏫
                 </div>
                 <div>
-                  <h4 className="font-bold text-base text-white">Надіслати у групу / осередок</h4>
+                  <h4 className="font-bold text-base text-white">{t('cloud.gallery.369')}</h4>
                   <p className="text-xs text-amber-300/80 truncate max-w-[280px]">
-                    Проєкт: "{sendToGroupModal.project.title}"
+                    {t('cloud.gallery.370')}{sendToGroupModal.project.title}"
                   </p>
                 </div>
               </div>
@@ -4045,12 +4050,12 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
               <div className="space-y-3 pt-1">
                 <div>
                   <label className="block text-xs font-semibold text-gray-300 mb-1">
-                    Код групи або осередка:
+                    {t('cloud.gallery.371')}
                   </label>
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="Введіть код (наприклад: UA-8392)"
+                      placeholder={t('cloud.gallery.372')}
                       value={sendGroupCodeInput}
                       onChange={(e) => handleSendGroupCodeChange(e.target.value)}
                       className="w-full px-3 py-2.5 rounded-xl bg-black/50 border border-amber-500/30 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 uppercase tracking-wider font-mono"
@@ -4069,7 +4074,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   <div className="p-3 bg-amber-950/20 rounded-xl border border-amber-500/30 space-y-1.5 animate-fadeIn">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-sm text-amber-200">
-                        {sendGroupInfo.name || 'Осередок спільноти'}
+                        {sendGroupInfo.name || t('cloud.gallery.373')}
                       </span>
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${
                         sendGroupInfo.mode === 'education'
@@ -4078,23 +4083,23 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           ? 'bg-red-500/20 text-red-300 border-red-500/30'
                           : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
                       }`}>
-                        {sendGroupInfo.mode === 'education' ? '🎓 Освітня' :
-                         sendGroupInfo.mode === 'readonly' ? '🔒 Дошка шаблонів' :
-                         '🖼️ Галерея'}
+                        {sendGroupInfo.mode === 'education' ? t('cloud.gallery.374') :
+                         sendGroupInfo.mode === 'readonly' ? t('cloud.gallery.375') :
+                         t('cloud.gallery.376')}
                       </span>
                     </div>
                     {sendGroupInfo.description && (
                       <p className="text-xs text-gray-300 line-clamp-2">{sendGroupInfo.description}</p>
                     )}
                     <div className="text-[11px] text-gray-400 flex justify-between pt-1 border-t border-amber-500/10">
-                      <span>Засновник: @{sendGroupInfo.creatorNickname || 'анонім'}</span>
-                      <span>Код: {sendGroupInfo.groupCode}</span>
+                      <span>{t('cloud.gallery.377')}{sendGroupInfo.creatorNickname || t('cloud.gallery.378')}</span>
+                      <span>{t('cloud.gallery.379')} {sendGroupInfo.groupCode}</span>
                     </div>
 
                     {sendGroupInfo.mode === 'readonly' && 
                      (sendGroupInfo.creatorNickname || '').trim().toLowerCase() !== (personalNickname || '').trim().toLowerCase() && (
                       <div className="p-2 bg-red-950/40 rounded-lg border border-red-500/30 text-[11px] text-red-300 leading-relaxed mt-1">
-                        ⚠️ Ця група працює у режимі "Дошка шаблонів" (readonly). Публікувати нові роботи сюди дозволено лише її засновнику (@{sendGroupInfo.creatorNickname}).
+                        {t('cloud.gallery.380')}{sendGroupInfo.creatorNickname}).
                       </div>
                     )}
                   </div>
@@ -4104,7 +4109,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 {myUserGroups.length > 0 && (
                   <div>
                     <span className="block text-[11px] font-semibold text-gray-400 mb-1.5">
-                      Або оберіть зі своїх осередків:
+                      {t('cloud.gallery.381')}
                     </span>
                     <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
                       {myUserGroups.map((g) => (
@@ -4149,7 +4154,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   }}
                   className="px-3.5 py-2 text-xs rounded-xl bg-gray-800 text-gray-300 hover:bg-gray-700 font-medium transition-colors"
                 >
-                  Скасувати
+                  {t('cloud.gallery.382')}
                 </button>
                 <button
                   type="button"
@@ -4159,10 +4164,10 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 >
                   {isSendingToGroup ? (
                     <>
-                      <span className="animate-spin">⏳</span> Надсилання...
+                      <span className="animate-spin">⏳</span> {t('cloud.gallery.383')}
                     </>
                   ) : (
-                    <>🏫 Надіслати у групу</>
+                    <>{t('cloud.gallery.384')}</>
                   )}
                 </button>
               </div>
@@ -4183,7 +4188,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
               <button
                 onClick={() => setSelectedSentGroupsProject(null)}
                 className="absolute top-4 right-4 text-gray-400 hover:text-white p-1.5 rounded-xl bg-black/40 hover:bg-black/60 border border-gray-700 transition-colors z-10"
-                title="Закрити"
+                title={t('cloud.gallery.385')}
               >
                 <XIcon size={18} />
               </button>
@@ -4193,13 +4198,13 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   🏫
                 </div>
                 <div className="min-w-0">
-                  <h3 className="font-bold text-base text-white">Групи з копією проєкту</h3>
+                  <h3 className="font-bold text-base text-white">{t('cloud.gallery.386')}</h3>
                   <p className="text-xs text-amber-300/90 truncate max-w-[240px]">"{selectedSentGroupsProject.title}"</p>
                 </div>
               </div>
 
               <p className="text-xs text-gray-300 leading-relaxed bg-black/30 p-3 rounded-xl border border-gray-800">
-                Копію цього проєкту збережено/надіслано у такі групи та осередки:
+                {t('cloud.gallery.387')}
               </p>
 
               <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[120px] max-h-[300px]">
@@ -4213,7 +4218,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   if (groups.length === 0) {
                     return (
                       <div className="py-6 text-center text-xs text-gray-400">
-                        Інформація про групи відсутня
+                        {t('cloud.gallery.388')}
                       </div>
                     );
                   }
@@ -4232,7 +4237,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         </div>
                         {g.sentAt && (
                           <p className="text-[10px] text-gray-500">
-                            Надіслано: {new Date(g.sentAt).toLocaleDateString('uk-UA')}
+                            {t('cloud.gallery.389')} {new Date(g.sentAt).toLocaleDateString('uk-UA')}
                           </p>
                         )}
                       </div>
@@ -4247,7 +4252,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           }}
                           className="px-2.5 py-1 rounded bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white text-[11px] font-medium border border-indigo-500/30 transition-colors"
                         >
-                          {sentGroupCopyStatus === g.groupId ? '✓ Скопійовано' : '📋 Код'}
+                          {sentGroupCopyStatus === g.groupId ? t('cloud.gallery.390') : t('cloud.gallery.391')}
                         </button>
 
                         <button
@@ -4262,7 +4267,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                           }}
                           className="px-2.5 py-1 rounded bg-amber-600/30 hover:bg-amber-600 text-amber-200 hover:text-white text-[11px] font-medium border border-amber-500/30 transition-colors"
                         >
-                          🏫 Перейти
+                          {t('cloud.gallery.392')}
                         </button>
                       </div>
                     </div>
@@ -4276,7 +4281,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   onClick={() => setSelectedSentGroupsProject(null)}
                   className="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-xs font-medium text-gray-200 transition-colors"
                 >
-                  Закрити
+                  {t('cloud.gallery.393')}
                 </button>
               </div>
             </div>
@@ -4302,7 +4307,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   setCopiedLink(false);
                 }}
                 className="absolute top-4 right-4 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] p-1.5 rounded-xl bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)] transition-colors z-10"
-                title="Закрити"
+                title={t('cloud.gallery.394')}
               >
                 <XIcon size={20} />
               </button>
@@ -4314,9 +4319,9 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-base text-[var(--text-primary)]">Поділитися проєктом</h3>
+                    <h3 className="font-bold text-base text-[var(--text-primary)]">{t('cloud.gallery.395')}</h3>
                     <span className="text-[10px] bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-500/30 font-semibold">
-                      ВереTkа
+                      {t('cloud.gallery.396')}
                     </span>
                   </div>
                   <p className="text-xs text-[var(--text-tertiary)] truncate max-w-[260px]">
@@ -4329,9 +4334,9 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
               <div className="relative rounded-xl border border-[var(--border-color)] bg-[var(--bg-primary)] p-2 overflow-hidden shadow-sm">
                 <div className="flex items-center justify-between text-[11px] text-[var(--text-tertiary)] px-2 py-1 mb-1 border-b border-[var(--border-color)]">
                   <span className="font-medium text-indigo-600 dark:text-indigo-300 flex items-center gap-1">
-                    🎨 Векторний проєкт ВереTkа
+                    {t('cloud.gallery.397')}
                   </span>
-                  <span>Об'єктів: <strong className="text-[var(--text-primary)]">{shareModalProject.shapesCount}</strong></span>
+                  <span>{t('cloud.gallery.398')} <strong className="text-[var(--text-primary)]">{shareModalProject.shapesCount}</strong></span>
                 </div>
                 <ProjectCardPreview
                   projectData={shareModalProject.projectData}
@@ -4343,7 +4348,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
               {/* Direct Link Input */}
               <div className="space-y-1.5">
-                <label className="block text-xs text-[var(--text-secondary)] font-semibold">Пряме посилання на проєкт:</label>
+                <label className="block text-xs text-[var(--text-secondary)] font-semibold">{t('cloud.gallery.399')}</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
@@ -4360,14 +4365,14 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                     }}
                     className="px-3.5 py-2 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-colors shrink-0 shadow-md shadow-indigo-600/30"
                   >
-                    {copiedLink ? '✓ Скопійовано' : '📋 Скопіювати'}
+                    {copiedLink ? t('cloud.gallery.400') : t('cloud.gallery.401')}
                   </button>
                 </div>
               </div>
 
               {/* Sharing Destinations */}
               <div className="space-y-3 pt-2 border-t border-[var(--border-color)]">
-                <label className="block text-xs text-[var(--text-secondary)] font-semibold">Поділитися в соціальних мережах та месенджерах:</label>
+                <label className="block text-xs text-[var(--text-secondary)] font-semibold">{t('cloud.gallery.402')}</label>
                 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {/* Telegram */}
@@ -4503,7 +4508,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
               <button
                 onClick={() => setShowGroupSettingsModal(false)}
                 className="absolute top-4 right-4 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] p-1.5 rounded-xl bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)] transition-colors"
-                title="Закрити"
+                title={t('cloud.gallery.403')}
               >
                 <XIcon size={20} />
               </button>
@@ -4513,7 +4518,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   ⚙️
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg text-white">Налаштування групи</h3>
+                  <h3 className="font-bold text-lg text-white">{t('cloud.gallery.404')}</h3>
                   <p className="text-xs text-gray-400">"{activeGroup.name}" ({activeGroup.groupCode})</p>
                 </div>
               </div>
@@ -4521,32 +4526,32 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
               {/* Quick Copy Links */}
               <div className="bg-black/40 p-3 rounded-xl border border-gray-800 space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-400">Код групи: <strong className="text-amber-300 font-mono">{activeGroup.groupCode}</strong></span>
+                  <span className="text-gray-400">{t('cloud.gallery.405')} <strong className="text-amber-300 font-mono">{activeGroup.groupCode}</strong></span>
                   <button
                     type="button"
                     onClick={() => {
                       navigator.clipboard.writeText(activeGroup.groupCode);
-                      setCopyStatusText('Код скопійовано!');
+                      setCopyStatusText(t('cloud.gallery.406'));
                       setTimeout(() => setCopyStatusText(''), 2000);
                     }}
                     className="px-2.5 py-1 rounded bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 text-[11px] font-medium transition-colors"
                   >
-                    📋 Скопіювати код
+                    {t('cloud.gallery.407')}
                   </button>
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-400">Пряме посилання:</span>
+                  <span className="text-gray-400">{t('cloud.gallery.408')}</span>
                   <button
                     type="button"
                     onClick={() => {
                       const link = `${window.location.origin}/?group=${activeGroup.groupCode}`;
                       navigator.clipboard.writeText(link);
-                      setCopyStatusText('Посилання скопійовано!');
+                      setCopyStatusText(t('cloud.gallery.409'));
                       setTimeout(() => setCopyStatusText(''), 2000);
                     }}
                     className="px-2.5 py-1 rounded bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 text-[11px] font-medium transition-colors"
                   >
-                    🔗 Скопіювати посилання
+                    {t('cloud.gallery.410')}
                   </button>
                 </div>
                 {copyStatusText && (
@@ -4556,21 +4561,21 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
               {/* Info Block */}
               <div className="text-xs text-gray-400 space-y-1 bg-black/20 p-3 rounded-xl border border-gray-800">
-                <div>Засновник: <strong className="text-gray-200">@{activeGroup.creatorNickname || 'Анонім'}</strong></div>
-                <div>Ваша роль: <strong className="text-indigo-300">
+                <div>{t('cloud.gallery.411')} <strong className="text-gray-200">@{activeGroup.creatorNickname || t('cloud.gallery.412')}</strong></div>
+                <div>{t('cloud.gallery.413')} <strong className="text-indigo-300">
                   {isPersonalLoggedIn && activeGroup.creatorNickname?.trim().toLowerCase() === personalNickname.trim().toLowerCase()
-                    ? '👑 Засновник групи (Повний доступ)'
-                    : '👤 Учасник групи'}
+                    ? t('cloud.gallery.414')
+                    : t('cloud.gallery.415')}
                 </strong></div>
               </div>
 
               {/* Editable parameters for creator */}
               {isPersonalLoggedIn && activeGroup.creatorNickname?.trim().toLowerCase() === personalNickname.trim().toLowerCase() ? (
                 <form onSubmit={handleSaveGroupSettingsSubmit} className="space-y-3 pt-2 border-t border-gray-800">
-                  <h4 className="text-xs font-bold text-indigo-300 uppercase tracking-wider">Редагування даних групи (Засновник):</h4>
+                  <h4 className="text-xs font-bold text-indigo-300 uppercase tracking-wider">{t('cloud.gallery.416')}</h4>
                   
                   <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1">Назва групи:*</label>
+                    <label className="block text-xs font-medium text-gray-300 mb-1">{t('cloud.gallery.417')}</label>
                     <input
                       type="text"
                       value={editGroupName}
@@ -4581,7 +4586,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1">Опис групи:</label>
+                    <label className="block text-xs font-medium text-gray-300 mb-1">{t('cloud.gallery.418')}</label>
                     <input
                       type="text"
                       value={editGroupDesc}
@@ -4591,22 +4596,22 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1">Режим роботи групи:</label>
+                    <label className="block text-xs font-medium text-gray-300 mb-1">{t('cloud.gallery.419')}</label>
                     <select
                       value={editGroupMode}
                       onChange={(e) => setEditGroupMode(e.target.value as GroupMode)}
                       className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500 text-white"
                     >
-                      <option value="gallery" className="bg-gray-900">🎨 Спільна майстерня (Всі бачать все)</option>
-                      <option value="education" className="bg-gray-900">🏫 Освітній клас (Учні бачать лише свої роботи)</option>
-                      <option value="readonly" className="bg-gray-900">🔒 Дошка шаблонів (Публікує лише засновник)</option>
+                      <option value="gallery" className="bg-gray-900">{t('cloud.gallery.420')}</option>
+                      <option value="education" className="bg-gray-900">{t('cloud.gallery.421')}</option>
+                      <option value="readonly" className="bg-gray-900">{t('cloud.gallery.422')}</option>
                     </select>
                   </div>
 
                   {editGroupMode === 'education' && (
                     <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-1.5">
                       <label className="block text-xs font-semibold text-amber-200">
-                        🎓 Правило повторного надсилання робіт учнями:
+                        {t('cloud.gallery.423')}
                       </label>
                       <div className="space-y-1 text-[11px]">
                         <label className="flex items-start gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-amber-500/10 transition-colors">
@@ -4619,8 +4624,8 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                             className="mt-0.5 accent-amber-500"
                           />
                           <div>
-                            <span className="font-semibold text-white">🟢 Вільне оновлення (дозволити перезапис)</span>
-                            <p className="text-[10px] text-gray-400">Учень може оновлювати існуючу здану роботу — стара версія перезаписується.</p>
+                            <span className="font-semibold text-white">{t('cloud.gallery.424')}</span>
+                            <p className="text-[10px] text-gray-400">{t('cloud.gallery.425')}</p>
                           </div>
                         </label>
 
@@ -4634,8 +4639,8 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                             className="mt-0.5 accent-amber-500"
                           />
                           <div>
-                            <span className="font-semibold text-white">🔵 Авто-версіонування (зберігати v2, v3...)</span>
-                            <p className="text-[10px] text-gray-400">Кожне повторне надсилання створює окрему нову версію роботи для відстеження прогресу.</p>
+                            <span className="font-semibold text-white">{t('cloud.gallery.426')}</span>
+                            <p className="text-[10px] text-gray-400">{t('cloud.gallery.427')}</p>
                           </div>
                         </label>
 
@@ -4649,8 +4654,8 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                             className="mt-0.5 accent-amber-500"
                           />
                           <div>
-                            <span className="font-semibold text-white">🔒 Фіксація здачі (заборона повторного оновлення)</span>
-                            <p className="text-[10px] text-gray-400">Після здачі учень не може оновити цей же проєкт (ідеально для контрольних робіт).</p>
+                            <span className="font-semibold text-white">{t('cloud.gallery.428')}</span>
+                            <p className="text-[10px] text-gray-400">{t('cloud.gallery.429')}</p>
                           </div>
                         </label>
                       </div>
@@ -4658,12 +4663,12 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   )}
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1">Новий пароль групи (залиште порожнім, якщо не змінюєте):</label>
+                    <label className="block text-xs font-medium text-gray-300 mb-1">{t('cloud.gallery.430')}</label>
                     <input
                       type="password"
                       value={editGroupNewPasscode}
                       onChange={(e) => setEditGroupNewPasscode(e.target.value)}
-                      placeholder="Новий пароль"
+                      placeholder={t('cloud.gallery.431')}
                       className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-sm focus:outline-none focus:border-indigo-500"
                     />
                   </div>
@@ -4680,18 +4685,18 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                     disabled={isSavingGroupSettings}
                     className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-colors shadow-lg shadow-indigo-900/30"
                   >
-                    {isSavingGroupSettings ? 'Збереження...' : '💾 Зберегти зміни в групі'}
+                    {isSavingGroupSettings ? t('cloud.gallery.432') : t('cloud.gallery.433')}
                   </button>
                 </form>
               ) : (
                 <p className="text-xs text-gray-400 italic bg-black/30 p-3 rounded-xl border border-gray-800">
-                  Змінювати назву, режим та пароль групи має право лише її Засновник.
+                  {t('cloud.gallery.434')}
                 </p>
               )}
 
               {/* Action buttons transferred here: Leave & Delete */}
               <div className="pt-3 border-t border-gray-800 space-y-2">
-                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Дії з групою:</h4>
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t('cloud.gallery.435')}</h4>
                 
                 <div className="flex flex-col gap-2">
                   <button
@@ -4702,7 +4707,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                     }}
                     className="w-full py-2 px-3 rounded-xl text-xs bg-gray-800 hover:bg-gray-700 text-gray-200 font-medium transition-colors flex items-center justify-center gap-1.5"
                   >
-                    🚪 Вийти з групи
+                    {t('cloud.gallery.436')}
                   </button>
 
                   <button
@@ -4715,7 +4720,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                     }}
                     className="w-full py-2 px-3 rounded-xl text-xs bg-red-600/80 hover:bg-red-600 text-white font-medium transition-colors flex items-center justify-center gap-1.5"
                   >
-                    🗑️ Видалити групу
+                    {t('cloud.gallery.437')}
                   </button>
                 </div>
               </div>
@@ -4736,7 +4741,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
               <button
                 onClick={() => setShowGroupMembersModal(false)}
                 className="absolute top-4 right-4 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] p-1.5 rounded-xl bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-color)] transition-colors"
-                title="Закрити"
+                title={t('cloud.gallery.438')}
               >
                 <XIcon size={20} />
               </button>
@@ -4746,9 +4751,9 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   👥
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg text-white">Учасники групи</h3>
+                  <h3 className="font-bold text-lg text-white">{t('cloud.gallery.439')}</h3>
                   <p className="text-xs text-gray-400">
-                    "{activeGroup.name}" • Всього: <strong className="text-indigo-300">{groupMembersList.length}</strong>
+                    "{activeGroup.name}{t('cloud.gallery.440')} <strong className="text-indigo-300">{groupMembersList.length}</strong>
                   </p>
                 </div>
               </div>
@@ -4757,7 +4762,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
               <div>
                 <input
                   type="text"
-                  placeholder="🔍 Пошук учасника за ім'ям або нікнеймом..."
+                  placeholder={t('cloud.gallery.441')}
                   value={groupMemberSearchQuery}
                   onChange={(e) => setGroupMemberSearchQuery(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-black/40 border border-gray-700 text-xs focus:outline-none focus:border-indigo-500 text-white"
@@ -4769,11 +4774,11 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 {isLoadingGroupMembers ? (
                   <div className="py-10 flex items-center justify-center gap-2 text-xs text-gray-400">
                     <VeretkaLoader size="sm" />
-                    <span>Завантаження списку учасників...</span>
+                    <span>{t('cloud.gallery.442')}</span>
                   </div>
                 ) : groupMembersList.length === 0 ? (
                   <div className="py-10 text-center text-xs text-gray-400">
-                    У цій групі ще немає зареєстрованих учасників
+                    {t('cloud.gallery.443')}
                   </div>
                 ) : (
                   groupMembersList
@@ -4806,7 +4811,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                 )}
                               </div>
                               <div className="text-[10px] text-gray-400 flex items-center gap-2 mt-0.5">
-                                <span>🎨 {m.projectsCount} {m.projectsCount === 1 ? 'проєкт' : (m.projectsCount >= 2 && m.projectsCount <= 4) ? 'проєкти' : 'проєктів'} у групі</span>
+                                <span>🎨 {m.projectsCount} {m.projectsCount === 1 ? t('cloud.gallery.444') : (m.projectsCount >= 2 && m.projectsCount <= 4) ? t('cloud.gallery.445') : t('cloud.gallery.446')} {t('cloud.gallery.447')}</span>
                               </div>
                             </div>
                           </div>
@@ -4816,7 +4821,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                               ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' 
                               : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30'
                           }`}>
-                            {isCreator ? '👑 Засновник' : '👤 Учасник'}
+                            {isCreator ? t('cloud.gallery.448') : t('cloud.gallery.449')}
                           </span>
                         </div>
                       );
@@ -4830,7 +4835,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   onClick={() => setShowGroupMembersModal(false)}
                   className="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-xs font-medium text-gray-200 transition-colors"
                 >
-                  Закрити
+                  {t('cloud.gallery.450')}
                 </button>
               </div>
             </div>
@@ -4843,7 +4848,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
             <div className="bg-[var(--bg-secondary,#1e1e2e)] text-white p-6 rounded-2xl border border-[var(--border-color,#313244)] max-w-lg w-full space-y-4 shadow-2xl relative">
               <div className="flex justify-between items-center pb-2 border-b border-gray-800">
                 <h4 className="font-bold text-base text-amber-400 flex items-center gap-2">
-                  ⚠️ Виявлено дублікат проєкту
+                  {t('cloud.gallery.451')}
                 </h4>
                 <button
                   type="button"
@@ -4856,16 +4861,16 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
               <div className="bg-amber-500/10 border border-amber-500/30 p-3.5 rounded-xl space-y-2 text-xs">
                 <p className="text-amber-200">
-                  У групі <strong className="text-white">"{groupConflictModal.groupName}"</strong> вже є проєкт з назвою <strong className="text-amber-300 font-semibold">"{groupConflictModal.existingProject?.title || groupConflictModal.projectToCopy.title}"</strong> від цього ж автора (<span className="text-indigo-300">@{personalNickname}</span>).
+                  {t('cloud.gallery.452')} <strong className="text-white">"{groupConflictModal.groupName}"</strong> {t('cloud.gallery.453')} <strong className="text-amber-300 font-semibold">"{groupConflictModal.existingProject?.title || groupConflictModal.projectToCopy.title}"</strong> {t('cloud.gallery.454')}<span className="text-indigo-300">@{personalNickname}</span>).
                 </p>
                 {groupConflictModal.studentUpdatePolicy === 'freeze_after_submit' && (
                   <p className="p-2 rounded-lg bg-red-500/20 text-red-200 border border-red-500/30 font-medium">
-                    🔒 <strong>Правило групи: Фіксація здачі.</strong> Оновлення існуючого проєкту заборонено автором групи. Ви можете опублікувати його як нову копію з іншою назвою.
+                    🔒 <strong>{t('cloud.gallery.455')}</strong> {t('cloud.gallery.456')}
                   </p>
                 )}
                 {groupConflictModal.studentUpdatePolicy === 'create_versions' && (
                   <p className="p-2 rounded-lg bg-indigo-500/20 text-indigo-200 border border-indigo-500/30 font-medium">
-                    🔵 <strong>Правило групи: Авто-версіонування.</strong> Для відстеження вашого навчального прогресу рекомендується створити нову версію.
+                    🔵 <strong>{t('cloud.gallery.457')}</strong> {t('cloud.gallery.458')}
                   </p>
                 )}
               </div>
@@ -4885,9 +4890,9 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 >
                   <span className="text-xl shrink-0">🔄</span>
                   <div>
-                    <div className="font-bold text-xs text-white">Оновити існуючий проєкт у групі</div>
+                    <div className="font-bold text-xs text-white">{t('cloud.gallery.459')}</div>
                     <div className="text-[11px] text-gray-300 mt-0.5">
-                      Перезаписати вміст існуючого проєкту новою версією. Зручно для доопрацювання завдання.
+                      {t('cloud.gallery.460')}
                     </div>
                   </div>
                 </button>
@@ -4901,9 +4906,9 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 >
                   <span className="text-xl shrink-0">📄</span>
                   <div>
-                    <div className="font-bold text-xs text-white">Опублікувати як окрему копію (автоверсія)</div>
+                    <div className="font-bold text-xs text-white">{t('cloud.gallery.461')}</div>
                     <div className="text-[11px] text-gray-300 mt-0.5">
-                      Створити копію з автоматичною наступною вільною версією: <span className="text-indigo-300 font-mono font-bold">"{groupConflictModal.nextSuggestedTitle || `${groupConflictModal.projectToCopy.title} (v.2)`}"</span>
+                      {t('cloud.gallery.462')} <span className="text-indigo-300 font-mono font-bold">"{groupConflictModal.nextSuggestedTitle || `${groupConflictModal.projectToCopy.title} (v.2)`}"</span>
                     </div>
                   </div>
                 </button>
@@ -4912,14 +4917,14 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 <div className="p-3 rounded-xl border border-gray-700 bg-black/30 space-y-2">
                   <div className="flex items-center gap-2">
                     <span className="text-lg">✏️</span>
-                    <span className="font-bold text-xs text-white">Вказати власну назву чи версію для копії</span>
+                    <span className="font-bold text-xs text-white">{t('cloud.gallery.463')}</span>
                   </div>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={groupConflictModal.customTitleInput}
                       onChange={(e) => setGroupConflictModal(prev => ({ ...prev, customTitleInput: e.target.value }))}
-                      placeholder={`Наприклад, ${groupConflictModal.nextSuggestedTitle || 'Проєкт (v.5)'}`}
+                      placeholder={`Наприклад, ${groupConflictModal.nextSuggestedTitle || t('cloud.gallery.464')}`}
                       className="flex-1 px-3 py-1.5 rounded-lg bg-black/50 border border-gray-700 text-xs text-white focus:outline-none focus:border-indigo-500"
                     />
                     <button
@@ -4928,7 +4933,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                       onClick={() => handleResolveConflictAction('custom_title')}
                       className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors disabled:opacity-50 shrink-0"
                     >
-                      Зберегти
+                      {t('cloud.gallery.465')}
                     </button>
                   </div>
                 </div>
@@ -4946,7 +4951,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                   onClick={() => setGroupConflictModal(prev => ({ ...prev, show: false }))}
                   className="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors"
                 >
-                  ❌ Скасувати надсилання
+                  {t('cloud.gallery.466')}
                 </button>
               </div>
             </div>

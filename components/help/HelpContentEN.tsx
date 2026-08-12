@@ -14,7 +14,7 @@ export const HelpContentEN: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
                 </Para>
             </section>
 
-            <section>
+                        <section>
                 <SectionTitle id="interface">2. Interface Overview</SectionTitle>
                 <Para>The editor's interface is logically divided into functional zones for maximum convenience:</Para>
                 <ul className="list-decimal list-inside space-y-3 pl-2">
@@ -57,7 +57,7 @@ export const HelpContentEN: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
                 </Para>
             </section>
 
-            <section>
+                        <section>
                 <SectionTitle id="projects">3. Projects</SectionTitle>
                 <SubTitle>Creating a New Project</SubTitle>
                 <Para>
@@ -97,7 +97,7 @@ export const HelpContentEN: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
                 </Para>
             </section>
 
-            <section>
+                        <section>
                 <SectionTitle id="templates">4. Templates</SectionTitle>
                 <SubTitle>Purpose and Benefits</SubTitle>
                 <Para>
@@ -131,7 +131,7 @@ export const HelpContentEN: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
                 </Para>
             </section>
 
-            <section>
+                        <section>
                 <SectionTitle id="shapes">5. Objects</SectionTitle>
                 <SubTitle>Creating Objects</SubTitle>
                 <Para>
@@ -187,7 +187,7 @@ export const HelpContentEN: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
                 </Para>
 </section>
 
-            <section>
+                        <section>
                 <SectionTitle id="code-export">6. Code & Export</SectionTitle>
                 <SubTitle>Code Generation</SubTitle>
                 <Para>
@@ -208,15 +208,84 @@ export const HelpContentEN: React.FC<HelpComponents> = ({ SectionTitle, SubTitle
                 </ul>
             </section>
 
-            <section>
+                        <section>
                 <SectionTitle id="feedback">7. Feedback</SectionTitle>
                 <Para>
                     Help improve VereTka! If you encounter a bug or have ideas, use <Key>Help</Key> → <Key>Send Feedback</Key>. This opens an email dialogue to directly contact the author.
                 </Para>
             </section>
 
-            <section>
-                <SectionTitle id="hotkeys">8. Hotkeys</SectionTitle>
+                        <section>
+                <SectionTitle id="cloud-storage">8. Cloud Storage and Gallery</SectionTitle>
+                <SubTitle>Capabilities Overview</SubTitle>
+                <Para>
+                    <strong className="text-[var(--text-primary)]">Cloud Storage and Gallery</strong> is an integrated online ecosystem that lets you store your projects online, access them from any device, share them in the public gallery, and collaborate in group workspaces (Cells/Groups).
+                </Para>
+                <Para>
+                    You can open Cloud Storage in several ways:
+                </Para>
+                <ul className="list-disc list-inside space-y-1 pl-2">
+                    <ListItem>From the main menu: <Key>File</Key> → <Key>Publish to Cloud...</Key></ListItem>
+                    <ListItem>Click the <Key>Gallery & Storage</Key> button on the top toolbar.</ListItem>
+                    <ListItem>Click the <Key>Cloud Gallery</Key> button on the Welcome Screen.</ListItem>
+                </ul>
+
+                <SubTitle>Personal Chest (Workspace)</SubTitle>
+                <Para>
+                    Your <strong className="text-[var(--text-primary)]">Chest</strong> is your private personal storage. Projects saved in your Chest are visible only to you.
+                </Para>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Access & Protection:</strong> Sign in with your unique Nickname and Password or via your Google account.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Saving & Opening:</strong> Save vector drawings under any name. Preview cards display project metadata (creation date, shape count). Click any card to load the project directly into the editor.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Version Control:</strong> When re-saving, you can either update the existing project or publish it as a new distinct copy.
+                    </ListItem>
+                </ul>
+
+                <SubTitle>Public Gallery</SubTitle>
+                <Para>
+                    The <strong className="text-[var(--text-primary)]">Public Gallery</strong> is a community showcase accessible to all Veretka users.
+                </Para>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Explore & Open:</strong> Browse public creations, search by title or author, and load projects into your editor to study or customize them.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Publishing:</strong> Share your artwork with the community to inspire others!
+                    </ListItem>
+                </ul>
+
+                <SubTitle>Cells & Groups (Education & Teams)</SubTitle>
+                <Para>
+                    <strong className="text-[var(--text-primary)]">Cells / Groups</strong> are dedicated workspaces for classrooms, study clubs, design teams, or workshops.
+                </Para>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Creating a Cell:</strong> An instructor or team lead can create a group workspace with a custom name, rules, and password.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Joining:</strong> Members simply enter the group name and password to join the shared room.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Group Gallery:</strong> All projects submitted to the group appear on a shared board, making it easy for instructors to inspect and review student assignments.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Cell Rules:</strong> Group creators can enforce versioning rules (e.g., allow updating existing files or require new version copies) to maintain author rights and project order.
+                    </ListItem>
+                </ul>
+
+                <SubTitle>Publishing & Updating Projects</SubTitle>
+                <Para>
+                    When publishing a project, choose your target destination (Public Gallery, Personal Chest, or Group Cell). If a duplicate name is detected, you can either overwrite the project with an updated version or publish a separate version copy.
+                </Para>
+            </section>
+
+                        <section>
+                <SectionTitle id="hotkeys">9. Hotkeys</SectionTitle>
                 <Para>Use these combinations to speed up your workflow.</Para>
                 
                 <SubTitle>File & History</SubTitle>
