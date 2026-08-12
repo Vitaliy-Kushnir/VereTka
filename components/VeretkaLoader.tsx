@@ -36,8 +36,8 @@ function samplePolygon(vertices: [number, number][], totalPoints = 36): string {
 
 const N = 36;
 
-// 20 rich geometric shapes, every shape has EXACTLY 36 points
-const SHAPES: string[] = [
+// 34 rich geometric shapes, every shape has EXACTLY 36 points
+export const SHAPES: string[] = [
   // 1. Circle
   Array.from({ length: N }, (_, i) => {
     const a = (i / N) * Math.PI * 2 - Math.PI / 2;
@@ -157,7 +157,89 @@ const SHAPES: string[] = [
   }).join(' '),
 
   // 20. Trapezoid
-  samplePolygon([[30, 15], [70, 15], [90, 85], [10, 85]], N)
+  samplePolygon([[30, 15], [70, 15], [90, 85], [10, 85]], N),
+
+  // 21. Butterfly / Hourglass (Figure-8)
+  Array.from({ length: N }, (_, i) => {
+    const t = (i / N) * Math.PI * 2;
+    const x = 50 + 36 * Math.sin(t);
+    const y = 50 + 36 * Math.sin(2 * t);
+    return `${Math.round(x * 10) / 10},${Math.round(y * 10) / 10}`;
+  }).join(' '),
+
+  // 22. Astroid (4-Cusp Star)
+  Array.from({ length: N }, (_, i) => {
+    const t = (i / N) * Math.PI * 2;
+    const x = 50 + 38 * Math.pow(Math.cos(t), 3);
+    const y = 50 + 38 * Math.pow(Math.sin(t), 3);
+    return `${Math.round(x * 10) / 10},${Math.round(y * 10) / 10}`;
+  }).join(' '),
+
+  // 23. Sunflower (8 Petals)
+  Array.from({ length: N }, (_, i) => {
+    const a = (i / N) * Math.PI * 2 - Math.PI / 2;
+    const r = 26 + 13 * Math.cos(8 * a);
+    return `${Math.round((50 + r * Math.cos(a)) * 10) / 10},${Math.round((50 + r * Math.sin(a)) * 10) / 10}`;
+  }).join(' '),
+
+  // 24. Chevron Arrowhead
+  samplePolygon([[50, 10], [88, 48], [68, 48], [68, 88], [32, 88], [32, 48], [12, 48]], N),
+
+  // 25. Lightning Spark
+  samplePolygon([[55, 10], [22, 50], [46, 50], [38, 88], [78, 45], [54, 45]], N),
+
+  // 26. Organic Blob / Amoeba
+  Array.from({ length: N }, (_, i) => {
+    const a = (i / N) * Math.PI * 2;
+    const r = 30 + 8 * Math.sin(3 * a) + 5 * Math.cos(5 * a);
+    return `${Math.round((50 + r * Math.cos(a)) * 10) / 10},${Math.round((50 + r * Math.sin(a)) * 10) / 10}`;
+  }).join(' '),
+
+  // 27. Royal Crown
+  samplePolygon([[15, 82], [85, 82], [88, 30], [68, 55], [50, 18], [32, 55], [12, 30]], N),
+
+  // 28. Hexagram (12-pointed Star of David)
+  samplePolygon(Array.from({ length: 12 }, (_, i) => {
+    const r = i % 2 === 0 ? 40 : 22;
+    const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
+    return [50 + r * Math.cos(a), 50 + r * Math.sin(a)];
+  }), N),
+
+  // 29. Reuleaux Triangle
+  Array.from({ length: N }, (_, i) => {
+    const a = (i / N) * Math.PI * 2 - Math.PI / 2;
+    const r = 32 + 8 * Math.cos(3 * a);
+    return `${Math.round((50 + r * Math.cos(a)) * 10) / 10},${Math.round((50 + r * Math.sin(a)) * 10) / 10}`;
+  }).join(' '),
+
+  // 30. Trefoil Clover (3 Petals)
+  Array.from({ length: N }, (_, i) => {
+    const a = (i / N) * Math.PI * 2 - Math.PI / 2;
+    const r = 26 + 14 * Math.sin(3 * a);
+    return `${Math.round((50 + r * Math.cos(a)) * 10) / 10},${Math.round((50 + r * Math.sin(a)) * 10) / 10}`;
+  }).join(' '),
+
+  // 31. Flame / Drop Badge
+  samplePolygon([[50, 10], [68, 28], [85, 48], [82, 75], [50, 90], [18, 75], [15, 48], [32, 28]], N),
+
+  // 32. Deltoid (3-Cusp Hypocycloid)
+  Array.from({ length: N }, (_, i) => {
+    const a = (i / N) * Math.PI * 2 - Math.PI / 2;
+    const x = 50 + 13 * (2 * Math.cos(a) + Math.cos(2 * a));
+    const y = 50 + 13 * (2 * Math.sin(a) - Math.sin(2 * a));
+    return `${Math.round(x * 10) / 10},${Math.round(y * 10) / 10}`;
+  }).join(' '),
+
+  // 33. Fish / Wave Loop
+  Array.from({ length: N }, (_, i) => {
+    const a = (i / N) * Math.PI * 2;
+    const x = 50 + 38 * Math.cos(a);
+    const y = 50 + 30 * Math.sin(2 * a);
+    return `${Math.round(x * 10) / 10},${Math.round(y * 10) / 10}`;
+  }).join(' '),
+
+  // 34. Octagram Diamond
+  samplePolygon([[50, 10], [78, 22], [90, 50], [78, 78], [50, 90], [22, 78], [10, 50], [22, 22]], N)
 ];
 
 export interface VeretkaLoaderProps {
@@ -293,4 +375,48 @@ export const VeretkaLoader: React.FC<VeretkaLoaderProps> = ({ className, size })
     </div>
   );
 };
+
+export interface ShapeInfo {
+  id: number;
+  nameUk: string;
+  nameEn: string;
+  pointsString: string;
+}
+
+export const SHAPE_INFOS: ShapeInfo[] = [
+  { id: 1, nameUk: 'Коло', nameEn: 'Circle', pointsString: SHAPES[0] },
+  { id: 2, nameUk: 'Квадрат', nameEn: 'Square', pointsString: SHAPES[1] },
+  { id: 3, nameUk: 'Трикутник', nameEn: 'Triangle', pointsString: SHAPES[2] },
+  { id: 4, nameUk: '5-променева зірка', nameEn: '5-Point Star', pointsString: SHAPES[3] },
+  { id: 5, nameUk: '8-променевий спалах', nameEn: '8-Point Sparkle', pointsString: SHAPES[4] },
+  { id: 6, nameUk: 'П\'ятикутник', nameEn: 'Pentagon', pointsString: SHAPES[5] },
+  { id: 7, nameUk: 'Шестикутник', nameEn: 'Hexagon', pointsString: SHAPES[6] },
+  { id: 8, nameUk: 'Восьмикутник', nameEn: 'Octagon', pointsString: SHAPES[7] },
+  { id: 9, nameUk: 'Хрест / Плюс', nameEn: 'Plus Cross', pointsString: SHAPES[8] },
+  { id: 10, nameUk: 'Серце', nameEn: 'Heart', pointsString: SHAPES[9] },
+  { id: 11, nameUk: 'Квіткова розетка (6 пелюсток)', nameEn: '6-Petal Rosette', pointsString: SHAPES[10] },
+  { id: 12, nameUk: 'Ромб / Алмаз', nameEn: 'Diamond Rhombus', pointsString: SHAPES[11] },
+  { id: 13, nameUk: 'Сквіркл / Супереліпс', nameEn: 'Squircle Superellipse', pointsString: SHAPES[12] },
+  { id: 14, nameUk: 'Крапля', nameEn: 'Teardrop', pointsString: SHAPES[13] },
+  { id: 15, nameUk: 'Шестерня', nameEn: 'Gear Cogwheel', pointsString: SHAPES[14] },
+  { id: 16, nameUk: 'Захисний щит', nameEn: 'Protection Shield', pointsString: SHAPES[15] },
+  { id: 17, nameUk: 'Півмісяць', nameEn: 'Crescent Moon', pointsString: SHAPES[16] },
+  { id: 18, nameUk: 'Капсула / Пігулка', nameEn: 'Capsule Pill', pointsString: SHAPES[17] },
+  { id: 19, nameUk: 'Лемніската / Нескінченність', nameEn: 'Infinity Lemniscate', pointsString: SHAPES[18] },
+  { id: 20, nameUk: 'Трапеція', nameEn: 'Trapezoid', pointsString: SHAPES[19] },
+  { id: 21, nameUk: 'Метелик / Пісочний годинник', nameEn: 'Butterfly Hourglass', pointsString: SHAPES[20] },
+  { id: 22, nameUk: 'Астроїда (4-вершинна зірка)', nameEn: 'Astroid 4-Cusp', pointsString: SHAPES[21] },
+  { id: 23, nameUk: 'Соняшник (8 пелюсток)', nameEn: '8-Petal Sunflower', pointsString: SHAPES[22] },
+  { id: 24, nameUk: 'Стрілка-шеврон', nameEn: 'Chevron Arrowhead', pointsString: SHAPES[23] },
+  { id: 25, nameUk: 'Блискавка / Спалах', nameEn: 'Lightning Spark', pointsString: SHAPES[24] },
+  { id: 26, nameUk: 'Органічна амеба', nameEn: 'Organic Amoeba', pointsString: SHAPES[25] },
+  { id: 27, nameUk: 'Королівська корона', nameEn: 'Royal Crown', pointsString: SHAPES[26] },
+  { id: 28, nameUk: 'Гексаграма (Зірка Давида)', nameEn: 'Hexagram Star', pointsString: SHAPES[27] },
+  { id: 29, nameUk: 'Трикутник Рело', nameEn: 'Reuleaux Triangle', pointsString: SHAPES[28] },
+  { id: 30, nameUk: 'Трилисник (3 пелюстки)', nameEn: 'Trefoil Clover', pointsString: SHAPES[29] },
+  { id: 31, nameUk: 'Полум\'я / Символ', nameEn: 'Flame Badge', pointsString: SHAPES[30] },
+  { id: 32, nameUk: 'Дельтоїда', nameEn: 'Deltoid 3-Cusp', pointsString: SHAPES[31] },
+  { id: 33, nameUk: 'Хвильова петля / Рибка', nameEn: 'Wave Loop', pointsString: SHAPES[32] },
+  { id: 34, nameUk: 'Октаграма-алмаз', nameEn: 'Octagram Diamond', pointsString: SHAPES[33] },
+];
 

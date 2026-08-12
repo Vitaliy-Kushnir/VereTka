@@ -21,6 +21,7 @@ import KeyboardShortcutsModal from './components/KeyboardShortcutsModal';
 import ApiKeyModal from './components/ApiKeyModal';
 import FeedbackModal from './components/FeedbackModal';
 import CheatCodeModal from './components/CheatCodeModal';
+import LoaderShowcaseModal from './components/LoaderShowcaseModal';
 import { saveFile, generateSvg, exportToRaster, openProjectFile, saveToHandle } from './lib/exportUtils';
 import { SquareIcon, CodeIcon, XIcon, AxesIcon, FitToScreenIcon, SelectIcon, EditPointsIcon, RectangleIcon, EllipseIcon, CircleIcon, LineIcon, PolylineIcon, BezierIcon, PolygonIcon, PencilIcon, TriangleIcon, RightTriangleIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, PiesliceIcon, ChordIcon, ArcIcon, StarIcon, TextIcon, ImageIcon, BitmapIcon, UndoIcon, RedoIcon, DuplicateIcon, GroupIcon, UngroupIcon, ToolsIcon, TrashIcon, GridIcon, SettingsIcon, DrawFromCornerIcon, DrawFromCenterIcon, CheckIcon, MenuIcon, SunIcon, MoonIcon, HomeIcon, BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, SadMonitorIcon, FullscreenIcon, ExitFullscreenIcon, AlignShapesLeftIcon, AlignShapesCenterHIcon, AlignShapesRightIcon, AlignShapesTopIcon, AlignShapesCenterVIcon, AlignShapesBottomIcon, DistributeHorizontalIcon, DistributeVerticalIcon, ChevronDownIcon, ChevronRightIcon, DistributePathIcon, FlipHorizontalIcon, FlipVerticalIcon, EraserIcon, CloudGalleryIcon } from './components/icons';
 import { getFinalPoints, getVisualBoundingBox, getBoundingBox, getEditablePoints, getShapeCenter, rotatePoint, isShapeClosed, isPathClosed, evaluateShapeContourPointAndTangent } from './lib/geometry';
@@ -1347,6 +1348,7 @@ export default function App(): React.ReactNode {
   const [autosavedProjectData, setAutosavedProjectData] = useState<string | null>(null);
 
   const [isCheatCodeModalOpen, setIsCheatCodeModalOpen] = useState(false);
+  const [isLoaderShowcaseModalOpen, setIsLoaderShowcaseModalOpen] = useState(false);
   const [activeCheats, setActiveCheats] = useState<Set<string>>(new Set());
 
 
@@ -1641,6 +1643,9 @@ export default function App(): React.ReactNode {
   const handleActivateCheat = useCallback((code: string) => {
     if (code === '000') {
         setActiveCheats(new Set());
+    } else if (code === '004') {
+        setActiveCheats((prev: Set<string>) => new Set(prev).add(code));
+        setIsLoaderShowcaseModalOpen(true);
     } else {
         setActiveCheats((prev: Set<string>) => new Set(prev).add(code));
     }
@@ -5202,6 +5207,13 @@ export default function App(): React.ReactNode {
                 onActivate={handleActivateCheat}
                 showNotification={showNotification}
                 activeCheats={activeCheats}
+            />
+          )}
+
+          {isLoaderShowcaseModalOpen && (
+            <LoaderShowcaseModal
+              isOpen={isLoaderShowcaseModalOpen}
+              onClose={() => setIsLoaderShowcaseModalOpen(false)}
             />
           )}
 

@@ -10,7 +10,7 @@ interface CheatCodeModalProps {
   activeCheats?: Set<string>;
 }
 
-const CHEAT_CODES_LIST = ['000', '001', '002', '003'];
+const CHEAT_CODES_LIST = ['000', '001', '002', '003', '004'];
 
 const CheatCodeModal: React.FC<CheatCodeModalProps> = ({ isOpen, onClose, onActivate, showNotification, activeCheats }) => {
     const { t } = useLanguage();
