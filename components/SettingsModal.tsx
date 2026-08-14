@@ -35,6 +35,8 @@ interface SettingsModalProps {
   setShowCursorCoords: (show: boolean) => void;
   showRotationAngle: boolean;
   setShowRotationAngle: (show: boolean) => void;
+  openAsWebApp: boolean;
+  setOpenAsWebApp: (open: boolean) => void;
   showLineNumbers: boolean;
   setShowLineNumbers: (show: boolean) => void;
   generatorType: 'local' | 'gemini';
@@ -283,6 +285,13 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                         <label htmlFor="showRotationAngle" className="ml-3 text-sm font-medium text-[var(--text-secondary)] cursor-pointer">
                                             {t('settings.appearance.showRotationAngle')}
                                             <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.appearance.showRotationAngleDesc')}</p>
+                                        </label>
+                                    </div>
+                                    <div className="flex items-start pt-1">
+                                        <input id="openAsWebApp" type="checkbox" checked={props.openAsWebApp} onChange={e => props.setOpenAsWebApp(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] bg-[var(--bg-secondary)] border-[var(--border-primary)] mt-0.5" />
+                                        <label htmlFor="openAsWebApp" className="ml-3 text-sm font-medium text-[var(--text-secondary)] cursor-pointer">
+                                            {t('settings.appearance.openAsWebApp')}
+                                            <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.appearance.openAsWebAppDesc')}</p>
                                         </label>
                                     </div>
                                 </div>

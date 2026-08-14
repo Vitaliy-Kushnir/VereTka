@@ -1303,6 +1303,7 @@ export default function App(): React.ReactNode {
   const [outlineWithFill, setOutlineWithFill] = useState<boolean>(true);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(!!document.fullscreenElement);
   const [maxRecentProjects, setMaxRecentProjects] = useState(12);
+  const [openAsWebApp, setOpenAsWebApp] = useState<boolean>(false);
 
   // State for temporary visual overrides (e.g., color picking preview)
   const [previewOverrides, setPreviewOverrides] = useState<Record<string, Partial<Shape>>>({});
@@ -1629,16 +1630,42 @@ export default function App(): React.ReactNode {
                 if (typeof settings.maxRecentProjects === 'number') {
                     setMaxRecentProjects(settings.maxRecentProjects);
                 }
+                if (typeof settings.openAsWebApp === 'boolean') {
+                    setOpenAsWebApp(settings.openAsWebApp);
+                }
             }
         } catch (e) { console.error("Failed to load app settings", e); }
     }, []);
 
     useEffect(() => {
         try {
-            const settings = { maxRecentProjects };
+            const settings = { maxRecentProjects, openAsWebApp };
             localStorage.setItem('veretka-app-settings', JSON.stringify(settings));
         } catch (e) { console.error("Failed to save app settings", e); }
-    }, [maxRecentProjects]);
+    }, [maxRecentProjects, openAsWebApp]);
+
+    useEffect(() => {
+        if (!openAsWebApp) return;
+
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
+        const isPopup = !!window.opener || window.location.search.includes('mode=webapp');
+        const alreadyAttempted = sessionStorage.getItem('veretka_launched_webapp') === 'true';
+
+        if (!isStandalone && !isPopup && !alreadyAttempted) {
+            sessionStorage.setItem('veretka_launched_webapp', 'true');
+            const targetUrl = new URL(window.location.href);
+            targetUrl.searchParams.set('mode', 'webapp');
+            
+            const popupWindow = window.open(
+                targetUrl.toString(),
+                'VeretkaWebAppWindow',
+                'width=1280,height=800,menubar=no,toolbar=no,location=no,status=no,resizable=yes'
+            );
+            if (popupWindow) {
+                popupWindow.focus();
+            }
+        }
+    }, [openAsWebApp]);
 
   const handleActivateCheat = useCallback((code: string) => {
     if (code === '000') {
@@ -5237,6 +5264,7 @@ export default function App(): React.ReactNode {
               enableSnapping={enableSnapping} setEnableSnapping={setEnableSnapping}
               showCursorCoords={showCursorCoords} setShowCursorCoords={setShowCursorCoords}
               showRotationAngle={showRotationAngle} setShowRotationAngle={setShowRotationAngle}
+              openAsWebApp={openAsWebApp} setOpenAsWebApp={setOpenAsWebApp}
               showLineNumbers={showLineNumbers} setShowLineNumbers={setShowLineNumbers}
               generatorType={generatorType} setGeneratorType={setGeneratorType}
               highlightCodeOnSelection={highlightCodeOnSelection} setHighlightCodeOnSelection={setHighlightCodeOnSelection}

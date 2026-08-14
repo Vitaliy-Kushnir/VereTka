@@ -328,8 +328,54 @@ export async function getPublicProjectsPaginated(maxResults = 12, lastVisibleDoc
     });
     return { projects: results, lastVisible };
   } catch (error) {
-    console.error('Error fetching paginated public projects:', error);
-    return { projects: [], lastVisible: null };
+    console.warn('Composite index pending/missing for getPublicProjectsPaginated, using fallback without orderBy:', error);
+    try {
+      const qFallback = query(
+        collection(db, 'projects'),
+        where('visibility', '==', 'public'),
+        limit(100)
+      );
+      const querySnapshot = await getDocs(qFallback);
+      let docs = querySnapshot.docs;
+      
+      docs.sort((a, b) => {
+        const cA = a.data().createdAt || 0;
+        const cB = b.data().createdAt || 0;
+        return cB - cA;
+      });
+
+      if (lastVisibleDoc) {
+        const lastIdx = docs.findIndex(d => d.id === lastVisibleDoc.id);
+        if (lastIdx !== -1) {
+          docs = docs.slice(lastIdx + 1);
+        }
+      }
+
+      const pagedDocs = docs.slice(0, maxResults);
+      const results: CloudProject[] = pagedDocs.map(docSnap => {
+        const data = docSnap.data() as any;
+        return {
+          id: docSnap.id,
+          title: data.title || 'Без назви',
+          authorName: data.authorName || 'Анонім',
+          ownerNickname: data.ownerNickname || '',
+          passcodeHash: data.passcodeHash || '',
+          visibility: data.visibility || 'public',
+          groupId: data.groupId || '',
+          groupName: data.groupName || '',
+          projectData: data.projectData || '',
+          shapesCount: data.shapesCount || 0,
+          createdAt: data.createdAt || 0,
+          updatedAt: data.updatedAt || 0,
+        };
+      });
+
+      const lastVisible = pagedDocs.length > 0 ? pagedDocs[pagedDocs.length - 1] : null;
+      return { projects: results, lastVisible };
+    } catch (fallbackErr) {
+      console.error('Fallback query failed for getPublicProjectsPaginated:', fallbackErr);
+      return { projects: [], lastVisible: null };
+    }
   }
 }
 
