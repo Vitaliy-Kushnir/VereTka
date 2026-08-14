@@ -895,7 +895,8 @@ export async function updateProjectVisibility(
 // Delete project
 export async function deleteProjectFromCloud(
   projectId: string,
-  passcode?: string
+  passcode?: string,
+  ownerNickname = ''
 ): Promise<{ success: boolean; message?: string }> {
   try {
     const docRef = doc(db, 'projects', projectId);
@@ -904,8 +905,14 @@ export async function deleteProjectFromCloud(
       return { success: false, message: 'Проєкт не знайдено' };
     }
 
+    const data = docSnap.data() as any;
+    const isOwner = !!(
+      ownerNickname &&
+      data.ownerNickname &&
+      data.ownerNickname.trim().toLowerCase() === ownerNickname.trim().toLowerCase()
+    );
+
     if (passcode && passcode.trim()) {
-      const data = docSnap.data() as any;
       const inputHash = await hashPasscode(passcode.trim());
 
       // If it's an educational/group submission
@@ -921,9 +928,11 @@ export async function deleteProjectFromCloud(
             }
           }
         }
-      } else if (data.passcodeHash && data.passcodeHash !== inputHash) {
+      } else if (data.passcodeHash && data.passcodeHash !== inputHash && !isOwner) {
         return { success: false, message: 'Невірний пароль проєкту' };
       }
+    } else if (data.passcodeHash && !isOwner) {
+      return { success: false, message: 'Невірний пароль проєкту' };
     }
 
     await deleteDoc(docRef);
@@ -939,7 +948,8 @@ export async function updateProjectContentInCloud(
   passcode: string,
   projectData: string,
   title: string,
-  shapesCount: number
+  shapesCount: number,
+  ownerNickname = ''
 ): Promise<{ success: boolean; message?: string }> {
   try {
     const docRef = doc(db, 'projects', projectId);
@@ -949,15 +959,29 @@ export async function updateProjectContentInCloud(
     }
 
     const data = docSnap.data() as any;
-    const inputHash = await hashPasscode(passcode);
-    if (data.passcodeHash && data.passcodeHash !== inputHash) {
+    const inputHash = passcode ? await hashPasscode(passcode.trim()) : '';
+    const isOwner = !!(
+      ownerNickname &&
+      data.ownerNickname &&
+      data.ownerNickname.trim().toLowerCase() === ownerNickname.trim().toLowerCase()
+    );
+
+    if (data.passcodeHash && data.passcodeHash !== inputHash && !isOwner) {
       return { success: false, message: 'Невірний пароль проєкту' };
     }
+
+    const searchKeywords = generateSearchKeywords(
+      title.trim() || data.title,
+      data.authorName || '',
+      data.ownerNickname || '',
+      data.groupName || ''
+    );
 
     await updateDoc(docRef, {
       title: title.trim() || data.title,
       projectData,
       shapesCount,
+      searchKeywords,
       updatedAt: Date.now()
     });
 
@@ -1962,7 +1986,8 @@ export async function updateProjectDetailsInCloud(
   projectId: string,
   passcode: string,
   title: string,
-  description: string
+  description: string,
+  ownerNickname = ''
 ): Promise<{ success: boolean; message?: string }> {
   try {
     const docRef = doc(db, 'projects', projectId);
@@ -1972,14 +1997,28 @@ export async function updateProjectDetailsInCloud(
     }
 
     const data = docSnap.data() as any;
-    const inputHash = await hashPasscode(passcode);
-    if (data.passcodeHash && data.passcodeHash !== inputHash) {
+    const inputHash = passcode ? await hashPasscode(passcode.trim()) : '';
+    const isOwner = !!(
+      ownerNickname &&
+      data.ownerNickname &&
+      data.ownerNickname.trim().toLowerCase() === ownerNickname.trim().toLowerCase()
+    );
+
+    if (data.passcodeHash && data.passcodeHash !== inputHash && !isOwner) {
       return { success: false, message: 'Невірний пароль проєкту' };
     }
 
+    const searchKeywords = generateSearchKeywords(
+      title.trim() || data.title,
+      data.authorName || '',
+      data.ownerNickname || '',
+      data.groupName || ''
+    );
+
     await updateDoc(docRef, {
-      title,
-      description,
+      title: title.trim() || data.title,
+      description: description.trim(),
+      searchKeywords,
       updatedAt: Date.now()
     });
     return { success: true };

@@ -1671,7 +1671,11 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
     if (!projectId) return;
 
     if (action === 'delete') {
-      const res = await deleteProjectFromCloud(projectId);
+      const res = await deleteProjectFromCloud(
+        projectId,
+        promptPasscode.trim() || personalPasscode,
+        isPersonalLoggedIn ? personalNickname : ''
+      );
       if (res.success) {
         setActionPasscodeModal({ show: false, projectId: '', action: 'delete' });
         setPromptPasscode('');
@@ -1752,7 +1756,8 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
       projectId,
       projPasscode,
       editProjectTitle.trim(),
-      editProjectDesc.trim()
+      editProjectDesc.trim(),
+      isPersonalLoggedIn ? personalNickname : ''
     );
     setIsSavingProjectDetails(false);
 
