@@ -132,7 +132,7 @@ function shapeToSvgString(shape: Shape): string {
             transformStr += `translate(${-center.x} ${-center.y})`;
         }
 
-        const t = transformStr.trim();
+        const t = ((transformStr) || "").trim();
         return t ? `transform="${t}"` : '';
     };
 

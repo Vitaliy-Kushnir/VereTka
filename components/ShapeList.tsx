@@ -206,8 +206,8 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
     const handleFinishEditing = () => {
         if (editingId) {
             const shape = shapes.find(s => s.id === editingId);
-            if (shape && editingValue.trim() !== '') {
-                onUpdateShape({ ...shape, name: editingValue.trim() });
+            if (shape && ((editingValue) || "").trim() !== '') {
+                onUpdateShape({ ...shape, name: ((editingValue) || "").trim() });
             }
         }
         setEditingId(null);

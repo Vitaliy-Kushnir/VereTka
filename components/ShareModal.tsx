@@ -44,7 +44,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, shareUrl }) =>
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4"
       onClick={onClose}
       aria-modal="true"
       role="dialog"
@@ -147,7 +147,8 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, shareUrl }) =>
           </div>
 
           {isTooLong && (
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded p-3 text-xs text-amber-200/90 leading-relaxed">
+            <div className="bg-[var(--bg-primary)] border border-[var(--border-secondary)] rounded-xl p-3 text-xs text-[var(--text-secondary)] leading-relaxed">
+              <span className="text-amber-600 dark:text-amber-400 font-semibold mr-1">⚠️</span>
               {t('share.tooLongWarning')}
             </div>
           )}

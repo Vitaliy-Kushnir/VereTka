@@ -72,7 +72,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
     useEffect(() => {
         if (!isOpen || !contentRef.current) return;
         
-        if (!debouncedSearchTerm.trim()) {
+        if (!((debouncedSearchTerm) || "").trim()) {
             setMatchCount(0);
             setCurrentMatchIndex(-1);
             return;
@@ -125,7 +125,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
 
     const applyHighlight = (node: React.ReactNode, term: string): React.ReactNode => {
         if (typeof node === 'string') {
-            if (!term.trim()) {
+            if (!((term) || "").trim()) {
                 return node;
             }
             const parts = node.split(new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
@@ -179,7 +179,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
 
     return (
         <div 
-            className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4"
             onClick={onClose}
             aria-modal="true"
             role="dialog"
@@ -209,7 +209,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                                     <XIcon size={16} />
                                 </button>
                             )}
-                            {debouncedSearchTerm.trim() && (
+                            {((debouncedSearchTerm) || "").trim() && (
                                 <>
                                     {searchTerm && <div className="w-px h-4 bg-[var(--border-secondary)]"></div>}
                                     <div className="flex items-center text-xs text-[var(--text-tertiary)]">

@@ -40,9 +40,10 @@ const StatusBar: React.FC<StatusBarProps> = ({
   const scaleRange = maxLog - minLog;
 
   const zoomToSliderValue = (zoom: number): number => {
-    if (scaleRange === 0) return 0;
+    if (isNaN(zoom) || !isFinite(zoom) || zoom <= 0 || scaleRange === 0) return 50;
     const clampedZoom = Math.max(MIN_SCALE, Math.min(MAX_SCALE, zoom));
-    return ((Math.log(clampedZoom) - minLog) / scaleRange) * 100;
+    const val = ((Math.log(clampedZoom) - minLog) / scaleRange) * 100;
+    return isNaN(val) ? 50 : val;
   };
 
   const sliderValueToZoom = (value: number): number => {

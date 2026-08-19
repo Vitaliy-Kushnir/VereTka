@@ -17,21 +17,37 @@ import {
   QueryDocumentSnapshot,
   DocumentData,
   serverTimestamp,
-  Timestamp
+  Timestamp,
+  getCountFromServer
 } from 'firebase/firestore';
 import { getAuth, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } from 'firebase/auth';
 import firebaseConfig from '../firebase-applet-config.json';
 
 // Initialize Firebase
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-export const db = initializeFirestore(app, { experimentalAutoDetectLongPolling: true }, firebaseConfig.firestoreDatabaseId);
+
+export const db = (() => {
+  try {
+    return initializeFirestore(app, {
+      experimentalForceLongPolling: true,
+      experimentalAutoDetectLongPolling: true,
+    }, firebaseConfig.firestoreDatabaseId || '(default)');
+  } catch (e) {
+    try {
+      return getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
+    } catch {
+      return getFirestore(app);
+    }
+  }
+})();
+
 export const auth = getAuth(app);
 
 // Helper function to create SHA-256 hash for passcodes
 export async function hashPasscode(passcode: string): Promise<string> {
   if (!passcode) return '';
   try {
-    const msgBuffer = new TextEncoder().encode(passcode.trim());
+    const msgBuffer = new TextEncoder().encode(((passcode) || "").trim());
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
@@ -154,7 +170,7 @@ export async function publishProjectToCloud(params: {
       const creator = groupData.creatorNickname || '';
       const mode = groupData.mode || 'gallery';
 
-      if (mode === 'readonly' && creator.toLowerCase() !== params.ownerNickname.trim().toLowerCase()) {
+      if (mode === 'readonly' && creator.toLowerCase() !== ((params.ownerNickname) || "").trim().toLowerCase()) {
         throw new Error('Ця група працює в режимі "Дошка шаблонів" (readonly). Тільки її засновник може публікувати сюди роботи.');
       }
     } else {
@@ -172,10 +188,10 @@ export async function publishProjectToCloud(params: {
   );
 
   const docRef = await addDoc(collection(db, 'projects'), {
-    title: params.title.trim() || 'Без назви',
-    description: params.description?.trim() || '',
-    authorName: params.authorName.trim() || 'Анонім',
-    ownerNickname: params.ownerNickname.trim().toLowerCase(),
+    title: ((params.title) || "").trim() || 'Без назви',
+    description: (params.description || '').trim(),
+    authorName: ((params.authorName) || "").trim() || 'Анонім',
+    ownerNickname: ((params.ownerNickname) || "").trim().toLowerCase(),
     passcodeHash,
     visibility: params.visibility,
     groupId: normGroupId || '',
@@ -227,8 +243,7 @@ export async function getPublicProjects(maxResults = 50): Promise<CloudProject[]
     const q = query(
       collection(db, 'projects'),
       where('visibility', '==', 'public'),
-      orderBy('createdAt', 'desc'),
-      limit(maxResults)
+      limit(maxResults * 2)
     );
     const querySnapshot = await getDocs(q);
     const results: CloudProject[] = [];
@@ -243,75 +258,80 @@ export async function getPublicProjects(maxResults = 50): Promise<CloudProject[]
         visibility: data.visibility || 'public',
         groupId: data.groupId || '',
         groupName: data.groupName || '',
+        description: data.description || '',
         projectData: data.projectData || '',
         shapesCount: data.shapesCount || 0,
         createdAt: data.createdAt || 0,
         updatedAt: data.updatedAt || 0,
       });
     });
-    return results;
+    results.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    return results.slice(0, maxResults);
   } catch (error) {
-    console.error('Error fetching public projects:', error);
-    // Fallback query without orderBy in case index is pending
-    const qFallback = query(
-      collection(db, 'projects'),
-      where('visibility', '==', 'public'),
-      limit(maxResults)
-    );
-    const querySnapshot = await getDocs(qFallback);
-    const results: CloudProject[] = [];
-    querySnapshot.forEach((docSnap) => {
-      const data = docSnap.data() as any;
-      results.push({
-        id: docSnap.id,
-        title: data.title || 'Без назви',
-        authorName: data.authorName || 'Анонім',
-        ownerNickname: data.ownerNickname || '',
-        passcodeHash: data.passcodeHash || '',
-        visibility: data.visibility || 'public',
-        groupId: data.groupId || '',
-        groupName: data.groupName || '',
-        projectData: data.projectData || '',
-        shapesCount: data.shapesCount || 0,
-        createdAt: data.createdAt || 0,
-        updatedAt: data.updatedAt || 0,
-      });
-    });
-    return results.sort((a, b) => b.createdAt - a.createdAt);
+    console.warn('Error fetching public projects:', error);
+    return [];
   }
 }
 
-export async function getPublicProjectsPaginated(maxResults = 12, lastVisibleDoc?: QueryDocumentSnapshot<DocumentData> | null): Promise<{ projects: CloudProject[], lastVisible: QueryDocumentSnapshot<DocumentData> | null }> {
+export async function getPublicProjectsCount(): Promise<number> {
   try {
-    let q;
-    if (lastVisibleDoc) {
-      q = query(
-        collection(db, 'projects'),
-        where('visibility', '==', 'public'),
-        orderBy('createdAt', 'desc'),
-        startAfter(lastVisibleDoc),
-        limit(maxResults)
-      );
-    } else {
-      q = query(
-        collection(db, 'projects'),
-        where('visibility', '==', 'public'),
-        orderBy('createdAt', 'desc'),
-        limit(maxResults)
-      );
+    const qCount = query(collection(db, 'projects'), where('visibility', '==', 'public'));
+    const countSnapshot = await getCountFromServer(qCount);
+    return countSnapshot.data().count;
+  } catch (error) {
+    console.warn('Error fetching public projects count:', error);
+    try {
+      const qDocs = query(collection(db, 'projects'), where('visibility', '==', 'public'));
+      const snap = await getDocs(qDocs);
+      return snap.size;
+    } catch {
+      return 0;
     }
-    
-    const querySnapshot = await getDocs(q);
-    const results: CloudProject[] = [];
-    let lastVisible: QueryDocumentSnapshot<DocumentData> | null = null;
-    
-    if (!querySnapshot.empty) {
-      lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
+  }
+}
+
+export async function getPublicProjectsPaginated(maxResults = 12, lastVisibleDoc?: QueryDocumentSnapshot<DocumentData> | null): Promise<{ projects: CloudProject[], lastVisible: QueryDocumentSnapshot<DocumentData> | null, totalCount: number }> {
+  try {
+    let totalCount = 0;
+    try {
+      const qCount = query(collection(db, 'projects'), where('visibility', '==', 'public'));
+      const countSnapshot = await getCountFromServer(qCount);
+      totalCount = countSnapshot.data().count;
+    } catch (e) {
+      console.warn('getCountFromServer fallback:', e);
     }
 
-    querySnapshot.forEach((docSnap) => {
+    const q = query(
+      collection(db, 'projects'),
+      where('visibility', '==', 'public'),
+      limit(200)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const docs = [...querySnapshot.docs];
+    
+    if (totalCount === 0 || totalCount < docs.length) {
+      totalCount = docs.length;
+    }
+    
+    docs.sort((a, b) => {
+      const cA = a.data().createdAt || 0;
+      const cB = b.data().createdAt || 0;
+      return cB - cA;
+    });
+
+    let pagedDocs = docs;
+    if (lastVisibleDoc) {
+      const lastIdx = docs.findIndex(d => d.id === lastVisibleDoc.id);
+      if (lastIdx !== -1) {
+        pagedDocs = docs.slice(lastIdx + 1);
+      }
+    }
+
+    const currentSlice = pagedDocs.slice(0, maxResults);
+    const results: CloudProject[] = currentSlice.map(docSnap => {
       const data = docSnap.data() as any;
-      results.push({
+      return {
         id: docSnap.id,
         title: data.title || 'Без назви',
         authorName: data.authorName || 'Анонім',
@@ -320,62 +340,19 @@ export async function getPublicProjectsPaginated(maxResults = 12, lastVisibleDoc
         visibility: data.visibility || 'public',
         groupId: data.groupId || '',
         groupName: data.groupName || '',
+        description: data.description || '',
         projectData: data.projectData || '',
         shapesCount: data.shapesCount || 0,
         createdAt: data.createdAt || 0,
         updatedAt: data.updatedAt || 0,
-      });
+      };
     });
-    return { projects: results, lastVisible };
+
+    const lastVisible = currentSlice.length > 0 ? currentSlice[currentSlice.length - 1] : null;
+    return { projects: results, lastVisible, totalCount };
   } catch (error) {
-    console.warn('Composite index pending/missing for getPublicProjectsPaginated, using fallback without orderBy:', error);
-    try {
-      const qFallback = query(
-        collection(db, 'projects'),
-        where('visibility', '==', 'public'),
-        limit(100)
-      );
-      const querySnapshot = await getDocs(qFallback);
-      let docs = querySnapshot.docs;
-      
-      docs.sort((a, b) => {
-        const cA = a.data().createdAt || 0;
-        const cB = b.data().createdAt || 0;
-        return cB - cA;
-      });
-
-      if (lastVisibleDoc) {
-        const lastIdx = docs.findIndex(d => d.id === lastVisibleDoc.id);
-        if (lastIdx !== -1) {
-          docs = docs.slice(lastIdx + 1);
-        }
-      }
-
-      const pagedDocs = docs.slice(0, maxResults);
-      const results: CloudProject[] = pagedDocs.map(docSnap => {
-        const data = docSnap.data() as any;
-        return {
-          id: docSnap.id,
-          title: data.title || 'Без назви',
-          authorName: data.authorName || 'Анонім',
-          ownerNickname: data.ownerNickname || '',
-          passcodeHash: data.passcodeHash || '',
-          visibility: data.visibility || 'public',
-          groupId: data.groupId || '',
-          groupName: data.groupName || '',
-          projectData: data.projectData || '',
-          shapesCount: data.shapesCount || 0,
-          createdAt: data.createdAt || 0,
-          updatedAt: data.updatedAt || 0,
-        };
-      });
-
-      const lastVisible = pagedDocs.length > 0 ? pagedDocs[pagedDocs.length - 1] : null;
-      return { projects: results, lastVisible };
-    } catch (fallbackErr) {
-      console.error('Fallback query failed for getPublicProjectsPaginated:', fallbackErr);
-      return { projects: [], lastVisible: null };
-    }
+    console.warn('Error in getPublicProjectsPaginated:', error);
+    return { projects: [], lastVisible: null, totalCount: 0 };
   }
 }
 
@@ -383,8 +360,8 @@ export async function searchPublicProjects(
   searchQueryStr: string,
   maxResults = 12,
   lastVisibleDoc?: QueryDocumentSnapshot<DocumentData> | null
-): Promise<{ projects: CloudProject[]; lastVisible: QueryDocumentSnapshot<DocumentData> | null }> {
-  const cleanQuery = searchQueryStr.trim().toLowerCase();
+): Promise<{ projects: CloudProject[]; lastVisible: QueryDocumentSnapshot<DocumentData> | null; totalCount: number }> {
+  const cleanQuery = ((searchQueryStr) || "").trim().toLowerCase();
   if (!cleanQuery) {
     return getPublicProjectsPaginated(maxResults, lastVisibleDoc);
   }
@@ -397,37 +374,19 @@ export async function searchPublicProjects(
   const token = words[0];
 
   try {
-    let q;
-    if (lastVisibleDoc) {
-      q = query(
-        collection(db, 'projects'),
-        where('visibility', '==', 'public'),
-        where('searchKeywords', 'array-contains', token),
-        orderBy('createdAt', 'desc'),
-        startAfter(lastVisibleDoc),
-        limit(maxResults)
-      );
-    } else {
-      q = query(
-        collection(db, 'projects'),
-        where('visibility', '==', 'public'),
-        where('searchKeywords', 'array-contains', token),
-        orderBy('createdAt', 'desc'),
-        limit(maxResults)
-      );
-    }
+    const qSearch = query(
+      collection(db, 'projects'),
+      where('visibility', '==', 'public'),
+      where('searchKeywords', 'array-contains', token),
+      limit(200)
+    );
 
-    const querySnapshot = await getDocs(q);
-    const results: CloudProject[] = [];
-    let lastVisible: QueryDocumentSnapshot<DocumentData> | null = null;
+    const querySnapshot = await getDocs(qSearch);
+    const docs = [...querySnapshot.docs];
 
-    if (!querySnapshot.empty) {
-      lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
-    }
-
-    querySnapshot.forEach((docSnap) => {
+    const results: CloudProject[] = docs.map((docSnap) => {
       const data = docSnap.data() as any;
-      results.push({
+      return {
         id: docSnap.id,
         title: data.title || 'Без назви',
         authorName: data.authorName || 'Анонім',
@@ -436,64 +395,56 @@ export async function searchPublicProjects(
         visibility: data.visibility || 'public',
         groupId: data.groupId || '',
         groupName: data.groupName || '',
+        description: data.description || '',
         projectData: data.projectData || '',
         shapesCount: data.shapesCount || 0,
         createdAt: data.createdAt || 0,
         updatedAt: data.updatedAt || 0,
         searchKeywords: data.searchKeywords || [],
-      });
+      };
     });
 
+    // Filter multi-word search query
     let filteredResults = results;
     if (words.length > 1) {
       filteredResults = results.filter(p => {
-        const fullText = `${p.title} ${p.authorName} ${p.ownerNickname} ${p.groupName || ''}`.toLowerCase();
+        const fullText = `${p.title} ${p.authorName} ${p.ownerNickname} ${p.groupName || ''} ${p.description || ''}`.toLowerCase();
         return words.every(w => fullText.includes(w));
       });
     }
 
-    return { projects: filteredResults, lastVisible };
-  } catch (error) {
-    console.error('Error searching public projects:', error);
-    // Fallback query without orderBy in case index is pending
-    try {
-      const qFallback = query(
-        collection(db, 'projects'),
-        where('visibility', '==', 'public'),
-        where('searchKeywords', 'array-contains', token),
-        limit(maxResults)
-      );
-      const querySnapshot = await getDocs(qFallback);
-      const results: CloudProject[] = [];
-      querySnapshot.forEach((docSnap) => {
-        const data = docSnap.data() as any;
-        results.push({
-          id: docSnap.id,
-          title: data.title || 'Без назви',
-          authorName: data.authorName || 'Анонім',
-          ownerNickname: data.ownerNickname || '',
-          passcodeHash: data.passcodeHash || '',
-          visibility: data.visibility || 'public',
-          groupId: data.groupId || '',
-          groupName: data.groupName || '',
-          projectData: data.projectData || '',
-          shapesCount: data.shapesCount || 0,
-          createdAt: data.createdAt || 0,
-          updatedAt: data.updatedAt || 0,
-          searchKeywords: data.searchKeywords || [],
-        });
-      });
-      results.sort((a, b) => b.createdAt - a.createdAt);
-      return { projects: results, lastVisible: null };
-    } catch (e2) {
-      return { projects: [], lastVisible: null };
+    const totalCount = filteredResults.length;
+
+    // Sort by createdAt descending in-memory
+    filteredResults.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+    // Handle pagination with lastVisibleDoc
+    let pagedResults = filteredResults;
+    if (lastVisibleDoc) {
+      const lastIdx = filteredResults.findIndex(d => d.id === lastVisibleDoc.id);
+      if (lastIdx !== -1) {
+        pagedResults = filteredResults.slice(lastIdx + 1);
+      }
     }
+
+    const finalSlice = pagedResults.slice(0, maxResults);
+    let lastVisible: QueryDocumentSnapshot<DocumentData> | null = null;
+    if (finalSlice.length > 0) {
+      const lastItem = finalSlice[finalSlice.length - 1];
+      const matchDoc = docs.find(d => d.id === lastItem.id);
+      lastVisible = matchDoc || null;
+    }
+
+    return { projects: finalSlice, lastVisible, totalCount };
+  } catch (error) {
+    console.warn('Error searching public projects:', error);
+    return { projects: [], lastVisible: null, totalCount: 0 };
   }
 }
 
 // Get personal projects for a specific user cabinet (verified by passcode)
 export async function getPersonalProjects(nickname: string, passcode?: string): Promise<{ success: boolean; projects?: CloudProject[]; message?: string }> {
-  const normNickname = nickname.trim().toLowerCase();
+  const normNickname = ((nickname) || "").trim().toLowerCase();
   if (!normNickname) {
     return { success: false, message: 'Вкажіть Нікнейм' };
   }
@@ -574,7 +525,7 @@ export async function getPersonalProjects(nickname: string, passcode?: string): 
       groupCopies.forEach((gc) => {
         if (gc.groupId) {
           const isMatch = (gc.parentProjectId && gc.parentProjectId === p.id) ||
-                          (!gc.parentProjectId && gc.title.trim().toLowerCase() === p.title.trim().toLowerCase());
+                          (!gc.parentProjectId && (gc.title || '').trim().toLowerCase() === (p.title || '').trim().toLowerCase());
           if (isMatch) {
             const alreadyExists = p.sentToGroups!.some((g) => g.groupId === gc.groupId);
             if (!alreadyExists) {
@@ -599,7 +550,7 @@ export async function getPersonalProjects(nickname: string, passcode?: string): 
 
 // Get group projects for a specific group code
 export async function getGroupProjects(groupCode: string): Promise<CloudProject[]> {
-  const normCode = groupCode.trim().toUpperCase();
+  const normCode = ((groupCode) || "").trim().toUpperCase();
   try {
     const q = query(
       collection(db, 'projects'),
@@ -661,7 +612,7 @@ export async function checkGroupProjectDuplicate(
   nextSuggestedTitle?: string;
   existingUserTitlesInGroup?: string[];
 }> {
-  const normGroupId = groupId.trim().toUpperCase();
+  const normGroupId = ((groupId) || "").trim().toUpperCase();
   if (!normGroupId) return { isDuplicate: false };
 
   try {
@@ -687,9 +638,9 @@ export async function checkGroupProjectDuplicate(
     );
     const projSnap = await getDocs(qProj);
 
-    const normTitle = title.trim().toLowerCase();
-    const normNick = ownerNickname.trim().toLowerCase();
-    const normAuthor = authorName.trim().toLowerCase();
+    const normTitle = ((title) || "").trim().toLowerCase();
+    const normNick = ((ownerNickname) || "").trim().toLowerCase();
+    const normAuthor = ((authorName) || "").trim().toLowerCase();
 
     let existingProject: CloudProject | undefined = undefined;
     const existingUserTitlesInGroup: string[] = [];
@@ -797,7 +748,7 @@ export async function copyProjectToGroup(
       return { success: false, message: `Ця група працює в режимі "Дошка шаблонів" (readonly). Тільки її засновник (@${creator}) може публікувати сюди роботи.` };
     }
 
-    const isOwner = !!(ownerNickname && data.ownerNickname && data.ownerNickname.trim().toLowerCase() === ownerNickname.trim().toLowerCase());
+    const isOwner = !!(ownerNickname && data.ownerNickname && ((data.ownerNickname) || "").trim().toLowerCase() === ((ownerNickname) || "").trim().toLowerCase());
 
     if (!isOwner && data.passcodeHash) {
       const inputHash = await hashPasscode(passcode);
@@ -873,7 +824,7 @@ export async function updateProjectVisibility(
 
     const data = docSnap.data() as any;
     const inputHash = passcode ? await hashPasscode(passcode) : '';
-    const isOwner = !!(ownerNickname && data.ownerNickname && data.ownerNickname.toLowerCase() === ownerNickname.trim().toLowerCase());
+    const isOwner = !!(ownerNickname && data.ownerNickname && data.ownerNickname.toLowerCase() === ((ownerNickname) || "").trim().toLowerCase());
 
     if (data.passcodeHash && data.passcodeHash !== inputHash && !isOwner) {
       return { success: false, message: 'Невірний пароль проєкту' };
@@ -909,11 +860,11 @@ export async function deleteProjectFromCloud(
     const isOwner = !!(
       ownerNickname &&
       data.ownerNickname &&
-      data.ownerNickname.trim().toLowerCase() === ownerNickname.trim().toLowerCase()
+      ((data.ownerNickname) || "").trim().toLowerCase() === ((ownerNickname) || "").trim().toLowerCase()
     );
 
-    if (passcode && passcode.trim()) {
-      const inputHash = await hashPasscode(passcode.trim());
+    if (passcode && ((passcode) || "").trim()) {
+      const inputHash = await hashPasscode(((passcode) || "").trim());
 
       // If it's an educational/group submission
       if (data.isGroupCopy || data.visibility === 'group') {
@@ -959,11 +910,11 @@ export async function updateProjectContentInCloud(
     }
 
     const data = docSnap.data() as any;
-    const inputHash = passcode ? await hashPasscode(passcode.trim()) : '';
+    const inputHash = passcode ? await hashPasscode(((passcode) || "").trim()) : '';
     const isOwner = !!(
       ownerNickname &&
       data.ownerNickname &&
-      data.ownerNickname.trim().toLowerCase() === ownerNickname.trim().toLowerCase()
+      ((data.ownerNickname) || "").trim().toLowerCase() === ((ownerNickname) || "").trim().toLowerCase()
     );
 
     if (data.passcodeHash && data.passcodeHash !== inputHash && !isOwner) {
@@ -971,14 +922,14 @@ export async function updateProjectContentInCloud(
     }
 
     const searchKeywords = generateSearchKeywords(
-      title.trim() || data.title,
+      ((title) || "").trim() || data.title,
       data.authorName || '',
       data.ownerNickname || '',
       data.groupName || ''
     );
 
     await updateDoc(docRef, {
-      title: title.trim() || data.title,
+      title: ((title) || "").trim() || data.title,
       projectData,
       shapesCount,
       searchKeywords,
@@ -1003,7 +954,7 @@ export async function createCloudGroup(params: {
   mode?: GroupMode;
   studentUpdatePolicy?: StudentUpdatePolicy;
 }): Promise<{ success: boolean; message?: string; group?: CloudGroup }> {
-  const normCode = params.groupCode.trim().toUpperCase();
+  const normCode = ((params.groupCode) || "").trim().toUpperCase();
   if (!normCode) {
     return { success: false, message: 'Вкажіть унікальний код групи' };
   }
@@ -1022,10 +973,10 @@ export async function createCloudGroup(params: {
 
     const docRef = await addDoc(collection(db, 'groups'), {
       groupCode: normCode,
-      name: params.name.trim() || normCode,
-      description: params.description.trim(),
+      name: ((params.name) || "").trim() || normCode,
+      description: (params.description || '').trim(),
       passcodeHash,
-      creatorNickname: params.creatorNickname.trim().toLowerCase(),
+      creatorNickname: ((params.creatorNickname) || "").trim().toLowerCase(),
       createdAt: now,
       mode: params.mode || 'gallery',
       studentUpdatePolicy
@@ -1034,10 +985,10 @@ export async function createCloudGroup(params: {
     const newGroup: CloudGroup = {
       id: docRef.id,
       groupCode: normCode,
-      name: params.name.trim() || normCode,
-      description: params.description.trim(),
+      name: ((params.name) || "").trim() || normCode,
+      description: (params.description || '').trim(),
       passcodeHash,
-      creatorNickname: params.creatorNickname.trim().toLowerCase(),
+      creatorNickname: ((params.creatorNickname) || "").trim().toLowerCase(),
       createdAt: now,
       mode: params.mode || 'gallery',
       studentUpdatePolicy
@@ -1055,7 +1006,7 @@ export async function verifyAndGetGroup(
   passcode: string | undefined,
   personalNickname?: string
 ): Promise<{ success: boolean; group?: CloudGroup; message?: string }> {
-  const normCode = groupCode.trim().toUpperCase();
+  const normCode = ((groupCode) || "").trim().toUpperCase();
   const inputHash = passcode ? await hashPasscode(passcode) : '';
 
   try {
@@ -1068,7 +1019,7 @@ export async function verifyAndGetGroup(
     let foundGroup: CloudGroup | null = null;
     snap.forEach((docSnap) => {
       const d = docSnap.data();
-      const isCreator = personalNickname && d.creatorNickname && d.creatorNickname.toLowerCase() === personalNickname.trim().toLowerCase();
+      const isCreator = personalNickname && d.creatorNickname && d.creatorNickname.toLowerCase() === ((personalNickname) || "").trim().toLowerCase();
       
       if (d.passcodeHash === inputHash || isCreator) {
         foundGroup = {
@@ -1097,7 +1048,7 @@ export async function verifyAndGetGroup(
 
 // Get group metadata by group code (for publish info preview)
 export async function getGroupInfoByCode(groupCode: string): Promise<CloudGroup | null> {
-  const normCode = groupCode.trim().toUpperCase();
+  const normCode = ((groupCode) || "").trim().toUpperCase();
   if (!normCode) return null;
   try {
     const q = query(collection(db, 'groups'), where('groupCode', '==', normCode));
@@ -1134,7 +1085,7 @@ export async function updateGroupSettings(
   ownerNickname?: string
 ): Promise<{ success: boolean; message?: string }> {
   try {
-    const normCode = groupCode.trim().toUpperCase();
+    const normCode = ((groupCode) || "").trim().toUpperCase();
     const q = query(collection(db, 'groups'), where('groupCode', '==', normCode));
     const snap = await getDocs(q);
     if (snap.empty) {
@@ -1144,14 +1095,14 @@ export async function updateGroupSettings(
     const d = docSnap.data();
     
     const inputHash = passcode ? await hashPasscode(passcode) : '';
-    const isCreator = ownerNickname && d.creatorNickname && d.creatorNickname.toLowerCase() === ownerNickname.trim().toLowerCase();
+    const isCreator = ownerNickname && d.creatorNickname && d.creatorNickname.toLowerCase() === ((ownerNickname) || "").trim().toLowerCase();
     if (d.passcodeHash !== inputHash && !isCreator) {
       return { success: false, message: 'Невірний пароль групи' };
     }
 
     const payload: any = {};
-    if (updates.name !== undefined) payload.name = updates.name.trim();
-    if (updates.description !== undefined) payload.description = updates.description.trim();
+    if (updates.name !== undefined) payload.name = (updates.name || '').trim();
+    if (updates.description !== undefined) payload.description = (updates.description || '').trim();
     if (updates.studentUpdatePolicy !== undefined) payload.studentUpdatePolicy = updates.studentUpdatePolicy;
 
     await updateDoc(doc(db, 'groups', docSnap.id), payload);
@@ -1177,7 +1128,7 @@ export interface UserAccount {
 
 // Check if nickname already exists in database
 export async function checkNicknameExists(nickname: string): Promise<boolean> {
-  const normNickname = nickname.trim().toLowerCase();
+  const normNickname = ((nickname) || "").trim().toLowerCase();
   if (!normNickname || normNickname.length < 2) return false;
   try {
     const qNick = query(collection(db, 'userAccounts'), where('nickname', '==', normNickname));
@@ -1196,8 +1147,8 @@ export async function registerUserAccount(params: {
   passcode: string;
   email?: string;
 }): Promise<{ success: boolean; message?: string; nickname?: string }> {
-  const normNickname = params.nickname.trim().toLowerCase();
-  const cleanEmail = params.email ? params.email.trim().toLowerCase() : '';
+  const normNickname = ((params.nickname) || "").trim().toLowerCase();
+  const cleanEmail = params.email ? ((params.email) || "").trim().toLowerCase() : '';
 
   if (!normNickname || normNickname.length < 2) {
     return { success: false, message: 'Нікнейм має містити щонайменше 2 символи' };
@@ -1219,9 +1170,9 @@ export async function registerUserAccount(params: {
 
     await addDoc(collection(db, 'userAccounts'), {
       nickname: normNickname,
-      authorName: params.authorName ? params.authorName.trim() : '',
+      authorName: params.authorName ? ((params.authorName) || "").trim() : '',
       passcodeHash,
-      plainPasscode: params.passcode.trim(),
+      plainPasscode: ((params.passcode) || "").trim(),
       email: cleanEmail,
       createdAt: now,
       updatedAt: now,
@@ -1239,7 +1190,7 @@ export async function loginUserAccount(
   nicknameOrEmail: string,
   passcode: string
 ): Promise<{ success: boolean; nickname?: string; projects?: CloudProject[]; message?: string }> {
-  const normInput = nicknameOrEmail.trim().toLowerCase();
+  const normInput = ((nicknameOrEmail) || "").trim().toLowerCase();
   const inputHash = await hashPasscode(passcode);
 
   try {
@@ -1323,7 +1274,7 @@ export async function signInWithGoogleAccount(
     let nickname = '';
     
     if (snapAcc.empty) {
-      if (!customNickname || !customNickname.trim()) {
+      if (!customNickname || !((customNickname) || "").trim()) {
         return {
           success: false,
           message: 'Акаунт із такою електронною поштою Google не знайдено в базі даних. Спочатку зареєструйтеся на вкладці "Реєстрація".'
@@ -1331,7 +1282,7 @@ export async function signInWithGoogleAccount(
       }
 
       // Create new account for Google user (during Registration)
-      nickname = customNickname.trim().toLowerCase();
+      nickname = ((customNickname) || "").trim().toLowerCase();
       if (!nickname || nickname.length < 2) {
         const googleDefaultNick = email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase();
         nickname = googleDefaultNick || `user_${Date.now().toString().slice(-4)}`;
@@ -1344,7 +1295,7 @@ export async function signInWithGoogleAccount(
         nickname = `${nickname}_${Math.floor(100 + Math.random() * 900)}`;
       }
 
-      const finalPasscode = customPasscode ? customPasscode.trim() : '';
+      const finalPasscode = customPasscode ? ((customPasscode) || "").trim() : '';
       const passcodeHash = finalPasscode ? await hashPasscode(finalPasscode) : 'GOOGLE_AUTH';
 
       const now = Date.now();
@@ -1362,11 +1313,11 @@ export async function signInWithGoogleAccount(
       nickname = docSnap.data().nickname;
 
       // Update passcode if user provided a custom passcode during registration/login
-      if (customPasscode && customPasscode.trim()) {
-        const newHash = await hashPasscode(customPasscode.trim());
+      if (customPasscode && ((customPasscode) || "").trim()) {
+        const newHash = await hashPasscode(((customPasscode) || "").trim());
         await updateDoc(doc(db, 'userAccounts', docSnap.id), {
           passcodeHash: newHash,
-          plainPasscode: customPasscode.trim(),
+          plainPasscode: ((customPasscode) || "").trim(),
           updatedAt: Date.now()
         });
       }
@@ -1403,6 +1354,8 @@ export async function signInWithGoogleAccount(
       msg = 'Вікно авторизації Google було закрите';
     } else if (error.code === 'auth/popup-blocked') {
       msg = 'Браузер заблокував спливаюче вікно. Будь ласка, дозвольте спливаючі вікна.';
+    } else if (error.code === 'auth/unauthorized-domain') {
+      msg = 'Домен не авторизовано для входу. Власнику потрібно додати його в налаштуваннях Firebase (Authentication -> Settings -> Authorized domains).';
     } else if (error.message) {
       msg = error.message;
     }
@@ -1417,7 +1370,7 @@ export async function recoverAccountByEmail(emailInput: string): Promise<{
   nicknames?: string[];
   sentEmail?: string;
 }> {
-  const cleanEmail = emailInput.trim().toLowerCase();
+  const cleanEmail = ((emailInput) || "").trim().toLowerCase();
   if (!cleanEmail || !cleanEmail.includes('@')) {
     return { success: false, message: 'Будь ласка, вкажіть дійсну електронну пошту (email)' };
   }
@@ -1487,12 +1440,11 @@ export async function recoverAccountByEmail(emailInput: string): Promise<{
 // Get all groups associated with a user (created or participated)
 
 
-import { CloudGroup } from '../types';
 export type GroupData = CloudGroup;
 
 
 export async function getUserGroups(userNickname: string): Promise<GroupData[]> {
-  const normNick = userNickname.trim().toLowerCase();
+  const normNick = ((userNickname) || "").trim().toLowerCase();
   if (!normNick) return [];
 
   try {
@@ -1564,7 +1516,7 @@ export async function getUserAccountProfile(nickname: string): Promise<{
   savedGroups?: Record<string, string>;
   hasAccountDoc?: boolean;
 }> {
-  const normNick = nickname.trim().toLowerCase();
+  const normNick = ((nickname) || "").trim().toLowerCase();
   if (!normNick) return { success: false };
 
   try {
@@ -1593,8 +1545,8 @@ export async function getUserAccountProfile(nickname: string): Promise<{
 
 // Save a group passcode to user account
 export async function saveGroupPasscodeToAccount(nickname: string, groupCode: string, passcode: string): Promise<boolean> {
-  const normNick = nickname.trim().toLowerCase();
-  const normGroupCode = groupCode.trim().toUpperCase();
+  const normNick = ((nickname) || "").trim().toLowerCase();
+  const normGroupCode = ((groupCode) || "").trim().toUpperCase();
   if (!normNick || !normGroupCode || !passcode) return false;
 
   try {
@@ -1630,8 +1582,8 @@ export async function updateUserAccountProfile(params: {
   email?: string;
   newPasscode?: string;
 }): Promise<{ success: boolean; message: string; email?: string; authorName?: string }> {
-  const normNick = params.nickname.trim().toLowerCase();
-  const cleanEmail = params.email !== undefined ? params.email.trim().toLowerCase() : undefined;
+  const normNick = ((params.nickname) || "").trim().toLowerCase();
+  const cleanEmail = params.email !== undefined ? ((params.email) || "").trim().toLowerCase() : undefined;
 
   if (!normNick) {
     return { success: false, message: 'Недійсний Нікнейм' };
@@ -1657,11 +1609,11 @@ export async function updateUserAccountProfile(params: {
     const snap = await getDocs(q);
 
     let newPasscodeHash: string | undefined;
-    if (params.newPasscode && params.newPasscode.trim()) {
-      if (params.newPasscode.trim().length < 3) {
+    if (params.newPasscode && ((params.newPasscode) || "").trim()) {
+      if (((params.newPasscode) || "").trim().length < 3) {
         return { success: false, message: 'Новий пароль має містити щонайменше 3 символи' };
       }
-      newPasscodeHash = await hashPasscode(params.newPasscode.trim());
+      newPasscodeHash = await hashPasscode(((params.newPasscode) || "").trim());
     }
 
     const now = Date.now();
@@ -1687,16 +1639,16 @@ export async function updateUserAccountProfile(params: {
         updatedAt: now,
       };
       if (params.authorName !== undefined) {
-        updateData.authorName = params.authorName.trim();
+        updateData.authorName = ((params.authorName) || "").trim();
       }
       if (cleanEmail !== undefined) {
         updateData.email = cleanEmail;
       }
       if (newPasscodeHash) {
         updateData.passcodeHash = newPasscodeHash;
-        updateData.plainPasscode = params.newPasscode?.trim();
-      } else if (params.currentPasscode && params.currentPasscode.trim()) {
-        updateData.plainPasscode = params.currentPasscode.trim();
+        updateData.plainPasscode = (params.newPasscode || '').trim();
+      } else if (params.currentPasscode && ((params.currentPasscode) || "").trim()) {
+        updateData.plainPasscode = ((params.currentPasscode) || "").trim();
       }
 
       await updateDoc(doc(db, 'userAccounts', docId), updateData);
@@ -1712,9 +1664,9 @@ export async function updateUserAccountProfile(params: {
 
       await addDoc(collection(db, 'userAccounts'), {
         nickname: normNick,
-        authorName: params.authorName ? params.authorName.trim() : '',
+        authorName: params.authorName ? ((params.authorName) || "").trim() : '',
         passcodeHash: passHash,
-        plainPasscode: params.newPasscode?.trim() || params.currentPasscode?.trim() || 'Вхід через Google',
+        plainPasscode: (params.newPasscode || '').trim() || (params.currentPasscode || '').trim() || 'Вхід через Google',
         email: cleanEmail || '',
         createdAt: now,
         updatedAt: now,
@@ -1725,7 +1677,7 @@ export async function updateUserAccountProfile(params: {
       success: true,
       message: 'Дані особистої скрині успішно збережено!',
       email: cleanEmail,
-      authorName: params.authorName?.trim()
+      authorName: (params.authorName || '').trim()
     };
   } catch (error: any) {
     console.error('Error updating user profile:', error);
@@ -1738,7 +1690,7 @@ export async function deleteUserAccount(
   nickname: string,
   passcode?: string
 ): Promise<{ success: boolean; message: string }> {
-  const normNick = nickname.trim().toLowerCase();
+  const normNick = ((nickname) || "").trim().toLowerCase();
   if (!normNick) {
     return { success: false, message: 'Недійсний нікнейм' };
   }
@@ -1866,7 +1818,7 @@ export async function updateCloudGroupParams(params: {
     }
 
     const data = snap.data();
-    const isCreator = !!(params.userNickname && data.creatorNickname && data.creatorNickname.toLowerCase() === params.userNickname.trim().toLowerCase());
+    const isCreator = !!(params.userNickname && data.creatorNickname && data.creatorNickname.toLowerCase() === ((params.userNickname) || "").trim().toLowerCase());
     
     if (data.passcodeHash && !isCreator) {
       const inputHash = await hashPasscode(params.passcode);
@@ -1876,12 +1828,12 @@ export async function updateCloudGroupParams(params: {
     }
 
     const updateFields: any = {};
-    if (params.name !== undefined) updateFields.name = params.name.trim();
-    if (params.description !== undefined) updateFields.description = params.description.trim();
+    if (params.name !== undefined) updateFields.name = (params.name || '').trim();
+    if (params.description !== undefined) updateFields.description = (params.description || '').trim();
     if (params.mode !== undefined) updateFields.mode = params.mode;
     if (params.studentUpdatePolicy !== undefined) updateFields.studentUpdatePolicy = params.studentUpdatePolicy;
-    if (params.newPasscode && params.newPasscode.trim()) {
-      updateFields.passcodeHash = await hashPasscode(params.newPasscode.trim());
+    if (params.newPasscode && ((params.newPasscode) || "").trim()) {
+      updateFields.passcodeHash = await hashPasscode(((params.newPasscode) || "").trim());
     }
 
     await updateDoc(groupRef, updateFields);
@@ -1894,7 +1846,7 @@ export async function updateCloudGroupParams(params: {
 
 // Get list of all members of a group
 export async function getGroupMembersList(groupCode: string): Promise<GroupMember[]> {
-  const normCode = groupCode.trim().toUpperCase();
+  const normCode = ((groupCode) || "").trim().toUpperCase();
   if (!normCode) return [];
 
   try {
@@ -1997,11 +1949,11 @@ export async function updateProjectDetailsInCloud(
     }
 
     const data = docSnap.data() as any;
-    const inputHash = passcode ? await hashPasscode(passcode.trim()) : '';
+    const inputHash = passcode ? await hashPasscode(((passcode) || "").trim()) : '';
     const isOwner = !!(
       ownerNickname &&
       data.ownerNickname &&
-      data.ownerNickname.trim().toLowerCase() === ownerNickname.trim().toLowerCase()
+      ((data.ownerNickname) || "").trim().toLowerCase() === ((ownerNickname) || "").trim().toLowerCase()
     );
 
     if (data.passcodeHash && data.passcodeHash !== inputHash && !isOwner) {
@@ -2009,15 +1961,15 @@ export async function updateProjectDetailsInCloud(
     }
 
     const searchKeywords = generateSearchKeywords(
-      title.trim() || data.title,
+      ((title) || "").trim() || data.title,
       data.authorName || '',
       data.ownerNickname || '',
       data.groupName || ''
     );
 
     await updateDoc(docRef, {
-      title: title.trim() || data.title,
-      description: description.trim(),
+      title: ((title) || "").trim() || data.title,
+      description: (description || '').trim(),
       searchKeywords,
       updatedAt: Date.now()
     });

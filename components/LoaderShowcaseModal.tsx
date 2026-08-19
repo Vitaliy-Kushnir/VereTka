@@ -38,7 +38,7 @@ export const LoaderShowcaseModal: React.FC<LoaderShowcaseModalProps> = ({ isOpen
   };
 
   const filteredShapes = useMemo(() => {
-    if (!searchQuery.trim()) return SHAPE_INFOS;
+    if (!((searchQuery) || "").trim()) return SHAPE_INFOS;
     const q = searchQuery.toLowerCase();
     return SHAPE_INFOS.filter(
       s => s.nameUk.toLowerCase().includes(q) || s.nameEn.toLowerCase().includes(q) || `#${s.id}`.includes(q)
@@ -113,10 +113,10 @@ export const LoaderShowcaseModal: React.FC<LoaderShowcaseModalProps> = ({ isOpen
   if (!isOpen) return null;
 
   // Extract vertices points for showing dots overlay
-  const parsedVertices = currentShapeInfo.pointsString.split(' ').map(pt => {
+  const parsedVertices = (currentShapeInfo?.pointsString || '').split(' ').map(pt => {
     const [x, y] = pt.split(',').map(Number);
     return { x, y };
-  });
+  }).filter(pt => !isNaN(pt.x) && !isNaN(pt.y));
 
   return (
     <div
@@ -239,12 +239,12 @@ export const LoaderShowcaseModal: React.FC<LoaderShowcaseModalProps> = ({ isOpen
           {activeTab === 'featured' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full items-center">
               {/* Left Column: Big Interactive Morphing Stage */}
-              <div className="lg:col-span-8 flex flex-col items-center justify-center bg-slate-950/80 rounded-2xl border border-slate-800 p-8 min-h-[380px] relative overflow-hidden group shadow-inner">
+              <div className="lg:col-span-8 flex flex-col items-center justify-center bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-primary)] p-8 min-h-[380px] relative overflow-hidden group shadow-inner">
                 {/* Background Grid Pattern */}
                 <div
                   className="absolute inset-0 opacity-10 pointer-events-none"
                   style={{
-                    backgroundImage: 'radial-gradient(#818cf8 1px, transparent 1px)',
+                    backgroundImage: 'radial-gradient(var(--text-primary) 1px, transparent 1px)',
                     backgroundSize: '24px 24px',
                   }}
                 />
@@ -311,7 +311,7 @@ export const LoaderShowcaseModal: React.FC<LoaderShowcaseModalProps> = ({ isOpen
                           cy={pt.y}
                           r="1.8"
                           fill="#f43f5e"
-                          stroke="#ffffff"
+                          stroke="var(--bg-primary)"
                           strokeWidth="0.5"
                           className="animate-pulse"
                         />
@@ -321,21 +321,21 @@ export const LoaderShowcaseModal: React.FC<LoaderShowcaseModalProps> = ({ isOpen
 
                 {/* Shape Identifier Badge */}
                 <div className="mt-4 flex flex-col items-center gap-1 z-10">
-                  <span className="text-xs uppercase font-mono tracking-widest text-indigo-400 font-bold bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
+                  <span className="text-xs uppercase font-mono tracking-widest text-[var(--accent-primary)] font-bold bg-[var(--accent-primary)]/10 px-3 py-1 rounded-full border border-[var(--accent-primary)]/20">
                     #{currentShapeInfo.id.toString().padStart(2, '0')} • {getLocalizedName(currentShapeInfo)}
                   </span>
-                  <span className="text-[11px] text-slate-400">
+                  <span className="text-[11px] text-[var(--text-tertiary)]">
                     36 точок точного геометрічного алгоритму
                   </span>
                 </div>
 
                 {/* Stage Floating Controls */}
-                <div className="flex items-center gap-2 mt-6 z-10 bg-slate-900/90 border border-slate-800 p-1.5 rounded-xl shadow-xl backdrop-blur-md">
+                <div className="flex items-center gap-2 mt-6 z-10 bg-[var(--bg-primary)] border border-[var(--border-primary)] p-1.5 rounded-xl shadow-lg">
                   <button
                     onClick={() =>
                       setSelectedShapeIndex(prev => (prev > 0 ? prev - 1 : SHAPE_INFOS.length - 1))
                     }
-                    className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                    className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
                     title={t('loaderShowcase.prev') || 'Попередня фігура'}
                   >
                     <ChevronLeftIcon size={18} />
@@ -343,7 +343,7 @@ export const LoaderShowcaseModal: React.FC<LoaderShowcaseModalProps> = ({ isOpen
 
                   <button
                     onClick={() => setIsPaused(p => !p)}
-                    className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-md transition-colors"
+                    className="px-4 py-2 rounded-lg bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-[var(--accent-text)] font-semibold text-xs flex items-center gap-1.5 shadow-md transition-colors"
                   >
                     {isPaused ? <PlayIcon size={16} /> : <PauseIcon size={16} />}
                     <span>{isPaused ? (t('loaderShowcase.play') || 'Відтворити') : (t('loaderShowcase.pause') || 'Пауза')}</span>
@@ -357,7 +357,7 @@ export const LoaderShowcaseModal: React.FC<LoaderShowcaseModalProps> = ({ isOpen
                       } while (r === selectedShapeIndex);
                       setSelectedShapeIndex(r);
                     }}
-                    className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs flex items-center gap-1 transition-colors"
+                    className="px-3 py-2 rounded-lg bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] font-medium text-xs flex items-center gap-1 border border-[var(--border-secondary)] transition-colors"
                     title={t('loaderShowcase.random') || 'Випадкова фігура'}
                   >
                     <RefreshCwIcon size={14} />
@@ -368,7 +368,7 @@ export const LoaderShowcaseModal: React.FC<LoaderShowcaseModalProps> = ({ isOpen
                     onClick={() =>
                       setSelectedShapeIndex(prev => (prev < SHAPE_INFOS.length - 1 ? prev + 1 : 0))
                     }
-                    className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                    className="p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
                     title={t('loaderShowcase.next') || 'Наступна фігура'}
                   >
                     <ChevronRightIcon size={18} />
@@ -441,12 +441,12 @@ export const LoaderShowcaseModal: React.FC<LoaderShowcaseModalProps> = ({ isOpen
                 </div>
 
                 {/* Quick Stats Box */}
-                <div className="mt-auto p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300 space-y-1">
-                  <div className="font-semibold text-indigo-200 flex items-center gap-1.5">
-                    <SparklesIcon size={14} />
+                <div className="mt-auto p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-xs text-[var(--text-secondary)] space-y-1">
+                  <div className="font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+                    <SparklesIcon size={14} className="text-[var(--accent-primary)]" />
                     <span>Алгоритм точкового морфінгу</span>
                   </div>
-                  <p className="text-[11px] leading-relaxed text-indigo-300/80">
+                  <p className="text-[11px] leading-relaxed text-[var(--text-tertiary)]">
                     Кожна з 34 фігур розраховується в реальному часі векторним семплінгом уздовж периметру. Режим Spline забезпечує унікальну плавність трансформацій.
                   </p>
                 </div>
@@ -558,7 +558,7 @@ export const LoaderShowcaseModal: React.FC<LoaderShowcaseModalProps> = ({ isOpen
                   return (
                     <div
                       key={i}
-                      className="bg-slate-950/90 border border-slate-800 p-4 rounded-xl flex flex-col items-center justify-center gap-3 relative overflow-hidden shadow-inner group hover:border-indigo-500/50 transition-colors"
+                      className="bg-[var(--bg-secondary)] border border-[var(--border-primary)] p-4 rounded-xl flex flex-col items-center justify-center gap-3 relative overflow-hidden group hover:border-[var(--accent-primary)] transition-colors shadow-sm"
                     >
                       <div className="w-20 h-20">
                         <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible">
@@ -594,10 +594,10 @@ export const LoaderShowcaseModal: React.FC<LoaderShowcaseModalProps> = ({ isOpen
                       </div>
 
                       <div className="text-center">
-                        <span className="text-[11px] font-mono font-bold text-indigo-400 block">
+                        <span className="text-[11px] font-mono font-bold text-[var(--accent-primary)] block">
                           #{info.id.toString().padStart(2, '0')} {getLocalizedName(info)}
                         </span>
-                        <span className="text-[10px] text-slate-500 font-mono">
+                        <span className="text-[10px] text-[var(--text-tertiary)] font-mono">
                           speed: {speed.toFixed(1)}s
                         </span>
                       </div>

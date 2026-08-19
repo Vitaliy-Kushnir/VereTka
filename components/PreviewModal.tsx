@@ -52,7 +52,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
             transformStr += `translate(${-center.x} ${-center.y})`;
         }
 
-        return transformStr.trim() || undefined;
+        return ((transformStr) || "").trim() || undefined;
     };
     
     const arrowMarkers = useMemo(() => {
@@ -84,7 +84,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
 
     return (
         <div 
-            className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4"
             onClick={onClose}
         >
             <div 
@@ -164,17 +164,19 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
                             if (!shape) return null;
                             if (shape.state === 'hidden') return null;
 
+                            const safeStrokeWidth = isNaN((shape as any).strokeWidth) || typeof (shape as any).strokeWidth !== 'number' ? 0 : (shape as any).strokeWidth;
                             const staticProps: React.SVGProps<any> = {
                                 stroke: shape.stroke,
-                                strokeWidth: shape.strokeWidth,
+                                strokeWidth: safeStrokeWidth,
                                 style: { opacity: shape.state === 'disabled' ? 0.5 : 1 },
                                 transform: getTransform(shape),
                             };
                             
                             const lineLikeProps = (s: LineShape | BezierCurveShape | PolylineShape | PathShape) => {
-                                const hasVisibleStroke = s.stroke !== 'none' && s.strokeWidth > 0;
+                                const sStrokeWidth = isNaN((s as any).strokeWidth) || typeof (s as any).strokeWidth !== 'number' ? 0 : (s as any).strokeWidth;
+                                const hasVisibleStroke = s.stroke !== 'none' && sStrokeWidth > 0;
                                 let dashArray;
-                                const hasDash = 'dash' in s && s.dash && s.dash.length > 0 && s.strokeWidth > 0;
+                                const hasDash = 'dash' in s && s.dash && s.dash.length > 0 && sStrokeWidth > 0;
                                 if (hasDash) {
                                     const cap = 'capstyle' in s && s.capstyle ? s.capstyle : 'butt';
                                     dashArray = s.dash!.map((value, index) => {
@@ -182,11 +184,11 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
                                         if (isDashSegment) { // It's a dash
                                             if (value <= 2) { // It's a "dot"
                                                 if (cap === 'round') return 0.01; // Use cap to make a circle
-                                                else return s.strokeWidth; // Use width to make a square
+                                                else return sStrokeWidth; // Use width to make a square
                                             }
                                         }
                                         // It's a long dash or any gap
-                                        return value * s.strokeWidth;
+                                        return value * sStrokeWidth;
                                     }).join(' ');
                                 }
                                 const dashOffset = 'dashoffset' in s ? s.dashoffset : undefined;
@@ -195,7 +197,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
                                 let markerStart, markerEnd;
                                 if (hasVisibleStroke && s.arrow && s.arrow !== 'none' && s.arrowshape) {
                                     const [d1m, d2m, d3m] = s.arrowshape;
-                                    const w = s.strokeWidth;
+                                    const w = sStrokeWidth;
                                     const d1 = d1m * w;
                                     const d2 = d2m * w;
                                     const d3 = d3m * w;
@@ -208,17 +210,25 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
 
                             switch (shape.type) {
                                 case 'rectangle': {
-                                    const rectProps: any = { ...staticProps, x: shape.x, y: shape.y, width: shape.width, height: shape.height, fill: shape.fill, ...joinStyleProps(shape) };
+                                    const rx = typeof shape.x === 'number' && !isNaN(shape.x) ? shape.x : 0;
+                                    const ry = typeof shape.y === 'number' && !isNaN(shape.y) ? shape.y : 0;
+                                    const rw = typeof shape.width === 'number' && !isNaN(shape.width) ? Math.max(0, shape.width) : 0;
+                                    const rh = typeof shape.height === 'number' && !isNaN(shape.height) ? Math.max(0, shape.height) : 0;
+                                    const rectProps: any = { ...staticProps, x: rx, y: ry, width: rw, height: rh, fill: shape.fill, ...joinStyleProps(shape) };
                                     if (shape.stipple && shape.fill !== 'none') rectProps.mask = `url(#mask-${shape.stipple})`;
-                                    if (shape.dash) rectProps.strokeDasharray = shape.dash.map(v => v * shape.strokeWidth).join(' ');
+                                    if (shape.dash) rectProps.strokeDasharray = shape.dash.map(v => v * safeStrokeWidth).join(' ');
                                     if (shape.dashoffset) rectProps.strokeDashoffset = shape.dashoffset;
                                     return <rect key={shape.id} {...rectProps} />;
                                 }
                                 case 'ellipse': {
                                     const ellipse = shape as EllipseShape;
-                                    const ellipseProps: any = { ...staticProps, cx: ellipse.cx, cy: ellipse.cy, rx: ellipse.rx, ry: ellipse.ry, fill: ellipse.fill };
+                                    const ecx = typeof ellipse.cx === 'number' && !isNaN(ellipse.cx) ? ellipse.cx : 0;
+                                    const ecy = typeof ellipse.cy === 'number' && !isNaN(ellipse.cy) ? ellipse.cy : 0;
+                                    const erx = typeof ellipse.rx === 'number' && !isNaN(ellipse.rx) ? Math.max(0, ellipse.rx) : 0;
+                                    const ery = typeof ellipse.ry === 'number' && !isNaN(ellipse.ry) ? Math.max(0, ellipse.ry) : 0;
+                                    const ellipseProps: any = { ...staticProps, cx: ecx, cy: ecy, rx: erx, ry: ery, fill: ellipse.fill };
                                     if (ellipse.stipple && ellipse.fill !== 'none') ellipseProps.mask = `url(#mask-${ellipse.stipple})`;
-                                    if (ellipse.dash) ellipseProps.strokeDasharray = ellipse.dash.map(v => v * ellipse.strokeWidth).join(' ');
+                                    if (ellipse.dash) ellipseProps.strokeDasharray = ellipse.dash.map(v => v * safeStrokeWidth).join(' ');
                                     if (ellipse.dashoffset) ellipseProps.strokeDashoffset = ellipse.dashoffset;
                                     return <ellipse key={ellipse.id} {...ellipseProps} />;
                                 }
@@ -226,21 +236,22 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
                                     const arcShape = shape as ArcShape;
                                     const arcProps: any = { ...staticProps, d: getArcPathData(arcShape), fill: arcShape.style === 'arc' ? 'none' : arcShape.fill };
                                     if (arcShape.stipple && arcShape.fill !== 'none' && arcShape.style !== 'arc') arcProps.mask = `url(#mask-${arcShape.stipple})`;
-                                    if (arcShape.dash) arcProps.strokeDasharray = arcShape.dash.map(v => v * arcShape.strokeWidth).join(' ');
+                                    if (arcShape.dash) arcProps.strokeDasharray = arcShape.dash.map(v => v * safeStrokeWidth).join(' ');
                                     if (arcShape.dashoffset) arcProps.strokeDashoffset = arcShape.dashoffset;
                                     return <path key={shape.id} {...arcProps} />;
                                 }
                                 case 'line':
-                                    return <line key={shape.id} {...staticProps} x1={shape.points[0].x} y1={shape.points[0].y} x2={shape.points[1].x} y2={shape.points[1].y} {...lineLikeProps(shape)} />;
+                                    if (!shape.points || !shape.points[0] || !shape.points[1]) return null;
+                                    return <line key={shape.id} {...staticProps} strokeWidth={safeStrokeWidth} x1={shape.points[0].x} y1={shape.points[0].y} x2={shape.points[1].x} y2={shape.points[1].y} {...lineLikeProps(shape)} />;
                                 case 'bezier':
                                     const fill = shape.isClosed ? shape.fill : 'none';
-                                    return <path key={shape.id} {...staticProps} d={getSmoothedPathData(shape.points, shape.smooth, shape.isClosed)} fill={fill} {...lineLikeProps(shape)} {...joinStyleProps(shape)} />;
+                                    return <path key={shape.id} {...staticProps} strokeWidth={safeStrokeWidth} d={getSmoothedPathData(shape.points, shape.smooth, shape.isClosed)} fill={fill} {...lineLikeProps(shape)} {...joinStyleProps(shape)} />;
                                 case 'pencil':
-                                    return <path key={shape.id} {...staticProps} d={getPolylinePointsAsPath(shape.points)} fill="none" {...joinStyleProps(shape)} {...lineLikeProps(shape)} />;
+                                    return <path key={shape.id} {...staticProps} strokeWidth={safeStrokeWidth} d={getPolylinePointsAsPath(shape.points)} fill="none" {...joinStyleProps(shape)} {...lineLikeProps(shape)} />;
                                 case 'polyline': {
-                                    const polyProps: React.SVGProps<any> = { ...staticProps, ...joinStyleProps(shape) };
+                                    const polyProps: React.SVGProps<any> = { ...staticProps, strokeWidth: safeStrokeWidth, ...joinStyleProps(shape) };
                                     if (shape.stipple && shape.isClosed && shape.fill !== 'none') polyProps.mask = `url(#mask-${shape.stipple})`;
-                                    if (shape.dash) polyProps.strokeDasharray = shape.dash.map(v => v * shape.strokeWidth).join(' ');
+                                    if (shape.dash) polyProps.strokeDasharray = shape.dash.map(v => v * safeStrokeWidth).join(' ');
                                     if (shape.dashoffset) polyProps.strokeDashoffset = shape.dashoffset;
                                     
                                     if (!shape.isClosed) {
@@ -257,35 +268,35 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
                                 case 'triangle': {
                                     const props: any = { ...staticProps, points: formatPointsForSvg(getIsoscelesTrianglePoints(shape)), fill: shape.fill, ...joinStyleProps(shape) };
                                     if (shape.stipple && shape.fill !== 'none') props.mask = `url(#mask-${shape.stipple})`;
-                                    if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * shape.strokeWidth).join(' ');
+                                    if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * safeStrokeWidth).join(' ');
                                     if (shape.dashoffset) props.strokeDashoffset = shape.dashoffset;
                                     return <polygon key={shape.id} {...props} />;
                                 }
                                 case 'right-triangle': {
                                     const props: any = { ...staticProps, points: formatPointsForSvg(getRightTrianglePoints(shape)), fill: shape.fill, ...joinStyleProps(shape) };
                                     if (shape.stipple && shape.fill !== 'none') props.mask = `url(#mask-${shape.stipple})`;
-                                    if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * shape.strokeWidth).join(' ');
+                                    if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * safeStrokeWidth).join(' ');
                                     if (shape.dashoffset) props.strokeDashoffset = shape.dashoffset;
                                     return <polygon key={shape.id} {...props} />;
                                 }
                                 case 'rhombus': {
                                     const props: any = { ...staticProps, points: formatPointsForSvg(getRhombusPoints(shape)), fill: shape.fill, ...joinStyleProps(shape) };
                                     if (shape.stipple && shape.fill !== 'none') props.mask = `url(#mask-${shape.stipple})`;
-                                    if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * shape.strokeWidth).join(' ');
+                                    if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * safeStrokeWidth).join(' ');
                                     if (shape.dashoffset) props.strokeDashoffset = shape.dashoffset;
                                     return <polygon key={shape.id} {...props} />;
                                 }
                                 case 'trapezoid': {
                                     const props: any = { ...staticProps, points: formatPointsForSvg(getTrapezoidPoints(shape)), fill: shape.fill, ...joinStyleProps(shape) };
                                     if (shape.stipple && shape.fill !== 'none') props.mask = `url(#mask-${shape.stipple})`;
-                                    if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * shape.strokeWidth).join(' ');
+                                    if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * safeStrokeWidth).join(' ');
                                     if (shape.dashoffset) props.strokeDashoffset = shape.dashoffset;
                                     return <polygon key={shape.id} {...props} />;
                                 }
                                 case 'parallelogram': {
                                     const props: any = { ...staticProps, points: formatPointsForSvg(getParallelogramPoints(shape)), fill: shape.fill, ...joinStyleProps(shape) };
                                     if (shape.stipple && shape.fill !== 'none') props.mask = `url(#mask-${shape.stipple})`;
-                                    if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * shape.strokeWidth).join(' ');
+                                    if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * safeStrokeWidth).join(' ');
                                     if (shape.dashoffset) props.strokeDashoffset = shape.dashoffset;
                                     return <polygon key={shape.id} {...props} />;
                                 }
@@ -294,7 +305,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
                                     const polyShape = shape as PolygonShape;
                                     const polyProps: any = { ...staticProps, fill: polyShape.fill, ...joinStyleProps(polyShape) };
                                     if (polyShape.stipple && polyShape.fill !== 'none') polyProps.mask = `url(#mask-${polyShape.stipple})`;
-                                    if (polyShape.dash) polyProps.strokeDasharray = polyShape.dash.map(v => v * polyShape.strokeWidth).join(' ');
+                                    if (polyShape.dash) polyProps.strokeDasharray = polyShape.dash.map(v => v * safeStrokeWidth).join(' ');
                                     if (polyShape.dashoffset) polyProps.strokeDashoffset = polyShape.dashoffset;
 
                                     if(polyShape.smooth) return <path key={shape.id} {...polyProps} d={getSmoothedPathData(getFinalPoints(shape)!, true, true)} />
@@ -350,14 +361,18 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
                                 }
                                 case 'image': {
                                     const imageShape = shape as ImageShape;
+                                    const ix = typeof imageShape.x === 'number' && !isNaN(imageShape.x) ? imageShape.x : 0;
+                                    const iy = typeof imageShape.y === 'number' && !isNaN(imageShape.y) ? imageShape.y : 0;
+                                    const iw = typeof imageShape.width === 'number' && !isNaN(imageShape.width) ? Math.max(0, imageShape.width) : 0;
+                                    const ih = typeof imageShape.height === 'number' && !isNaN(imageShape.height) ? Math.max(0, imageShape.height) : 0;
                                     return (
                                         <image
                                             key={imageShape.id}
                                             href={imageShape.src}
-                                            x={imageShape.x}
-                                            y={imageShape.y}
-                                            width={imageShape.width}
-                                            height={imageShape.height}
+                                            x={ix}
+                                            y={iy}
+                                            width={iw}
+                                            height={ih}
                                             {...staticProps}
                                         />
                                     );
@@ -365,14 +380,18 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
                                 case 'bitmap': {
                                     const bitmapShape = shape as BitmapShape;
                                     const { x, y, width: bmpWidth, height: bmpHeight, bitmapType, foreground, background } = bitmapShape;
+                                    const bx = typeof x === 'number' && !isNaN(x) ? x : 0;
+                                    const by = typeof y === 'number' && !isNaN(y) ? y : 0;
+                                    const bw = typeof bmpWidth === 'number' && !isNaN(bmpWidth) ? Math.max(0, bmpWidth) : 0;
+                                    const bh = typeof bmpHeight === 'number' && !isNaN(bmpHeight) ? Math.max(0, bmpHeight) : 0;
                                     const maskId = bitmapType.startsWith('gray')
                                         ? `url(#mask-${bitmapType})`
                                         : `url(#mask-bitmap-${bitmapType})`;
 
                                     return (
                                         <g key={bitmapShape.id} {...staticProps}>
-                                            <rect x={x} y={y} width={bmpWidth} height={bmpHeight} fill={background} />
-                                            <rect x={x} y={y} width={bmpWidth} height={bmpHeight} fill={foreground} mask={maskId} />
+                                            <rect x={bx} y={by} width={bw} height={bh} fill={background} />
+                                            <rect x={bx} y={by} width={bw} height={bh} fill={foreground} mask={maskId} />
                                         </g>
                                     );
                                 }

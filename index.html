@@ -9,8 +9,14 @@
     <meta name="description" content="A simple vector editor that uses the Gemini API to generate Python Tkinter code." />
     <link rel="apple-touch-icon" href="favicon.svg">
     <title>VereTka - Vector Editor for Canvas Tkinter</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Marck+Script&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+      .font-handwriting {
+        font-family: 'Caveat', 'Marck Script', cursive, 'Brush Script MT', sans-serif;
+      }
       body {
         overscroll-behavior: none;
         user-select: none; /* Standard syntax */
@@ -72,6 +78,27 @@
         
         --cursor-bg: var(--text-primary);
         --cursor-text: var(--bg-primary);
+
+        --brand-header-text: #818cf8;
+        --brand-badge-bg: rgba(99, 102, 241, 0.16);
+        --brand-badge-border: rgba(129, 140, 248, 0.38);
+        --brand-badge-border-hover: rgba(168, 85, 247, 0.55);
+        --brand-badge-shadow: rgba(99, 102, 241, 0.22);
+        --brand-badge-text-start: #c7d2fe;
+        --brand-badge-text-mid: #e9d5ff;
+        --brand-badge-text-end: #a5b4fc;
+        --brand-badge-symbol: #a5b4fc;
+        --brand-badge-dot-outer: rgba(129, 140, 248, 0.75);
+        --brand-badge-dot-inner: #818cf8;
+        --brand-badge-flourish: #818cf8;
+
+        --input-bg: #1f2937;
+        --input-border: #4b5563;
+        --input-text: #f9fafb;
+        --input-placeholder: #9ca3af;
+        --card-bg: #1f2937;
+        --card-border: #374151;
+        --modal-overlay: rgba(0, 0, 0, 0.75);
       }
 
       /* Light Theme */
@@ -116,6 +143,27 @@
         
         --cursor-bg: var(--text-primary);
         --cursor-text: var(--bg-app);
+
+        --brand-header-text: #4338ca;
+        --brand-badge-bg: rgba(99, 102, 241, 0.09);
+        --brand-badge-border: rgba(79, 70, 229, 0.35);
+        --brand-badge-border-hover: rgba(109, 40, 217, 0.55);
+        --brand-badge-shadow: rgba(79, 70, 229, 0.12);
+        --brand-badge-text-start: #3730a3;
+        --brand-badge-text-mid: #581c87;
+        --brand-badge-text-end: #4338ca;
+        --brand-badge-symbol: #3730a3;
+        --brand-badge-dot-outer: rgba(79, 70, 229, 0.6);
+        --brand-badge-dot-inner: #4338ca;
+        --brand-badge-flourish: #4f46e5;
+
+        --input-bg: #ffffff;
+        --input-border: #d1d5db;
+        --input-text: #111827;
+        --input-placeholder: #9ca3af;
+        --card-bg: #ffffff;
+        --card-border: #e5e7eb;
+        --modal-overlay: rgba(0, 0, 0, 0.45);
       }
 
       .code-line {
@@ -164,6 +212,22 @@
         display: inline-block;
         white-space: nowrap;
         animation: scrollText 4s linear infinite alternate;
+      }
+
+      /* Custom Scrollbars */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background-color: var(--border-secondary);
+        border-radius: 10px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background-color: var(--text-disabled);
       }
     </style>
     <link rel="stylesheet" href="index.css">

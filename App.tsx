@@ -39,6 +39,16 @@ import { compressProjectToUrl, decompressProjectFromUrl } from './lib/shareUtils
 import { useLanguage } from './components/LanguageContext';
 import { CloudGalleryModal } from './components/CloudGalleryModal';
 import { getCloudProjectById } from './lib/firebase';
+import { MobileBottomBar } from './components/mobile/MobileBottomBar';
+import { MobileBottomSheet, SheetPinMode } from './components/mobile/MobileBottomSheet';
+import { MobileTopHeader } from './components/mobile/MobileTopHeader';
+import { MobileMenuDrawer } from './components/mobile/MobileMenuDrawer';
+import { MobileShapesSheet } from './components/mobile/MobileShapesSheet';
+import { MobileStyleSheet } from './components/mobile/MobileStyleSheet';
+import { MobileLayersSheet } from './components/mobile/MobileLayersSheet';
+import { MobileAlignSheet } from './components/mobile/MobileAlignSheet';
+import { FloatingModeControls } from './components/FloatingModeControls';
+import { useIsMobile, useIsLandscape } from './hooks/useIsMobile';
 
 type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
@@ -158,6 +168,7 @@ const MenuBar: React.FC<{
     onFlipH?: () => void;
     onFlipV?: () => void;
     canFlip?: boolean;
+    onAlignShapes?: (alignment: 'left' | 'center-h' | 'right' | 'top' | 'center-v' | 'bottom' | 'center-both' | 'distribute-h' | 'distribute-v' | 'distribute-path', relativeTo: 'selection' | 'canvas') => void;
     onOpenCloudGallery?: (tab?: 'public' | 'personal' | 'group' | 'publish') => void;
 }> = React.memo((props) => {
     const { isOpen: isFileOpen, toggle: toggleFile, close: closeFile, wrapperProps: fileProps } = useDropdown();
@@ -236,6 +247,8 @@ const MenuBar: React.FC<{
                             <hr className="border-[var(--border-secondary)] my-1"/>
                             <MenuItem onClick={() => handleMenuClick(props.onFlipH, closeObject)} disabled={!props.canFlip} shortcut="Ctrl+H">{t('menu.edit.flipH')}</MenuItem>
                             <MenuItem onClick={() => handleMenuClick(props.onFlipV, closeObject)} disabled={!props.canFlip} shortcut="Ctrl+V">{t('menu.edit.flipV')}</MenuItem>
+                            <hr className="border-[var(--border-secondary)] my-1"/>
+                            <MenuItem onClick={() => handleMenuClick(() => props.onAlignShapes?.('center-both', 'canvas'), closeObject)} disabled={!props.isShapeSelected}>🎯 {t('menu.object.centerCanvas') || 'В центр полотна'}</MenuItem>
                             <hr className="border-[var(--border-secondary)] my-1"/>
                             <MenuItem onClick={() => handleMenuClick(props.onConvertToPath, closeObject)} disabled={!props.canConvertToPath}>{t('menu.object.toPath')}</MenuItem>
                         </div>
@@ -791,7 +804,7 @@ const TopToolbar: React.FC<{
     onUngroup: () => void; canUngroup?: boolean;
     onExtractFromGroup?: () => void; canExtractFromGroup?: boolean;
     onFlipH: () => void; onFlipV: () => void; canFlip?: boolean;
-    onAlignShapes: (alignment: 'left' | 'center-h' | 'right' | 'top' | 'center-v' | 'bottom' | 'distribute-h' | 'distribute-v' | 'distribute-path', relativeTo: 'selection' | 'canvas', distributeOptions?: { orientAlongPath: boolean, orientationType: 'radial' | 'tangent' | 'parallel' | 'perpendicular' | 'custom', orientationAngle: number, rotateAlongPath: boolean }) => void;
+    onAlignShapes: (alignment: 'left' | 'center-h' | 'right' | 'top' | 'center-v' | 'bottom' | 'center-both' | 'distribute-h' | 'distribute-v' | 'distribute-path', relativeTo: 'selection' | 'canvas', distributeOptions?: { orientAlongPath: boolean, orientationType: 'radial' | 'tangent' | 'parallel' | 'perpendicular' | 'custom', orientationAngle: number, rotateAlongPath: boolean }) => void;
     activeTool: Tool; setActiveTool: (tool: Tool) => void;
     onOpenMobileLeft: () => void; onOpenMobileRight: () => void;
     selectedShapes: Shape[];
@@ -915,8 +928,8 @@ const TopToolbar: React.FC<{
                                 <ChevronRightIcon size={16} />
                             </button>
                             {isAlignMenuOpen && (
-                                <div className="absolute left-full top-0 ml-1 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-md shadow-lg z-50 min-w-[200px] py-1 text-sm" onClick={(e) => e.stopPropagation()}>
-                                    <div className="px-3 py-1 flex items-center justify-between border-b border-[var(--border-secondary)] pb-2 mb-2">
+                                <div className="absolute left-full top-0 ml-1 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-md shadow-lg z-50 min-w-[210px] py-1.5 text-sm" onClick={(e) => e.stopPropagation()}>
+                                    <div className="px-3 py-1 flex items-center justify-between border-b border-[var(--border-secondary)] pb-2 mb-1.5">
                                         <label className={`flex items-center gap-2 text-xs text-[var(--text-secondary)] ${isDistributingPath ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:text-[var(--text-primary)]'}`}>
                                             <input type="radio" name="alignRelativeTo" checked={alignRelativeTo === 'selection' && !isDistributingPath} disabled={isDistributingPath} onChange={() => setAlignRelativeTo('selection')} />
                                             {t('tool.align.selection') || 'Відносно виділення'}
@@ -926,6 +939,19 @@ const TopToolbar: React.FC<{
                                             {t('tool.align.canvas') || 'Відносно полотна'}
                                         </label>
                                     </div>
+                                    {alignRelativeTo === 'canvas' && (
+                                        <div className="px-2 pb-1.5 mb-1.5 border-b border-[var(--border-secondary)]">
+                                            <button
+                                                type="button"
+                                                onClick={() => onAlignShapes('center-both', 'canvas')}
+                                                disabled={selectedShapes.length < 1}
+                                                className="w-full py-1 px-2 text-xs font-semibold text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10 rounded-md flex items-center justify-center gap-1.5 border border-[var(--accent-primary)]/30 hover:border-[var(--accent-primary)] transition-all disabled:opacity-40"
+                                                title="Розмістити виділені об'єкти точно по центру полотна (X і Y)"
+                                            >
+                                                <span>🎯</span> {t('tool.align.centerBothCanvas') || 'В центр полотна'}
+                                            </button>
+                                        </div>
+                                    )}
                                     <div className="grid grid-cols-3 gap-1 px-2">
                                        <button title={t('tool.align.left') || 'Align Left'} onClick={() => onAlignShapes('left', alignRelativeTo)} disabled={alignRelativeTo === 'selection' && selectedShapes.length < 2} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"><AlignShapesLeftIcon /></button>
                                        <button title={t('tool.align.centerH') || 'Align Horizontal Center'} onClick={() => onAlignShapes('center-h', alignRelativeTo)} disabled={alignRelativeTo === 'selection' && selectedShapes.length < 2} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:opacity-50"><AlignShapesCenterHIcon /></button>
@@ -1343,6 +1369,36 @@ export default function App(): React.ReactNode {
   const [isProjectActive, setIsProjectActive] = useState(false);
   const { projects: recentProjects, addRecentProject, openRecentProject, removeRecentProject, clearAllProjects } = useRecentProjects(maxRecentProjects);
   
+  const isMobile = useIsMobile(1024);
+  const isLandscape = useIsLandscape();
+  const [mobileSheet, setMobileSheet] = useState<'tools' | 'shapes' | 'palette' | 'layers' | 'code' | 'menu' | 'align' | null>(null);
+  const [mobileSheetPinMode, setMobileSheetPinMode] = useState<SheetPinMode>('unpinned');
+  const [mobileSheetHeightVh, setMobileSheetHeightVh] = useState<number>(54);
+  const [mobileSheetWidthVw, setMobileSheetWidthVw] = useState<number>(48);
+
+  const MOBILE_SHEET_TABS: Array<'shapes' | 'palette' | 'align' | 'layers' | 'code'> = useMemo(() => [
+      'shapes',
+      'palette',
+      'align',
+      'layers',
+      'code'
+  ], []);
+
+  const handleNavigateSheetPrev = useCallback(() => {
+      if (!mobileSheet || mobileSheet === 'menu') return;
+      const currentIndex = MOBILE_SHEET_TABS.indexOf(mobileSheet as any);
+      if (currentIndex === -1) return;
+      const prevIndex = (currentIndex - 1 + MOBILE_SHEET_TABS.length) % MOBILE_SHEET_TABS.length;
+      setMobileSheet(MOBILE_SHEET_TABS[prevIndex]);
+  }, [mobileSheet, MOBILE_SHEET_TABS]);
+
+  const handleNavigateSheetNext = useCallback(() => {
+      if (!mobileSheet || mobileSheet === 'menu') return;
+      const currentIndex = MOBILE_SHEET_TABS.indexOf(mobileSheet as any);
+      if (currentIndex === -1) return;
+      const nextIndex = (currentIndex + 1) % MOBILE_SHEET_TABS.length;
+      setMobileSheet(MOBILE_SHEET_TABS[nextIndex]);
+  }, [mobileSheet, MOBILE_SHEET_TABS]);
   const [isScreenTooSmall, setIsScreenTooSmall] = useState(false);
   const [projectTemplates, setProjectTemplates] = useState<ProjectTemplate[]>([]);
   const [projectWasEverActive, setProjectWasEverActive] = useState(false);
@@ -1695,7 +1751,7 @@ export default function App(): React.ReactNode {
   const codeStringForExport = useMemo(() => {
     const lines = showComments 
       ? generatedCodeLines 
-      : generatedCodeLines.filter(line => !(line?.content?.trim() || '').startsWith('#'));
+      : generatedCodeLines.filter(line => !((line?.content || '').trim() || '').startsWith('#'));
     
     return lines.map(line => line.content).join('\n');
   }, [generatedCodeLines, showComments]);
@@ -1713,19 +1769,6 @@ export default function App(): React.ReactNode {
     } catch (e) {
         console.error("Failed to load project templates from localStorage", e);
     }
-  }, []);
-
-  useEffect(() => {
-    const checkScreenSize = () => {
-      setIsScreenTooSmall(window.innerWidth < MIN_SCREEN_WIDTH);
-    };
-
-    checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
-
-    return () => {
-      window.removeEventListener('resize', checkScreenSize);
-    };
   }, []);
 
   useEffect(() => {
@@ -1904,6 +1947,15 @@ export default function App(): React.ReactNode {
     resizeObserver.observe(viewportElement);
     return () => resizeObserver.disconnect();
   }, [isProjectActive]);
+
+  useEffect(() => {
+    if (isMobile && isProjectActive) {
+      const timer = setTimeout(() => {
+        fitCanvasToView();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isMobile, isLandscape, isProjectActive, mobileSheet, mobileSheetPinMode, mobileSheetHeightVh, mobileSheetWidthVw, fitCanvasToView]);
 
 
   const showNotification = useCallback((message: string, type: 'info' | 'error' = 'info', duration: number = 3000) => {
@@ -2897,6 +2949,9 @@ export default function App(): React.ReactNode {
   }, [shapes, inlineEditingShapeId]);
 
   const handleGenerateCode = useCallback(async () => {
+    if (isMobile) {
+        setMobileSheet('code');
+    }
     const shapesForGeneration = displayedShapes.filter((s: any) => !(s.type === 'image' && s.isImport) && s.state !== 'hidden');
     if (shapesForGeneration.length === 0) { showNotification(t('app.1108'), 'info'); return; }
     
@@ -2924,8 +2979,8 @@ export default function App(): React.ReactNode {
         const lines = code.split('\n');
         const codeLines = lines.map(line => {
             const match = line.match(/(.*?) # ID:([a-zA-Z0-9.-]+)/);
-            if (match && match[1] && match[2]) {
-                return { content: match[1].trim(), shapeId: match[2] };
+            if (match && match[1] !== undefined && match[2]) {
+                return { content: (match[1] || '').trim(), shapeId: match[2] };
             }
             return { content: line, shapeId: null };
         });
@@ -3237,7 +3292,7 @@ export default function App(): React.ReactNode {
     try {
         let savedData: any = null;
         if (typeof fileContent === 'string') {
-            const trimmed = fileContent.trim();
+            const trimmed = (fileContent || '').trim();
             if (trimmed.startsWith('from tkinter') || trimmed.startsWith('import tkinter') || fileName?.endsWith('.py')) {
                 showNotification('Вибраний файл є Python-скриптом (.py), а не JSON-проєктом Веретки (.vec.json)', 'error');
                 return;
@@ -3463,7 +3518,7 @@ export default function App(): React.ReactNode {
 
         if (extension === '.txt' && includeLineNumbers) {
             contentToSave = generatedCodeLines
-                .filter(line => showComments || !(line?.content?.trim() || '').startsWith('#'))
+                .filter(line => showComments || !((line?.content || '').trim() || '').startsWith('#'))
                 .map((line, index) => `${String(index + 1).padStart(4, ' ')} | ${line.content}`)
                 .join('\n');
         } else {
@@ -3541,34 +3596,38 @@ export default function App(): React.ReactNode {
         // 1500 * 4/3 = 2000. Most browsers support at least 2048 characters.
         const CODE_LENGTH_THRESHOLD = 1500;
         
-        if (codeString.length > CODE_LENGTH_THRESHOLD) {
-            setConfirmationAction({
-                title: t('app.1050'),
-                message: t('app.1051'),
-                onConfirm: () => {
+        // Always show external resource warning first
+        setConfirmationAction({
+            title: t('app.1055'),
+            message: t('app.1056'),
+            confirmText: t('app.1057'),
+            cancelText: t('app.1058'),
+            variant: 'primary',
+            onConfirm: () => {
+                if (codeString.length > CODE_LENGTH_THRESHOLD) {
+                    setConfirmationAction({
+                        title: t('app.1050'),
+                        message: t('app.1051'),
+                        onConfirm: () => {
+                            openUrl(codeString);
+                            setConfirmationAction(null);
+                        },
+                        variant: 'primary',
+                        confirmText: t('app.1052'),
+                        cancelText: t('app.1121'),
+                        alternativeAction: {
+                            text: t('app.1053'),
+                            onClick: handleCopyAndGo,
+                            title: t('app.1054')
+                        }
+                    });
+                } else {
                     openUrl(codeString);
                     setConfirmationAction(null);
-                },
-                variant: 'primary',
-                confirmText: t('app.1052'),
-                cancelText: t('app.1121'),
-                alternativeAction: {
-                    text: t('app.1053'),
-                    onClick: handleCopyAndGo,
-                    title: t('app.1054')
                 }
-            });
-        } else {
-             confirmAction(
-                () => openUrl(codeString),
-                t('app.1055'),
-                t('app.1056'),
-                t('app.1057'),
-                t('app.1058'),
-                'primary'
-            );
-        }
-    }, [codeStringForExport, showNotification, confirmAction]);
+            }
+        });
+    }, [codeStringForExport, showNotification, t]);
 
 
   const handleDuplicate = useCallback(() => { 
@@ -3617,7 +3676,7 @@ export default function App(): React.ReactNode {
     });
   }, [deleteShape, t, distributePathState, selectedShapeIds]);
 
-  const handleAlignShapes = useCallback((alignment: 'left' | 'center-h' | 'right' | 'top' | 'center-v' | 'bottom' | 'distribute-h' | 'distribute-v' | 'distribute-path', relativeTo: 'selection' | 'canvas', distributeOptions?: { orientAlongPath: boolean, orientationType: 'radial' | 'tangent' | 'parallel' | 'perpendicular' | 'custom', orientationAngle: number, rotateAlongPath: boolean }) => {
+  const handleAlignShapes = useCallback((alignment: 'left' | 'center-h' | 'right' | 'top' | 'center-v' | 'bottom' | 'center-both' | 'distribute-h' | 'distribute-v' | 'distribute-path', relativeTo: 'selection' | 'canvas', distributeOptions?: { orientAlongPath: boolean, orientationType: 'radial' | 'tangent' | 'parallel' | 'perpendicular' | 'custom', orientationAngle: number, rotateAlongPath: boolean }) => {
       if (distributePathState) {
           if (relativeTo !== 'canvas') return;
           if (alignment === 'distribute-h' || alignment === 'distribute-v' || alignment === 'distribute-path') return;
@@ -3647,10 +3706,11 @@ export default function App(): React.ReactNode {
 
           if (alignment === 'left') dx = 0 - minX;
           else if (alignment === 'right') dx = canvasWidth - maxX;
-          else if (alignment === 'center-h') dx = (canvasWidth / 2) - (minX + width / 2);
-          else if (alignment === 'top') dy = 0 - minY;
+          else if (alignment === 'center-h' || alignment === 'center-both') dx = (canvasWidth / 2) - (minX + width / 2);
+          
+          if (alignment === 'top') dy = 0 - minY;
           else if (alignment === 'bottom') dy = canvasHeight - maxY;
-          else if (alignment === 'center-v') dy = (canvasHeight / 2) - (minY + height / 2);
+          else if (alignment === 'center-v' || alignment === 'center-both') dy = (canvasHeight / 2) - (minY + height / 2);
 
           const newState = { ...distributePathState };
           if (distributePathState.type === 'circle') {
@@ -3734,20 +3794,22 @@ export default function App(): React.ReactNode {
       if (relativeTo === 'canvas') {
           if (alignment === 'left') targetX = 0;
           else if (alignment === 'right') targetX = canvasWidth;
-          else if (alignment === 'center-h') targetX = canvasWidth / 2;
-          else if (alignment === 'top') targetY = 0;
+          else if (alignment === 'center-h' || alignment === 'center-both') targetX = canvasWidth / 2;
+          
+          if (alignment === 'top') targetY = 0;
           else if (alignment === 'bottom') targetY = canvasHeight;
-          else if (alignment === 'center-v') targetY = canvasHeight / 2;
+          else if (alignment === 'center-v' || alignment === 'center-both') targetY = canvasHeight / 2;
       } else {
           if (alignment === 'left') targetX = Math.min(...topLevelEntities.map(e => e.bbox.x));
           else if (alignment === 'right') targetX = Math.max(...topLevelEntities.map(e => e.bbox.x + e.bbox.width));
-          else if (alignment === 'center-h') {
+          else if (alignment === 'center-h' || alignment === 'center-both') {
               const minX = Math.min(...topLevelEntities.map(e => e.bbox.x));
               const maxX = Math.max(...topLevelEntities.map(e => e.bbox.x + e.bbox.width));
               targetX = minX + (maxX - minX) / 2;
-          } else if (alignment === 'top') targetY = Math.min(...topLevelEntities.map(e => e.bbox.y));
+          }
+          if (alignment === 'top') targetY = Math.min(...topLevelEntities.map(e => e.bbox.y));
           else if (alignment === 'bottom') targetY = Math.max(...topLevelEntities.map(e => e.bbox.y + e.bbox.height));
-          else if (alignment === 'center-v') {
+          else if (alignment === 'center-v' || alignment === 'center-both') {
               const minY = Math.min(...topLevelEntities.map(e => e.bbox.y));
               const maxY = Math.max(...topLevelEntities.map(e => e.bbox.y + e.bbox.height));
               targetY = minY + (maxY - minY) / 2;
@@ -3836,10 +3898,11 @@ export default function App(): React.ReactNode {
 
               if (alignment === 'left') dx = targetX - entity.bbox.x;
               else if (alignment === 'right') dx = targetX - (entity.bbox.x + entity.bbox.width);
-              else if (alignment === 'center-h') dx = targetX - (entity.bbox.x + entity.bbox.width / 2);
-              else if (alignment === 'top') dy = targetY - entity.bbox.y;
+              else if (alignment === 'center-h' || alignment === 'center-both') dx = targetX - (entity.bbox.x + entity.bbox.width / 2);
+              
+              if (alignment === 'top') dy = targetY - entity.bbox.y;
               else if (alignment === 'bottom') dy = targetY - (entity.bbox.y + entity.bbox.height);
-              else if (alignment === 'center-v') dy = targetY - (entity.bbox.y + entity.bbox.height / 2);
+              else if (alignment === 'center-v' || alignment === 'center-both') dy = targetY - (entity.bbox.y + entity.bbox.height / 2);
 
               if (dx === 0 && dy === 0) return s;
 
@@ -3850,12 +3913,49 @@ export default function App(): React.ReactNode {
                       return { ...s, cx: s.cx + dx, cy: s.cy + dy };
                   case 'line': case 'bezier': case 'pencil': case 'polyline':
                       return { ...s, points: (s as any).points.map((p: any) => ({ x: p.x + dx, y: p.y + dy })) };
+                  case 'group':
+                      if ((s as any).rotationCenter) {
+                          return { ...s, rotationCenter: { x: (s as any).rotationCenter.x + dx, y: (s as any).rotationCenter.y + dy } };
+                      }
+                      return s;
                   default:
                       return s;
               }
           });
       });
-  }, [selectedShapeIds, shapes, setShapes, canvasWidth, canvasHeight]);
+  }, [selectedShapeIds, shapes, setShapes, canvasWidth, canvasHeight, distributePathState]);
+
+  const handleConfirmDistributePath = useCallback(() => {
+      if (distributePathState) {
+          setSelectedShapeIds(distributePathState.entities.map(e => e.ids[0]));
+      }
+      setHistoryState((prev: any) => {
+          const newShapes = applyDistributePathToShapes(prev.shapes, prev.distributePathState!);
+          const addedShapes = newShapes.filter(ns => !prev.shapes.some((ps: any) => ps.id === ns.id));
+          const removedShapeIds = prev.shapes.filter((ps: any) => !newShapes.some(ns => ns.id === ps.id)).map((s: any) => s.id);
+          let newLayers = prev.layers;
+          if (addedShapes.length > 0 || removedShapeIds.length > 0) {
+              newLayers = newLayers.map((layer: any) => {
+                  let updatedShapeIds = layer.shapeIds || [];
+                  if (removedShapeIds.length > 0) {
+                      updatedShapeIds = updatedShapeIds.filter((id: string) => !removedShapeIds.includes(id));
+                  }
+                  if (addedShapes.length > 0 && layer.id === (prev.activeLayerId || newLayers[0].id)) {
+                      updatedShapeIds = [...updatedShapeIds, ...addedShapes.map((s: any) => s.id)];
+                  }
+                  return { ...layer, shapeIds: updatedShapeIds };
+              });
+          }
+          return { ...prev, shapes: newShapes, layers: newLayers, distributePathState: null };
+      });
+  }, [distributePathState, setHistoryState]);
+
+  const handleCancelDistributePath = useCallback(() => {
+      if (distributePathState) {
+          setSelectedShapeIds(distributePathState.entities.map(e => e.ids[0]));
+      }
+      setDistributePathState(null);
+  }, [distributePathState]);
 
   const handleGroup = useCallback(() => {
     if (distributePathState) return;
@@ -4758,13 +4858,25 @@ export default function App(): React.ReactNode {
       setPreviewFillColor(null);
   }, []);
 
+  const handleCancelFillPreview = useCallback(() => {
+      setPreviewFillColor(null);
+  }, []);
+
   const handleSetStrokeColor = useCallback((color: string) => {
       setStrokeColor(color);
       setPreviewStrokeColor(null);
   }, []);
 
+  const handleCancelStrokePreview = useCallback(() => {
+      setPreviewStrokeColor(null);
+  }, []);
+
   const handleSetTextColor = useCallback((color: string) => {
       setTextColor(color);
+      setPreviewTextColor(null);
+  }, []);
+
+  const handleCancelTextPreview = useCallback(() => {
       setPreviewTextColor(null);
   }, []);
 
@@ -4853,93 +4965,104 @@ export default function App(): React.ReactNode {
 
   return (
     <div className="h-screen bg-[var(--bg-app)] text-[var(--text-primary)] font-sans flex flex-col selection:bg-[var(--accent-primary)] selection:text-[var(--accent-text)] overflow-hidden">
-      {isScreenTooSmall && (
-        <div className="fixed inset-0 bg-[var(--bg-app)] flex items-center justify-center z-[100] text-center p-8">
-          <div className="flex flex-col items-center gap-6">
-            <SadMonitorIcon size={96} className="text-[var(--text-tertiary)]" />
-            <div>
-              <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-4">{t('app.1066')}</h1>
-              <p className="text-[var(--text-secondary)]">
-                {t('app.1067')}
-                <br />
-                {t('app.1068')}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
       
-      <div className={isScreenTooSmall ? 'hidden' : 'h-full flex flex-col'}>
+      <div className="h-full flex flex-col">
           <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept="image/png, image/jpeg, image/gif, image/webp" onChange={handleFileSelect} />
           <input type="file" ref={projectLoadInputRef} style={{ display: 'none' }} accept=".json,.vec.json" onChange={handleProjectFileSelected} />
           {notification && (
-            <div className={`fixed top-5 left-1/2 -translate-x-1/2 ${notification.type === 'error' ? 'bg-[var(--destructive-bg)]' : 'bg-[var(--accent-primary)]'} text-[var(--accent-text)] py-2 px-4 rounded-lg shadow-lg z-50 animate-fade-in-down`}>
+            <div className={`fixed top-5 left-1/2 -translate-x-1/2 ${notification.type === 'error' ? 'bg-[var(--destructive-bg)]' : 'bg-[var(--accent-primary)]'} text-[var(--accent-text)] py-2 px-4 rounded-lg shadow-lg z-[99999] animate-fade-in-down`}>
               {notification.message}
             </div>
           )}
           
-          <MenuBar
-            isDistributingPath={!!distributePathState}
-            onGenerate={handleGenerateCode}
-            showGenerateButton={generatorType === 'gemini'}
-            onNewProject={handleOpenNewProjectModal}
-            onSaveProject={handleSaveProject}
-            canSave={isProjectActive && (hasUnsavedChanges || !fileHandle)}
-            onSaveProjectAs={() => setIsSaveAsModalOpen(true)}
-            onSaveAsTemplate={() => setIsSaveTemplateModalOpen(true)}
-            onLoadProject={handleLoadProject}
-            onOpenCloudGallery={(tab) => {
-                setCloudGalleryInitialTab(tab || 'public');
+          {isMobile ? (
+            <MobileTopHeader
+              projectName={projectName}
+              isProjectActive={isProjectActive}
+              onOpenMenu={() => setMobileSheet('menu')}
+              onUndo={undo}
+              onRedo={redo}
+              canUndo={canUndo}
+              canRedo={canRedo}
+              onOpenPreview={() => {
+                if (shapes.length > 0) {
+                  setShapesAtGenerationTime(shapes);
+                  setIsPreviewOpen(true);
+                } else {
+                  showNotification('Спочатку створіть фігури для симуляції', 'info');
+                }
+              }}
+              onOpenCloudGallery={() => {
+                setCloudGalleryInitialTab('public');
                 setIsCloudGalleryOpen(true);
-            }}
-            onImportImage={handleImportImage}
-            onExport={() => setIsExportModalOpen(true)}
-            onShareLink={handleShareLink}
-            showShareLink={activeCheats.has('003')}
-            onUndo={undo}
-            onRedo={redo}
-            canUndo={canUndo}
-            canRedo={canRedo}
-            onDuplicate={handleDuplicate}
-            isShapeSelected={!(selectedShapeIds.length === 0)}
-            onDelete={handleDelete}
-            onGroup={handleGroup}
-            canGroup={canGroup}
-            onUngroup={handleUngroup}
-            canUngroup={canUngroup}
-            onExtractFromGroup={handleExtractFromGroup}
-            canExtractFromGroup={canExtractFromGroup}
-            onFlipH={() => handleFlip('horizontal')}
-            onFlipV={() => handleFlip('vertical')}
-            canFlip={canFlip}
-            onConvertToPath={handleConvertToPath}
-            canConvertToPath={canConvertToPath}
-            onFitCanvasToView={fitCanvasToView}
-            onToggleFullscreen={handleToggleFullscreen}
-            isFullscreen={isFullscreen}
-            showGrid={showGrid}
-            setShowGrid={setShowGrid}
-            snapToGrid={snapToGrid}
-            setSnapToGrid={setSnapToGrid}
-            showAxes={showAxes}
-            setShowAxes={setShowAxes}
-            showCenterGuides={showCenterGuides}
-            setShowCenterGuides={setShowCenterGuides}
-            enableSnapping={enableSnapping}
-            setEnableSnapping={setEnableSnapping}
-            onOpenSettings={handleOpenSettings}
-            theme={theme}
-            setTheme={setTheme}
-            projectName={projectName}
-            isProjectActive={isProjectActive}
-            onGoHome={handleGoHome}
-            onOpenAbout={() => setIsAboutModalOpen(true)}
-            onOpenHelp={() => setIsHelpModalOpen(true)}
-            onOpenShortcuts={() => setIsShortcutsModalOpen(true)}
-            onOpenFeedback={() => setIsFeedbackModalOpen(true)}
-          />
+              }}
+              isLandscape={isLandscape}
+            />
+          ) : (
+            <MenuBar
+              isDistributingPath={!!distributePathState}
+              onGenerate={handleGenerateCode}
+              showGenerateButton={generatorType === 'gemini'}
+              onNewProject={handleOpenNewProjectModal}
+              onSaveProject={handleSaveProject}
+              canSave={isProjectActive && (hasUnsavedChanges || !fileHandle)}
+              onSaveProjectAs={() => setIsSaveAsModalOpen(true)}
+              onSaveAsTemplate={() => setIsSaveTemplateModalOpen(true)}
+              onLoadProject={handleLoadProject}
+              onOpenCloudGallery={(tab) => {
+                  setCloudGalleryInitialTab(tab || 'public');
+                  setIsCloudGalleryOpen(true);
+              }}
+              onImportImage={handleImportImage}
+              onExport={() => setIsExportModalOpen(true)}
+              onShareLink={handleShareLink}
+              showShareLink={activeCheats.has('003')}
+              onUndo={undo}
+              onRedo={redo}
+              canUndo={canUndo}
+              canRedo={canRedo}
+              onDuplicate={handleDuplicate}
+              isShapeSelected={!(selectedShapeIds.length === 0)}
+              onDelete={handleDelete}
+              onGroup={handleGroup}
+              canGroup={canGroup}
+              onUngroup={handleUngroup}
+              canUngroup={canUngroup}
+              onExtractFromGroup={handleExtractFromGroup}
+              canExtractFromGroup={canExtractFromGroup}
+              onFlipH={() => handleFlip('horizontal')}
+              onFlipV={() => handleFlip('vertical')}
+              canFlip={canFlip}
+              onAlignShapes={handleAlignShapes}
+              onConvertToPath={handleConvertToPath}
+              canConvertToPath={canConvertToPath}
+              onFitCanvasToView={fitCanvasToView}
+              onToggleFullscreen={handleToggleFullscreen}
+              isFullscreen={isFullscreen}
+              showGrid={showGrid}
+              setShowGrid={setShowGrid}
+              snapToGrid={snapToGrid}
+              setSnapToGrid={setSnapToGrid}
+              showAxes={showAxes}
+              setShowAxes={setShowAxes}
+              showCenterGuides={showCenterGuides}
+              setShowCenterGuides={setShowCenterGuides}
+              enableSnapping={enableSnapping}
+              setEnableSnapping={setEnableSnapping}
+              onOpenSettings={handleOpenSettings}
+              theme={theme}
+              setTheme={setTheme}
+              projectName={projectName}
+              isProjectActive={isProjectActive}
+              onGoHome={handleGoHome}
+              onOpenAbout={() => setIsAboutModalOpen(true)}
+              onOpenHelp={() => setIsHelpModalOpen(true)}
+              onOpenShortcuts={() => setIsShortcutsModalOpen(true)}
+              onOpenFeedback={() => setIsFeedbackModalOpen(true)}
+            />
+          )}
 
-          {isProjectActive && <TopToolbar
+          {isProjectActive && !isMobile && <TopToolbar
               allShapes={shapes}
               distributePathState={distributePathState}
               onDistributePathChange={setDistributePathState}
@@ -5001,10 +5124,10 @@ export default function App(): React.ReactNode {
               setTextFontSize={setTextFontSize}
           />}
 
-           <main className="flex-grow grid grid-cols-1 md:grid-cols-[380px_1fr] lg:grid-cols-[380px_1fr_295px] min-h-0">
+           <main className={`flex-grow grid min-h-0 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-[380px_1fr] lg:grid-cols-[380px_1fr_295px]'}`}>
              
             {/* Left Column */}
-            {isProjectActive && <aside className={`${isLeftPanelVisible ? 'fixed inset-0 bg-[var(--bg-app)]/95 backdrop-blur-sm z-40 p-4 flex flex-col' : 'hidden'} md:static md:bg-transparent md:z-auto md:flex flex-col gap-4 min-h-0 bg-[var(--bg-primary)]/50 md:p-2`}>
+            {isProjectActive && !isMobile && <aside className={`${isLeftPanelVisible ? 'fixed inset-0 bg-[var(--bg-app)]/95 backdrop-blur-sm z-40 p-4 flex flex-col' : 'hidden'} md:static md:bg-transparent md:z-auto md:flex flex-col gap-4 min-h-0 bg-[var(--bg-primary)]/50 md:p-2`}>
                 <div className="md:hidden flex justify-end mb-4">
                     <button onClick={() => setIsLeftPanelVisible(false)} className="p-2 rounded-lg text-[var(--accent-text)]"><XIcon/></button>
                 </div>
@@ -5037,7 +5160,30 @@ export default function App(): React.ReactNode {
             </aside>}
 
              {/* Center Content */}
-            <div className={`flex flex-col min-w-0 min-h-0 p-2 md:p-4 ${!isProjectActive && "md:col-start-1 lg:col-start-1 md:col-span-3 lg:col-span-3"}`}>
+            <div 
+                className={`flex flex-col min-w-0 min-h-0 flex-1 transition-[padding] duration-150 ease-out ${
+                    !isProjectActive 
+                        ? "p-0 sm:p-2 md:p-4 md:col-start-1 lg:col-start-1 md:col-span-3 lg:col-span-3 h-full overflow-hidden" 
+                        : "p-2 md:p-4 pb-16 lg:pb-4"
+                }`}
+                style={
+                    isProjectActive && isMobile
+                        ? isLandscape
+                            ? {
+                                paddingRight: mobileSheet && mobileSheet !== 'menu' && mobileSheetPinMode === 'docked'
+                                    ? `calc(${mobileSheetWidthVw}vw + 56px + env(safe-area-inset-right, 0px))`
+                                    : `calc(56px + env(safe-area-inset-right, 0px))`,
+                                paddingBottom: '8px'
+                              }
+                            : {
+                                paddingBottom: mobileSheet && mobileSheet !== 'menu' && mobileSheetPinMode === 'docked'
+                                    ? `calc(${mobileSheetHeightVh}vh + 54px + env(safe-area-inset-bottom, 0px))`
+                                    : `calc(54px + env(safe-area-inset-bottom, 0px))`,
+                                paddingRight: '0px'
+                              }
+                        : undefined
+                }
+            >
                 {isProjectActive ? (
                     <>
                         <div ref={viewportRef} className="bg-[var(--bg-secondary)] rounded-lg shadow-inner flex-grow overflow-hidden relative grid" style={{
@@ -5048,6 +5194,55 @@ export default function App(): React.ReactNode {
                             {showAxes && <Ruler orientation="horizontal" transform={viewTransform} length={viewportSize.width - RULER_THICKNESS} canvasSize={{ width: canvasWidth, height: canvasHeight }} />}
                             {showAxes && <Ruler orientation="vertical" transform={viewTransform} length={viewportSize.height - RULER_THICKNESS} canvasSize={{ width: canvasWidth, height: canvasHeight }} />}
                             <div className="relative overflow-hidden" style={{ gridRow: showAxes ? 2 : '1 / -1', gridColumn: showAxes ? 2 : '1 / -1' }}>
+                                 {/* Floating Mode Controls Hub (Active only during specific operations on mobile) */}
+                                 {isMobile && (
+                                     <FloatingModeControls
+                                         distributePathState={distributePathState}
+                                         onDistributePathChange={setDistributePathStateWithoutHistory}
+                                         onConfirmDistributePath={handleConfirmDistributePath}
+                                         onCancelDistributePath={handleCancelDistributePath}
+                                         isSelectingPathShape={isSelectingPathShape}
+                                         onToggleSelectPathShape={() => setIsSelectingPathShape(prev => !prev)}
+                                         activeTool={activeTool}
+                                         setActiveTool={handleSetActiveTool}
+                                         selectedShapeIds={selectedShapeIds}
+                                         selectedShapes={selectedShapes}
+                                         allShapes={shapes}
+                                         activePointIndex={activePointIndex}
+                                         setActivePointIndex={setActivePointIndex}
+                                         onDeletePoint={deletePoint}
+                                         onAddPoint={addPoint}
+                                         isDrawingPolyline={isDrawingPolyline}
+                                         polylinePoints={polylinePoints}
+                                         onCompletePolyline={(close) => handleCompletePolyline(close)}
+                                         onCancelPolyline={handleCancelPolyline}
+                                         onUndoPolylinePoint={() => setPolylinePoints(prev => prev.slice(0, -1))}
+                                         isDrawingBezier={isDrawingBezier}
+                                         bezierPoints={bezierPoints}
+                                         onCompleteBezier={(close) => handleCompleteBezier(close ?? false)}
+                                         onCancelBezier={handleCancelBezier}
+                                         onUndoBezierPoint={() => setBezierPoints(prev => prev.slice(0, -1))}
+                                         onGroup={handleGroup}
+                                         onDeleteSelected={handleDelete}
+                                         onOpenAlign={() => {
+                                             if (isMobile) {
+                                                 setMobileSheet('align');
+                                             } else {
+                                                 handleAlignShapes('center-h', 'canvas');
+                                             }
+                                         }}
+                                         onStartDistributePath={() => handleAlignShapes('distribute-path', 'canvas')}
+                                         isImportingImage={isImportingImage}
+                                         pendingImage={pendingImage}
+                                         onCancelImportImage={() => {
+                                             setIsImportingImage(false);
+                                             setPendingImage(null);
+                                         }}
+                                         canvasWidth={canvasWidth}
+                                         canvasHeight={canvasHeight}
+                                     />
+                                 )}
+
                                  {inlineEditingShape && (
                                     <InlineTextEditor
                                         shape={inlineEditingShape}
@@ -5123,7 +5318,7 @@ export default function App(): React.ReactNode {
             </div>
             
              {/* Right Column */}
-            {isProjectActive && <aside className={`${isRightPanelVisible ? 'fixed inset-0 bg-[var(--bg-app)]/95 backdrop-blur-sm z-40 p-4 flex flex-col' : 'hidden'} lg:static lg:bg-transparent lg:z-auto lg:flex flex-col gap-4 overflow-y-auto md:p-2`}>
+            {isProjectActive && !isMobile && <aside className={`${isRightPanelVisible ? 'fixed inset-0 bg-[var(--bg-app)]/95 backdrop-blur-sm z-40 p-4 flex flex-col' : 'hidden'} lg:static lg:bg-transparent lg:z-auto lg:flex flex-col gap-4 overflow-y-auto md:p-2`}>
                  <div className="lg:hidden flex justify-end mb-4">
                     <button onClick={() => setIsRightPanelVisible(false)} className="p-2 rounded-lg text-[var(--accent-text)]"><XIcon /></button>
                 </div>
@@ -5187,36 +5382,8 @@ export default function App(): React.ReactNode {
                     <PropertyEditor onExtractFromGroup={handleExtractFromGroup} handleFlip={handleFlip} showSystemTags={showSystemTags} 
                         distributePathState={distributePathState}
                         onDistributePathChange={setDistributePathState}
-                        onConfirmDistributePath={() => {
-                            if (distributePathState) {
-                                setSelectedShapeIds(distributePathState.entities.map(e => e.ids[0]));
-                            }
-                            setHistoryState((prev: any) => {
-                                const newShapes = applyDistributePathToShapes(prev.shapes, prev.distributePathState!);
-                                const addedShapes = newShapes.filter(ns => !prev.shapes.some((ps: any) => ps.id === ns.id));
-                                const removedShapeIds = prev.shapes.filter((ps: any) => !newShapes.some(ns => ns.id === ps.id)).map((s: any) => s.id);
-                                let newLayers = prev.layers;
-                                if (addedShapes.length > 0 || removedShapeIds.length > 0) {
-                                    newLayers = newLayers.map((layer: any) => {
-                                        let updatedShapeIds = layer.shapeIds || [];
-                                        if (removedShapeIds.length > 0) {
-                                            updatedShapeIds = updatedShapeIds.filter((id: string) => !removedShapeIds.includes(id));
-                                        }
-                                        if (addedShapes.length > 0 && layer.id === (prev.activeLayerId || newLayers[0].id)) {
-                                            updatedShapeIds = [...updatedShapeIds, ...addedShapes.map((s: any) => s.id)];
-                                        }
-                                        return { ...layer, shapeIds: updatedShapeIds };
-                                    });
-                                }
-                                return { ...prev, shapes: newShapes, layers: newLayers, distributePathState: null };
-                            });
-                        }}
-                        onCancelDistributePath={() => {
-                            if (distributePathState) {
-                                setSelectedShapeIds(distributePathState.entities.map(e => e.ids[0]));
-                            }
-                            setDistributePathState(null);
-                        }}
+                        onConfirmDistributePath={handleConfirmDistributePath}
+                        onCancelDistributePath={handleCancelDistributePath}
                         selectedShapes={selectedShapes} allShapes={shapes} updateShape={updateShape} updateShapes={updateShapes} deleteShape={deleteShape} duplicateShape={duplicateShape}
                         activeTool={activeTool} activePointIndex={activePointIndex} setActivePointIndex={setActivePointIndex}
                         deletePoint={deletePoint} addPoint={addPoint} convertToPath={convertToPath} showNotification={showNotification}
@@ -5226,6 +5393,301 @@ export default function App(): React.ReactNode {
                 </div>
             </aside>}
           </main>
+
+          {isMobile && (
+            <MobileMenuDrawer
+              isOpen={mobileSheet === 'menu'}
+              onClose={() => setMobileSheet(null)}
+              projectName={projectName}
+              isProjectActive={isProjectActive}
+              onGoHome={handleGoHome}
+              onNewProject={handleOpenNewProjectModal}
+              onSaveProject={handleSaveProject}
+              canSave={isProjectActive && (hasUnsavedChanges || !fileHandle)}
+              onSaveProjectAs={() => setIsSaveAsModalOpen(true)}
+              onSaveAsTemplate={() => setIsSaveTemplateModalOpen(true)}
+              onLoadProject={handleLoadProject}
+              onOpenCloudGallery={(tab) => {
+                setCloudGalleryInitialTab(tab || 'public');
+                setIsCloudGalleryOpen(true);
+              }}
+              onImportImage={handleImportImage}
+              onExport={() => setIsExportModalOpen(true)}
+              onShareLink={handleShareLink}
+              showShareLink={activeCheats.has('003')}
+              onClearCanvas={handleClearCanvas}
+              onFitCanvasToView={fitCanvasToView}
+              onToggleFullscreen={handleToggleFullscreen}
+              isFullscreen={isFullscreen}
+              showGrid={showGrid}
+              setShowGrid={setShowGrid}
+              snapToGrid={snapToGrid}
+              setSnapToGrid={setSnapToGrid}
+              showAxes={showAxes}
+              setShowAxes={setShowAxes}
+              showCenterGuides={showCenterGuides}
+              setShowCenterGuides={setShowCenterGuides}
+              enableSnapping={enableSnapping}
+              setEnableSnapping={setEnableSnapping}
+              theme={theme}
+              setTheme={setTheme}
+              onOpenSettings={handleOpenSettings}
+              onOpenCode={() => setMobileSheet('code')}
+              onOpenPreview={() => {
+                if (shapes.length > 0) {
+                  setShapesAtGenerationTime(shapes);
+                  setIsPreviewOpen(true);
+                } else {
+                  showNotification('Спочатку додайте фігури для тесту', 'info');
+                }
+              }}
+              onOpenAlign={() => setMobileSheet('align')}
+              onSaveCode={() => setIsSaveCodeModalOpen(true)}
+              onRunOnline={() => handleOpenOrRunCodeOnline(true)}
+              onOpenAbout={() => setIsAboutModalOpen(true)}
+              onOpenHelp={() => setIsHelpModalOpen(true)}
+              onOpenShortcuts={() => setIsShortcutsModalOpen(true)}
+              onOpenFeedback={() => setIsFeedbackModalOpen(true)}
+              onOpenCheatCodes={() => setIsCheatCodeModalOpen(true)}
+            />
+          )}
+
+          {isProjectActive && isMobile && (
+              <>
+                  <MobileBottomBar
+                      activeTool={activeTool}
+                      setActiveTool={handleSetActiveTool}
+                      undo={undo}
+                      redo={redo}
+                      canUndo={canUndo}
+                      canRedo={canRedo}
+                      hasSelectedShapes={selectedShapeIds.length > 0}
+                      selectedShapesCount={selectedShapeIds.length}
+                      canGroup={canGroup}
+                      canUngroup={canUngroup}
+                      canFlip={canFlip}
+                      onDeleteShape={handleDelete}
+                      onDuplicateShape={handleDuplicate}
+                      onGroup={handleGroup}
+                      onUngroup={handleUngroup}
+                      onFlipH={() => handleFlip('horizontal')}
+                      onFlipV={() => handleFlip('vertical')}
+                      onOpenLayers={() => setMobileSheet(prev => prev === 'layers' ? null : 'layers')}
+                      onOpenShapes={() => setMobileSheet(prev => prev === 'shapes' ? null : 'shapes')}
+                      onOpenPalette={() => setMobileSheet(prev => prev === 'palette' ? null : 'palette')}
+                      onOpenCode={() => setMobileSheet(prev => prev === 'code' ? null : 'code')}
+                      onOpenAlign={() => setMobileSheet(prev => prev === 'align' ? null : 'align')}
+                      activeSheet={mobileSheet}
+                      isLandscape={isLandscape}
+                  />
+                  
+                  <MobileBottomSheet 
+                      isOpen={mobileSheet === 'shapes'} 
+                      onClose={() => setMobileSheet(null)} 
+                      title={t('shape.list') || "Фігури та Інструменти"}
+                      pinMode={mobileSheetPinMode}
+                      onPinModeChange={setMobileSheetPinMode}
+                      onHeightVhChange={setMobileSheetHeightVh}
+                      onWidthVwChange={setMobileSheetWidthVw}
+                      onNavigatePrev={handleNavigateSheetPrev}
+                      onNavigateNext={handleNavigateSheetNext}
+                      activeTabId="shapes"
+                      isLandscape={isLandscape}
+                  >
+                      <MobileShapesSheet
+                          activeTool={activeTool}
+                          setActiveTool={handleSetActiveTool}
+                          drawMode={drawMode}
+                          setDrawMode={setDrawMode}
+                          numberOfSides={numberOfSides}
+                          setNumberOfSides={setNumberOfSides}
+                          activeCheats={activeCheats}
+                          onClose={() => {
+                              if (mobileSheetPinMode !== 'docked') {
+                                  setMobileSheet(null);
+                              }
+                          }}
+                      />
+                  </MobileBottomSheet>
+
+                  <MobileBottomSheet 
+                      isOpen={mobileSheet === 'palette'} 
+                      onClose={() => setMobileSheet(null)} 
+                      title={t('tool.color') || "Колір, Стиль та Властивості"}
+                      pinMode={mobileSheetPinMode}
+                      onPinModeChange={setMobileSheetPinMode}
+                      onHeightVhChange={setMobileSheetHeightVh}
+                      onWidthVwChange={setMobileSheetWidthVw}
+                      onNavigatePrev={handleNavigateSheetPrev}
+                      onNavigateNext={handleNavigateSheetNext}
+                      activeTabId="palette"
+                      isLandscape={isLandscape}
+                  >
+                      <MobileStyleSheet
+                          fillColor={fillColor}
+                          isFillEnabled={isFillEnabled}
+                          setIsFillEnabled={setIsFillEnabled}
+                          handleSetFillColor={handleSetFillColor}
+                          setPreviewFillColor={setPreviewFillColor}
+                          handleCancelFillPreview={handleCancelFillPreview}
+                          strokeColor={strokeColor}
+                          isStrokeEnabled={isStrokeEnabled}
+                          setIsStrokeEnabled={setIsStrokeEnabled}
+                          handleSetStrokeColor={handleSetStrokeColor}
+                          setPreviewStrokeColor={setPreviewStrokeColor}
+                          handleCancelStrokePreview={handleCancelStrokePreview}
+                          strokeWidth={strokeWidth}
+                          setStrokeWidth={setStrokeWidth}
+                          textColor={textColor}
+                          setTextColor={handleSetTextColor}
+                          setPreviewTextColor={setPreviewTextColor}
+                          handleCancelTextPreview={handleCancelTextPreview}
+                          textFont={textFont}
+                          setTextFont={setTextFont}
+                          textFontSize={textFontSize}
+                          setTextFontSize={setTextFontSize}
+                          selectedShapes={selectedShapes}
+                          allShapes={shapes}
+                          canvasWidth={canvasWidth}
+                          canvasHeight={canvasHeight}
+                          updateShape={updateShape}
+                          updateShapes={updateShapes}
+                          deleteShape={deleteShape}
+                          duplicateShape={duplicateShape}
+                          handleExtractFromGroup={handleExtractFromGroup}
+                          handleFlip={handleFlip}
+                          showSystemTags={showSystemTags}
+                          distributePathState={distributePathState}
+                          setDistributePathState={setDistributePathState}
+                          onConfirmDistributePath={handleConfirmDistributePath}
+                          onCancelDistributePath={handleCancelDistributePath}
+                          activeTool={activeTool}
+                          activePointIndex={activePointIndex}
+                          setActivePointIndex={setActivePointIndex}
+                          deletePoint={deletePoint}
+                          addPoint={addPoint}
+                          convertToPath={convertToPath}
+                          showNotification={showNotification}
+                          setShapePreview={setShapePreview}
+                          cancelShapePreview={cancelShapePreview}
+                          onAlignShapes={handleAlignShapes}
+                      />
+                  </MobileBottomSheet>
+
+                  <MobileBottomSheet 
+                      isOpen={mobileSheet === 'align'} 
+                      onClose={() => setMobileSheet(null)} 
+                      title={t('menu.tools.align') || "Вирівнювання та розподіл"}
+                      pinMode={mobileSheetPinMode}
+                      onPinModeChange={setMobileSheetPinMode}
+                      onHeightVhChange={setMobileSheetHeightVh}
+                      onWidthVwChange={setMobileSheetWidthVw}
+                      onNavigatePrev={handleNavigateSheetPrev}
+                      onNavigateNext={handleNavigateSheetNext}
+                      activeTabId="align"
+                      isLandscape={isLandscape}
+                  >
+                      <MobileAlignSheet
+                          selectedShapes={selectedShapes}
+                          allShapes={shapes}
+                          canvasWidth={canvasWidth}
+                          canvasHeight={canvasHeight}
+                          onAlignShapes={handleAlignShapes}
+                          distributePathState={distributePathState}
+                          onDistributePathChange={setDistributePathState}
+                          onConfirmDistributePath={handleConfirmDistributePath}
+                          onCancelDistributePath={handleCancelDistributePath}
+                          onClose={() => setMobileSheet(null)}
+                      />
+                  </MobileBottomSheet>
+
+                  <MobileBottomSheet 
+                      isOpen={mobileSheet === 'layers'} 
+                      onClose={() => setMobileSheet(null)} 
+                      title="Об'єкти та Шари"
+                      pinMode={mobileSheetPinMode}
+                      onPinModeChange={setMobileSheetPinMode}
+                      onHeightVhChange={setMobileSheetHeightVh}
+                      onWidthVwChange={setMobileSheetWidthVw}
+                      onNavigatePrev={handleNavigateSheetPrev}
+                      onNavigateNext={handleNavigateSheetNext}
+                      activeTabId="layers"
+                      isLandscape={isLandscape}
+                  >
+                      <MobileLayersSheet
+                          shapes={shapes}
+                          lockedShapeIds={lockedShapeIds}
+                          selectedShapeIds={selectedShapeIds}
+                          onSelectShape={handleSelectShape}
+                          onDeleteShape={confirmDeleteShape}
+                          onMoveShape={moveShape}
+                          onUpdateShape={updateShape}
+                          onReorderShape={reorderShape}
+                          showTkinterNames={showTkinterNames}
+                          layers={layers}
+                          activeLayerId={activeLayerId}
+                          onMoveToLayer={moveToLayer}
+                          onSetActiveLayer={setActiveLayer}
+                          onLayerWarning={(reason, layerId, action) => setDrawingWarningModal({ show: true, reason, layerId, action })}
+                          ignoreHiddenWarningForLayer={ignoreHiddenWarningForLayer}
+                          distributePathState={distributePathState}
+                          onAddLayer={addLayer}
+                          onDeleteLayer={deleteLayer}
+                          onClearLayer={clearLayer}
+                          onToggleLayerVisibility={toggleLayerVisibility}
+                          onToggleLayerLock={toggleLayerLock}
+                          onUpdateLayerName={updateLayerName}
+                          onMoveLayer={moveLayer}
+                          canvasWidth={canvasWidth}
+                          canvasHeight={canvasHeight}
+                          canvasBgColor={canvasBgColor}
+                      />
+                  </MobileBottomSheet>
+
+                  <MobileBottomSheet 
+                      isOpen={mobileSheet === 'code'} 
+                      onClose={() => setMobileSheet(null)} 
+                      title={t('menu.export.code') || "Код Tkinter"}
+                      pinMode={mobileSheetPinMode}
+                      onPinModeChange={setMobileSheetPinMode}
+                      onHeightVhChange={setMobileSheetHeightVh}
+                      onWidthVwChange={setMobileSheetWidthVw}
+                      onNavigatePrev={handleNavigateSheetPrev}
+                      onNavigateNext={handleNavigateSheetNext}
+                      activeTabId="code"
+                      isLandscape={isLandscape}
+                  >
+                      <div className={isLandscape ? "h-full flex flex-col min-h-[260px]" : "h-[75vh] flex flex-col"}>
+                          <CodeDisplay 
+                              codeLines={generatedCodeLines} isLoading={isLoading} error={error} onUpdate={handleGenerateCode}
+                              onPreview={() => {
+                                  if (shapes.length > 0) {
+                                      setShapesAtGenerationTime(shapes);
+                                      setIsPreviewOpen(true);
+                                  } else {
+                                      showNotification('Спочатку додайте фігури для тесту', 'info');
+                                  }
+                              }} 
+                              hasUnsyncedChanges={hasUnsyncedChangesWithCode}
+                              opacity={1} setOpacity={() => {}}
+                              selectedShapeIds={selectedShapeIds}
+                              highlightCodeOnSelection={highlightCodeOnSelection}
+                              setHighlightCodeOnSelection={setHighlightCodeOnSelection}
+                              showLineNumbers={showLineNumbers}
+                              setShowLineNumbers={setShowLineNumbers}
+                              showComments={showComments}
+                              setShowComments={setShowComments}
+                              generatorType={generatorType}
+                              onSwitchToLocalGenerator={handleSwitchToLocalFromError}
+                              onOpenSettingsToGenerator={handleOpenSettingsToCode}
+                              onSaveCode={() => setIsSaveCodeModalOpen(true)}
+                              onOpenOrRunCodeOnline={handleOpenOrRunCodeOnline}
+                              codeStringForExport={codeStringForExport}
+                          />
+                      </div>
+                  </MobileBottomSheet>
+              </>
+          )}
           
           {isCheatCodeModalOpen && (
             <CheatCodeModal
@@ -5434,7 +5896,7 @@ export default function App(): React.ReactNode {
             currentProjectName={projectName}
           />
           {drawingWarningModal && drawingWarningModal.show && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
                 <div className="bg-[var(--bg-app)] border border-[var(--border-color)] p-6 rounded-lg shadow-xl w-[400px] relative">
                     <button 
                         className="absolute top-4 right-4 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"

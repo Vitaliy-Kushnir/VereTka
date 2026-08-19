@@ -36,7 +36,7 @@ const ExportModal: React.FC<ExportModalProps> = ({ onClose, onExport }) => {
 
     return (
         <div 
-            className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999]"
             onClick={onClose}
         >
             <div 

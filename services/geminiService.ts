@@ -128,7 +128,7 @@ Please generate only the Python code as a single block of text.
         const code = response.text || '';
         
         // Clean up the response to ensure it's just Python code.
-        const cleanedCode = code.replace(/^```(python)?\n/i, '').replace(/```$/, '').trim();
+        const cleanedCode = (code || '').replace(/^```(python)?\n/i, '').replace(/```$/, '').trim();
         
         return cleanedCode;
     } catch (error) {

@@ -23,7 +23,7 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onSave, curr
     }, [isOpen, currentApiKey]);
 
     const handleSave = () => {
-        onSave(key.trim() === '' ? null : key.trim());
+        onSave(((key) || "").trim() === '' ? null : ((key) || "").trim());
         onClose();
     };
 
@@ -37,7 +37,7 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose, onSave, curr
 
     return (
         <div 
-            className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4"
             onClick={onClose}
             aria-modal="true"
             role="dialog"

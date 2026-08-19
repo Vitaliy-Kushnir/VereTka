@@ -13,10 +13,16 @@ export const Label: React.FC<{ htmlFor: string; children?: React.ReactNode; titl
     <label htmlFor={htmlFor} className={`text-sm font-medium text-[var(--text-secondary)] w-28 flex-shrink-0 ${className || ""}`} title={title}>{children}</label>
 );
 
-export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: number; onChange: (value: number) => void, disabled?: boolean; step?: number; min?: number; max?: number; onFocus?: React.FocusEventHandler<HTMLInputElement>; title?: string, className?: string, smartRound?: boolean, unit?: string; onBlur?: React.FocusEventHandler<HTMLInputElement>; onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>; autoFocus?: boolean, stepLogic?: 'grid'; placeholder?: string }> (
+export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: number | ''; onChange: (value: number) => void, disabled?: boolean; step?: number; min?: number; max?: number; onFocus?: React.FocusEventHandler<HTMLInputElement>; title?: string, className?: string, smartRound?: boolean, unit?: string; onBlur?: React.FocusEventHandler<HTMLInputElement>; onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>; autoFocus?: boolean, stepLogic?: 'grid'; placeholder?: string }> (
     ({ id, value, onChange, disabled, step = 1, min, max, onFocus, title, className, smartRound = true, unit, onBlur, onKeyDown, autoFocus, stepLogic, placeholder }, forwardedRef) => {
     
-    const [displayValue, setDisplayValue] = useState(String(isNaN(value as any) ? 0 : value));
+    const getSafeString = (v: any) => {
+        if (v === '' || v === null || v === undefined) return '';
+        if (typeof v === 'number' && isNaN(v)) return '';
+        return String(v);
+    };
+
+    const [displayValue, setDisplayValue] = useState<string>(() => getSafeString(value));
     const internalRef = useRef<HTMLInputElement>(null);
 
     // Combine forwardedRef and internalRef
@@ -33,9 +39,11 @@ export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: num
     // Sync with external value changes, but only if not focused to avoid disrupting user input.
     useEffect(() => {
         if (document.activeElement !== internalRef.current) {
-            // Check if the numeric value differs to avoid unnecessary updates (e.g., "12." vs 12)
-            if (Number(displayValue) !== value) {
-                 setDisplayValue(String(value));
+            const nextStr = getSafeString(value);
+            if (nextStr === '' && displayValue !== '') {
+                setDisplayValue('');
+            } else if (nextStr !== '' && Number(displayValue) !== Number(value)) {
+                setDisplayValue(nextStr);
             }
         }
     }, [value, displayValue]);
@@ -53,7 +61,7 @@ export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: num
             const safeValue = isNaN(value as any) ? 0 : value;
             setDisplayValue((safeValue as any) === '' ? '' : String(safeValue));
             if((safeValue as any) !== '' && safeValue !== Number(displayValue)) {
-                onChange(safeValue);
+                onChange(Number(safeValue));
             }
             return;
         }
@@ -947,7 +955,7 @@ for (const color of TKINTER_NAMED_COLORS) {
 // Utility to convert color names/rgb to hex. Returns null if invalid.
 const toHex = (color: string): string | null => {
     if (!color || typeof color !== 'string') return null;
-    const trimmedColor = color.trim();
+    const trimmedColor = ((color) || "").trim();
     const lowerColor = trimmedColor.toLowerCase();
 
     // Check map first
@@ -1063,7 +1071,7 @@ const AllColorsModal: React.FC<AllColorsModalProps> = ({ isOpen, onClose, onSele
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[99999] p-4" onClick={onClose}>
             <div className="bg-[var(--bg-primary)] rounded-lg shadow-2xl w-full max-w-2xl h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 <header className="flex justify-between items-center p-4 border-b border-[var(--border-primary)] flex-shrink-0">
                     <h2 className="text-xl font-bold text-[var(--text-primary)]">{t('color.allColorsTitle')}</h2>
@@ -1218,7 +1226,7 @@ export const ColorInput: React.FC<{
     const hexValue = useMemo(() => toHex(inputValue) || '#000000', [inputValue]);
     
     const { convertibleTo, conversionTarget } = useMemo(() => {
-        const trimmedInput = inputValue.trim();
+        const trimmedInput = ((inputValue) || "").trim();
         const lowerInput = trimmedInput.toLowerCase();
 
         if (nameToHexMap.has(lowerInput)) {
@@ -1234,14 +1242,14 @@ export const ColorInput: React.FC<{
     }, [inputValue]);
 
     const inputTitle = useMemo(() => {
-        if (inputValue.trim().startsWith('#')) {
+        if (((inputValue) || "").trim().startsWith('#')) {
             return "HEX code in #RRGGBB or #RGB format. Allowed characters: 0-9, a-f.";
         }
         return "Enter color name (e.g. 'Red', 'LightBlue') or HEX code.";
     }, [inputValue]);
 
     const isValidWebColorName = (name: string): boolean => {
-        if (!name || typeof name !== 'string' || name.trim().startsWith('#')) return false;
+        if (!name || typeof name !== 'string' || ((name) || "").trim().startsWith('#')) return false;
         
         const ctx = document.createElement('canvas').getContext('2d');
         if (!ctx) return false;
@@ -1249,7 +1257,7 @@ export const ColorInput: React.FC<{
         ctx.fillStyle = '__invalid_color__';
         const invalidColorResult = ctx.fillStyle;
         
-        ctx.fillStyle = name.trim();
+        ctx.fillStyle = ((name) || "").trim();
         const resolvedColorHex = ctx.fillStyle;
         
         return resolvedColorHex !== invalidColorResult && resolvedColorHex !== 'rgba(0, 0, 0, 0)';
@@ -1329,7 +1337,7 @@ export const ColorInput: React.FC<{
     const handleCommit = useCallback(() => {
         if (!isEditing || conversionChoice) return;
         
-        const trimmedInput = inputValue.trim();
+        const trimmedInput = ((inputValue) || "").trim();
 
         if (trimmedInput === '') {
             handleCancelClick();

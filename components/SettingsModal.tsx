@@ -141,8 +141,8 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
     };
 
     const handleConfirmEditing = () => {
-        if (editingTemplateId && editingTemplateName.trim()) {
-            props.onRenameTemplate(editingTemplateId, editingTemplateName.trim());
+        if (editingTemplateId && ((editingTemplateName) || "").trim()) {
+            props.onRenameTemplate(editingTemplateId, ((editingTemplateName) || "").trim());
         }
         setEditingTemplateId(null);
     };
@@ -165,8 +165,16 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
         props.setGeneratorType(type);
     };
 
+    const handleCanvasVarNameChange = (value: string) => {
+        let cleanedValue = value.replace(/[^a-zA-Z0-9_]/g, '');
+        if (/^[0-9]/.test(cleanedValue)) {
+            cleanedValue = '_' + cleanedValue;
+        }
+        props.setCanvasVarName(cleanedValue);
+    };
+
     return (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={props.onClose} aria-modal="true" role="dialog">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4" onClick={props.onClose} aria-modal="true" role="dialog">
             <div className="bg-[var(--bg-primary)] border border-[var(--border-secondary)] rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-fade-in" onClick={e => e.stopPropagation()}>
                 <header className="p-4 border-b border-[var(--border-secondary)] flex items-center justify-between gap-4 flex-shrink-0">
                     <h2 className="text-lg font-bold text-[var(--text-primary)]">{t('settings.title')}</h2>
@@ -210,7 +218,7 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                 <h3 className="text-lg font-semibold text-[var(--text-secondary)] pt-2">{t('settings.canvas.codeDisplay')}</h3>
                                 <div className="grid grid-cols-1 gap-2">
                                     <Label htmlFor="canvasVarName" title={t('settings.canvas.varName')}>
-                                        <input id="canvasVarName" type="text" value={props.canvasVarName} onChange={e => props.setCanvasVarName(e.target.value)} className="w-full bg-[var(--bg-app)] border border-[var(--border-secondary)] text-[var(--text-primary)] text-sm rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] transition-shadow" />
+                                        <input id="canvasVarName" type="text" value={props.canvasVarName} onChange={e => handleCanvasVarNameChange(e.target.value)} className="w-full bg-[var(--bg-app)] border border-[var(--border-secondary)] text-[var(--text-primary)] text-sm rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] transition-shadow" />
                                     </Label>
                                     <p className="text-xs text-[var(--text-tertiary)]">{t('settings.canvas.varNameDesc')}</p>
                                 </div>

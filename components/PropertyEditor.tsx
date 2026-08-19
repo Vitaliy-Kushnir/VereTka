@@ -81,8 +81,8 @@ const DashControls: React.FC<{
     updateShape: (shape: Shape) => void;
     roundFn: (num: number) => number;
 }> = ({ shape, updateShape, roundFn }) => {
-    const isStrokeDisabled = shape.stroke === 'none' || shape.strokeWidth === 0;
-    const strokeWidth = shape.strokeWidth > 0 ? shape.strokeWidth : 1;
+    const isStrokeDisabled = shape.stroke === 'none' || isNaN(shape.strokeWidth) || shape.strokeWidth === 0;
+    const strokeWidth = !isNaN(shape.strokeWidth) && shape.strokeWidth > 0 ? shape.strokeWidth : 1;
     const { t } = useLanguage();
     
     const isCustomDash = React.useMemo(() => {
@@ -97,8 +97,8 @@ const DashControls: React.FC<{
     const handleSegmentChange = (index: number, absoluteValue: number) => {
         if (!shape.dash) return;
         const newDash = [...shape.dash];
-        const newMultiplier = absoluteValue >= 0 ? absoluteValue / strokeWidth : 0;
-        newDash[index] = newMultiplier;
+        const newMultiplier = absoluteValue >= 0 ? (strokeWidth > 0 ? absoluteValue / strokeWidth : 0) : 0;
+        newDash[index] = isNaN(newMultiplier) ? 0 : newMultiplier;
         updateShape({ ...shape, dash: newDash });
     };
 
@@ -130,7 +130,7 @@ const DashControls: React.FC<{
                                 <Label htmlFor={`${shape.id}-dash-${index}`} title={index % 2 === 0 ? t('prop.dash.strokeLen', {i: index/2 + 1}) : t('prop.dash.gapLen', {i: Math.ceil(index/2)})}>{index % 2 === 0 ? t('prop.dash.stroke', {i: index/2+1}) : t('prop.dash.gap', {i: Math.ceil(index/2)})}</Label>
                                 <NumberInput 
                                   id={`${shape.id}-dash-${index}`} 
-                                  value={roundFn(val * strokeWidth)} 
+                                  value={isNaN(val * strokeWidth) ? 0 : roundFn(val * strokeWidth)} 
                                   onChange={v => handleSegmentChange(index, v)} 
                                   min={0}
                                   disabled={isStrokeDisabled}
@@ -286,7 +286,7 @@ const StrokeControls: React.FC<{
                 <Label htmlFor={`${shape.id}-stroke-width`} title={t('prop.title.strokeWidthLine')}>{t('prop.width')}</Label>
                 <NumberInput 
                     id={`${shape.id}-stroke-width`} 
-                    value={roundFn(shape.strokeWidth)} 
+                    value={isNaN(shape.strokeWidth) ? 1 : roundFn(shape.strokeWidth)} 
                     onChange={v => updateShape({ ...shape, strokeWidth: v })} 
                     min={0} 
                     disabled={isStrokeNone} 
@@ -839,14 +839,14 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
         const isClosed = (shape.type === 'polyline' || shape.type === 'bezier') && shape.isClosed;
         if (isClosed) return null;
 
-        const strokeWidth = shape.strokeWidth > 0 ? shape.strokeWidth : 1;
+        const strokeWidth = !isNaN(shape.strokeWidth) && shape.strokeWidth > 0 ? shape.strokeWidth : 1;
         const [d1m, d2m, d3m] = shape.arrowshape ?? [8, 10, 3];
 
         const handleArrowChange = (index: number, absoluteValue: number) => {
             if (strokeWidth === 0) return;
             const newMultipliers = [...(shape.arrowshape ?? [8, 10, 3])];
             const newMultiplier = absoluteValue / strokeWidth;
-            newMultipliers[index] = parseFloat(newMultiplier.toFixed(2));
+            newMultipliers[index] = isNaN(newMultiplier) ? 0 : parseFloat(newMultiplier.toFixed(2));
             updateShape({ ...shape, arrowshape: newMultipliers as [number, number, number] });
         };
         
@@ -878,9 +878,9 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                 </InputWrapper>
                 {shape.arrow && shape.arrow !== 'none' && (
                     <div className="space-y-2 pl-4 border-l-2 border-[var(--border-secondary)] ml-2 mt-2 pt-2">
-                        <InputWrapper><Label htmlFor={`${shape.id}-arrow-d1`} title={t('prop.title.arrowTipOffset')}>{t('props.arrowTipOffset')}</Label><NumberInput id={`${shape.id}-arrow-d1`} value={roundToHundredths(d1m * strokeWidth)} onChange={v => handleArrowChange(0, v)} min={0} smartRound={false} /></InputWrapper>
-                        <InputWrapper><Label htmlFor={`${shape.id}-arrow-d2`} title={t('prop.title.arrowWingsOffset')}>{t('props.arrowWingsOffset')}</Label><NumberInput id={`${shape.id}-arrow-d2`} value={roundToHundredths(d2m * strokeWidth)} onChange={v => handleArrowChange(1, v)} min={0} smartRound={false} /></InputWrapper>
-                        <InputWrapper><Label htmlFor={`${shape.id}-arrow-d3`} title={t('prop.title.arrowWingWidth')}>{t('props.arrowWingWidth')}</Label><NumberInput id={`${shape.id}-arrow-d3`} value={roundToHundredths(d3m * strokeWidth)} onChange={v => handleArrowChange(2, v)} min={0} smartRound={false} /></InputWrapper>
+                        <InputWrapper><Label htmlFor={`${shape.id}-arrow-d1`} title={t('prop.title.arrowTipOffset')}>{t('props.arrowTipOffset')}</Label><NumberInput id={`${shape.id}-arrow-d1`} value={isNaN(d1m * strokeWidth) ? 0 : roundToHundredths(d1m * strokeWidth)} onChange={v => handleArrowChange(0, v)} min={0} smartRound={false} /></InputWrapper>
+                        <InputWrapper><Label htmlFor={`${shape.id}-arrow-d2`} title={t('prop.title.arrowWingsOffset')}>{t('props.arrowWingsOffset')}</Label><NumberInput id={`${shape.id}-arrow-d2`} value={isNaN(d2m * strokeWidth) ? 0 : roundToHundredths(d2m * strokeWidth)} onChange={v => handleArrowChange(1, v)} min={0} smartRound={false} /></InputWrapper>
+                        <InputWrapper><Label htmlFor={`${shape.id}-arrow-d3`} title={t('prop.title.arrowWingWidth')}>{t('props.arrowWingWidth')}</Label><NumberInput id={`${shape.id}-arrow-d3`} value={isNaN(d3m * strokeWidth) ? 0 : roundToHundredths(d3m * strokeWidth)} onChange={v => handleArrowChange(2, v)} min={0} smartRound={false} /></InputWrapper>
                     </div>
                 )}
             </>
@@ -1047,7 +1047,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                         />
                     </div>
                 </div>
-                <InputWrapper><Label htmlFor={`${line.id}-stroke-width`} title={t('prop.title.width')}>{t('prop.width')}:</Label><NumberInput id={`${line.id}-stroke-width`} value={roundToHundredths(line.strokeWidth)} onChange={v => updateShape({ ...line, strokeWidth: v })} min={0} smartRound={false} /></InputWrapper>
+                <InputWrapper><Label htmlFor={`${line.id}-stroke-width`} title={t('prop.title.width')}>{t('prop.width')}:</Label><NumberInput id={`${line.id}-stroke-width`} value={isNaN(line.strokeWidth) ? 1 : roundToHundredths(line.strokeWidth)} onChange={v => updateShape({ ...line, strokeWidth: v })} min={0} smartRound={false} /></InputWrapper>
                 <DashControls shape={line} updateShape={updateShape} roundFn={roundToHundredths} />
                 {lineLikeControls(line)}
             </>;
@@ -1069,7 +1069,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                         />
                     </div>
                 </div>
-                <InputWrapper><Label htmlFor={`${path.id}-stroke-width`} title={t('prop.title.width')}>{t('prop.width')}:</Label><NumberInput id={`${path.id}-stroke-width`} value={roundToHundredths(path.strokeWidth)} onChange={v => updateShape({ ...path, strokeWidth: v })} min={0} smartRound={false} /></InputWrapper>
+                <InputWrapper><Label htmlFor={`${path.id}-stroke-width`} title={t('prop.title.width')}>{t('prop.width')}:</Label><NumberInput id={`${path.id}-stroke-width`} value={isNaN(path.strokeWidth) ? 1 : roundToHundredths(path.strokeWidth)} onChange={v => updateShape({ ...path, strokeWidth: v })} min={0} smartRound={false} /></InputWrapper>
                 <DashControls shape={path} updateShape={updateShape} roundFn={roundToHundredths} />
                 {joinStyleControls(path)}
                 {lineLikeControls(path)}
@@ -1600,7 +1600,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
     if (validShapes.length === 0) return null;
 
     const commonStroke = validShapes.every(s => s.stroke === validShapes[0].stroke) ? validShapes[0].stroke : '';
-    const commonStrokeWidth = validShapes.every(s => s.strokeWidth === validShapes[0].strokeWidth) ? validShapes[0].strokeWidth : '';
+    const commonStrokeWidth = validShapes.every(s => s.strokeWidth === validShapes[0].strokeWidth) ? (isNaN(validShapes[0].strokeWidth) ? '' : validShapes[0].strokeWidth) : '';
     const commonState = validShapes.every(s => s.state === validShapes[0].state) ? validShapes[0].state : '';
     
     const commonStipple = validShapes.every(s => (s as any).stipple === (validShapes[0] as any).stipple) ? (validShapes[0] as any).stipple : '';

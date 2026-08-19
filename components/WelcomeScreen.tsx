@@ -2,6 +2,7 @@
 import React, { useMemo, useState } from 'react';
 import { NewFileIcon, OpenFileIcon, HistoryIcon, XIcon, ArrowRightIcon, RefreshIcon } from './icons';
 import { useLanguage } from './LanguageContext';
+import { BetaBadge } from './BetaBadge';
 
 interface RecentProject {
     name: string;
@@ -58,8 +59,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     }, [autosavedProjectData]);
 
     return (
-        <div className="w-full h-full bg-[var(--bg-app)] rounded-lg flex flex-col p-8 sm:p-12 lg:p-16 overflow-y-auto relative" onClick={() => setIsLanguageOpen(false)}>
-            <div className="absolute top-4 right-4 sm:top-8 sm:right-8 z-10 flex items-center">
+        <div className="w-full h-full bg-[var(--bg-app)] rounded-lg flex flex-col p-4 sm:p-8 md:p-12 lg:p-16 overflow-y-auto relative" onClick={() => setIsLanguageOpen(false)}>
+            <div className="absolute top-3 right-3 sm:top-6 sm:right-8 z-10 flex items-center">
                 <div className="relative" onClick={(e) => e.stopPropagation()}>
                     <button
                         onClick={() => setIsLanguageOpen(!isLanguageOpen)}
@@ -180,29 +181,29 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                     )}
                 </div>
             </div>
-            <div className="max-w-7xl mx-auto w-full">
+            <div className="max-w-7xl mx-auto w-full pt-4 sm:pt-0">
                  {/* Autosave Restore Banner */}
                 {parsedAutosave && (
-                    <div className="bg-yellow-900/50 border border-yellow-500/50 text-yellow-200 text-sm rounded-lg p-4 mb-12 flex items-center justify-between gap-4 animate-fade-in-down">
-                        <div className="flex items-center gap-4">
+                    <div className="bg-yellow-900/50 border border-yellow-500/50 text-yellow-200 text-sm rounded-xl p-3.5 sm:p-4 mb-6 sm:mb-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 animate-fade-in-down">
+                        <div className="flex items-center gap-3 sm:gap-4">
                             <RefreshIcon size={24} className="flex-shrink-0" />
                             <div>
                                 <p className="font-bold text-yellow-100">{t('welcome.autosave.found')}</p>
-                                <p>
+                                <p className="text-xs sm:text-sm">
                                     {t('welcome.autosave.message').replace('{name}', parsedAutosave.name).replace('{time}', parsedAutosave.timestamp?.toLocaleString(language === 'uk' ? 'uk-UA' : 'en-US') ?? t('welcome.autosave.recently'))}
                                 </p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-center">
                             <button 
                                 onClick={onRestoreAutosave} 
-                                className="px-4 py-1.5 rounded-md font-semibold bg-yellow-600 text-white hover:bg-yellow-500 transition-colors"
+                                className="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold bg-yellow-600 text-white hover:bg-yellow-500 transition-colors shadow-xs"
                             >
                                 {t('welcome.autosave.restore')}
                             </button>
                             <button 
                                 onClick={onDismissAutosave} 
-                                className="p-2 rounded-md hover:bg-white/10"
+                                className="p-1.5 rounded-lg hover:bg-white/10"
                                 title={t('welcome.autosave.dismiss')}
                             >
                                 <XIcon size={16} />
@@ -211,9 +212,9 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                     </div>
                 )}
                 {/* Header */}
-                <header className="text-center mb-16 animate-fade-in-down">
-                    <div className="inline-flex items-center gap-6 mb-6">
-                        <div className="h-32 w-32 text-indigo-400 flex-shrink-0">
+                <header className="text-center mb-8 sm:mb-12 md:mb-16 animate-fade-in-down">
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mb-4 sm:mb-6">
+                        <div className="h-20 w-20 sm:h-28 sm:w-28 md:h-32 md:w-32 text-indigo-400 flex-shrink-0">
                             <svg viewBox="342 42 615 610" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
                                 <path d="M0 377 167.354 0 382 0 214.646 377Z" fill="#404040" transform="matrix(-1 -8.74228e-08 -8.74228e-08 1 745 274)"/>
                                 <path d="M0 11.6394C-1.43639e-15 5.21113 5.21115-1.43638e-15 11.6394-2.87276e-15L11.6394 0C18.0677-1.43638e-15 23.2788 5.21113 23.2788 11.6394L23.2787 78.6188C23.2787 85.047 18.0676 90.2582 11.6393 90.2582L11.6394 90.2581C5.21115 90.2581 0 85.0469 0 78.6187Z" fill="#404040" transform="matrix(0.913545 -0.406737 -0.406737 -0.913545 566.02 303.751)"/>
@@ -232,49 +233,52 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                                 <path d="M220.27 30.5573C192.814 23.3587 144.253-8.25427 80.72 2.04285 17.1869 12.34-0.996792 71.4324 0.0414646 89.5092 1.07972 107.586 6.28948 135.309 15.8645 153.298 30.0006 179.858 56.4739 190.887 78.0564 183.531 99.6389 176.175 105.088 139.242 86.2557 123.988 67.423 108.734 38.8872 120.07 32.6043 134.374 26.3214 148.678 31.1916 168.911 48.5587 209.813 62.0437 243.951 85.9893 284.104 71.4443 348.273" stroke="#0070C0" strokeWidth="5.33333" strokeMiterlimit="8" fill="none" transform="matrix(-0.944285 0.329128 0.329128 0.944285 627.56 27.8097)"/>
                             </svg>
                         </div>
-                        <div className="text-center">
-                            <h1 className="text-7xl md:text-7xl font-extrabold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-                                {t('welcome.title')}
-                            </h1>
-                            <p className="text-xl md:text-2xl text-[var(--text-secondary)] font-medium italic mt-2">
+                        <div className="text-center sm:text-left flex flex-col items-center sm:items-start max-w-full px-1">
+                            <div className="flex items-center justify-center sm:justify-start gap-2.5 sm:gap-4 flex-wrap">
+                                <h1 className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl font-extrabold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent tracking-tight leading-tight">
+                                    {t('welcome.title')}
+                                </h1>
+                                <BetaBadge size="lg" />
+                            </div>
+                            <p className="text-sm xs:text-base sm:text-xl md:text-2xl text-[var(--text-secondary)] font-medium italic mt-1 sm:mt-2 max-w-xl leading-snug">
                                 {t('welcome.subtitle')}
                             </p>
                         </div>
                     </div>
-                     <div className="mt-4 max-w-3xl mx-auto">
-                         <hr className="my-2 border-[var(--border-secondary)] w-1/2 mx-auto" />
-                         <p className="text-md text-[var(--text-tertiary)] mt-2">
+                     <div className="mt-3 sm:mt-4 max-w-3xl mx-auto px-2">
+                         <hr className="my-2 border-[var(--border-secondary)] w-1/3 sm:w-1/2 mx-auto" />
+                         <p className="text-xs sm:text-sm md:text-base text-[var(--text-tertiary)] mt-2 leading-relaxed">
                              {t('welcome.description')}
                          </p>
                      </div>
                 </header>
 
                 {/* Main Actions */}
-                <div className={`grid grid-cols-1 ${onOpenCloudGallery ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6 mb-16 animate-fade-in-up`}>
+                <div className={`grid grid-cols-1 ${onOpenCloudGallery ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4 sm:gap-6 mb-8 sm:mb-16 animate-fade-in-up`}>
                     <button 
                         onClick={onCreateNew}
-                        className="group flex items-center gap-6 p-6 bg-[var(--bg-primary)] rounded-lg text-left hover:bg-[var(--bg-hover)] border border-[var(--border-primary)] hover:border-[var(--border-secondary)] transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl"
+                        className="group flex items-center gap-4 sm:gap-6 p-4 sm:p-6 bg-[var(--bg-primary)] rounded-xl sm:rounded-2xl text-left hover:bg-[var(--bg-hover)] border border-[var(--border-primary)] hover:border-[var(--border-secondary)] transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl active:scale-98"
                     >
-                        <NewFileIcon size={32} className="text-indigo-400 flex-shrink-0" />
+                        <NewFileIcon size={30} className="text-indigo-400 flex-shrink-0" />
                         <div>
-                            <h2 className="text-lg font-semibold text-[var(--text-primary)]">{t('welcome.action.new')}</h2>
-                            <p className="text-sm text-[var(--text-tertiary)] mt-1">{t('welcome.action.newDesc')}</p>
+                            <h2 className="text-base sm:text-lg font-semibold text-[var(--text-primary)]">{t('welcome.action.new')}</h2>
+                            <p className="text-xs sm:text-sm text-[var(--text-tertiary)] mt-0.5 sm:mt-1">{t('welcome.action.newDesc')}</p>
                         </div>
                     </button>
                     <button 
                         onClick={onLoadProject}
-                        className="group flex items-center gap-6 p-6 bg-[var(--bg-primary)] rounded-lg text-left hover:bg-[var(--bg-hover)] border border-[var(--border-primary)] hover:border-[var(--border-secondary)] transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl"
+                        className="group flex items-center gap-4 sm:gap-6 p-4 sm:p-6 bg-[var(--bg-primary)] rounded-xl sm:rounded-2xl text-left hover:bg-[var(--bg-hover)] border border-[var(--border-primary)] hover:border-[var(--border-secondary)] transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl active:scale-98"
                     >
-                        <OpenFileIcon size={32} className="text-purple-400 flex-shrink-0" />
+                        <OpenFileIcon size={30} className="text-purple-400 flex-shrink-0" />
                         <div>
-                            <h2 className="text-lg font-semibold text-[var(--text-primary)]">{t('welcome.action.load')}</h2>
-                            <p className="text-sm text-[var(--text-tertiary)] mt-1">{t('welcome.action.loadDesc')}</p>
+                            <h2 className="text-base sm:text-lg font-semibold text-[var(--text-primary)]">{t('welcome.action.load')}</h2>
+                            <p className="text-xs sm:text-sm text-[var(--text-tertiary)] mt-0.5 sm:mt-1">{t('welcome.action.loadDesc')}</p>
                         </div>
                     </button>
                     {onOpenCloudGallery && (
                         <button 
                             onClick={() => onOpenCloudGallery('public')}
-                            className="group flex items-center gap-6 p-6 bg-[var(--bg-primary)] rounded-lg text-left hover:bg-[var(--bg-hover)] border border-[var(--border-primary)] hover:border-[var(--border-secondary)] transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl"
+                            className="group flex items-center gap-4 sm:gap-6 p-4 sm:p-6 bg-[var(--bg-primary)] rounded-xl sm:rounded-2xl text-left hover:bg-[var(--bg-hover)] border border-[var(--border-primary)] hover:border-[var(--border-secondary)] transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl active:scale-98"
                         >
                             <div className="w-9 h-9 rounded-xl bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold text-xl border border-sky-500/20 flex-shrink-0">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -285,8 +289,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                                 </svg>
                             </div>
                             <div>
-                                <h2 className="text-lg font-semibold text-[var(--text-primary)]">{t('welcome.action.cloud') || 'Хмарна галерея'}</h2>
-                                <p className="text-sm text-[var(--text-tertiary)] mt-1">{t('welcome.action.cloudDesc') || 'Перегляд та відкриття спільних хмарних проєктів.'}</p>
+                                <h2 className="text-base sm:text-lg font-semibold text-[var(--text-primary)]">{t('welcome.action.cloud') || 'Хмарна галерея'}</h2>
+                                <p className="text-xs sm:text-sm text-[var(--text-tertiary)] mt-0.5 sm:mt-1">{t('welcome.action.cloudDesc') || 'Перегляд та відкриття спільних хмарних проєктів.'}</p>
                             </div>
                         </button>
                     )}
@@ -294,18 +298,18 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
                 {/* Return to Project Button */}
                 {hasActiveProject && (
-                    <div className="mb-12 animate-fade-in-up">
-                        <hr className="my-12 border-[var(--border-secondary)] w-1/4 mx-auto" />
+                    <div className="mb-8 sm:mb-12 animate-fade-in-up">
+                        <hr className="my-6 sm:my-10 border-[var(--border-secondary)] w-1/4 mx-auto" />
                         <div className="flex justify-center">
                             <div className="w-full md:w-[calc(50%-0.75rem)]">
                                 <button
                                     onClick={onReturnToProject}
-                                    className="w-full group flex items-center gap-3 p-3 bg-[var(--accent-primary)] text-[var(--accent-text)] rounded-lg text-left hover:bg-[var(--accent-primary-hover)] border border-transparent transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl"
+                                    className="w-full group flex items-center gap-3.5 sm:gap-4 p-3.5 sm:p-4 bg-[var(--accent-primary)] text-[var(--accent-text)] rounded-xl sm:rounded-2xl text-left hover:bg-[var(--accent-primary-hover)] border border-transparent transition-all duration-300 ease-in-out hover:scale-[1.02] hover:shadow-xl active:scale-98"
                                 >
-                                    <ArrowRightIcon size={32} className="flex-shrink-0 transition-transform group-hover:translate-x-1" />
+                                    <ArrowRightIcon size={28} className="flex-shrink-0 transition-transform group-hover:translate-x-1" />
                                     <div>
-                                        <h2 className="text-lg font-semibold">{t('welcome.action.return')}</h2>
-                                        <p className="text-sm text-[var(--accent-text)] opacity-80 mt-1">{t('welcome.action.returnDesc')}</p>
+                                        <h2 className="text-base sm:text-lg font-semibold">{t('welcome.action.return')}</h2>
+                                        <p className="text-xs sm:text-sm text-[var(--accent-text)] opacity-80 mt-0.5">{t('welcome.action.returnDesc')}</p>
                                     </div>
                                 </button>
                             </div>

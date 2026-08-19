@@ -75,7 +75,7 @@ const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ isOpen,
   ], [t]);
 
   const filteredShortcuts = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
+    const term = ((searchTerm) || "").trim().toLowerCase();
     return SHORTCUTS_DATA.filter(item => {
       if (activeCategory !== 'all' && item.category !== activeCategory) {
         return false;
@@ -91,7 +91,7 @@ const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({ isOpen,
 
   return (
     <div 
-      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4"
       onClick={onClose}
       aria-modal="true"
       role="dialog"

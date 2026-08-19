@@ -47,28 +47,35 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
     const { t } = useLanguage();
     if (!shape) return null;
 
-    const scaledHandleSize = HANDLE_SIZE / viewTransform.scale;
-    const scaledTouchHandleSize = TOUCH_HANDLE_SIZE / viewTransform.scale;
-    const scaledStrokeWidth = 1 / viewTransform.scale;
-    const scaledRotateOffset = ROTATE_HANDLE_OFFSET / viewTransform.scale;
+    const scale = (!viewTransform || !viewTransform.scale || isNaN(viewTransform.scale) || !isFinite(viewTransform.scale) || viewTransform.scale <= 0) ? 1 : viewTransform.scale;
+    const scaledHandleSize = isNaN(HANDLE_SIZE / scale) || !isFinite(HANDLE_SIZE / scale) ? HANDLE_SIZE : HANDLE_SIZE / scale;
+    const scaledTouchHandleSize = isNaN(TOUCH_HANDLE_SIZE / scale) || !isFinite(TOUCH_HANDLE_SIZE / scale) ? TOUCH_HANDLE_SIZE : TOUCH_HANDLE_SIZE / scale;
+    const scaledStrokeWidth = isNaN(1 / scale) || !isFinite(1 / scale) ? 1 : 1 / scale;
+    const scaledRotateOffset = isNaN(ROTATE_HANDLE_OFFSET / scale) || !isFinite(ROTATE_HANDLE_OFFSET / scale) ? ROTATE_HANDLE_OFFSET : ROTATE_HANDLE_OFFSET / scale;
 
     const center = getShapeCenter(shape, allShapes);
-    if (!center) return null;
+    if (!center || isNaN(center.x) || isNaN(center.y)) return null;
 
-    const rotation = 'rotation' in shape ? shape.rotation ?? 0 : 0;
+    const rotation = 'rotation' in shape ? (typeof shape.rotation === 'number' && !isNaN(shape.rotation) ? shape.rotation : 0) : 0;
     
     // Calculate visual bounds early to use in both modes
     const visualBounds = useMemo(() => {
         if (!shape) return null;
         // If we are point-editing a rotated shape, use the stable center from the action
         // to prevent the bounding box from jumping around.
+        let vb: { x: number; y: number; width: number; height: number } | null = null;
         if (action?.type === 'point-editing' && 'rotation' in action.initialShape && action.initialShape.rotation !== 0) {
-            return getVisualBoundingBox(shape, action.center, allShapes);
+            vb = getVisualBoundingBox(shape, action.center, allShapes);
+        } else {
+            vb = getVisualBoundingBox(shape, undefined, allShapes);
         }
-        return getVisualBoundingBox(shape, undefined, allShapes);
+        if (!vb || isNaN(vb.x) || isNaN(vb.y) || isNaN(vb.width) || isNaN(vb.height) || !isFinite(vb.x) || !isFinite(vb.y) || !isFinite(vb.width) || !isFinite(vb.height)) {
+            return null;
+        }
+        return vb;
     }, [shape, action, allShapes]);
     
-    const VisualBoundsRect = visualBounds && (
+    const VisualBoundsRect = visualBounds && !isNaN(visualBounds.x) && !isNaN(visualBounds.y) && !isNaN(visualBounds.width) && !isNaN(visualBounds.height) && (
         <g >
             <rect
                 x={visualBounds.x}
@@ -78,7 +85,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
                 fill="none"
                 stroke="var(--text-tertiary)"
                 strokeWidth={scaledStrokeWidth}
-                strokeDasharray={`${3 / viewTransform.scale} ${3 / viewTransform.scale}`}
+                strokeDasharray={`${3 / scale} ${3 / scale}`}
             />
             {/* Top-left dot */}
             <circle cx={visualBounds.x} cy={visualBounds.y} r={scaledHandleSize / 2.5} fill="var(--text-tertiary)" />
@@ -287,15 +294,16 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
     }
     
     const bbox = getBoundingBox(shape, allShapes);
-    if (!bbox || (bbox.width <= 0 && bbox.height <= 0)) return null;
+    if (!bbox || isNaN(bbox.x) || isNaN(bbox.y) || isNaN(bbox.width) || isNaN(bbox.height) || !isFinite(bbox.x) || !isFinite(bbox.y) || !isFinite(bbox.width) || !isFinite(bbox.height) || (bbox.width <= 0 && bbox.height <= 0)) return null;
 
 
     if (shape.type === 'line') {
         const [start, end] = shape.points;
+        if (!start || !end || isNaN(start.x) || isNaN(start.y) || isNaN(end.x) || isNaN(end.y)) return null;
         const rotatedStart = rotatePoint(start, center, rotation);
         const rotatedEnd = rotatePoint(end, center, rotation);
 
-        const lineBbox = getBoundingBox(shape, allShapes)!;
+        const lineBbox = bbox;
     
         const handlePosition = (shape as RotatableShape).rotationHandlePosition;
         const unrotatedRotationHandlePos = {
@@ -348,7 +356,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
             <React.Fragment>
                 {VisualBoundsRect}
                 <g>
-                    <line x1={rotatedStart.x} y1={rotatedStart.y} x2={rotatedEnd.x} y2={rotatedEnd.y} stroke="var(--selection-stroke)" strokeWidth={6 / viewTransform.scale} strokeOpacity="0.3" strokeLinecap="round" />
+                    <line x1={rotatedStart.x} y1={rotatedStart.y} x2={rotatedEnd.x} y2={rotatedEnd.y} stroke="var(--selection-stroke)" strokeWidth={6 / scale} strokeOpacity="0.3" strokeLinecap="round" />
                     
                     <g onMouseDown={(e) => handleLineResizeDown(e, 'line-start')} onTouchStart={(e) => handleLineResizeDown(e as any, 'line-start')} data-handle="true" style={{ cursor: "grab" }}>
                         <circle cx={rotatedStart.x} cy={rotatedStart.y} r={scaledHandleSize / 1.5} fill="var(--bg-primary)" stroke="var(--selection-stroke)" strokeWidth={scaledStrokeWidth} />
@@ -498,6 +506,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
     }
     
     const renderSpecialHandle = (pos: { x: number, y: number }, onMouseDown: (e: React.MouseEvent | React.TouchEvent) => void) => {
+        if (!pos || isNaN(pos.x) || isNaN(pos.y)) return null;
         return (
             <g onMouseDown={onMouseDown} onTouchStart={onMouseDown} data-handle="true" style={{ cursor: ADJUST_CURSOR_STYLE }}>
                 <circle
@@ -613,16 +622,19 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
 
     return (
         <React.Fragment>
-            <g transform={`rotate(${-rotation} ${center.x} ${center.y})`}>
-                <rect 
-                    x={bbox.x} y={bbox.y} width={bbox.width} height={bbox.height} 
-                    fill="none" stroke="var(--selection-stroke)" strokeWidth={scaledStrokeWidth} 
-                    />
-            </g>
+            {bbox && !isNaN(bbox.x) && !isNaN(bbox.y) && !isNaN(bbox.width) && !isNaN(bbox.height) && (
+                <g transform={`rotate(${-rotation} ${center.x} ${center.y})`}>
+                    <rect 
+                        x={bbox.x} y={bbox.y} width={bbox.width} height={bbox.height} 
+                        fill="none" stroke="var(--selection-stroke)" strokeWidth={scaledStrokeWidth} 
+                        />
+                </g>
+            )}
             {VisualBoundsRect}
             <g>
                 {handles.map(({ name, x, y }) => {
                     const rotatedPos = rotatePoint({ x, y }, center, rotation);
+                    if (isNaN(rotatedPos.x) || isNaN(rotatedPos.y)) return null;
                     const cursor = getCursorForHandle(name);
                     return (
                         <g 
@@ -652,7 +664,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
                     )
                 })}
             
-                {('rotation' in shape) && shape.rotation !== undefined && (
+                {('rotation' in shape) && shape.rotation !== undefined && !isNaN(rotationHandlePos.x) && !isNaN(rotationHandlePos.y) && (
                     <g onMouseDown={handleRotateDown} onTouchStart={handleRotateDown} data-handle="true" style={{ cursor: ROTATE_CURSOR_STYLE }}>
                         <line x1={center.x} y1={center.y} x2={rotationHandlePos.x} y2={rotationHandlePos.y} stroke="var(--selection-stroke)" strokeWidth={scaledStrokeWidth} />
                         <circle cx={rotationHandlePos.x} cy={rotationHandlePos.y} r={scaledHandleSize / 2} fill="var(--bg-primary)" stroke="var(--selection-stroke)" strokeWidth={scaledStrokeWidth}  transform={`rotate(${rotation} ${rotationHandlePos.x} ${rotationHandlePos.y})`} />

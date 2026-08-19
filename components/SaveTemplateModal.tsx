@@ -13,14 +13,14 @@ const SaveTemplateModal: React.FC<SaveTemplateModalProps> = ({ onClose, onSave }
     const [name, setName] = useState(t('template.new'));
 
     const handleSave = () => {
-        if (name.trim()) {
-            onSave(name.trim());
+        if (((name) || "").trim()) {
+            onSave(((name) || "").trim());
         }
     };
 
     return (
         <div 
-            className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999]"
             onClick={onClose}
             aria-modal="true"
             role="dialog"
@@ -60,7 +60,7 @@ const SaveTemplateModal: React.FC<SaveTemplateModalProps> = ({ onClose, onSave }
                     </button>
                      <button
                         onClick={handleSave}
-                        disabled={!name.trim()}
+                        disabled={!((name) || "").trim()}
                         className="px-6 py-2 rounded-lg font-semibold bg-[var(--accent-primary)] text-[var(--accent-text)] hover:bg-[var(--accent-primary-hover)] transition-colors disabled:bg-[var(--bg-disabled)] disabled:text-[var(--text-disabled)] disabled:cursor-not-allowed"
                     >
                         {t('action.save')}

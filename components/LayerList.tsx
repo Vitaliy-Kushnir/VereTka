@@ -67,8 +67,8 @@ export default function LayerList({ layers, activeLayerId, onAddLayer, onDeleteL
     };
 
     const finishEditing = () => {
-        if (editingLayerId && editName && editName.trim()) {
-            const trimmedName = editName.trim();
+        if (editingLayerId && editName && ((editName) || "").trim()) {
+            const trimmedName = ((editName) || "").trim();
             const currentLayer = layers.find(l => l.id === editingLayerId);
             
             if (trimmedName !== currentLayer?.name) {

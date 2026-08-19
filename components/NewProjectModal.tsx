@@ -50,7 +50,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ onClose, onCreate, in
                 width, 
                 height, 
                 bgColor, 
-                canvasVarName: canvasVarName.trim() || 'c' 
+                canvasVarName: ((canvasVarName) || "").trim() || 'c' 
             },
             selectedTemplateId === 'blank' ? null : selectedTemplateId
         );
@@ -68,7 +68,7 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ onClose, onCreate, in
 
     return (
         <div 
-            className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999]"
             onClick={onClose}
         >
             <div 

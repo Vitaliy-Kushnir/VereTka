@@ -87,7 +87,7 @@ function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, ca
         }
         
         if (shape.tags) {
-            shape.tags.split('\n').map(t => t.trim()).filter(Boolean).forEach(t => tagsSet.add(t));
+            (shape.tags || '').split('\n').map(t => (t || '').trim()).filter(Boolean).forEach(t => tagsSet.add(t));
         }
 
         let currentGroupId: string | undefined = shape.groupId;
@@ -98,7 +98,7 @@ function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, ca
             const parentGroup = allShapes.find(s => s.id === currentGroupId);
             if (parentGroup) {
                 if (parentGroup.tags) {
-                    parentGroup.tags.split('\n').map(t => t.trim()).filter(Boolean).forEach(t => tagsSet.add(t));
+                    (parentGroup.tags || '').split('\n').map(t => (t || '').trim()).filter(Boolean).forEach(t => tagsSet.add(t));
                 }
                 currentGroupId = parentGroup.groupId;
             } else {
@@ -298,7 +298,7 @@ export async function generateTkinterCodeLocally(
     t: (key: string) => string
 ): Promise<{ codeLines: CodeLine[] }> {
     
-    const finalCanvasVarName = canvasVarName.trim() || 'c';
+    const finalCanvasVarName = ((canvasVarName) || "").trim() || 'c';
     const imageShapes = shapes.filter(s => s.type === 'image') as ImageShape[];
     const imageVarMap = new Map<string, string>();
     let imageSetupCode = '';
@@ -322,7 +322,7 @@ export async function generateTkinterCodeLocally(
     const codeLines: CodeLine[] = [];
 
     codeLines.push({ content: 'from tkinter import *', shapeId: null });
-    if (imageSetupCode.trim()) {
+    if (((imageSetupCode) || "").trim()) {
         codeLines.push({ content: `\n# --- Image setup ---`, shapeId: null });
         imageSetupCode.split('\n').forEach(l => codeLines.push({ content: l, shapeId: null }));
     }
@@ -348,8 +348,8 @@ export async function generateTkinterCodeLocally(
                 }
 
                 if (commentToUse) {
-                    commentToUse.split('\n').forEach(line => {
-                        codeLines.push({ content: line.trim() === '' ? '#' : `# ${line}`, shapeId: shape.id });
+                    (commentToUse || '').split('\n').forEach(line => {
+                        codeLines.push({ content: (line || '').trim() === '' ? '#' : `# ${line}`, shapeId: shape.id });
                     });
                 }
                 codeLines.push({ content: lineContent, shapeId: shape.id });

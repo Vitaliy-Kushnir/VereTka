@@ -343,3 +343,46 @@ export interface LayerState {
     layers: Layer[];
     activeLayerId: string | null;
 }
+
+export type ProjectVisibility = 'public' | 'private' | 'group';
+
+export interface GroupLinkInfo {
+  groupId: string;
+  groupName: string;
+  sentAt?: number;
+}
+
+export interface CloudProject {
+  id: string;
+  title: string;
+  description?: string;
+  authorName: string;
+  ownerNickname: string;
+  passcodeHash: string;
+  visibility: ProjectVisibility;
+  groupId?: string;
+  groupName?: string;
+  projectData: string;
+  shapesCount: number;
+  createdAt: number;
+  updatedAt: number;
+  searchKeywords?: string[];
+  isGroupCopy?: boolean;
+  parentProjectId?: string;
+  sentToGroups?: GroupLinkInfo[];
+}
+
+export type GroupMode = 'education' | 'gallery' | 'readonly';
+export type StudentUpdatePolicy = 'allow_overwrite' | 'create_versions' | 'freeze_after_submit';
+
+export interface CloudGroup {
+  id: string;
+  groupCode: string;
+  name: string;
+  description: string;
+  passcodeHash: string;
+  creatorNickname: string;
+  createdAt: number;
+  mode?: GroupMode;
+  studentUpdatePolicy?: StudentUpdatePolicy;
+}

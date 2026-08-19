@@ -513,14 +513,20 @@ export const getBoundingBox = (shape: Shape, allShapes?: Shape[]): { x: number, 
     switch (shape.type) {
         case 'rectangle':
         case 'arc':
-            return { x: shape.x, y: shape.y, width: shape.width, height: shape.height };
+            if (isNaN(shape.x) || isNaN(shape.y) || isNaN(shape.width) || isNaN(shape.height)) return null;
+            return { x: shape.x ?? 0, y: shape.y ?? 0, width: Math.max(0, shape.width ?? 0), height: Math.max(0, shape.height ?? 0) };
         case 'ellipse':
-            return { x: shape.cx - shape.rx, y: shape.cy - shape.ry, width: shape.rx * 2, height: shape.ry * 2 };
-        case 'text':
-            return getTextBoundingBox(shape);
+            if (isNaN(shape.cx) || isNaN(shape.cy) || isNaN(shape.rx) || isNaN(shape.ry)) return null;
+            return { x: shape.cx - shape.rx, y: shape.cy - shape.ry, width: Math.max(0, shape.rx * 2), height: Math.max(0, shape.ry * 2) };
+        case 'text': {
+            const tb = getTextBoundingBox(shape);
+            if (!tb || isNaN(tb.x) || isNaN(tb.y) || isNaN(tb.width) || isNaN(tb.height)) return null;
+            return tb;
+        }
         case 'image':
         case 'bitmap':
-            return { x: shape.x, y: shape.y, width: shape.width, height: shape.height };
+            if (isNaN(shape.x) || isNaN(shape.y) || isNaN(shape.width) || isNaN(shape.height)) return null;
+            return { x: shape.x ?? 0, y: shape.y ?? 0, width: Math.max(0, shape.width ?? 0), height: Math.max(0, shape.height ?? 0) };
         
         case 'triangle':
         case 'right-triangle':
@@ -546,7 +552,7 @@ export const getBoundingBox = (shape: Shape, allShapes?: Shape[]): { x: number, 
     
     if (!points || points.length === 0) return null;
     
-    const validPoints = points.filter((p): p is {x: number, y: number} => !!p);
+    const validPoints = points.filter((p): p is {x: number, y: number} => !!p && typeof p.x === 'number' && !isNaN(p.x) && typeof p.y === 'number' && !isNaN(p.y) && isFinite(p.x) && isFinite(p.y));
     if (validPoints.length === 0) return null;
 
     const xs = validPoints.map(p => p.x);
@@ -555,6 +561,10 @@ export const getBoundingBox = (shape: Shape, allShapes?: Shape[]): { x: number, 
     const minY = Math.min(...ys);
     const maxX = Math.max(...xs);
     const maxY = Math.max(...ys);
+
+    if (isNaN(minX) || isNaN(minY) || isNaN(maxX) || isNaN(maxY) || !isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) {
+        return null;
+    }
 
     return {
         x: minX,
@@ -565,24 +575,26 @@ export const getBoundingBox = (shape: Shape, allShapes?: Shape[]): { x: number, 
 };
 
 export const getShapeCenter = (shape: Shape, allShapes?: Shape[]): { x: number; y: number } | null => {
-    if ('rotationCenter' in shape && shape.rotationCenter) {
+    if (!shape) return null;
+    if ('rotationCenter' in shape && shape.rotationCenter && typeof shape.rotationCenter.x === 'number' && !isNaN(shape.rotationCenter.x) && typeof shape.rotationCenter.y === 'number' && !isNaN(shape.rotationCenter.y)) {
         return shape.rotationCenter;
     }
     if (shape.type === 'text') {
+        if (typeof shape.x !== 'number' || isNaN(shape.x) || typeof shape.y !== 'number' || isNaN(shape.y)) return null;
         return { x: shape.x, y: shape.y };
     }
     // Prioritize explicit center properties for accuracy, as they are the geometric center.
-    if ('cx' in shape && 'cy' in shape) {
-        return { x: shape.cx, y: shape.cy };
+    if ('cx' in shape && 'cy' in shape && typeof (shape as any).cx === 'number' && !isNaN((shape as any).cx) && typeof (shape as any).cy === 'number' && !isNaN((shape as any).cy)) {
+        return { x: (shape as any).cx, y: (shape as any).cy };
     }
 
     const unrotatedShape = 'rotation' in shape && shape.rotation !== 0 ? { ...shape, rotation: 0 } : shape;
     const box = getBoundingBox(shape.type === 'group' ? shape : unrotatedShape, allShapes);
 
-    if (!box) {
+    if (!box || isNaN(box.x) || isNaN(box.y) || isNaN(box.width) || isNaN(box.height)) {
         // Fallback for shapes without a calculable bounding box (e.g., zero-size)
-        if ('x' in shape && 'y' in shape && 'width' in shape && 'height' in shape) {
-            return { x: shape.x + shape.width / 2, y: shape.y + shape.height / 2 };
+        if ('x' in shape && 'y' in shape && 'width' in shape && 'height' in shape && typeof (shape as any).x === 'number' && !isNaN((shape as any).x) && typeof (shape as any).y === 'number' && !isNaN((shape as any).y) && typeof (shape as any).width === 'number' && !isNaN((shape as any).width) && typeof (shape as any).height === 'number' && !isNaN((shape as any).height)) {
+            return { x: (shape as any).x + (shape as any).width / 2, y: (shape as any).y + (shape as any).height / 2 };
         }
         return null;
     }
@@ -725,6 +737,7 @@ export function getFinalPoints(shape: Shape, overrideCenter?: { x: number; y: nu
 }
 
 export const getVisualBoundingBox = (shape: Shape, overrideCenter?: { x: number; y: number }, allShapes?: Shape[]): { x: number, y: number, width: number, height: number } | null => {
+    if (!shape) return null;
     if (shape.type === 'group') {
         if (!allShapes) return null;
         const children = allShapes.filter(s => shape.shapeIds?.includes(s.id));
@@ -733,20 +746,21 @@ export const getVisualBoundingBox = (shape: Shape, overrideCenter?: { x: number;
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         children.forEach(child => {
             const bbox = getVisualBoundingBox(child, undefined, allShapes);
-            if (bbox) {
+            if (bbox && !isNaN(bbox.x) && !isNaN(bbox.y) && !isNaN(bbox.width) && !isNaN(bbox.height)) {
                 minX = Math.min(minX, bbox.x);
                 minY = Math.min(minY, bbox.y);
                 maxX = Math.max(maxX, bbox.x + bbox.width);
                 maxY = Math.max(maxY, bbox.y + bbox.height);
             }
         });
-        if (minX === Infinity) return null;
+        if (minX === Infinity || isNaN(minX) || isNaN(minY) || isNaN(maxX) || isNaN(maxY) || !isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) return null;
         return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
     }
 
     // Optimization for rotated ellipses and circles.
     if (shape.type === 'ellipse') {
         const { cx, cy, rx, ry, rotation = 0 } = shape;
+        if (typeof cx !== 'number' || isNaN(cx) || typeof cy !== 'number' || isNaN(cy) || typeof rx !== 'number' || isNaN(rx) || typeof ry !== 'number' || isNaN(ry)) return null;
         const angleRad = (rotation * Math.PI) / 180;
         const cos = Math.cos(angleRad);
         const sin = Math.sin(angleRad);
@@ -756,6 +770,8 @@ export const getVisualBoundingBox = (shape: Shape, overrideCenter?: { x: number;
         
         const width = 2 * Math.sqrt(term1);
         const height = 2 * Math.sqrt(term2);
+
+        if (isNaN(width) || isNaN(height)) return null;
 
         return {
             x: cx - width / 2,
@@ -769,20 +785,39 @@ export const getVisualBoundingBox = (shape: Shape, overrideCenter?: { x: number;
     if (!finalPoints || finalPoints.length === 0) {
         // Fallback for shapes without points (like a zero-size rectangle)
         if ('x' in shape && 'y' in shape && 'width' in shape && 'height' in shape) {
-            return { x: shape.x, y: shape.y, width: shape.width, height: shape.height };
+            const sx = (shape as any).x;
+            const sy = (shape as any).y;
+            const sw = (shape as any).width;
+            const sh = (shape as any).height;
+            if (typeof sx === 'number' && !isNaN(sx) && typeof sy === 'number' && !isNaN(sy) && typeof sw === 'number' && !isNaN(sw) && typeof sh === 'number' && !isNaN(sh)) {
+                return { x: sx, y: sy, width: Math.max(0, sw), height: Math.max(0, sh) };
+            }
+            return null;
         }
         if ('cx' in shape && 'cy' in shape) {
-            return { x: shape.cx, y: shape.cy, width: 0, height: 0 };
+            const scx = (shape as any).cx;
+            const scy = (shape as any).cy;
+            if (typeof scx === 'number' && !isNaN(scx) && typeof scy === 'number' && !isNaN(scy)) {
+                return { x: scx, y: scy, width: 0, height: 0 };
+            }
+            return null;
         }
         return null;
     }
 
-    const xs = finalPoints.map(p => p.x);
-    const ys = finalPoints.map(p => p.y);
+    const validPoints = finalPoints.filter((p): p is { x: number; y: number } => !!p && typeof p.x === 'number' && !isNaN(p.x) && typeof p.y === 'number' && !isNaN(p.y) && isFinite(p.x) && isFinite(p.y));
+    if (validPoints.length === 0) return null;
+
+    const xs = validPoints.map(p => p.x);
+    const ys = validPoints.map(p => p.y);
     const minX = Math.min(...xs);
     const minY = Math.min(...ys);
     const maxX = Math.max(...xs);
     const maxY = Math.max(...ys);
+
+    if (isNaN(minX) || isNaN(minY) || isNaN(maxX) || isNaN(maxY) || !isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) {
+        return null;
+    }
 
     return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 };

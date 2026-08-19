@@ -286,6 +286,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   const hasDraggedRef = useRef(false);
   const mouseDownPosRef = useRef<{x: number, y: number} | null>(null);
   const touchStateRef = useRef<{ initialDist: number, initialMidpoint: {x:number, y:number}, initialTransform: ViewTransform } | null>(null);
+  const lastTapRef = useRef<{ time: number; x: number; y: number; shapeId?: string } | null>(null);
   const isSpacePressedRef = useRef(false);
   const [isSpacePressed, setIsSpacePressed] = useState(false);
 
@@ -448,8 +449,6 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 return;
             }
             
-            setAction({ type: 'dragging', initialShape: clickedShape, startPos: pos });
-            
             const getRootId = (id: string): string => {
                 const shape = shapes.find(s => s.id === id);
                 if (shape && shape.groupId) return getRootId(shape.groupId);
@@ -458,9 +457,19 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 return id;
             };
             const resolvedClickedId = getRootId(clickedShape.id);
+            const isAlreadySelected = selectedShapeIds.includes(resolvedClickedId) || selectedShapeIds.includes(clickedShape.id);
 
-            if (!selectedShapeIds.includes(resolvedClickedId)) onSelectShape(clickedShape.id, e.ctrlKey || e.metaKey, e.shiftKey);
-            else if (e.ctrlKey || e.metaKey || e.shiftKey) onSelectShape(clickedShape.id, e.ctrlKey || e.metaKey, e.shiftKey);
+            if (!isAlreadySelected) {
+                // First click: only select the shape/group, do not initiate dragging
+                onSelectShape(clickedShape.id, e.ctrlKey || e.metaKey, e.shiftKey);
+            } else {
+                // Shape is already selected: start dragging on subsequent press/drag (or toggle selection if Ctrl/Shift held)
+                if (e.ctrlKey || e.metaKey || e.shiftKey) {
+                    onSelectShape(clickedShape.id, e.ctrlKey || e.metaKey, e.shiftKey);
+                } else {
+                    setAction({ type: 'dragging', initialShape: clickedShape, startPos: pos });
+                }
+            }
         } else {
             // Clicked on empty space, initiate selection box.
             setAction({ type: 'selecting', startPos: pos, currentPos: pos });
@@ -2112,6 +2121,35 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
         // Only handle single touches from here
         const touch = e.touches[0];
+        const now = Date.now();
+        const targetElement = e.target as SVGElement;
+        const clickedShapeId = targetElement?.dataset?.id;
+
+        // Double-tap detection for touch/smartphone mode
+        if (
+            lastTapRef.current && 
+            now - lastTapRef.current.time < 350 &&
+            Math.hypot(touch.clientX - lastTapRef.current.x, touch.clientY - lastTapRef.current.y) < 30
+        ) {
+            lastTapRef.current = null;
+            const shape = clickedShapeId ? shapes.find(s => s?.id === clickedShapeId) : null;
+            if (shape && shape.type === 'text') {
+                onStartInlineEdit(shape.id);
+                return;
+            } else if (shape && shape.groupId) {
+                onSelectShape(shape.id, false, false, true);
+                return;
+            } else if (isDrawingPolyline) {
+                onCompletePolyline(false);
+                return;
+            } else if (isDrawingBezier) {
+                onCompleteBezier(false);
+                return;
+            }
+        } else {
+            lastTapRef.current = { time: now, x: touch.clientX, y: touch.clientY, shapeId: clickedShapeId };
+        }
+
         const mockMouseEvent = { 
             clientX: touch.clientX, 
             clientY: touch.clientY, 
@@ -2120,7 +2158,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         } as unknown as React.MouseEvent<HTMLDivElement>;
         handleMouseDown(mockMouseEvent);
 
-    }, [handleMouseDown, viewTransform]);
+    }, [handleMouseDown, viewTransform, shapes, onStartInlineEdit, onSelectShape, isDrawingPolyline, isDrawingBezier, onCompletePolyline, onCompleteBezier]);
 
     const handleTouchMove = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
         e.preventDefault();
@@ -2366,7 +2404,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         transformStr += `translate(${-center.x} ${-center.y})`;
     }
 
-    return transformStr.trim() || undefined;
+    return ((transformStr) || "").trim() || undefined;
   };
   
     const arrowMarkers = useMemo(() => {
@@ -2556,22 +2594,25 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             )}
           </div>
         )}
-        <svg
-            ref={svgRef}
-            className="rounded-md touch-none w-full h-full"
-        >
+        {(() => {
+          const safeScale = (!viewTransform || isNaN(viewTransform.scale) || !isFinite(viewTransform.scale) || viewTransform.scale <= 0) ? 1 : viewTransform.scale;
+          return (
+            <svg
+                ref={svgRef}
+                className="rounded-md touch-none w-full h-full"
+            >
             <defs>
                 <filter id="dropshadow" x="-20%" y="-20%" width="140%" height="140%">
                     <feDropShadow dx="0" dy="3" stdDeviation="5" floodColor="#000000" floodOpacity="0.3"/>
                 </filter>
                 {showGrid && (
                     <pattern id="grid" width={gridSize} height={gridSize} patternUnits="userSpaceOnUse">
-                        <path d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`} fill="none" stroke={gridStrokeColor} strokeWidth={1 / viewTransform.scale}/>
+                        <path d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`} fill="none" stroke={gridStrokeColor} strokeWidth={1 / safeScale}/>
                     </pattern>
                 )}
-                {showGrid && viewTransform.scale > 10 && (
+                {showGrid && safeScale > 10 && (
                      <pattern id="fine-grid" width="1" height="1" patternUnits="userSpaceOnUse">
-                        <path d="M 1 0 L 0 0 0 1" fill="none" stroke={fineGridStrokeColor} strokeWidth={1 / viewTransform.scale} />
+                        <path d="M 1 0 L 0 0 0 1" fill="none" stroke={fineGridStrokeColor} strokeWidth={1 / safeScale} />
                     </pattern>
                 )}
                 
@@ -2691,7 +2732,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 const isDrawing = activeTool !== 'select';
                 const isDuplicationPreview = action?.type === 'duplicating' && shape.id.endsWith('-preview');
                 const shapeCursor = (isDisabled || isHiddenAndSelected) ? 'default' : (isDrawing ? 'inherit' : 'move');
-                const hitboxStrokeWidth = Math.max(isNaN(shape.strokeWidth) ? 0 : shape.strokeWidth, 20 / viewTransform.scale);
+                const safeScale = (!viewTransform || isNaN(viewTransform.scale) || !isFinite(viewTransform.scale) || viewTransform.scale <= 0) ? 1 : viewTransform.scale;
+                const safeStrokeWidth = isNaN((shape as any).strokeWidth) || typeof (shape as any).strokeWidth !== 'number' ? 0 : (shape as any).strokeWidth;
+                const hitboxStrokeWidth = Math.max(safeStrokeWidth, 20 / safeScale);
                 
                 let transform = getTransform(shape);
                 const isThisShapeBeingPointEdited = action?.type === 'point-editing' && shape.id === (action as any).initialShape.id;
@@ -2705,7 +2748,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 const staticProps = {
                     'data-id': shape.id,
                     stroke: shape.stroke,
-                    strokeWidth: shape.strokeWidth,
+                    strokeWidth: safeStrokeWidth,
                     style: { 
                         opacity: shape.state === 'disabled' || isDuplicationPreview ? 0.5 : (isHidden ? 0.3 : 1),
                         cursor: shapeCursor,
@@ -2715,11 +2758,12 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 };
 
                 const lineLikeProps = (s: LineShape | BezierCurveShape | PolylineShape | PathShape | ArcShape) => {
-                    const hasVisibleStroke = s.stroke !== 'none' && s.strokeWidth > 0;
+                    const sStrokeWidth = isNaN((s as any).strokeWidth) || typeof (s as any).strokeWidth !== 'number' ? 0 : (s as any).strokeWidth;
+                    const hasVisibleStroke = s.stroke !== 'none' && sStrokeWidth > 0;
                     let dashArray;
-                    const hasDash = 'dash' in s && s.dash && s.dash.length > 0 && s.strokeWidth > 0;
+                    const hasDash = 'dash' in s && s.dash && s.dash.length > 0 && sStrokeWidth > 0;
                     if (hasDash) {
-                        dashArray = s.dash!.map(value => value * s.strokeWidth).join(' ');
+                        dashArray = s.dash!.map(value => value * sStrokeWidth).join(' ');
                     }
                     const dashOffset = 'dashoffset' in s ? s.dashoffset : undefined;
                     const lineCap: 'butt' | 'round' | 'square' = (s.capstyle === 'projecting' ? 'square' : s.capstyle) ?? 'butt';
@@ -2727,7 +2771,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     let markerStart, markerEnd;
                     if (hasVisibleStroke && 'arrow' in s && s.arrow && s.arrow !== 'none' && s.arrowshape) {
                         const [d1m, d2m, d3m] = s.arrowshape;
-                        const w = s.strokeWidth;
+                        const w = sStrokeWidth;
                         const d1 = d1m * w;
                         const d2 = d2m * w;
                         const d3 = d3m * w;
@@ -2737,27 +2781,34 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     }
                     return { strokeDasharray: dashArray, strokeDashoffset: dashOffset, markerStart, markerEnd, strokeLinecap: lineCap };
                 };
-                
-                const finalStaticProps: any = {
+                              const finalStaticProps: any = {
                     ...staticProps,
-                    strokeWidth: shape.strokeWidth, // Завжди використовуємо візуальну товщину
+                    strokeWidth: safeStrokeWidth, // Завжди використовуємо візуальну товщину
                     pointerEvents: lockedShapeIds.has(shape.id) || isHidden || isDisabled ? 'none' : ((shape.type === 'line' || shape.type === 'pencil' || (shape.type === 'polyline' && !shape.isClosed)) ? 'stroke' : 'all'),
                 }
 
                 const renderedShape = (() => {
                 switch (shape.type) {
                     case 'rectangle': {
-                        const rectProps: any = { ...finalStaticProps, x: shape.x, y: shape.y, width: shape.width, height: shape.height, fill: shape.fill, ...joinStyleProps(shape) };
+                        const rx = typeof shape.x === 'number' && !isNaN(shape.x) ? shape.x : 0;
+                        const ry = typeof shape.y === 'number' && !isNaN(shape.y) ? shape.y : 0;
+                        const rw = typeof shape.width === 'number' && !isNaN(shape.width) ? Math.max(0, shape.width) : 0;
+                        const rh = typeof shape.height === 'number' && !isNaN(shape.height) ? Math.max(0, shape.height) : 0;
+                        const rectProps: any = { ...finalStaticProps, x: rx, y: ry, width: rw, height: rh, fill: shape.fill, ...joinStyleProps(shape) };
                         if (shape.stipple && shape.fill !== 'none') rectProps.mask = `url(#mask-${shape.stipple})`;
-                        if (shape.dash) rectProps.strokeDasharray = shape.dash.map(v => v * shape.strokeWidth).join(' ');
+                        if (shape.dash) rectProps.strokeDasharray = shape.dash.map(v => v * safeStrokeWidth).join(' ');
                         if (shape.dashoffset) rectProps.strokeDashoffset = shape.dashoffset;
                         return <rect key={shape.id} {...rectProps} />;
                     }
                     case 'ellipse': {
                         const ellipse = shape as EllipseShape;
-                        const ellipseProps: any = { ...finalStaticProps, cx: ellipse.cx, cy: ellipse.cy, rx: ellipse.rx, ry: ellipse.ry, fill: ellipse.fill };
+                        const ecx = typeof ellipse.cx === 'number' && !isNaN(ellipse.cx) ? ellipse.cx : 0;
+                        const ecy = typeof ellipse.cy === 'number' && !isNaN(ellipse.cy) ? ellipse.cy : 0;
+                        const erx = typeof ellipse.rx === 'number' && !isNaN(ellipse.rx) ? Math.max(0, ellipse.rx) : 0;
+                        const ery = typeof ellipse.ry === 'number' && !isNaN(ellipse.ry) ? Math.max(0, ellipse.ry) : 0;
+                        const ellipseProps: any = { ...finalStaticProps, cx: ecx, cy: ecy, rx: erx, ry: ery, fill: ellipse.fill };
                         if (ellipse.stipple && ellipse.fill !== 'none') ellipseProps.mask = `url(#mask-${ellipse.stipple})`;
-                        if (ellipse.dash) ellipseProps.strokeDasharray = ellipse.dash.map(v => v * ellipse.strokeWidth).join(' ');
+                        if (ellipse.dash) ellipseProps.strokeDasharray = ellipse.dash.map(v => v * safeStrokeWidth).join(' ');
                         if (ellipse.dashoffset) ellipseProps.strokeDashoffset = ellipse.dashoffset;
                         return <ellipse key={ellipse.id} {...ellipseProps} />;
                     }
@@ -2765,11 +2816,12 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         const arcShape = shape as ArcShape;
                         const arcProps: any = { ...finalStaticProps, d: getArcPathData(arcShape), fill: arcShape.style === 'arc' ? 'none' : arcShape.fill };
                         if (arcShape.stipple && arcShape.fill !== 'none' && arcShape.style !== 'arc') arcProps.mask = `url(#mask-${arcShape.stipple})`;
-                        if (arcShape.dash) arcProps.strokeDasharray = arcShape.dash.map(v => v * arcShape.strokeWidth).join(' ');
+                        if (arcShape.dash) arcProps.strokeDasharray = arcShape.dash.map(v => v * safeStrokeWidth).join(' ');
                         if (arcShape.dashoffset) arcProps.strokeDashoffset = arcShape.dashoffset;
                         return <path key={shape.id} {...arcProps} />;
                     }
                     case 'line':
+                        if (!shape.points || !shape.points[0] || !shape.points[1]) return null;
                         return (
                             <React.Fragment key={shape.id}>
                                 <line 
@@ -2780,7 +2832,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                     transform={finalStaticProps.transform}
                                     style={{ cursor: finalStaticProps.style.cursor, pointerEvents: finalStaticProps.pointerEvents === 'none' ? 'none' : 'stroke' }}
                                 />
-                                <line {...finalStaticProps} stroke={shape.stroke} strokeWidth={shape.strokeWidth} x1={shape.points[0].x} y1={shape.points[0].y} x2={shape.points[1].x} y2={shape.points[1].y} {...lineLikeProps(shape)} style={{ ...finalStaticProps.style, pointerEvents: 'none' }} />
+                                <line {...finalStaticProps} stroke={shape.stroke} strokeWidth={safeStrokeWidth} x1={shape.points[0].x} y1={shape.points[0].y} x2={shape.points[1].x} y2={shape.points[1].y} {...lineLikeProps(shape)} style={{ ...finalStaticProps.style, pointerEvents: 'none' }} />
                             </React.Fragment>
                         );
                     case 'bezier': {
@@ -2801,35 +2853,35 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                         data-id={shape.id}
                                         style={{ cursor: finalStaticProps.style.cursor, pointerEvents: finalStaticProps.pointerEvents === 'none' ? 'none' : 'stroke' }}
                                     />
-                                    <path {...finalStaticProps} stroke={shape.stroke} strokeWidth={shape.strokeWidth} d={pathData} fill={fill} {...lineLikeProps(shape)} {...joinStyleProps(shape)} style={{ ...finalStaticProps.style, pointerEvents: 'none' }} />
+                                    <path {...finalStaticProps} stroke={shape.stroke} strokeWidth={safeStrokeWidth} d={pathData} fill={fill} {...lineLikeProps(shape)} {...joinStyleProps(shape)} style={{ ...finalStaticProps.style, pointerEvents: 'none' }} />
                                 </React.Fragment>
                              )
                         }
-                        return <path key={shape.id} {...finalStaticProps} stroke={shape.stroke} strokeWidth={shape.strokeWidth} d={pathData} fill={fill} {...lineLikeProps(shape)} {...joinStyleProps(shape)} />;
+                        return <path key={shape.id} {...finalStaticProps} stroke={shape.stroke} strokeWidth={safeStrokeWidth} d={pathData} fill={fill} {...lineLikeProps(shape)} {...joinStyleProps(shape)} />;
                     }
                     case 'pencil': {
                         const d = getPolylinePointsAsPath(shape.points);
                         return (
                             <React.Fragment key={shape.id}>
                                  <path 
-                                    d={d}
-                                    stroke="transparent"
-                                    strokeWidth={hitboxStrokeWidth}
-                                    fill="none"
+                                    d={d} 
+                                    stroke="transparent" 
+                                    strokeWidth={hitboxStrokeWidth} 
+                                    fill="none" 
                                     
                                     strokeLinejoin={shape.joinstyle ?? 'round'}
                                     transform={finalStaticProps.transform}
                                     data-id={shape.id}
                                     style={{ cursor: finalStaticProps.style.cursor, pointerEvents: finalStaticProps.pointerEvents === 'none' ? 'none' : 'stroke' }}
                                  />
-                                 <path {...finalStaticProps} stroke={shape.stroke} strokeWidth={shape.strokeWidth} d={d} fill="none" {...joinStyleProps(shape)} {...lineLikeProps(shape)} style={{ ...finalStaticProps.style, pointerEvents: 'none' }} />
+                                 <path {...finalStaticProps} stroke={shape.stroke} strokeWidth={safeStrokeWidth} d={d} fill="none" {...joinStyleProps(shape)} {...lineLikeProps(shape)} style={{ ...finalStaticProps.style, pointerEvents: 'none' }} />
                             </React.Fragment>
                         );
                     }
                     case 'polyline': {
                         const polyProps: React.SVGProps<any> = { ...finalStaticProps, ...joinStyleProps(shape) };
                         if (shape.stipple && shape.isClosed && shape.fill !== 'none') polyProps.mask = `url(#mask-${shape.stipple})`;
-                        if (shape.dash) polyProps.strokeDasharray = shape.dash.map(v => v * shape.strokeWidth).join(' ');
+                        if (shape.dash) polyProps.strokeDasharray = shape.dash.map(v => v * safeStrokeWidth).join(' ');
                         if (shape.dashoffset) polyProps.strokeDashoffset = shape.dashoffset;
                         
                         if (!shape.isClosed) {
@@ -2867,35 +2919,35 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     case 'triangle': {
                         const props: any = { ...finalStaticProps, points: formatPointsForSvg(getIsoscelesTrianglePoints(shape)), fill: shape.fill, ...joinStyleProps(shape) };
                         if (shape.stipple && shape.fill !== 'none') props.mask = `url(#mask-${shape.stipple})`;
-                        if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * shape.strokeWidth).join(' ');
+                        if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * safeStrokeWidth).join(' ');
                         if (shape.dashoffset) props.strokeDashoffset = shape.dashoffset;
                         return <polygon key={shape.id} {...props} />;
                     }
                     case 'right-triangle': {
                         const props: any = { ...finalStaticProps, points: formatPointsForSvg(getRightTrianglePoints(shape)), fill: shape.fill, ...joinStyleProps(shape) };
                         if (shape.stipple && shape.fill !== 'none') props.mask = `url(#mask-${shape.stipple})`;
-                        if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * shape.strokeWidth).join(' ');
+                        if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * safeStrokeWidth).join(' ');
                         if (shape.dashoffset) props.strokeDashoffset = shape.dashoffset;
                         return <polygon key={shape.id} {...props} />;
                     }
                     case 'rhombus': {
                         const props: any = { ...finalStaticProps, points: formatPointsForSvg(getRhombusPoints(shape)), fill: shape.fill, ...joinStyleProps(shape) };
                         if (shape.stipple && shape.fill !== 'none') props.mask = `url(#mask-${shape.stipple})`;
-                        if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * shape.strokeWidth).join(' ');
+                        if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * safeStrokeWidth).join(' ');
                         if (shape.dashoffset) props.strokeDashoffset = shape.dashoffset;
                         return <polygon key={shape.id} {...props} />;
                     }
                     case 'trapezoid': {
                         const props: any = { ...finalStaticProps, points: formatPointsForSvg(getTrapezoidPoints(shape)), fill: shape.fill, ...joinStyleProps(shape) };
                         if (shape.stipple && shape.fill !== 'none') props.mask = `url(#mask-${shape.stipple})`;
-                        if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * shape.strokeWidth).join(' ');
+                        if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * safeStrokeWidth).join(' ');
                         if (shape.dashoffset) props.strokeDashoffset = shape.dashoffset;
                         return <polygon key={shape.id} {...props} />;
                     }
                     case 'parallelogram': {
                         const props: any = { ...finalStaticProps, points: formatPointsForSvg(getParallelogramPoints(shape)), fill: shape.fill, ...joinStyleProps(shape) };
                         if (shape.stipple && shape.fill !== 'none') props.mask = `url(#mask-${shape.stipple})`;
-                        if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * shape.strokeWidth).join(' ');
+                        if (shape.dash) props.strokeDasharray = shape.dash.map(v => v * safeStrokeWidth).join(' ');
                         if (shape.dashoffset) props.strokeDashoffset = shape.dashoffset;
                         return <polygon key={shape.id} {...props} />;
                     }
@@ -2904,7 +2956,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         const polyShape = shape as PolygonShape;
                         const polyProps: any = { ...finalStaticProps, fill: polyShape.fill, ...joinStyleProps(polyShape) };
                         if (polyShape.stipple && polyShape.fill !== 'none') polyProps.mask = `url(#mask-${polyShape.stipple})`;
-                        if (polyShape.dash) polyProps.strokeDasharray = polyShape.dash.map(v => v * polyShape.strokeWidth).join(' ');
+                        if (polyShape.dash) polyProps.strokeDasharray = polyShape.dash.map(v => v * safeStrokeWidth).join(' ');
                         if (polyShape.dashoffset) polyProps.strokeDashoffset = polyShape.dashoffset;
 
                         if(polyShape.smooth) return <path key={shape.id} {...polyProps} d={getSmoothedPathData(getFinalPoints(shape)!, true, true)} />
@@ -2960,14 +3012,18 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     }
                     case 'image': {
                         const imageShape = shape as ImageShape;
+                        const ix = typeof imageShape.x === 'number' && !isNaN(imageShape.x) ? imageShape.x : 0;
+                        const iy = typeof imageShape.y === 'number' && !isNaN(imageShape.y) ? imageShape.y : 0;
+                        const iw = typeof imageShape.width === 'number' && !isNaN(imageShape.width) ? Math.max(0, imageShape.width) : 0;
+                        const ih = typeof imageShape.height === 'number' && !isNaN(imageShape.height) ? Math.max(0, imageShape.height) : 0;
                         return (
                             <image
                                 key={imageShape.id}
                                 href={imageShape.src}
-                                x={imageShape.x}
-                                y={imageShape.y}
-                                width={imageShape.width}
-                                height={imageShape.height}
+                                x={ix}
+                                y={iy}
+                                width={iw}
+                                height={ih}
                                 {...finalStaticProps}
                             />
                         );
@@ -2975,14 +3031,18 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     case 'bitmap': {
                         const bitmapShape = shape as BitmapShape;
                         const { x, y, width: bmpWidth, height: bmpHeight, bitmapType, foreground, background } = bitmapShape;
+                        const bx = typeof x === 'number' && !isNaN(x) ? x : 0;
+                        const by = typeof y === 'number' && !isNaN(y) ? y : 0;
+                        const bw = typeof bmpWidth === 'number' && !isNaN(bmpWidth) ? Math.max(0, bmpWidth) : 0;
+                        const bh = typeof bmpHeight === 'number' && !isNaN(bmpHeight) ? Math.max(0, bmpHeight) : 0;
                         const maskId = bitmapType.startsWith('gray')
                             ? `url(#mask-${bitmapType})`
                             : `url(#mask-bitmap-${bitmapType})`;
 
                         return (
                             <g key={bitmapShape.id} {...staticProps} data-id={shape.id}>
-                                <rect data-id={shape.id} x={x} y={y} width={bmpWidth} height={bmpHeight} fill={background} />
-                                <rect data-id={shape.id} x={x} y={y} width={bmpWidth} height={bmpHeight} fill={foreground} mask={maskId} />
+                                <rect data-id={shape.id} x={bx} y={by} width={bw} height={bh} fill={background} />
+                                <rect data-id={shape.id} x={bx} y={by} width={bw} height={bh} fill={foreground} mask={maskId} />
                             </g>
                         );
                     }
@@ -3002,7 +3062,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
                 return <g key={`g-${shape.id}`} id={`shape-render-${shape.id}`}>{renderedShape}</g>;
             })}
-             {action?.type === 'selecting' && (
+             {action?.type === 'selecting' && action.startPos && action.currentPos && !isNaN(action.startPos.x) && !isNaN(action.startPos.y) && !isNaN(action.currentPos.x) && !isNaN(action.currentPos.y) && (
                  <rect 
                      x={Math.min(action.startPos.x, action.currentPos.x)}
                      y={Math.min(action.startPos.y, action.currentPos.y)}
@@ -3010,7 +3070,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                      height={Math.abs(action.currentPos.y - action.startPos.y)}
                      fill="rgba(59, 130, 246, 0.1)"
                      stroke="rgba(59, 130, 246, 0.8)"
-                     strokeWidth={1 / viewTransform.scale}
+                     strokeWidth={1 / safeScale}
                      style={{ pointerEvents: 'none' }}
                  />
              )}
@@ -3035,7 +3095,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 <g style={{ pointerEvents: 'none' }}>
                     {activeGroupIds.map((groupId) => {
                         const groupBounds = computeGroupBounds(groupId);
-                        if (!groupBounds) return null;
+                        if (!groupBounds || isNaN(groupBounds.x) || isNaN(groupBounds.y) || isNaN(groupBounds.width) || isNaN(groupBounds.height)) return null;
                         return (
                             <rect 
                                 key={`group-bounds-${groupId}`}
@@ -3045,8 +3105,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                 height={groupBounds.height}
                                 fill="none"
                                 stroke="var(--text-tertiary)"
-                                strokeWidth={1 / viewTransform.scale}
-                                strokeDasharray={`${3 / viewTransform.scale} ${3 / viewTransform.scale}`}
+                                strokeWidth={1 / safeScale}
+                                strokeDasharray={`${3 / safeScale} ${3 / safeScale}`}
                             />
                         );
                     })}
@@ -3058,9 +3118,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 <g className="distribute-path-controls">
                     {props.distributePathState.type === 'circle' && (
                         <>
-                            <circle cx={props.distributePathState.circleParams.cx} cy={props.distributePathState.circleParams.cy} r={props.distributePathState.circleParams.radius} fill="none" stroke="#00d2ff" strokeWidth={2 / viewTransform.scale} strokeDasharray={`${5 / viewTransform.scale},${5 / viewTransform.scale}`} style={{ pointerEvents: 'none' }} />
+                            <circle cx={props.distributePathState.circleParams.cx} cy={props.distributePathState.circleParams.cy} r={props.distributePathState.circleParams.radius} fill="none" stroke="#00d2ff" strokeWidth={2 / safeScale} strokeDasharray={`${5 / safeScale},${5 / safeScale}`} style={{ pointerEvents: 'none' }} />
                             {/* Center Handle */}
-                            <circle cx={props.distributePathState.circleParams.cx} cy={props.distributePathState.circleParams.cy} r={6 / viewTransform.scale} fill="var(--bg-primary)" stroke="#00d2ff" strokeWidth={2 / viewTransform.scale} style={{ cursor: 'move', pointerEvents: 'all' }} onMouseDown={(e) => {
+                            <circle cx={props.distributePathState.circleParams.cx} cy={props.distributePathState.circleParams.cy} r={6 / safeScale} fill="var(--bg-primary)" stroke="#00d2ff" strokeWidth={2 / safeScale} style={{ cursor: 'move', pointerEvents: 'all' }} onMouseDown={(e) => {
                                 e.stopPropagation();
                                 const pt = getTransformedPointerPosition(getPointerPosition(e));
                                 setAction({ type: 'edit-distribute-path', handle: 'center', startPoint: pt, initialDistributePath: props.distributePathState! });
@@ -3070,7 +3130,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                 setAction({ type: 'edit-distribute-path', handle: 'center', startPoint: pt, initialDistributePath: props.distributePathState! });
                             }} />
                             {/* Radius Handle */}
-                            <circle cx={props.distributePathState.circleParams.cx + props.distributePathState.circleParams.radius} cy={props.distributePathState.circleParams.cy} r={6 / viewTransform.scale} fill="var(--bg-primary)" stroke="#00d2ff" strokeWidth={2 / viewTransform.scale} style={{ cursor: 'ew-resize', pointerEvents: 'all' }} onMouseDown={(e) => {
+                            <circle cx={props.distributePathState.circleParams.cx + props.distributePathState.circleParams.radius} cy={props.distributePathState.circleParams.cy} r={6 / safeScale} fill="var(--bg-primary)" stroke="#00d2ff" strokeWidth={2 / safeScale} style={{ cursor: 'ew-resize', pointerEvents: 'all' }} onMouseDown={(e) => {
                                 e.stopPropagation();
                                 const pt = getTransformedPointerPosition(getPointerPosition(e));
                                 setAction({ type: 'edit-distribute-path', handle: 'radius', startPoint: pt, initialDistributePath: props.distributePathState! });
@@ -3084,13 +3144,13 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                 <line 
                                     x1={props.distributePathState.circleParams.cx} 
                                     y1={props.distributePathState.circleParams.cy} 
-                                    x2={props.distributePathState.circleParams.cx + Math.cos(props.distributePathState.angleOffset * Math.PI / 180 - Math.PI / 2) * (props.distributePathState.circleParams.radius + 30 / viewTransform.scale)} 
-                                    y2={props.distributePathState.circleParams.cy + Math.sin(props.distributePathState.angleOffset * Math.PI / 180 - Math.PI / 2) * (props.distributePathState.circleParams.radius + 30 / viewTransform.scale)} 
-                                    stroke="#00d2ff" strokeWidth={1 / viewTransform.scale} strokeDasharray={`${3 / viewTransform.scale},${3 / viewTransform.scale}`} style={{ pointerEvents: 'none' }} />
+                                    x2={props.distributePathState.circleParams.cx + Math.cos(props.distributePathState.angleOffset * Math.PI / 180 - Math.PI / 2) * (props.distributePathState.circleParams.radius + 30 / safeScale)} 
+                                    y2={props.distributePathState.circleParams.cy + Math.sin(props.distributePathState.angleOffset * Math.PI / 180 - Math.PI / 2) * (props.distributePathState.circleParams.radius + 30 / safeScale)} 
+                                    stroke="#00d2ff" strokeWidth={1 / safeScale} strokeDasharray={`${3 / safeScale},${3 / safeScale}`} style={{ pointerEvents: 'none' }} />
                                 <circle 
-                                    cx={props.distributePathState.circleParams.cx + Math.cos(props.distributePathState.angleOffset * Math.PI / 180 - Math.PI / 2) * (props.distributePathState.circleParams.radius + 30 / viewTransform.scale)} 
-                                    cy={props.distributePathState.circleParams.cy + Math.sin(props.distributePathState.angleOffset * Math.PI / 180 - Math.PI / 2) * (props.distributePathState.circleParams.radius + 30 / viewTransform.scale)} 
-                                    r={6 / viewTransform.scale} fill="#00d2ff" stroke="var(--bg-primary)" strokeWidth={2 / viewTransform.scale} style={{ cursor: ROTATE_CURSOR_STYLE, pointerEvents: 'all' }} 
+                                    cx={props.distributePathState.circleParams.cx + Math.cos(props.distributePathState.angleOffset * Math.PI / 180 - Math.PI / 2) * (props.distributePathState.circleParams.radius + 30 / safeScale)} 
+                                    cy={props.distributePathState.circleParams.cy + Math.sin(props.distributePathState.angleOffset * Math.PI / 180 - Math.PI / 2) * (props.distributePathState.circleParams.radius + 30 / safeScale)} 
+                                    r={6 / safeScale} fill="#00d2ff" stroke="var(--bg-primary)" strokeWidth={2 / safeScale} style={{ cursor: ROTATE_CURSOR_STYLE, pointerEvents: 'all' }} 
                                     onMouseDown={(e) => {
                                         e.stopPropagation();
                                         const pt = getTransformedPointerPosition(getPointerPosition(e));
@@ -3113,13 +3173,13 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         const startY = my - Math.sin(finalAngle) * (len / 2);
                         const endX = mx + Math.cos(finalAngle) * (len / 2);
                         const endY = my + Math.sin(finalAngle) * (len / 2);
-                        const rotX = mx + Math.cos(finalAngle - Math.PI / 2) * (30 / viewTransform.scale);
-                        const rotY = my + Math.sin(finalAngle - Math.PI / 2) * (30 / viewTransform.scale);
+                        const rotX = mx + Math.cos(finalAngle - Math.PI / 2) * (30 / safeScale);
+                        const rotY = my + Math.sin(finalAngle - Math.PI / 2) * (30 / safeScale);
                         return (
                         <>
-                            <line x1={startX} y1={startY} x2={endX} y2={endY} stroke="#00d2ff" strokeWidth={2 / viewTransform.scale} strokeDasharray={`${5 / viewTransform.scale},${5 / viewTransform.scale}`} style={{ pointerEvents: 'none' }} />
+                            <line x1={startX} y1={startY} x2={endX} y2={endY} stroke="#00d2ff" strokeWidth={2 / safeScale} strokeDasharray={`${5 / safeScale},${5 / safeScale}`} style={{ pointerEvents: 'none' }} />
                             {/* Start Handle */}
-                            <circle cx={startX} cy={startY} r={6 / viewTransform.scale} fill="var(--bg-primary)" stroke="#00d2ff" strokeWidth={2 / viewTransform.scale} style={{ cursor: 'move', pointerEvents: 'all' }} onMouseDown={(e) => {
+                            <circle cx={startX} cy={startY} r={6 / safeScale} fill="var(--bg-primary)" stroke="#00d2ff" strokeWidth={2 / safeScale} style={{ cursor: 'move', pointerEvents: 'all' }} onMouseDown={(e) => {
                                 e.stopPropagation();
                                 const pt = getTransformedPointerPosition(getPointerPosition(e));
                                 setAction({ type: 'edit-distribute-path', handle: 'start', startPoint: pt, initialDistributePath: props.distributePathState! });
@@ -3129,7 +3189,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                 setAction({ type: 'edit-distribute-path', handle: 'start', startPoint: pt, initialDistributePath: props.distributePathState! });
                             }} />
                             {/* End Handle */}
-                            <circle cx={endX} cy={endY} r={6 / viewTransform.scale} fill="var(--bg-primary)" stroke="#00d2ff" strokeWidth={2 / viewTransform.scale} style={{ cursor: 'move', pointerEvents: 'all' }} onMouseDown={(e) => {
+                            <circle cx={endX} cy={endY} r={6 / safeScale} fill="var(--bg-primary)" stroke="#00d2ff" strokeWidth={2 / safeScale} style={{ cursor: 'move', pointerEvents: 'all' }} onMouseDown={(e) => {
                                 e.stopPropagation();
                                 const pt = getTransformedPointerPosition(getPointerPosition(e));
                                 setAction({ type: 'edit-distribute-path', handle: 'end', startPoint: pt, initialDistributePath: props.distributePathState! });
@@ -3145,11 +3205,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                     y1={my} 
                                     x2={rotX} 
                                     y2={rotY} 
-                                    stroke="#00d2ff" strokeWidth={1 / viewTransform.scale} strokeDasharray={`${3 / viewTransform.scale},${3 / viewTransform.scale}`} style={{ pointerEvents: 'none' }} />
+                                    stroke="#00d2ff" strokeWidth={1 / safeScale} strokeDasharray={`${3 / safeScale},${3 / safeScale}`} style={{ pointerEvents: 'none' }} />
                                 <circle 
                                     cx={rotX} 
                                     cy={rotY} 
-                                    r={6 / viewTransform.scale} fill="#00d2ff" stroke="var(--bg-primary)" strokeWidth={2 / viewTransform.scale} style={{ cursor: ROTATE_CURSOR_STYLE, pointerEvents: 'all' }} 
+                                    r={6 / safeScale} fill="#00d2ff" stroke="var(--bg-primary)" strokeWidth={2 / safeScale} style={{ cursor: ROTATE_CURSOR_STYLE, pointerEvents: 'all' }} 
                                     onMouseDown={(e) => {
                                         e.stopPropagation();
                                         const pt = getTransformedPointerPosition(getPointerPosition(e));
@@ -3182,7 +3242,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         const midY = (minY + maxY) / 2;
 
                         const rotX = midX;
-                        const rotY = minY - 30 / viewTransform.scale;
+                        const rotY = minY - 30 / safeScale;
 
                         const angleOffset = props.distributePathState.angleOffset || 0;
                         const nodePoints = (('points' in pShape && Array.isArray((pShape as any).points)) ? (pShape as any).points : pts);
@@ -3194,8 +3254,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                     d={pathString}
                                     fill="none"
                                     stroke="#00d2ff"
-                                    strokeWidth={2 / viewTransform.scale}
-                                    strokeDasharray={`${5 / viewTransform.scale},${5 / viewTransform.scale}`}
+                                    strokeWidth={2 / safeScale}
+                                    strokeDasharray={`${5 / safeScale},${5 / safeScale}`}
                                     style={{ pointerEvents: 'none' }}
                                 />
 
@@ -3207,8 +3267,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                     height={Math.max(1, maxY - minY)}
                                     fill="none"
                                     stroke="#00d2ff"
-                                    strokeWidth={1 / viewTransform.scale}
-                                    strokeDasharray={`${3 / viewTransform.scale},${3 / viewTransform.scale}`}
+                                    strokeWidth={1 / safeScale}
+                                    strokeDasharray={`${3 / safeScale},${3 / safeScale}`}
                                     style={{ pointerEvents: 'none' }}
                                 />
 
@@ -3216,10 +3276,10 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                 <circle
                                     cx={center.x}
                                     cy={center.y}
-                                    r={6 / viewTransform.scale}
+                                    r={6 / safeScale}
                                     fill="var(--bg-primary)"
                                     stroke="#00d2ff"
-                                    strokeWidth={2 / viewTransform.scale}
+                                    strokeWidth={2 / safeScale}
                                     style={{ cursor: 'move', pointerEvents: 'all' }}
                                     onMouseDown={(e) => {
                                         e.stopPropagation();
@@ -3246,13 +3306,13 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                 ].map((h, i) => (
                                     <rect
                                         key={`resize-${i}`}
-                                        x={h.x - 4 / viewTransform.scale}
-                                        y={h.y - 4 / viewTransform.scale}
-                                        width={8 / viewTransform.scale}
-                                        height={8 / viewTransform.scale}
+                                        x={h.x - 4 / safeScale}
+                                        y={h.y - 4 / safeScale}
+                                        width={8 / safeScale}
+                                        height={8 / safeScale}
                                         fill="var(--bg-primary)"
                                         stroke="#00d2ff"
-                                        strokeWidth={1.5 / viewTransform.scale}
+                                        strokeWidth={1.5 / safeScale}
                                         style={{ cursor: h.cursor, pointerEvents: 'all' }}
                                         onMouseDown={(e) => {
                                             e.stopPropagation();
@@ -3275,10 +3335,10 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                             key={`node-${idx}`}
                                             cx={pt.x}
                                             cy={pt.y}
-                                            r={5 / viewTransform.scale}
+                                            r={5 / safeScale}
                                             fill="var(--bg-primary)"
                                             stroke="#00d2ff"
-                                            strokeWidth={1.5 / viewTransform.scale}
+                                            strokeWidth={1.5 / safeScale}
                                             style={{ cursor: 'pointer', pointerEvents: 'all' }}
                                             onMouseDown={(e) => {
                                                 e.stopPropagation();
@@ -3302,17 +3362,17 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                         x2={rotX}
                                         y2={rotY}
                                         stroke="#00d2ff"
-                                        strokeWidth={1 / viewTransform.scale}
-                                        strokeDasharray={`${3 / viewTransform.scale},${3 / viewTransform.scale}`}
+                                        strokeWidth={1 / safeScale}
+                                        strokeDasharray={`${3 / safeScale},${3 / safeScale}`}
                                         style={{ pointerEvents: 'none' }}
                                     />
                                     <circle
                                         cx={rotX}
                                         cy={rotY}
-                                        r={6 / viewTransform.scale}
+                                        r={6 / safeScale}
                                         fill="#00d2ff"
                                         stroke="var(--bg-primary)"
-                                        strokeWidth={2 / viewTransform.scale}
+                                        strokeWidth={2 / safeScale}
                                         style={{ cursor: ROTATE_CURSOR_STYLE, pointerEvents: 'all' }}
                                         onMouseDown={(e) => {
                                             e.stopPropagation();
@@ -3338,10 +3398,10 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                             <circle
                                                 cx={res.targetCX}
                                                 cy={res.targetCY}
-                                                r={7 / viewTransform.scale}
+                                                r={7 / safeScale}
                                                 fill="#ff9800"
                                                 stroke="var(--bg-primary)"
-                                                strokeWidth={2 / viewTransform.scale}
+                                                strokeWidth={2 / safeScale}
                                                 style={{ cursor: 'grab', pointerEvents: 'all' }}
                                                 onMouseDown={(e) => {
                                                     e.stopPropagation();
@@ -3373,10 +3433,10 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                             <circle
                                                 cx={rotatedPoint.x}
                                                 cy={rotatedPoint.y}
-                                                r={6 / viewTransform.scale}
+                                                r={6 / safeScale}
                                                 fill="var(--special-handle-fill)"
                                                 stroke="var(--special-handle-stroke)"
-                                                strokeWidth={2 / viewTransform.scale}
+                                                strokeWidth={2 / safeScale}
                                                 style={{ cursor: ADJUST_CURSOR_STYLE, pointerEvents: 'all' }}
                                                 onMouseDown={(e) => {
                                                     e.stopPropagation();
@@ -3405,40 +3465,54 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         x1={width / 2} y1={-100000} x2={width / 2} y2={100000} 
                         stroke="var(--text-tertiary)"
                         strokeOpacity="0.4"
-                        strokeWidth={1 / viewTransform.scale} 
+                        strokeWidth={1 / safeScale} 
                         pointerEvents="none"
                     />
                     <line 
                         x1={-100000} y1={height / 2} x2={100000} y2={height / 2} 
                         stroke="var(--text-tertiary)"
                         strokeOpacity="0.4"
-                        strokeWidth={1 / viewTransform.scale} 
+                        strokeWidth={1 / safeScale} 
                         pointerEvents="none"
                     />
                 </>
             )}
 
             {/* Snap Lines */}
-            {(snapLines.x !== null || (keyboardSnapLines && keyboardSnapLines.x !== null)) && (
-                <line 
-                    x1={snapLines.x !== null ? snapLines.x : (keyboardSnapLines?.x ?? undefined)} y1={-100000} x2={snapLines.x !== null ? snapLines.x : (keyboardSnapLines?.x ?? undefined)} y2={100000} 
-                    stroke="var(--accent-primary)" 
-                    strokeWidth={1 / viewTransform.scale} 
-                    strokeDasharray={`${5 / viewTransform.scale},${5 / viewTransform.scale}`} 
-                    pointerEvents="none"
-                />
-            )}
-            {(snapLines.y !== null || (keyboardSnapLines && keyboardSnapLines.y !== null)) && (
-                <line 
-                    x1={-100000} y1={snapLines.y !== null ? snapLines.y : (keyboardSnapLines?.y ?? undefined)} x2={100000} y2={snapLines.y !== null ? snapLines.y : (keyboardSnapLines?.y ?? undefined)} 
-                    stroke="var(--accent-primary)" 
-                    strokeWidth={1 / viewTransform.scale} 
-                    strokeDasharray={`${5 / viewTransform.scale},${5 / viewTransform.scale}`} 
-                    pointerEvents="none"
-                />
-            )}
+            {(() => {
+                const snapX = snapLines.x !== null && snapLines.x !== undefined && !isNaN(snapLines.x) 
+                    ? snapLines.x 
+                    : (keyboardSnapLines?.x !== null && keyboardSnapLines?.x !== undefined && !isNaN(keyboardSnapLines.x) ? keyboardSnapLines.x : null);
+                if (snapX === null) return null;
+                return (
+                    <line 
+                        x1={snapX} y1={-100000} x2={snapX} y2={100000} 
+                        stroke="var(--accent-primary)" 
+                        strokeWidth={1 / safeScale} 
+                        strokeDasharray={`${5 / safeScale},${5 / safeScale}`} 
+                        pointerEvents="none"
+                    />
+                );
+            })()}
+            {(() => {
+                const snapY = snapLines.y !== null && snapLines.y !== undefined && !isNaN(snapLines.y) 
+                    ? snapLines.y 
+                    : (keyboardSnapLines?.y !== null && keyboardSnapLines?.y !== undefined && !isNaN(keyboardSnapLines.y) ? keyboardSnapLines.y : null);
+                if (snapY === null) return null;
+                return (
+                    <line 
+                        x1={-100000} y1={snapY} x2={100000} y2={snapY} 
+                        stroke="var(--accent-primary)" 
+                        strokeWidth={1 / safeScale} 
+                        strokeDasharray={`${5 / safeScale},${5 / safeScale}`} 
+                        pointerEvents="none"
+                    />
+                );
+            })()}
             </g>
         </svg>
+      );
+    })()}
     </div>
   );
 };

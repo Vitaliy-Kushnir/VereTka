@@ -33,13 +33,17 @@ const Ruler: React.FC<RulerProps> = ({ orientation, transform, length, canvasSiz
   const height = isHorizontal ? RULER_THICKNESS : length;
 
   const ticks = useMemo(() => {
-    if (length <= 0) return [];
+    if (length <= 0 || isNaN(length) || !isFinite(length)) return [];
+    const safeScale = (!transform || isNaN(transform.scale) || !isFinite(transform.scale) || transform.scale <= 0) ? 1 : transform.scale;
+    const tx = (!transform || isNaN(transform.x) || !isFinite(transform.x)) ? 0 : transform.x;
+    const ty = (!transform || isNaN(transform.y) || !isFinite(transform.y)) ? 0 : transform.y;
     
-    const majorInterval = getNiceInterval(60, transform.scale);
-    const minorInterval = getNiceInterval(15, transform.scale);
+    const majorInterval = getNiceInterval(60, safeScale);
+    const minorInterval = getNiceInterval(15, safeScale);
+    if (minorInterval <= 0) return [];
 
-    const viewMin = isHorizontal ? -transform.x / transform.scale : -transform.y / transform.scale;
-    const viewMax = viewMin + length / transform.scale;
+    const viewMin = isHorizontal ? -tx / safeScale : -ty / safeScale;
+    const viewMax = viewMin + length / safeScale;
     
     const tickData = [];
     
@@ -51,14 +55,14 @@ const Ruler: React.FC<RulerProps> = ({ orientation, transform, length, canvasSiz
 
     for (let v = firstValue; v <= viewMax && tickCount < MAX_TICKS; v += minorInterval) {
         tickCount++;
-        const canvasMax = isHorizontal ? canvasSize.width : canvasSize.height;
+        const canvasMax = isHorizontal ? (canvasSize?.width ?? 0) : (canvasSize?.height ?? 0);
         if (v < 0 || v > canvasMax) {
             continue;
         }
 
-        const position = v * transform.scale + (isHorizontal ? transform.x : transform.y);
+        const position = v * safeScale + (isHorizontal ? tx : ty);
         
-        if (position < 0 || position > length) {
+        if (isNaN(position) || !isFinite(position) || position < 0 || position > length) {
             continue;
         }
 
@@ -73,7 +77,7 @@ const Ruler: React.FC<RulerProps> = ({ orientation, transform, length, canvasSiz
             labelValue = (Math.round(v * 100) / 100).toString();
         } else {
              // Don't draw minor ticks if they are too close together
-            if (minorInterval * transform.scale < 5) continue;
+            if (minorInterval * safeScale < 5) continue;
             tickHeight = RULER_THICKNESS * 0.3;
         }
         
@@ -84,9 +88,9 @@ const Ruler: React.FC<RulerProps> = ({ orientation, transform, length, canvasSiz
         });
     }
     return tickData;
-  }, [length, transform, isHorizontal, canvasSize.width, canvasSize.height]);
+  }, [length, transform, isHorizontal, canvasSize?.width, canvasSize?.height]);
   
-  if (width <= 0 || height <= 0) return null;
+  if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) return null;
 
   return (
     <svg width={width} height={height} className="bg-[var(--ruler-bg)]">

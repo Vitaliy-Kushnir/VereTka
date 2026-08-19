@@ -31,7 +31,7 @@ const CheatCodeModal: React.FC<CheatCodeModalProps> = ({ isOpen, onClose, onActi
     };
 
     const handleActivate = () => {
-        const trimmedValue = inputValue.trim();
+        const trimmedValue = ((inputValue) || "").trim();
         const match = trimmedValue.match(/^#?(\d{3})$/);
 
         if (match) {

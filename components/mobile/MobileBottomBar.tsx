@@ -1,0 +1,497 @@
+import React, { useState } from 'react';
+import { 
+    SelectIcon, 
+    RectangleIcon, 
+    LayersIcon, 
+    PaletteIcon, 
+    CodeIcon,
+    DuplicateIcon, 
+    TrashIcon, 
+    FlipHorizontalIcon, 
+    FlipVerticalIcon, 
+    GroupIcon, 
+    UngroupIcon, 
+    EditPointsIcon,
+    AlignShapesCenterHIcon
+} from '../icons';
+import { MoreHorizontal, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Tool } from '../../types';
+import { useIsLandscape } from '../../hooks/useIsMobile';
+
+interface MobileBottomBarProps {
+    activeTool: Tool;
+    setActiveTool: (tool: Tool) => void;
+    undo: () => void;
+    redo: () => void;
+    canUndo: boolean;
+    canRedo: boolean;
+    hasSelectedShapes: boolean;
+    selectedShapesCount?: number;
+    canGroup?: boolean;
+    canUngroup?: boolean;
+    canFlip?: boolean;
+    onDeleteShape: () => void;
+    onDuplicateShape: () => void;
+    onGroup?: () => void;
+    onUngroup?: () => void;
+    onFlipH?: () => void;
+    onFlipV?: () => void;
+    onOpenLayers: () => void;
+    onOpenShapes: () => void;
+    onOpenPalette: () => void;
+    onOpenCode: () => void;
+    onOpenAlign?: () => void;
+    onOpenActions?: () => void;
+    activeSheet?: 'tools' | 'shapes' | 'palette' | 'layers' | 'code' | 'menu' | 'align' | null;
+    isLandscape?: boolean;
+}
+
+export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
+    activeTool,
+    setActiveTool,
+    hasSelectedShapes,
+    selectedShapesCount = 0,
+    canGroup = false,
+    canUngroup = false,
+    canFlip = false,
+    onDeleteShape,
+    onDuplicateShape,
+    onGroup,
+    onUngroup,
+    onFlipH,
+    onFlipV,
+    onOpenLayers,
+    onOpenShapes,
+    onOpenPalette,
+    onOpenCode,
+    onOpenAlign,
+    activeSheet = null,
+    isLandscape: isLandscapeProp
+}) => {
+    const isLandscapeDetected = useIsLandscape();
+    const isLandscape = isLandscapeProp !== undefined ? isLandscapeProp : isLandscapeDetected;
+    const [isActionsExpanded, setIsActionsExpanded] = useState<boolean>(false);
+
+    const isShapesActive = activeSheet === 'shapes' || (!activeSheet && activeTool !== 'select' && activeTool !== 'edit-points');
+    const isStyleActive = activeSheet === 'palette';
+    const isLayersActive = activeSheet === 'layers';
+    const isCodeActive = activeSheet === 'code';
+    const isAlignActive = activeSheet === 'align';
+    const isSelectActive = !activeSheet && (activeTool === 'select' || activeTool === 'edit-points');
+
+    // -------------------------------------------------------------
+    // LANDSCAPE MODE: Vertical Right-Side Bar (Top to Bottom)
+    // -------------------------------------------------------------
+    if (isLandscape) {
+        return (
+            <aside 
+                className="fixed top-12 bottom-0 right-0 w-14 sm:w-16 bg-[var(--bg-primary)] border-l border-[var(--border-primary)] z-[120] shadow-[-6px_0_20px_rgba(0,0,0,0.35)] flex flex-col justify-between items-center py-2 px-1 pb-[max(6px,env(safe-area-inset-bottom,0px))] pr-[max(4px,env(safe-area-inset-right,0px))] select-none"
+                aria-label="Панель керування"
+            >
+                {/* Top Section: Main Navigation Tools (Top to Bottom) */}
+                <div className="flex flex-col items-center gap-1.5 w-full">
+                    {/* 1. Select / Edit points */}
+                    <button 
+                        onClick={() => {
+                            if (activeTool === 'select') {
+                                setActiveTool('edit-points');
+                            } else {
+                                setActiveTool('select');
+                            }
+                        }}
+                        title={activeTool === 'edit-points' ? 'Режим вузлів' : 'Режим вибору'}
+                        className={`relative w-full py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center transition-all ${
+                            isSelectActive 
+                                ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/15 font-bold shadow-xs border border-[var(--accent-primary)]/30' 
+                                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] font-medium'
+                        }`}
+                    >
+                        {activeTool === 'edit-points' ? <EditPointsIcon size={18} /> : <SelectIcon size={18} />}
+                        <span className="text-[10px] mt-0.5 leading-none tracking-tight truncate max-w-full">
+                            {activeTool === 'edit-points' ? 'Вузли' : 'Вибір'}
+                        </span>
+                        {isSelectActive && (
+                            <span className="absolute left-0.5 top-1.5 bottom-1.5 w-1 rounded-r bg-[var(--accent-primary)]" />
+                        )}
+                    </button>
+
+                    {/* 2. Shapes Sheet */}
+                    <button 
+                        onClick={onOpenShapes}
+                        title="Фігури та інструменти"
+                        className={`relative w-full py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center transition-all ${
+                            isShapesActive
+                                ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/15 font-bold shadow-xs border border-[var(--accent-primary)]/30' 
+                                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] font-medium'
+                        }`}
+                    >
+                        <RectangleIcon size={18} />
+                        <span className="text-[10px] mt-0.5 leading-none tracking-tight truncate max-w-full">
+                            Фігури
+                        </span>
+                        {activeSheet === 'shapes' && (
+                            <span className="absolute left-0.5 top-1.5 bottom-1.5 w-1 rounded-r bg-[var(--accent-primary)]" />
+                        )}
+                    </button>
+
+                    {/* 3. Style / Palette Sheet */}
+                    <button 
+                        onClick={onOpenPalette}
+                        title="Стиль та колір"
+                        className={`relative w-full py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center transition-all ${
+                            isStyleActive
+                                ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/15 font-bold shadow-xs border border-[var(--accent-primary)]/30' 
+                                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] font-medium'
+                        }`}
+                    >
+                        <PaletteIcon size={18} />
+                        <span className="text-[10px] mt-0.5 leading-none tracking-tight truncate max-w-full">
+                            Стиль
+                        </span>
+                        {isStyleActive && (
+                            <span className="absolute left-0.5 top-1.5 bottom-1.5 w-1 rounded-r bg-[var(--accent-primary)]" />
+                        )}
+                    </button>
+
+                    {/* 4. Objects / Layers Sheet */}
+                    <button 
+                        onClick={onOpenLayers}
+                        title="Об'єкти та шари"
+                        className={`relative w-full py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center transition-all ${
+                            isLayersActive
+                                ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/15 font-bold shadow-xs border border-[var(--accent-primary)]/30' 
+                                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] font-medium'
+                        }`}
+                    >
+                        <LayersIcon size={18} />
+                        <span className="text-[10px] mt-0.5 leading-none tracking-tight truncate max-w-full">
+                            Об&apos;єкти
+                        </span>
+                        {isLayersActive && (
+                            <span className="absolute left-0.5 top-1.5 bottom-1.5 w-1 rounded-r bg-[var(--accent-primary)]" />
+                        )}
+                    </button>
+
+                    {/* 5. Tkinter Code Sheet */}
+                    <button 
+                        onClick={onOpenCode}
+                        title="Код Tkinter"
+                        className={`relative w-full py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center transition-all ${
+                            isCodeActive
+                                ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/15 font-bold shadow-xs border border-[var(--accent-primary)]/30' 
+                                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] font-medium'
+                        }`}
+                    >
+                        <CodeIcon size={18} />
+                        <span className="text-[10px] mt-0.5 leading-none tracking-tight truncate max-w-full">
+                            Код
+                        </span>
+                        {isCodeActive && (
+                            <span className="absolute left-0.5 top-1.5 bottom-1.5 w-1 rounded-r bg-[var(--accent-primary)]" />
+                        )}
+                    </button>
+                </div>
+
+                {/* Bottom Section: Contextual Selection Actions when shapes are selected */}
+                {hasSelectedShapes && (
+                    <div className="flex flex-col items-center gap-1 w-full pt-1.5 border-t border-[var(--border-primary)] relative">
+                        {/* Count Badge & Expand Toggle */}
+                        <div className="flex items-center justify-center w-full">
+                            <span 
+                                title={`Вибрано фігур: ${selectedShapesCount}`}
+                                className="text-[10px] font-bold text-[var(--accent-primary)] bg-[var(--accent-primary)]/15 px-1.5 py-0.5 rounded-full border border-[var(--accent-primary)]/30 text-center"
+                            >
+                                {selectedShapesCount}
+                            </span>
+                        </div>
+
+                        {/* Align Sheet Button */}
+                        {onOpenAlign && (
+                            <button
+                                onClick={onOpenAlign}
+                                title="Вирівнювання та розподіл"
+                                className={`p-1.5 rounded-lg transition-all active:scale-95 flex items-center justify-center ${
+                                    isAlignActive 
+                                        ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] ring-2 ring-[var(--accent-primary)]/40' 
+                                        : 'bg-[var(--accent-primary)]/80 text-[var(--accent-text)] hover:bg-[var(--accent-primary)]'
+                                }`}
+                            >
+                                <AlignShapesCenterHIcon size={15} />
+                            </button>
+                        )}
+
+                        {/* Duplicate */}
+                        <button
+                            onClick={onDuplicateShape}
+                            title="Дублювати"
+                            className="p-1.5 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-secondary)] active:scale-95 transition-all"
+                        >
+                            <DuplicateIcon size={15} />
+                        </button>
+
+                        {/* Quick More Actions Toggle Popup Button */}
+                        {(canFlip || canGroup || canUngroup) && (
+                            <div className="relative">
+                                <button
+                                    onClick={() => setIsActionsExpanded(prev => !prev)}
+                                    title="Додаткові дії з виділенням"
+                                    className={`p-1.5 rounded-lg border transition-all active:scale-95 ${
+                                        isActionsExpanded 
+                                            ? 'bg-[var(--accent-primary)]/20 border-[var(--accent-primary)] text-[var(--accent-primary)]' 
+                                            : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] border-[var(--border-secondary)] hover:text-[var(--text-primary)]'
+                                    }`}
+                                >
+                                    <MoreHorizontal size={15} />
+                                </button>
+
+                                {/* Floating Popup for More Actions in Landscape */}
+                                {isActionsExpanded && (
+                                    <div className="absolute right-full bottom-0 mr-2 bg-[var(--bg-app)] border border-[var(--border-primary)] rounded-xl shadow-2xl p-1.5 flex flex-col gap-1 z-50 min-w-[120px] backdrop-blur-md">
+                                        {canFlip && onFlipH && (
+                                            <button 
+                                                onClick={() => { onFlipH(); setIsActionsExpanded(false); }}
+                                                className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-[var(--bg-hover)] text-xs text-[var(--text-primary)]"
+                                            >
+                                                <FlipHorizontalIcon size={14} />
+                                                <span>Віддзеркалити H</span>
+                                            </button>
+                                        )}
+                                        {canFlip && onFlipV && (
+                                            <button 
+                                                onClick={() => { onFlipV(); setIsActionsExpanded(false); }}
+                                                className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-[var(--bg-hover)] text-xs text-[var(--text-primary)]"
+                                            >
+                                                <FlipVerticalIcon size={14} />
+                                                <span>Віддзеркалити V</span>
+                                            </button>
+                                        )}
+                                        {canGroup && onGroup && (
+                                            <button 
+                                                onClick={() => { onGroup(); setIsActionsExpanded(false); }}
+                                                className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-[var(--bg-hover)] text-xs text-[var(--text-primary)]"
+                                            >
+                                                <GroupIcon size={14} />
+                                                <span>Згрупувати</span>
+                                            </button>
+                                        )}
+                                        {canUngroup && onUngroup && (
+                                            <button 
+                                                onClick={() => { onUngroup(); setIsActionsExpanded(false); }}
+                                                className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-[var(--bg-hover)] text-xs text-[var(--text-primary)]"
+                                            >
+                                                <UngroupIcon size={14} />
+                                                <span>Розгрупувати</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Delete Shape */}
+                        <button
+                            onClick={onDeleteShape}
+                            title="Видалити фігуру"
+                            className="p-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/30 active:scale-95 transition-all"
+                        >
+                            <TrashIcon size={15} />
+                        </button>
+                    </div>
+                )}
+            </aside>
+        );
+    }
+
+    // -------------------------------------------------------------
+    // PORTRAIT MODE: Classic Horizontal Bottom Bar
+    // -------------------------------------------------------------
+    return (
+        <div className="fixed bottom-0 left-0 right-0 bg-[var(--bg-primary)] border-t border-[var(--border-primary)] pb-[env(safe-area-inset-bottom)] z-[120] shadow-[0_-8px_25px_rgba(0,0,0,0.35)]">
+            {/* Quick Contextual Actions if shapes are selected */}
+            {hasSelectedShapes && (
+                <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-[var(--border-primary)] bg-[var(--bg-secondary)]/95 backdrop-blur-md overflow-x-auto gap-2 no-scrollbar">
+                    <div className="flex items-center gap-1 shrink-0 text-[11px] font-bold text-[var(--accent-primary)] px-2 py-1 rounded-lg bg-[var(--accent-primary)]/12 border border-[var(--accent-primary)]/20">
+                        <span>Вибрано: {selectedShapesCount}</span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                        {onOpenAlign && (
+                            <button 
+                                onClick={onOpenAlign} 
+                                title="Вирівнювання та розподіл"
+                                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold text-xs transition-all shadow-xs active:scale-95 shrink-0 ${
+                                    isAlignActive 
+                                        ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] ring-2 ring-[var(--accent-primary)]/40' 
+                                        : 'bg-[var(--accent-primary)]/80 text-[var(--accent-text)] hover:bg-[var(--accent-primary)]'
+                                }`}
+                            >
+                                <AlignShapesCenterHIcon size={14} />
+                                <span>Вирівняти</span>
+                            </button>
+                        )}
+
+                        <button 
+                            onClick={onDuplicateShape} 
+                            title="Дублювати"
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] text-xs font-medium border border-[var(--border-secondary)] transition-all active:scale-95 shrink-0"
+                        >
+                            <DuplicateIcon size={14} />
+                            <span>Дублювати</span>
+                        </button>
+
+                        {canFlip && onFlipH && onFlipV && (
+                            <div className="flex items-center gap-1 shrink-0">
+                                <button 
+                                    onClick={onFlipH} 
+                                    title="Віддзеркалити горизонтально"
+                                    className="p-1.5 rounded-lg bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-secondary)] active:scale-95"
+                                >
+                                    <FlipHorizontalIcon size={14} />
+                                </button>
+                                <button 
+                                    onClick={onFlipV} 
+                                    title="Віддзеркалити вертикально"
+                                    className="p-1.5 rounded-lg bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-secondary)] active:scale-95"
+                                >
+                                    <FlipVerticalIcon size={14} />
+                                </button>
+                            </div>
+                        )}
+
+                        {canGroup && onGroup && (
+                            <button 
+                                onClick={onGroup} 
+                                title="Згрупувати"
+                                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] text-xs font-medium border border-[var(--border-secondary)] active:scale-95 shrink-0"
+                            >
+                                <GroupIcon size={14} />
+                                <span>Група</span>
+                            </button>
+                        )}
+
+                        {canUngroup && onUngroup && (
+                            <button 
+                                onClick={onUngroup} 
+                                title="Розгрупувати"
+                                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] text-xs font-medium border border-[var(--border-secondary)] active:scale-95 shrink-0"
+                            >
+                                <UngroupIcon size={14} />
+                                <span>Розгрупувати</span>
+                            </button>
+                        )}
+
+                        <button 
+                            onClick={onDeleteShape} 
+                            title="Видалити"
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 text-xs font-semibold border border-red-500/30 active:scale-95 transition-all shrink-0"
+                        >
+                            <TrashIcon size={14} />
+                            <span>Видалити</span>
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Main Mobile Navigation Tabs (Portrait) */}
+            <div className="grid grid-cols-5 items-center px-1.5 py-1 text-center gap-1">
+                {/* 1. Select / Edit Points Tool */}
+                <button 
+                    onClick={() => {
+                        if (activeTool === 'select') {
+                            setActiveTool('edit-points');
+                        } else {
+                            setActiveTool('select');
+                        }
+                    }}
+                    className={`relative flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all ${
+                        isSelectActive 
+                            ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/15 font-bold shadow-xs border border-[var(--accent-primary)]/30' 
+                            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] font-medium'
+                    }`}
+                >
+                    {activeTool === 'edit-points' ? <EditPointsIcon size={19} /> : <SelectIcon size={19} />}
+                    <span className="text-[11px] mt-0.5 leading-tight tracking-tight truncate max-w-full">
+                        {activeTool === 'edit-points' ? 'Вузли' : 'Вибір'}
+                    </span>
+                    {isSelectActive && (
+                        <span className="absolute bottom-0.5 w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)]" />
+                    )}
+                </button>
+
+                {/* 2. Shapes Sheet */}
+                <button 
+                    onClick={onOpenShapes}
+                    className={`relative flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all ${
+                        isShapesActive
+                            ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/15 font-bold shadow-xs border border-[var(--accent-primary)]/30' 
+                            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] font-medium'
+                    }`}
+                >
+                    <RectangleIcon size={19} />
+                    <span className="text-[11px] mt-0.5 leading-tight tracking-tight truncate max-w-full">
+                        Фігури
+                    </span>
+                    {activeSheet === 'shapes' && (
+                        <span className="absolute bottom-0.5 w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)]" />
+                    )}
+                </button>
+
+                {/* 3. Style & Properties Sheet */}
+                <button 
+                    onClick={onOpenPalette}
+                    className={`relative flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all ${
+                        isStyleActive
+                            ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/15 font-bold shadow-xs border border-[var(--accent-primary)]/30' 
+                            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] font-medium'
+                    }`}
+                >
+                    <PaletteIcon size={19} />
+                    <span className="text-[11px] mt-0.5 leading-tight tracking-tight truncate max-w-full">
+                        Стиль
+                    </span>
+                    {isStyleActive && (
+                        <span className="absolute bottom-0.5 w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)]" />
+                    )}
+                </button>
+
+                {/* 4. Objects / Layers & Shapes List Sheet */}
+                <button 
+                    onClick={onOpenLayers}
+                    className={`relative flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all ${
+                        isLayersActive
+                            ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/15 font-bold shadow-xs border border-[var(--accent-primary)]/30' 
+                            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] font-medium'
+                    }`}
+                >
+                    <LayersIcon size={19} />
+                    <span className="text-[11px] mt-0.5 leading-tight tracking-tight truncate max-w-full">
+                        Об&apos;єкти
+                    </span>
+                    {isLayersActive && (
+                        <span className="absolute bottom-0.5 w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)]" />
+                    )}
+                </button>
+
+                {/* 5. Tkinter Code & Simulator */}
+                <button 
+                    onClick={onOpenCode}
+                    className={`relative flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all ${
+                        isCodeActive
+                            ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/15 font-bold shadow-xs border border-[var(--accent-primary)]/30' 
+                            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] font-medium'
+                    }`}
+                >
+                    <CodeIcon size={19} />
+                    <span className="text-[11px] mt-0.5 leading-tight tracking-tight truncate max-w-full">
+                        Код
+                    </span>
+                    {isCodeActive && (
+                        <span className="absolute bottom-0.5 w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)]" />
+                    )}
+                </button>
+            </div>
+        </div>
+    );
+};
+
+export default MobileBottomBar;
