@@ -713,6 +713,7 @@ const DistributePathTopControls: React.FC<{
                              <input 
                                  id="dist-top-path-sides"
                                  type="number"
+                                 onWheel={(e) => (e.target as HTMLElement).blur()}
                                  className="w-16 py-1 px-2 rounded border bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-primary)] text-xs"
                                  value={(distributePathState.shapePathParams.pathShape as any).sides}
                                  min={3}
@@ -735,6 +736,7 @@ const DistributePathTopControls: React.FC<{
                              <input 
                                  id="dist-top-path-inner-radius"
                                  type="number"
+                                 onWheel={(e) => (e.target as HTMLElement).blur()}
                                  className="w-16 py-1 px-2 rounded border bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-primary)] text-xs"
                                  value={Math.round((distributePathState.shapePathParams.pathShape as any).innerRadius ?? ((distributePathState.shapePathParams.pathShape as any).radius / 2))}
                                  min={0}
@@ -1514,6 +1516,14 @@ export default function App(): React.ReactNode {
       });
   }, [historyState.distributePathState]);
 
+  const handleDistributePathChange = useCallback((newPathOrFn: DistributePathState | null | ((prev: DistributePathState | null) => DistributePathState | null), isTransient?: boolean) => {
+      if (isTransient) {
+          setDistributePathStateWithoutHistory(newPathOrFn);
+      } else {
+          setDistributePathState(newPathOrFn);
+      }
+  }, [setDistributePathStateWithoutHistory, setDistributePathState]);
+
   const handleDistributePathChangeEnd = useCallback(() => {
       setTransientDistributePathState((currentTransient) => {
           if (currentTransient) {
@@ -2065,9 +2075,9 @@ export default function App(): React.ReactNode {
     setIgnoreHiddenWarningForLayer(null);
   }, [setShapes, isImportingImage]);
 
-  const updateShape = useCallback((updatedShape: Shape) => {
+  const updateShape = useCallback((updatedShape: Shape, isTransient = false) => {
     cancelShapePreview();
-    setShapes(prevShapes => {
+    const updateFn = (prevShapes: Shape[]) => {
       const oldShape = prevShapes.find((s: any) => s.id === updatedShape.id);
       
       let nextShapes = prevShapes.map(shape => (shape.id === updatedShape.id ? updatedShape : shape));
@@ -2139,25 +2149,41 @@ export default function App(): React.ReactNode {
       }
       
       return nextShapes;
-    });
-    if (selectedShapeIds.length === 1 && updatedShape.id === selectedShapeIds[0] && updatedShape.state !== 'normal') {
+    };
+
+    if (isTransient) {
+        updateShapesWithoutHistory(updateFn);
+    } else {
+        setShapes(updateFn);
+    }
+
+    if (!isTransient && selectedShapeIds.length === 1 && updatedShape.id === selectedShapeIds[0] && updatedShape.state !== 'normal') {
         setSelectedShapeIds([]);
         setActivePointIndex(null);
     }
-  }, [setShapes, selectedShapeIds, cancelShapePreview]);
+  }, [setShapes, updateShapesWithoutHistory, selectedShapeIds, cancelShapePreview]);
 
-  const updateShapes = useCallback((updatedShapes: Shape[]) => {
+  const updateShapes = useCallback((updatedShapes: Shape[], isTransient = false) => {
     cancelShapePreview();
-    setShapes(prevShapes => {
+    const updateFn = (prevShapes: Shape[]) => {
       const updatesMap = new Map(updatedShapes.map((s: any) => [s.id, s]));
       return prevShapes.map((s: any) => updatesMap.get(s.id) || s);
-    });
-    const idsToDeselect = updatedShapes.filter((s: any) => s.state !== 'normal').map((s: any) => s.id);
-    if (idsToDeselect.some((id: string) => selectedShapeIds.includes(id))) {
-        setSelectedShapeIds((prev: any) => prev.filter((p: any) => !idsToDeselect.includes(p)));
-        setActivePointIndex(null);
+    };
+
+    if (isTransient) {
+        updateShapesWithoutHistory(updateFn);
+    } else {
+        setShapes(updateFn);
     }
-  }, [setShapes, selectedShapeIds, cancelShapePreview]);
+
+    if (!isTransient) {
+        const idsToDeselect = updatedShapes.filter((s: any) => s.state !== 'normal').map((s: any) => s.id);
+        if (idsToDeselect.some((id: string) => selectedShapeIds.includes(id))) {
+            setSelectedShapeIds((prev: any) => prev.filter((p: any) => !idsToDeselect.includes(p)));
+            setActivePointIndex(null);
+        }
+    }
+  }, [setShapes, updateShapesWithoutHistory, selectedShapeIds, cancelShapePreview]);
   
   const setShapePreview = useCallback((shapeId: string, overrides: Partial<Shape>) => {
     setPreviewOverrides((prev: any) => ({ ...prev, [shapeId]: overrides }));
@@ -4631,6 +4657,45 @@ export default function App(): React.ReactNode {
                                     }
                                 }
                             }
+
+                            // Snap to canvas edges
+                            if (dx !== 0) {
+                                const canvasXTargets = [
+                                    { moving: movingBox.x, target: 0 },
+                                    { moving: movingBox.x + movingBox.width, target: 0 },
+                                    { moving: movingCenters.x, target: 0 },
+                                    { moving: movingBox.x, target: canvasWidth },
+                                    { moving: movingBox.x + movingBox.width, target: canvasWidth },
+                                    { moving: movingCenters.x, target: canvasWidth }
+                                ];
+                                for (const t of canvasXTargets) {
+                                    const diff = Math.abs(t.moving - t.target);
+                                    if (diff < minSnapDistX) {
+                                        minSnapDistX = diff;
+                                        bestDx = dx - (t.moving - t.target);
+                                        newSnapLines.x = t.target;
+                                    }
+                                }
+                            }
+
+                            if (dy !== 0) {
+                                const canvasYTargets = [
+                                    { moving: movingBox.y, target: 0 },
+                                    { moving: movingBox.y + movingBox.height, target: 0 },
+                                    { moving: movingCenters.y, target: 0 },
+                                    { moving: movingBox.y, target: canvasHeight },
+                                    { moving: movingBox.y + movingBox.height, target: canvasHeight },
+                                    { moving: movingCenters.y, target: canvasHeight }
+                                ];
+                                for (const t of canvasYTargets) {
+                                    const diff = Math.abs(t.moving - t.target);
+                                    if (diff < minSnapDistY) {
+                                        minSnapDistY = diff;
+                                        bestDy = dy - (t.moving - t.target);
+                                        newSnapLines.y = t.target;
+                                    }
+                                }
+                            }
                         }
 
                         if (showCenterGuides) {
@@ -5065,7 +5130,7 @@ export default function App(): React.ReactNode {
           {isProjectActive && !isMobile && <TopToolbar
               allShapes={shapes}
               distributePathState={distributePathState}
-              onDistributePathChange={setDistributePathState}
+              onDistributePathChange={handleDistributePathChange}
               isSelectingPathShape={isSelectingPathShape}
               onToggleSelectPathShape={() => setIsSelectingPathShape(prev => !prev)}
               isDistributingPath={!!distributePathState}
@@ -5142,6 +5207,7 @@ export default function App(): React.ReactNode {
                         onPreview={() => setIsPreviewOpen(true)} hasUnsyncedChanges={hasUnsyncedChangesWithCode}
                         opacity={1} setOpacity={() => {}}
                         selectedShapeIds={selectedShapeIds}
+                        allShapes={shapes}
                         highlightCodeOnSelection={highlightCodeOnSelection}
                         setHighlightCodeOnSelection={setHighlightCodeOnSelection}
                         showLineNumbers={showLineNumbers}
@@ -5318,7 +5384,7 @@ export default function App(): React.ReactNode {
             </div>
             
              {/* Right Column */}
-            {isProjectActive && !isMobile && <aside className={`${isRightPanelVisible ? 'fixed inset-0 bg-[var(--bg-app)]/95 backdrop-blur-sm z-40 p-4 flex flex-col' : 'hidden'} lg:static lg:bg-transparent lg:z-auto lg:flex flex-col gap-4 overflow-y-auto md:p-2`}>
+            {isProjectActive && !isMobile && <aside className={`${isRightPanelVisible ? 'fixed inset-0 bg-[var(--bg-app)]/95 backdrop-blur-sm z-40 p-4 flex flex-col' : 'hidden'} lg:static lg:bg-transparent lg:z-auto lg:flex flex-col gap-3 min-h-0 overflow-hidden md:p-2`}>
                  <div className="lg:hidden flex justify-end mb-4">
                     <button onClick={() => setIsRightPanelVisible(false)} className="p-2 rounded-lg text-[var(--accent-text)]"><XIcon /></button>
                 </div>
@@ -5378,10 +5444,10 @@ export default function App(): React.ReactNode {
                         </div>
                     </div>
                 </div>
-                <div className="flex-[2_2_0%] min-h-0">
+                <div className="flex-[2_2_0%] min-h-0 flex flex-col overflow-hidden">
                     <PropertyEditor onExtractFromGroup={handleExtractFromGroup} handleFlip={handleFlip} showSystemTags={showSystemTags} 
                         distributePathState={distributePathState}
-                        onDistributePathChange={setDistributePathState}
+                        onDistributePathChange={handleDistributePathChange}
                         onConfirmDistributePath={handleConfirmDistributePath}
                         onCancelDistributePath={handleCancelDistributePath}
                         selectedShapes={selectedShapes} allShapes={shapes} updateShape={updateShape} updateShapes={updateShapes} deleteShape={deleteShape} duplicateShape={duplicateShape}
@@ -5594,7 +5660,7 @@ export default function App(): React.ReactNode {
                           canvasHeight={canvasHeight}
                           onAlignShapes={handleAlignShapes}
                           distributePathState={distributePathState}
-                          onDistributePathChange={setDistributePathState}
+                          onDistributePathChange={handleDistributePathChange}
                           onConfirmDistributePath={handleConfirmDistributePath}
                           onCancelDistributePath={handleCancelDistributePath}
                           onClose={() => setMobileSheet(null)}
@@ -5671,6 +5737,7 @@ export default function App(): React.ReactNode {
                               hasUnsyncedChanges={hasUnsyncedChangesWithCode}
                               opacity={1} setOpacity={() => {}}
                               selectedShapeIds={selectedShapeIds}
+                              allShapes={shapes}
                               highlightCodeOnSelection={highlightCodeOnSelection}
                               setHighlightCodeOnSelection={setHighlightCodeOnSelection}
                               showLineNumbers={showLineNumbers}

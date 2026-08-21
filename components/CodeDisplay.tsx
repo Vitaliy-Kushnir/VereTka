@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { CopyIcon, CheckIcon, RefreshIcon, PreviewIcon, WordWrapIcon, EllipsisIcon, SaveIcon, PlayIcon, CodeIcon, SettingsIcon } from './icons';
 import { useLanguage } from './LanguageContext';
+import { Shape } from '../types';
 
 export interface CodeLine {
   content: string;
@@ -20,6 +21,7 @@ interface CodeDisplayProps {
   opacity: number;
   setOpacity: (opacity: number) => void;
   selectedShapeIds: string[];
+  allShapes?: Shape[];
   highlightCodeOnSelection: boolean;
   setHighlightCodeOnSelection: (show: boolean) => void;
   showLineNumbers: boolean;
@@ -48,7 +50,7 @@ const useClickOutside = (ref: React.RefObject<HTMLElement>, handler: (event: Mou
   }, [ref, handler]);
 };
 
-const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, onUpdate, onPreview, onSaveCode, onOpenOrRunCodeOnline, hasUnsyncedChanges, selectedShapeIds, highlightCodeOnSelection, setHighlightCodeOnSelection, showLineNumbers, setShowLineNumbers, showComments, setShowComments, generatorType, onSwitchToLocalGenerator, onOpenSettingsToGenerator, codeStringForExport }) => {
+const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, onUpdate, onPreview, onSaveCode, onOpenOrRunCodeOnline, hasUnsyncedChanges, selectedShapeIds, allShapes, highlightCodeOnSelection, setHighlightCodeOnSelection, showLineNumbers, setShowLineNumbers, showComments, setShowComments, generatorType, onSwitchToLocalGenerator, onOpenSettingsToGenerator, codeStringForExport }) => {
   const [isCopied, setIsCopied] = useState(false);
   const [isWordWrapEnabled, setIsWordWrapEnabled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -67,6 +69,124 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, 
 
   const hasVisibleLines = visibleLines.length > 0;
 
+  // Build a map of shapeId -> 'direct' | 'group' | 'none'
+  const shapeHighlightMap = useMemo(() => {
+    const map = new Map<string, 'direct' | 'group' | 'none'>();
+    if (!highlightCodeOnSelection || selectedShapeIds.length === 0) {
+      return map;
+    }
+
+    const directSelectedSet = new Set(selectedShapeIds);
+    const shapesList = allShapes || [];
+    const shapesMap = new Map<string, Shape>();
+    shapesList.forEach(s => shapesMap.set(s.id, s));
+
+    // Helper: get all ancestor group IDs for any shape/group ID (recursively up the tree)
+    const getAncestors = (id: string): string[] => {
+      const ancestors: string[] = [];
+      let currId: string | undefined = id;
+      const visited = new Set<string>();
+
+      while (currId && !visited.has(currId)) {
+        visited.add(currId);
+        const item = shapesMap.get(currId);
+        let parentId: string | undefined = item?.groupId;
+
+        if (!parentId) {
+          // Find any group shape that lists currId in its shapeIds
+          const parentGroup = shapesList.find(g => g.type === 'group' && g.shapeIds && g.shapeIds.includes(currId!));
+          if (parentGroup) {
+            parentId = parentGroup.id;
+          }
+        }
+
+        if (parentId && !visited.has(parentId)) {
+          ancestors.push(parentId);
+          currId = parentId;
+        } else {
+          currId = undefined;
+        }
+      }
+      return ancestors;
+    };
+
+    // Collect all relevant group IDs connected to the current selection
+    const allGroupIds = new Set<string>();
+
+    selectedShapeIds.forEach(id => {
+      const item = shapesMap.get(id);
+      if (item?.type === 'group') {
+        allGroupIds.add(id);
+      }
+      if (item?.groupId) {
+        allGroupIds.add(item.groupId);
+      }
+      getAncestors(id).forEach(gId => allGroupIds.add(gId));
+    });
+
+    // Expand allGroupIds downwards: if a parent group is in allGroupIds,
+    // all its nested subgroup IDs should also be in allGroupIds
+    let addedMore = true;
+    while (addedMore) {
+      addedMore = false;
+      shapesList.forEach(s => {
+        if (s.type === 'group' && !allGroupIds.has(s.id)) {
+          const ancestors = getAncestors(s.id);
+          if (ancestors.some(aId => allGroupIds.has(aId))) {
+            allGroupIds.add(s.id);
+            addedMore = true;
+          }
+        }
+      });
+    }
+
+    // Determine highlight type for every leaf shape
+    shapesList.forEach(s => {
+      if (s.type === 'group') return;
+
+      const isDirect = directSelectedSet.has(s.id);
+      if (isDirect) {
+        map.set(s.id, 'direct');
+      } else {
+        const ancestors = getAncestors(s.id);
+        const isGroupMember = ancestors.some(aId => allGroupIds.has(aId)) || 
+                              (s.groupId ? allGroupIds.has(s.groupId) : false);
+        if (isGroupMember) {
+          map.set(s.id, 'group');
+        } else {
+          map.set(s.id, 'none');
+        }
+      }
+    });
+
+    // For any directly selected ID that might not be in allShapes array
+    directSelectedSet.forEach(id => {
+      if (!map.has(id)) {
+        map.set(id, 'direct');
+      }
+    });
+
+    return map;
+  }, [selectedShapeIds, allShapes, highlightCodeOnSelection]);
+
+  const firstHighlightedIndex = useMemo(() => {
+    if (!highlightCodeOnSelection) return -1;
+    let firstDirect = -1;
+    let firstGroup = -1;
+    for (let i = 0; i < visibleLines.length; i++) {
+      const shapeId = visibleLines[i].shapeId;
+      if (!shapeId) continue;
+      const hType = shapeHighlightMap.get(shapeId);
+      if (hType === 'direct' && firstDirect === -1) {
+        firstDirect = i;
+      }
+      if (hType === 'group' && firstGroup === -1) {
+        firstGroup = i;
+      }
+    }
+    return firstDirect !== -1 ? firstDirect : firstGroup;
+  }, [visibleLines, shapeHighlightMap, highlightCodeOnSelection]);
+
   useEffect(() => {
     if (codeLines.length > 0) {
       setIsCopied(false);
@@ -74,13 +194,13 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, 
   }, [codeLines]);
   
   useEffect(() => {
-    if (highlightCodeOnSelection) {
+    if (highlightCodeOnSelection && firstHighlightedIndex !== -1) {
         highlightedLineRef.current?.scrollIntoView({
             behavior: 'smooth',
             block: 'center',
         });
     }
-  }, [selectedShapeIds, visibleLines, highlightCodeOnSelection]);
+  }, [firstHighlightedIndex, highlightCodeOnSelection]);
 
   const handleCopy = () => {
     if (codeStringForExport) {
@@ -137,20 +257,29 @@ const CodeDisplay: React.FC<CodeDisplayProps> = ({ codeLines, isLoading, error, 
       <div className={`p-4 overflow-auto text-sm h-full font-mono allow-selection`}>
         {visibleLines.map((line, index) => {
             const isComment = (line?.content?.trim() || '').startsWith('#');
-            const isHighlighted = highlightCodeOnSelection && selectedShapeIds.length > 0 && !!line.shapeId && selectedShapeIds.includes(line.shapeId);
-            const highlightClass = isHighlighted
-                ? (isComment ? 'code-line-comment-highlighted' : 'code-line-highlighted')
-                : '';
+            const highlightType = line.shapeId ? (shapeHighlightMap.get(line.shapeId) || 'none') : 'none';
+
+            let highlightClass = '';
+            if (highlightType === 'direct') {
+                highlightClass = isComment ? 'code-line-comment-highlighted' : 'code-line-highlighted';
+            } else if (highlightType === 'group') {
+                highlightClass = isComment ? 'code-line-group-comment-highlighted' : 'code-line-group-highlighted';
+            }
+
+            const isRefTarget = index === firstHighlightedIndex;
 
             return (
                 <div
                 key={index}
-                ref={isHighlighted ? highlightedLineRef : null}
+                ref={isRefTarget ? highlightedLineRef : null}
                 className={`flex items-start`}
                 >
                 {showLineNumbers && (
                     <span
-                    className={`text-right text-[var(--text-tertiary)] select-none pr-4 w-12 flex-shrink-0 ${(isHighlighted && !isComment) ? 'line-number-highlighted' : ''}`}
+                    className={`text-right text-[var(--text-tertiary)] select-none pr-4 w-12 flex-shrink-0 ${
+                        highlightType === 'direct' && !isComment ? 'line-number-highlighted' : 
+                        highlightType === 'group' && !isComment ? 'line-number-group-highlighted' : ''
+                    }`}
                     aria-hidden="true"
                     >
                     {index + 1}

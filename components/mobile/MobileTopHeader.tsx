@@ -51,9 +51,9 @@ export const MobileTopHeader: React.FC<MobileTopHeaderProps> = ({
             <div className="flex items-center gap-1.5 min-w-0 flex-1 mr-2">
                 <button
                     onClick={onOpenMenu}
-                    title="Меню"
+                    title={t('mobile.header.openMenu') || 'Меню'}
                     className="p-2 -ml-1 rounded-xl text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] active:scale-95 transition-transform shrink-0"
-                    aria-label="Відкрити меню"
+                    aria-label={t('mobile.header.openMenu') || 'Відкрити меню'}
                 >
                     <MenuIcon size={21} />
                 </button>
@@ -80,18 +80,18 @@ export const MobileTopHeader: React.FC<MobileTopHeaderProps> = ({
                         <button
                             onClick={onUndo}
                             disabled={!canUndo}
-                            title="Скасувати (Ctrl+Z)"
+                            title={`${t('menu.edit.undo')} (Ctrl+Z)`}
                             className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] active:scale-95 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
-                            aria-label="Скасувати"
+                            aria-label={t('menu.edit.undo')}
                         >
                             <UndoIcon size={17} />
                         </button>
                         <button
                             onClick={onRedo}
                             disabled={!canRedo}
-                            title="Повторити (Ctrl+Y)"
+                            title={`${t('menu.edit.redo')} (Ctrl+Y)`}
                             className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] active:scale-95 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
-                            aria-label="Повторити"
+                            aria-label={t('menu.edit.redo')}
                         >
                             <RedoIcon size={17} />
                         </button>
@@ -100,20 +100,20 @@ export const MobileTopHeader: React.FC<MobileTopHeaderProps> = ({
 
                         <button
                             onClick={onOpenPreview}
-                            title="Запустити симуляцію Tkinter"
+                            title={t('mobile.header.runSimulation') || 'Запустити симуляцію Tkinter'}
                             className="px-2 py-1 rounded-lg text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 active:scale-95 transition-all flex items-center gap-1 font-semibold text-xs shrink-0"
                         >
                             <PreviewIcon size={15} />
-                            <span className="text-[11px]">Тест</span>
+                            <span className="text-[11px]">{t('mobile.header.test') || 'Тест'}</span>
                         </button>
                     </>
                 )}
 
                 <button
                     onClick={onOpenCloudGallery}
-                    title="Хмарна галерея"
+                    title={t('welcome.action.cloud') || 'Хмарна галерея'}
                     className="p-1.5 rounded-lg text-indigo-400 hover:bg-indigo-500/10 active:scale-95 transition-all shrink-0"
-                    aria-label="Хмарна галерея"
+                    aria-label={t('welcome.action.cloud') || 'Хмарна галерея'}
                 >
                     <CloudGalleryIcon size={18} />
                 </button>

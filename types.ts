@@ -210,6 +210,8 @@ export interface ArcShape extends BaseShape, RotatableShape, FillableShape, Dash
     capstyle?: 'butt' | 'round' | 'projecting';
     arrow?: 'none' | 'first' | 'last' | 'both';
     arrowshape?: [number, number, number];
+    isFlippedHorizontally?: boolean;
+    isFlippedVertically?: boolean;
 }
 
 export interface TextShape extends BaseShape, RotatableShape, FillableShape {

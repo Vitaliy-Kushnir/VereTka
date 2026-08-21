@@ -303,8 +303,8 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                         >
                             <CloudGalleryIcon size={20} />
                             <div>
-                                <div className="text-sm">Хмарна Галерея</div>
-                                <div className="text-[11px] text-indigo-300/80 font-normal">Публічні проєкти, групи та класи</div>
+                                <div className="text-sm">{t('gallery.title') || 'Хмарна Галерея'}</div>
+                                <div className="text-[11px] text-indigo-300/80 font-normal">{t('mobile.menu.cloudGalleryDesc') || 'Публічні проєкти, групи та класи'}</div>
                             </div>
                         </button>
                     </div>
@@ -320,21 +320,21 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[var(--bg-secondary)] text-left"
                             >
                                 <CodeIcon size={18} className="text-emerald-400" />
-                                <span>Перегляд коду Python</span>
+                                <span>{t('menu.export.viewPythonCode') || 'Перегляд коду Python'}</span>
                             </button>
                             <button
                                 onClick={() => handleAction(onOpenPreview)}
                                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[var(--bg-secondary)] text-left text-amber-400 font-medium"
                             >
                                 <PreviewIcon size={18} />
-                                <span>Запуск у симуляторі (Tkinter)</span>
+                                <span>{t('menu.export.runSimulator') || 'Запуск у симуляторі (Tkinter)'}</span>
                             </button>
                             <button
                                 onClick={() => handleAction(onSaveCode)}
                                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[var(--bg-secondary)] text-left"
                             >
                                 <SaveIcon size={18} className="text-blue-400" />
-                                <span>Зберегти як .py файл</span>
+                                <span>{t('menu.export.savePy') || 'Зберегти як .py файл'}</span>
                             </button>
                             {onRunOnline && (
                                 <button
@@ -342,7 +342,7 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                                     className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[var(--bg-secondary)] text-left"
                                 >
                                     <PlayIcon size={18} className="text-green-400" />
-                                    <span>Запустити в онлайн-середовищі</span>
+                                    <span>{t('menu.export.runOnline') || 'Запустити в онлайн-середовищі'}</span>
                                 </button>
                             )}
                         </div>
@@ -443,7 +443,7 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                             >
                                 <div className="flex items-center gap-3">
                                     {theme === 'dark' ? <SunIcon size={18} /> : <MoonIcon size={18} />}
-                                    <span>{theme === 'dark' ? 'Світла тема' : 'Темна тема'}</span>
+                                    <span>{theme === 'dark' ? (t('theme.light') || 'Світла тема') : (t('theme.dark') || 'Темна тема')}</span>
                                 </div>
                             </button>
                             <button
@@ -489,7 +489,7 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                                     className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[var(--bg-secondary)] text-left text-purple-400"
                                 >
                                     <KeyIcon size={18} />
-                                    <span>Чит-коди</span>
+                                    <span>{t('menu.help.cheatCodes') || 'Чит-коди'}</span>
                                 </button>
                             )}
                             <button

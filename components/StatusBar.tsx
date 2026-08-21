@@ -98,6 +98,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
                     max={Math.round(MAX_SCALE * 100)}
                     unit="%"
                     smartRound={false}
+                    showQuickPopup={false}
                 />
             </div>
         ) : (

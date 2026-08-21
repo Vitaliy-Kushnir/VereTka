@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ColorInput } from '../FormControls';
+import { ColorInput, NumberInput } from '../FormControls';
 import PropertyEditor from '../PropertyEditor';
 import { MobileAlignSheet } from './MobileAlignSheet';
 import { Shape, Tool, DistributePathState } from '../../types';
@@ -137,7 +137,7 @@ export const MobileStyleSheet: React.FC<MobileStyleSheetProps> = ({
                         }`}
                     >
                         <SettingsIcon size={14} />
-                        <span className="truncate">Властивості</span>
+                        <span className="truncate">{t('prop.title') || 'Властивості'}</span>
                     </button>
                     <button
                         onClick={() => setSubTab('style')}
@@ -148,7 +148,7 @@ export const MobileStyleSheet: React.FC<MobileStyleSheetProps> = ({
                         }`}
                     >
                         <PaletteIcon size={14} />
-                        <span className="truncate">Кольори</span>
+                        <span className="truncate">{t('tool.style') || 'Кольори'}</span>
                     </button>
                     <button
                         onClick={() => setSubTab('align')}
@@ -159,13 +159,13 @@ export const MobileStyleSheet: React.FC<MobileStyleSheetProps> = ({
                         }`}
                     >
                         <AlignShapesCenterHIcon size={14} />
-                        <span className="truncate">Позиція</span>
+                        <span className="truncate">{t('mobile.align.positionTab') || 'Позиція'}</span>
                     </button>
                 </div>
             )}
 
             {/* Content Body */}
-            <div className="flex-1 overflow-y-auto pr-0.5 space-y-3.5 overscroll-contain">
+            <div className="flex-1 space-y-3.5">
                 {/* Properties View */}
                 {hasSelection && subTab === 'properties' && (
                     <div className="p-0.5">
@@ -290,7 +290,7 @@ export const MobileStyleSheet: React.FC<MobileStyleSheetProps> = ({
                             </div>
 
                             <div className="flex items-center justify-between">
-                                <span className="text-sm font-semibold text-[var(--text-primary)]">Колір тексту</span>
+                                <span className="text-sm font-semibold text-[var(--text-primary)]">{t('prop.textColor') || 'Колір тексту'}</span>
                                 <ColorInput 
                                     id="mobile-text-color" 
                                     value={textColor} 
@@ -302,7 +302,7 @@ export const MobileStyleSheet: React.FC<MobileStyleSheetProps> = ({
 
                             <div className="grid grid-cols-2 gap-3 pt-2.5 border-t border-[var(--border-secondary)]">
                                 <div>
-                                    <span className="text-xs font-medium text-[var(--text-secondary)] mb-1 block">Шрифт</span>
+                                    <span className="text-xs font-medium text-[var(--text-secondary)] mb-1 block">{t('prop.font') || 'Шрифт'}</span>
                                     <select
                                         value={textFont}
                                         onChange={(e) => setTextFont(e.target.value)}
@@ -318,14 +318,15 @@ export const MobileStyleSheet: React.FC<MobileStyleSheetProps> = ({
                                     </select>
                                 </div>
                                 <div>
-                                    <span className="text-xs font-medium text-[var(--text-secondary)] mb-1 block">Розмір (pt)</span>
-                                    <input
-                                        type="number"
-                                        min="6"
-                                        max="120"
+                                    <span className="text-xs font-medium text-[var(--text-secondary)] mb-1 block">{t('prop.fontSize') || 'Розмір'} (pt)</span>
+                                    <NumberInput
+                                        id="mobile-font-size"
+                                        min={6}
+                                        max={120}
                                         value={isNaN(textFontSize) ? 12 : textFontSize}
-                                        onChange={(e) => setTextFontSize(Number(e.target.value))}
-                                        className="w-full bg-[var(--bg-primary)] border border-[var(--border-secondary)] rounded-xl p-2 text-xs text-[var(--text-primary)] font-medium"
+                                        onChange={(val) => setTextFontSize(val)}
+                                        unit="pt"
+                                        presets={[8, 10, 12, 14, 16, 18, 24, 32, 48, 72]}
                                     />
                                 </div>
                             </div>

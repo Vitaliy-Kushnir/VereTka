@@ -1,4 +1,4 @@
-import { Shape, JoinStyle, LineShape, BezierCurveShape, PolylineShape, PathShape, ArcShape, TextShape } from '../types';
+import { Shape, JoinStyle, LineShape, BezierCurveShape, PolylineShape, PathShape, ArcShape, TextShape, Layer } from '../types';
 import { getFinalPoints, getShapeCenter, getArcPathData, getTextBoundingBox, processTextLines } from './geometry';
 import { getVisualFontFamily } from './constants';
 
@@ -329,4 +329,55 @@ export async function exportToRaster(
         const url = URL.createObjectURL(svgBlob);
         img.src = url;
     });
+}
+
+/**
+ * Extracts shapes from a parsed project object, ordering them by layer hierarchy
+ * (bottom layer to top layer) and applying layer visibility.
+ */
+export function getOrderedShapesFromParsed(parsed: any): Shape[] {
+    if (!parsed) return [];
+    const shapes: Shape[] = parsed.shapes || (Array.isArray(parsed) ? parsed : []);
+    const layers: Layer[] = parsed.layers;
+
+    if (!layers || !Array.isArray(layers) || layers.length === 0) {
+        return shapes;
+    }
+
+    const shapeMap = new Map(shapes.map((s: any) => [s.id, s]));
+    const orderedShapes: Shape[] = [];
+
+    const processShape = (shapeId: string, parentHidden: boolean, targetArray: Shape[]) => {
+        let shape = shapeMap.get(shapeId);
+        if (shape) {
+            let newShape = shape;
+            if (parentHidden) {
+                newShape = { ...shape, layerHidden: true } as any;
+            }
+            targetArray.push(newShape);
+            shapeMap.delete(shapeId);
+
+            if (newShape.type === 'group' && (newShape as any).shapeIds) {
+                for (const childId of (newShape as any).shapeIds) {
+                    processShape(childId, parentHidden || newShape.state === 'hidden', targetArray);
+                }
+            }
+        }
+    };
+
+    // Render from bottom layer to top layer (top layer is index 0)
+    for (let i = layers.length - 1; i >= 0; i--) {
+        const layer = layers[i];
+        for (const shapeId of layer.shapeIds || []) {
+            processShape(shapeId, !layer.visible, orderedShapes);
+        }
+    }
+
+    // Unassigned shapes fall back to rendering at the bottom
+    const unassignedShapes: Shape[] = [];
+    for (const shapeId of Array.from(shapeMap.keys())) {
+        processShape(shapeId, false, unassignedShapes);
+    }
+
+    return [...unassignedShapes, ...orderedShapes];
 }

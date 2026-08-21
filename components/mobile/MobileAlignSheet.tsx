@@ -126,7 +126,7 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                                 </span>
                             </div>
                             <span className="text-[11px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded font-medium">
-                                Активно
+                                {t('mobile.align.active') || 'Активно'}
                             </span>
                         </div>
 
@@ -249,8 +249,8 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                                     >
                                         <option value="">
                                             {candidatePathShapes.length === 0 
-                                                ? 'Немає доступних фігур (намалюйте на полотні)' 
-                                                : '-- Оберіть фігуру як контур --'}
+                                                ? t('mobile.align.noShapes') || 'Немає доступних фігур (намалюйте на полотні)' 
+                                                : t('mobile.align.selectShapeContour') || '-- Оберіть фігуру як контур --'}
                                         </option>
                                         {candidatePathShapes.map(s => (
                                             <option key={s.id} value={s.id}>
@@ -418,7 +418,7 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                             {distributePathState.orientAlongPath && (
                                 <div className="pl-6 space-y-2">
                                     <div className="flex items-center justify-between gap-2">
-                                        <span className="text-[var(--text-secondary)] text-xs">Тип орієнтації:</span>
+                                        <span className="text-[var(--text-secondary)] text-xs">{t('mobile.align.orientationType') || 'Тип орієнтації:'}</span>
                                         <select
                                             value={distributePathState.orientationType}
                                             onChange={(e) => {
@@ -448,7 +448,7 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                                     {distributePathState.orientationType === 'custom' && (
                                         <div className="space-y-1">
                                             <div className="flex justify-between text-xs text-[var(--text-secondary)]">
-                                                <span>Кут орієнтації:</span>
+                                                <span>{t('mobile.align.orientationAngle') || 'Кут орієнтації:'}</span>
                                                 <strong className="text-[var(--text-primary)]">{distributePathState.orientationAngle ?? 0}°</strong>
                                             </div>
                                             <input
@@ -497,7 +497,7 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                                     className="py-2.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-transform"
                                 >
                                     <CheckIcon size={16} />
-                                    <span>Застосувати</span>
+                                    <span>{t('button.apply') || 'Застосувати'}</span>
                                 </button>
                             )}
                             {onCancelDistributePath && (
@@ -507,7 +507,7 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                                     className="py-2.5 px-3 rounded-lg bg-[var(--bg-primary)] hover:bg-red-500/10 text-red-400 border border-red-500/30 font-medium text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
                                 >
                                     <XIcon size={16} />
-                                    <span>Скасувати</span>
+                                    <span>{t('button.cancel') || 'Скасувати'}</span>
                                 </button>
                             )}
                         </div>
@@ -517,7 +517,7 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                 {/* Target Mode: Selection vs Canvas Selector */}
                 <div className="bg-[var(--bg-secondary)] p-3 rounded-xl border border-[var(--border-secondary)] space-y-2.5">
                     <div className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
-                        База вирівнювання (Відносно чого):
+                        {t('mobile.align.base') || 'База вирівнювання (Відносно чого):'}
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 bg-[var(--bg-primary)] p-1 rounded-xl border border-[var(--border-secondary)]">
@@ -534,7 +534,7 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                         >
                             <span className="font-bold">{t('tool.align.selection') || 'Відносно виділення'}</span>
                             <span className="text-[10px] opacity-80">
-                                {count < 2 ? '(потрібно 2+ фігури)' : `(${count} виділено)`}
+                                {count < 2 ? (t('mobile.align.need2Plus') || '(потрібно 2+ фігури)') : (t('mobile.align.selectedCount') || '({count} виділено)').replace('{count}', String(count))}
                             </span>
                         </button>
 
@@ -559,11 +559,13 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                     <div className="text-[11px] text-[var(--text-secondary)] bg-[var(--bg-primary)]/70 p-2 rounded-lg border border-[var(--border-secondary)]/50">
                         {alignRelativeTo === 'canvas' ? (
                             <span>
-                                ℹ️ <strong>Полотно:</strong> Об&apos;єкти вирівнюються за межами або центром робочого полотна ({canvasWidth}×{canvasHeight}px). Працює для 1 або більше фігур.
+                                {(t('mobile.align.canvasDesc') || 'ℹ️ Полотно: Обʼєкти вирівнюються за межами або центром робочого полотна ({w}×{h}px). Працює для 1 або більше фігур.')
+                                    .replace('{w}', String(canvasWidth))
+                                    .replace('{h}', String(canvasHeight))}
                             </span>
                         ) : (
                             <span>
-                                ℹ️ <strong>Виділення:</strong> Фігури вирівнюються одна відносно одної за крайніми координатами спільної рамки виділення.
+                                {t('mobile.align.selectionDesc') || 'ℹ️ Виділення: Фігури вирівнюються одна відносно одної за крайніми координатами спільної рамки виділення.'}
                             </span>
                         )}
                     </div>
@@ -573,7 +575,7 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                 <div className="bg-[var(--bg-secondary)] p-3.5 rounded-xl border border-[var(--border-secondary)] space-y-3">
                     <div className="flex items-center justify-between">
                         <div className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">
-                            Вирівнювання сторін:
+                            {t('mobile.align.sideAlign') || 'Вирівнювання сторін:'}
                         </div>
                         {alignRelativeTo === 'canvas' && (
                             <button
@@ -582,7 +584,7 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                                 disabled={count < 1}
                                 className="text-[11px] font-bold text-[var(--accent-primary)] hover:underline flex items-center gap-1 bg-[var(--accent-primary)]/10 px-2 py-0.5 rounded"
                             >
-                                🎯 В центр полотна
+                                🎯 {t('tool.align.centerBothCanvas') || 'В центр полотна'}
                             </button>
                         )}
                     </div>
@@ -596,7 +598,7 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                             className="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-secondary)] hover:bg-[var(--bg-hover)] active:scale-95 text-xs text-[var(--text-primary)] disabled:opacity-40 transition-all"
                         >
                             <AlignShapesLeftIcon size={20} className="text-[var(--accent-primary)]" />
-                            <span className="font-semibold text-[11px] leading-tight">Зліва</span>
+                            <span className="font-semibold text-[11px] leading-tight">{t('mobile.align.left') || 'Зліва'}</span>
                         </button>
 
                         {/* Align Center H */}
@@ -607,7 +609,7 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                             className="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-secondary)] hover:bg-[var(--bg-hover)] active:scale-95 text-xs text-[var(--text-primary)] disabled:opacity-40 transition-all"
                         >
                             <AlignShapesCenterHIcon size={20} className="text-[var(--accent-primary)]" />
-                            <span className="font-semibold text-[11px] leading-tight">Центр X</span>
+                            <span className="font-semibold text-[11px] leading-tight">{t('mobile.align.centerX') || 'Центр X'}</span>
                         </button>
 
                         {/* Align Right */}
@@ -618,7 +620,7 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                             className="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-secondary)] hover:bg-[var(--bg-hover)] active:scale-95 text-xs text-[var(--text-primary)] disabled:opacity-40 transition-all"
                         >
                             <AlignShapesRightIcon size={20} className="text-[var(--accent-primary)]" />
-                            <span className="font-semibold text-[11px] leading-tight">Справа</span>
+                            <span className="font-semibold text-[11px] leading-tight">{t('mobile.align.right') || 'Справа'}</span>
                         </button>
 
                         {/* Align Top */}
@@ -629,7 +631,7 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                             className="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-secondary)] hover:bg-[var(--bg-hover)] active:scale-95 text-xs text-[var(--text-primary)] disabled:opacity-40 transition-all"
                         >
                             <AlignShapesTopIcon size={20} className="text-[var(--accent-primary)]" />
-                            <span className="font-semibold text-[11px] leading-tight">Зверху</span>
+                            <span className="font-semibold text-[11px] leading-tight">{t('mobile.align.top') || 'Зверху'}</span>
                         </button>
 
                         {/* Align Center V */}
@@ -640,7 +642,7 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                             className="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-secondary)] hover:bg-[var(--bg-hover)] active:scale-95 text-xs text-[var(--text-primary)] disabled:opacity-40 transition-all"
                         >
                             <AlignShapesCenterVIcon size={20} className="text-[var(--accent-primary)]" />
-                            <span className="font-semibold text-[11px] leading-tight">Центр Y</span>
+                            <span className="font-semibold text-[11px] leading-tight">{t('mobile.align.centerY') || 'Центр Y'}</span>
                         </button>
 
                         {/* Align Bottom */}
@@ -651,7 +653,7 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                             className="flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-secondary)] hover:bg-[var(--bg-hover)] active:scale-95 text-xs text-[var(--text-primary)] disabled:opacity-40 transition-all"
                         >
                             <AlignShapesBottomIcon size={20} className="text-[var(--accent-primary)]" />
-                            <span className="font-semibold text-[11px] leading-tight">Знизу</span>
+                            <span className="font-semibold text-[11px] leading-tight">{t('mobile.align.bottom') || 'Знизу'}</span>
                         </button>
                     </div>
                 </div>
@@ -660,10 +662,10 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                 <div className="bg-[var(--bg-secondary)] p-3.5 rounded-xl border border-[var(--border-secondary)] space-y-3">
                     <div className="flex items-center justify-between">
                         <div className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">
-                            Рівномірний розподіл інтервалів:
+                            {t('mobile.align.distributeSection') || 'Рівномірний розподіл інтервалів:'}
                         </div>
                         <span className="text-[10px] text-[var(--text-tertiary)]">
-                            {alignRelativeTo === 'canvas' ? 'Мін. 2 об\'єкти' : 'Мін. 3 об\'єкти'}
+                            {alignRelativeTo === 'canvas' ? (t('mobile.align.min2Objects') || 'Мін. 2 обʼєкти') : (t('mobile.align.min3Objects') || 'Мін. 3 обʼєкти')}
                         </span>
                     </div>
 
@@ -680,7 +682,7 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                             className="flex items-center justify-center gap-2 p-3 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-secondary)] hover:bg-[var(--bg-hover)] active:scale-95 text-xs font-semibold text-[var(--text-primary)] disabled:opacity-40 transition-all"
                         >
                             <DistributeHorizontalIcon size={20} className="text-cyan-400" />
-                            <span>Горизонтально</span>
+                            <span>{t('mobile.align.distributeH') || 'Горизонтально'}</span>
                         </button>
 
                         {/* Distribute Vertically */}
@@ -695,7 +697,7 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                             className="flex items-center justify-center gap-2 p-3 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-secondary)] hover:bg-[var(--bg-hover)] active:scale-95 text-xs font-semibold text-[var(--text-primary)] disabled:opacity-40 transition-all"
                         >
                             <DistributeVerticalIcon size={20} className="text-cyan-400" />
-                            <span>Вертикально</span>
+                            <span>{t('mobile.align.distributeV') || 'Вертикально'}</span>
                         </button>
                     </div>
 
@@ -711,7 +713,7 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                             <span>{t('tool.distribute.path') || 'Розподілити за шляхом / контуром'}</span>
                         </button>
                         <p className="text-[10px] text-[var(--text-tertiary)] text-center mt-1.5">
-                            Розміщує виділені об&apos;єкти вздовж кругового, лінійного або довільного контуру
+                            {t('mobile.align.distributePathHint') || 'Розміщує виділені об\'єкти вздовж кругового, лінійного або довільного контуру'}
                         </p>
                     </div>
                 </div>

@@ -119,8 +119,18 @@ export function MobileBottomSheet({
         }
     }, [activePinMode, setNextPinMode]);
 
+    const handleWheelScroll = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+        e.stopPropagation();
+    }, []);
+
     // Touch & Mouse Drag handlers
     const handleTouchStart = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+        const target = e.target as HTMLElement;
+        // Do not drag sheet window if user is interacting with form controls, buttons, links, etc.
+        if (target.closest('input, textarea, select, button, label, a, [role="button"], [data-no-sheet-drag], [contenteditable="true"]')) {
+            return;
+        }
+
         const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
         const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
         dragStartYRef.current = clientY;
@@ -340,7 +350,7 @@ export function MobileBottomSheet({
 
                 {/* Right Side Sheet Container */}
                 <div 
-                    className={`relative bg-[var(--bg-app)] h-full rounded-l-2xl sm:rounded-l-3xl pointer-events-auto flex flex-row border-l transition-[box-shadow,border-color] duration-75 ease-out select-none ${
+                    className={`relative bg-[var(--bg-app)] h-full rounded-l-2xl sm:rounded-l-3xl pointer-events-auto flex flex-row border-l transition-[box-shadow,border-color] duration-75 ease-out ${
                         activePinMode === 'docked'
                             ? 'border-l-2 border-indigo-500 shadow-[-12px_0_40px_rgba(79,70,229,0.25)]'
                             : activePinMode === 'float'
@@ -360,7 +370,7 @@ export function MobileBottomSheet({
                         className="w-4 shrink-0 flex items-center justify-center cursor-ew-resize active:cursor-grabbing touch-none select-none hover:bg-[var(--accent-primary)]/10 transition-colors border-r border-[var(--border-secondary)]/40"
                         onTouchStart={handleTouchStart}
                         onMouseDown={handleTouchStart}
-                        title="Потягніть вліво/вправо для зміни ширини або свайпайте для зміни вкладок"
+                        title={t('mobile.sheet.dragWidthHint') || 'Потягніть вліво/вправо для зміни ширини або свайпайте для зміни вкладок'}
                     >
                         <div className={`w-1.5 h-12 rounded-full transition-colors ${
                             activePinMode === 'docked'
@@ -389,7 +399,7 @@ export function MobileBottomSheet({
                                             onNavigatePrev();
                                         }}
                                         className="p-1 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] active:scale-95 transition-colors"
-                                        title="Попередня вкладка"
+                                        title={t('mobile.sheet.prevTab') || 'Попередня вкладка'}
                                     >
                                         <ChevronLeft size={16} />
                                     </button>
@@ -408,7 +418,7 @@ export function MobileBottomSheet({
                                             onNavigateNext();
                                         }}
                                         className="p-1 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] active:scale-95 transition-colors"
-                                        title="Наступна вкладка"
+                                        title={t('mobile.sheet.nextTab') || 'Наступна вкладка'}
                                     >
                                         <ChevronRight size={16} />
                                     </button>
@@ -436,7 +446,7 @@ export function MobileBottomSheet({
                                                 ? (t('sheet.mode.float') || 'Плаваюче поверх. Натисніть для режиму «Розділений екран / Поруч»')
                                                 : (t('sheet.mode.docked') || 'Розділений екран (Поруч). Натисніть, щоб відшпилити')
                                     }
-                                    aria-label="Режим пришпилення"
+                                    aria-label={t('mobile.sheet.pinMode') || 'Режим пришпилення'}
                                 >
                                     {activePinMode === 'docked' ? (
                                         <Columns2 size={15} className="animate-pulse" />
@@ -452,8 +462,8 @@ export function MobileBottomSheet({
                                     type="button"
                                     onClick={togglePresetSize}
                                     className="p-1.5 rounded-lg hover:bg-[var(--bg-secondary)] active:scale-95 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all flex items-center justify-center border border-transparent hover:border-[var(--border-secondary)]"
-                                    title={isExpandedWidth ? 'Звузити шторку' : isCompactWidth ? 'Розширити шторку' : 'Змінити ширину'}
-                                    aria-label="Змінити ширину"
+                                    title={isExpandedWidth ? (t('mobile.sheet.collapse') || 'Звузити шторку') : isCompactWidth ? (t('mobile.sheet.expand') || 'Розширити шторку') : (t('mobile.sheet.changeWidth') || 'Змінити ширину')}
+                                    aria-label={t('mobile.sheet.changeWidth') || 'Змінити ширину'}
                                 >
                                     {isExpandedWidth ? (
                                         <Minimize2 size={14} />
@@ -470,7 +480,7 @@ export function MobileBottomSheet({
                                     onClick={onClose}
                                     className="p-1.5 rounded-full hover:bg-[var(--bg-secondary)] active:scale-95 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all ml-0.5"
                                     title={t('help.close') || 'Закрити'}
-                                    aria-label="Закрити"
+                                    aria-label={t('help.close') || 'Закрити'}
                                 >
                                     <X size={16} />
                                 </button>
@@ -479,8 +489,9 @@ export function MobileBottomSheet({
 
                         {/* Scrollable Content inside Landscape Side Sheet */}
                         <div 
-                            className="overflow-y-auto overflow-x-auto px-3.5 py-2.5 overscroll-contain flex-1 select-text custom-scrollbar"
+                            className="overflow-y-auto overflow-x-auto px-3.5 py-2.5 overscroll-contain flex-1 select-text custom-scrollbar touch-pan-y"
                             ref={dragScrollProps.scrollRef}
+                            onWheel={handleWheelScroll}
                             onMouseDown={dragScrollProps.onMouseDown}
                             onMouseLeave={dragScrollProps.onMouseLeave}
                             onMouseUp={dragScrollProps.onMouseUp}
@@ -514,7 +525,7 @@ export function MobileBottomSheet({
             
             {/* Sheet Container - Sits directly above MobileBottomBar */}
             <div 
-                className={`relative bg-[var(--bg-app)] w-full rounded-t-3xl pointer-events-auto flex flex-col border-t transition-[height,box-shadow,border-color] duration-75 ease-out select-none ${
+                className={`relative bg-[var(--bg-app)] w-full rounded-t-3xl pointer-events-auto flex flex-col border-t transition-[height,box-shadow,border-color] duration-75 ease-out ${
                     activePinMode === 'docked'
                         ? 'border-t-2 border-indigo-500 shadow-[0_-12px_40px_rgba(79,70,229,0.25)]'
                         : activePinMode === 'float'
@@ -559,7 +570,7 @@ export function MobileBottomSheet({
                                     onNavigatePrev();
                                 }}
                                 className="p-1 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] active:scale-95 transition-colors"
-                                title="Попередня вкладка"
+                                title={t('mobile.sheet.prevTab') || 'Попередня вкладка'}
                             >
                                 <ChevronLeft size={16} />
                             </button>
@@ -578,7 +589,7 @@ export function MobileBottomSheet({
                                     onNavigateNext();
                                 }}
                                 className="p-1 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] active:scale-95 transition-colors"
-                                title="Наступна вкладка"
+                                title={t('mobile.sheet.nextTab') || 'Наступна вкладка'}
                             >
                                 <ChevronRight size={16} />
                             </button>
@@ -605,7 +616,7 @@ export function MobileBottomSheet({
                                         ? (t('sheet.mode.float') || 'Плаваюче поверх. Натисніть для режиму «Розділений екран / Поруч»')
                                         : (t('sheet.mode.docked') || 'Розділений екран (Поруч). Натисніть, щоб відшпилити')
                             }
-                            aria-label="Режим пришпилення"
+                            aria-label={t('mobile.sheet.pinMode') || 'Режим пришпилення'}
                         >
                             {activePinMode === 'docked' ? (
                                 <Rows2 size={16} className="animate-pulse" />
@@ -621,8 +632,8 @@ export function MobileBottomSheet({
                             type="button"
                             onClick={togglePresetSize}
                             className="p-1.5 rounded-lg hover:bg-[var(--bg-secondary)] active:scale-95 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all flex items-center justify-center border border-transparent hover:border-[var(--border-secondary)]"
-                            title={isExpandedHeight ? 'Зменшити шторку' : isCompactHeight ? 'Розгорнути шторку' : 'Змінити висоту шторки'}
-                            aria-label="Змінити розмір"
+                            title={isExpandedHeight ? (t('mobile.sheet.collapse') || 'Зменшити шторку') : isCompactHeight ? (t('mobile.sheet.expand') || 'Розгорнути шторку') : (t('mobile.sheet.changeHeight') || 'Змінити висоту шторки')}
+                            aria-label={t('mobile.sheet.changeHeight') || 'Змінити розмір'}
                         >
                             {isExpandedHeight ? (
                                 <Minimize2 size={15} />
@@ -639,7 +650,7 @@ export function MobileBottomSheet({
                             onClick={onClose}
                             className="p-1.5 rounded-full hover:bg-[var(--bg-secondary)] active:scale-95 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all ml-0.5"
                             title={t('help.close') || 'Закрити'}
-                            aria-label="Закрити"
+                            aria-label={t('help.close') || 'Закрити'}
                         >
                             <X size={17} />
                         </button>
@@ -648,8 +659,9 @@ export function MobileBottomSheet({
                 
                 {/* Scrollable Content */}
                 <div 
-                    className="overflow-y-auto overflow-x-auto px-4 py-3 overscroll-contain flex-1 select-text custom-scrollbar"
+                    className="overflow-y-auto overflow-x-auto px-4 py-3 overscroll-contain flex-1 select-text custom-scrollbar touch-pan-y"
                     ref={dragScrollProps.scrollRef}
+                    onWheel={handleWheelScroll}
                     onMouseDown={dragScrollProps.onMouseDown}
                     onMouseLeave={dragScrollProps.onMouseLeave}
                     onMouseUp={dragScrollProps.onMouseUp}

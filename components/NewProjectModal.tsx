@@ -119,11 +119,11 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ onClose, onCreate, in
                     <h3 className="text-lg font-semibold text-[var(--text-tertiary)] pt-2">{t('project.canvasSettings')}</h3>
                     <InputWrapper>
                         <Label htmlFor="canvasWidth">{t('project.width')}</Label>
-                        <NumberInput id="canvasWidth" value={width} onChange={setWidth} min={100} step={10} />
+                        <NumberInput id="canvasWidth" value={width} onChange={setWidth} min={100} step={10} unit="px" presets={[640, 800, 1024, 1280, 1920]} />
                     </InputWrapper>
                     <InputWrapper>
                         <Label htmlFor="canvasHeight">{t('project.height')}</Label>
-                        <NumberInput id="canvasHeight" value={height} onChange={setHeight} min={100} step={10} />
+                        <NumberInput id="canvasHeight" value={height} onChange={setHeight} min={100} step={10} unit="px" presets={[480, 600, 720, 1080]} />
                     </InputWrapper>
                     <InputWrapper>
                         <Label htmlFor="canvasVarName">{t('project.canvasName')}</Label>

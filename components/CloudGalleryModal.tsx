@@ -14,7 +14,7 @@ import {
   Info
 } from 'lucide-react';
 import { VeretkaLoader } from './VeretkaLoader';
-import { generateSvg } from '../lib/exportUtils';
+import { generateSvg, getOrderedShapesFromParsed } from '../lib/exportUtils';
 import { 
   getPublicProjectsPaginated, 
   searchPublicProjects,
@@ -305,18 +305,19 @@ const ProjectCardPreview: React.FC<ProjectCardPreviewProps> = ({
     if (!projectData) return;
     try {
       const parsed = JSON.parse(projectData);
-      if (parsed.thumbnail) {
-        setThumbUrl(parsed.thumbnail);
-        return;
-      }
-      const shapes = parsed.shapes || (Array.isArray(parsed) ? parsed : []);
+      const shapes = getOrderedShapesFromParsed(parsed);
+      const w = parsed.canvasSettings?.width || 800;
+      const h = parsed.canvasSettings?.height || 600;
+      const bg = parsed.canvasSettings?.bgColor || '#ffffff';
+
       if (shapes && shapes.length > 0) {
-        const w = parsed.canvasSettings?.width || 800;
-        const h = parsed.canvasSettings?.height || 600;
-        const bg = parsed.canvasSettings?.bgColor || '#ffffff';
         const svgStr = generateSvg(shapes, w, h, bg);
         const encoded = unescape(encodeURIComponent(svgStr));
         setThumbUrl(`data:image/svg+xml;base64,${btoa(encoded)}`);
+      } else if (parsed.thumbnail) {
+        setThumbUrl(parsed.thumbnail);
+      } else {
+        setThumbUrl(null);
       }
     } catch (e) {
       console.error('Error generating thumbnail:', e);
@@ -404,7 +405,7 @@ const ProjectLargePreviewModal: React.FC<{
     if (!project || !project.projectData) return;
     try {
       const parsed = JSON.parse(project.projectData);
-      const shapes = parsed.shapes || (Array.isArray(parsed) ? parsed : []);
+      const shapes = getOrderedShapesFromParsed(parsed);
       const w = parsed.canvasSettings?.width || 800;
       const h = parsed.canvasSettings?.height || 600;
       const bg = parsed.canvasSettings?.bgColor || '#ffffff';
@@ -702,13 +703,7 @@ const ProjectLargePreviewModal: React.FC<{
             </div>
           )}
 
-          {/* Sticky floating hint when canvas overflows or is elongated */}
-          {(zoomMode !== 'fit' || zoomLevel > 100) && (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-[var(--bg-primary)]/90 backdrop-blur-md text-[11px] text-[var(--text-secondary)] px-3 py-1 rounded-full border border-[var(--border-secondary)] shadow-lg pointer-events-none flex items-center gap-1.5 opacity-90 animate-in fade-in">
-              <Move size={12} className="text-[var(--accent-primary)]" />
-              <span>{t('cloud.gallery.preview.scrollHint') || "Перетягуйте мишкою або прокручуйте для огляду"}</span>
-            </div>
-          )}
+
         </div>
 
         {/* Footer Bar */}
@@ -719,7 +714,7 @@ const ProjectLargePreviewModal: React.FC<{
             </span>
             <span className="hidden sm:inline opacity-40">•</span>
             <span className="hidden sm:inline">
-              Фон: <span className="inline-block w-3 h-3 rounded-full border border-[var(--border-secondary)] align-middle ml-1 mr-0.5" style={{ backgroundColor: canvasInfo.bgColor }} /> <span className="font-mono">{canvasInfo.bgColor}</span>
+              Тло: <span className="inline-block w-3 h-3 rounded-full border border-[var(--border-secondary)] align-middle ml-1 mr-0.5" style={{ backgroundColor: canvasInfo.bgColor }} /> <span className="font-mono">{canvasInfo.bgColor}</span>
             </span>
           </div>
 

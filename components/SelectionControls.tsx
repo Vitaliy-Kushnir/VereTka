@@ -526,7 +526,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
     };
     
     const renderArcHandles = (shape: ArcShape) => {
-        const { x, y, width, height, start, extent } = shape;
+        const { x, y, width, height, start, extent, isFlippedHorizontally, isFlippedVertically } = shape;
         const rx = width / 2;
         const ry = height / 2;
         const cx = x + rx;
@@ -536,9 +536,20 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
         const endRad = ((start + extent) * Math.PI) / 180;
         const midRad = ((start + extent / 2) * Math.PI) / 180;
 
-        const startHandlePos = { x: cx + rx * Math.cos(startRad), y: cy - ry * Math.sin(startRad) };
-        const endHandlePos = { x: cx + rx * Math.cos(endRad), y: cy - ry * Math.sin(endRad) };
-        const moveHandlePos = { x: cx + rx * Math.cos(midRad), y: cy - ry * Math.sin(midRad) };
+        let startHandlePos = { x: cx + rx * Math.cos(startRad), y: cy - ry * Math.sin(startRad) };
+        let endHandlePos = { x: cx + rx * Math.cos(endRad), y: cy - ry * Math.sin(endRad) };
+        let moveHandlePos = { x: cx + rx * Math.cos(midRad), y: cy - ry * Math.sin(midRad) };
+
+        if (isFlippedHorizontally) {
+            startHandlePos = { x: cx - (startHandlePos.x - cx), y: startHandlePos.y };
+            endHandlePos = { x: cx - (endHandlePos.x - cx), y: endHandlePos.y };
+            moveHandlePos = { x: cx - (moveHandlePos.x - cx), y: moveHandlePos.y };
+        }
+        if (isFlippedVertically) {
+            startHandlePos = { x: startHandlePos.x, y: cy - (startHandlePos.y - cy) };
+            endHandlePos = { x: endHandlePos.x, y: cy - (endHandlePos.y - cy) };
+            moveHandlePos = { x: moveHandlePos.x, y: cy - (moveHandlePos.y - cy) };
+        }
 
         const rotatedStart = rotatePoint(startHandlePos, center, rotation);
         const rotatedEnd = rotatePoint(endHandlePos, center, rotation);
@@ -606,10 +617,15 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
             const rotationRad = -Math.PI / 2;
             const handleAngle = (angleStep / 2) + rotationRad;
             const smallOffset = 10 / viewTransform.scale;
-            innerVertex = {
-                x: shape.cx + Math.cos(handleAngle) * smallOffset,
-                y: shape.cy + Math.sin(handleAngle) * smallOffset,
-            };
+            let pointX = shape.cx + Math.cos(handleAngle) * smallOffset;
+            let pointY = shape.cy + Math.sin(handleAngle) * smallOffset;
+            if (shape.isFlippedHorizontally) {
+                pointX = shape.cx - (pointX - shape.cx);
+            }
+            if (shape.isFlippedVertically) {
+                pointY = shape.cy - (pointY - shape.cy);
+            }
+            innerVertex = { x: pointX, y: pointY };
         }
         
         const rotatedInnerVertex = rotatePoint(innerVertex, center, rotation);

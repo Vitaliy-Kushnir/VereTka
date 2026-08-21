@@ -9,6 +9,10 @@ export function useDragScroll() {
     const scrollTop = useRef(0);
 
     const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('input, textarea, select, button, label, a, [role="button"], [contenteditable="true"]')) {
+            return;
+        }
         if (!scrollRef.current) return;
         isDown.current = true;
         scrollRef.current.classList.add('cursor-grabbing');
@@ -35,15 +39,18 @@ export function useDragScroll() {
     const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
         if (!isDown.current || !scrollRef.current) return;
         
-        e.preventDefault(); // Prevents text selection while dragging
-        
         const x = e.pageX - scrollRef.current.offsetLeft;
         const y = e.pageY - scrollRef.current.offsetTop;
-        const walkX = (x - startX.current) * 1.5; // Scroll fast
-        const walkY = (y - startY.current) * 1.5;
+        const deltaX = x - startX.current;
+        const deltaY = y - startY.current;
 
-        scrollRef.current.scrollLeft = scrollLeft.current - walkX;
-        scrollRef.current.scrollTop = scrollTop.current - walkY;
+        if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
+            e.preventDefault(); // Prevents text selection while dragging
+            const walkX = deltaX * 1.5; // Scroll fast
+            const walkY = deltaY * 1.5;
+            scrollRef.current.scrollLeft = scrollLeft.current - walkX;
+            scrollRef.current.scrollTop = scrollTop.current - walkY;
+        }
     }, []);
 
     // Clean up

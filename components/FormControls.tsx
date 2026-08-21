@@ -9,12 +9,314 @@ export const InputWrapper: React.FC<{ children: React.ReactNode }> = ({ children
     <div className="flex items-center gap-2">{children}</div>
 );
 
-export const Label: React.FC<{ htmlFor: string; children?: React.ReactNode; title?: string; className?: string }> = ({ htmlFor, children, title, className }) => (
-    <label htmlFor={htmlFor} className={`text-sm font-medium text-[var(--text-secondary)] w-28 flex-shrink-0 ${className || ""}`} title={title}>{children}</label>
+export const Label: React.FC<{ htmlFor?: string; children?: React.ReactNode; title?: string; className?: string }> = ({ htmlFor, children, title, className }) => (
+    <label 
+        htmlFor={htmlFor} 
+        onClick={(e) => {
+            // Prevent default label click behavior so tapping on label does not focus input or trigger mobile virtual keyboard
+            e.preventDefault();
+        }}
+        className={`text-sm font-medium text-[var(--text-secondary)] w-28 flex-shrink-0 select-none cursor-default ${className || ""}`} 
+        title={title}
+    >
+        {children}
+    </label>
 );
 
-export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: number | ''; onChange: (value: number) => void, disabled?: boolean; step?: number; min?: number; max?: number; onFocus?: React.FocusEventHandler<HTMLInputElement>; title?: string, className?: string, smartRound?: boolean, unit?: string; onBlur?: React.FocusEventHandler<HTMLInputElement>; onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>; autoFocus?: boolean, stepLogic?: 'grid'; placeholder?: string }> (
-    ({ id, value, onChange, disabled, step = 1, min, max, onFocus, title, className, smartRound = true, unit, onBlur, onKeyDown, autoFocus, stepLogic, placeholder }, forwardedRef) => {
+// Interactive Circular Angle Picker Component for Rotations and Angles
+export const CircularAnglePicker: React.FC<{
+    value: number;
+    onChange: (val: number, isFinal: boolean) => void;
+    onChangeEnd?: (val: number) => void;
+    min?: number;
+    max?: number;
+    step?: number;
+    disabled?: boolean;
+}> = ({ value, onChange, onChangeEnd, min = -360, max = 360, step = 1, disabled }) => {
+    const { t } = useLanguage();
+    const dialRef = useRef<SVGSVGElement>(null);
+    const isDraggingRef = useRef(false);
+    const [isHovered, setIsHovered] = useState(false);
+
+    const safeAngle = typeof value === 'number' && !isNaN(value) ? value : 0;
+    // Normalize display angle into 0..360 for dial visualization
+    const normalizedDeg = ((safeAngle % 360) + 360) % 360;
+    const rad = (normalizedDeg * Math.PI) / 180;
+
+    const size = 140;
+    const center = size / 2;
+    const radius = 50;
+    const handleRadius = 7;
+
+    // Handle position on the circle (0 deg pointing right / East, negative angle goes clockwise per Tkinter)
+    const handleX = center + radius * Math.cos(-rad);
+    const handleY = center + radius * Math.sin(-rad);
+
+    const computeAngleFromEvent = (e: PointerEvent | React.PointerEvent) => {
+        if (!dialRef.current) return safeAngle;
+        const rect = dialRef.current.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const dx = e.clientX - cx;
+        const dy = e.clientY - cy;
+
+        // Note: Math.atan2(dy, dx) returns angle in radians, clockwise positive.
+        // We negate it to match Tkinter's counter-clockwise positive convention.
+        let deg = Math.round((-Math.atan2(dy, dx) * 180) / Math.PI);
+        if (deg < 0) deg += 360;
+
+        // Snapping: snap to 15-degree increments if within 4 degrees
+        const snapThreshold = 4;
+        const snapStep = 15;
+        const remainder = deg % snapStep;
+        if (remainder <= snapThreshold) {
+            deg -= remainder;
+        } else if (remainder >= snapStep - snapThreshold) {
+            deg += (snapStep - remainder);
+        }
+
+        deg = ((deg % 360) + 360) % 360;
+
+        // If min < 0 and original safeAngle was negative, preserve sign convention
+        if (min < 0 && safeAngle < 0 && deg > 180) {
+            deg = deg - 360;
+        }
+
+        if (min !== undefined) deg = Math.max(min, deg);
+        if (max !== undefined) deg = Math.min(max, deg);
+
+        return deg;
+    };
+
+    const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
+        if (disabled || e.button !== 0) return;
+        e.preventDefault();
+        (e.target as Element).setPointerCapture?.(e.pointerId);
+        isDraggingRef.current = true;
+
+        const newAngle = computeAngleFromEvent(e);
+        onChange(newAngle, false);
+
+        const onPointerMove = (moveE: PointerEvent) => {
+            if (!isDraggingRef.current) return;
+            moveE.preventDefault();
+            const angle = computeAngleFromEvent(moveE);
+            onChange(angle, false);
+        };
+
+        const onPointerUp = (upE: PointerEvent) => {
+            isDraggingRef.current = false;
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+            window.removeEventListener('pointercancel', onPointerUp);
+
+            const finalAngle = computeAngleFromEvent(upE);
+            onChange(finalAngle, true);
+            onChangeEnd?.(finalAngle);
+        };
+
+        window.addEventListener('pointermove', onPointerMove, { passive: false });
+        window.addEventListener('pointerup', onPointerUp);
+        window.addEventListener('pointercancel', onPointerUp);
+    };
+
+    const cardinalTicks = [0, 45, 90, 135, 180, 225, 270, 315];
+
+    return (
+        <div className="flex flex-col items-center gap-2 select-none">
+            <div className="relative flex items-center justify-center">
+                <svg
+                    ref={dialRef}
+                    width={size}
+                    height={size}
+                    onPointerDown={handlePointerDown}
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
+                    className="cursor-crosshair touch-none"
+                >
+                    {/* Background Dial Circle */}
+                    <circle
+                        cx={center}
+                        cy={center}
+                        r={radius}
+                        className="fill-[var(--bg-secondary)] stroke-[var(--border-primary)]"
+                        strokeWidth="2"
+                    />
+
+                    {/* Outer Track Ring */}
+                    <circle
+                        cx={center}
+                        cy={center}
+                        r={radius + 8}
+                        className="fill-none stroke-[var(--border-secondary)]"
+                        strokeWidth="1"
+                        strokeDasharray="2,3"
+                    />
+
+                    {/* Cardinal Angle Ticks */}
+                    {cardinalTicks.map(angle => {
+                        const tickRad = (-angle * Math.PI) / 180;
+                        const isMajor = angle % 90 === 0;
+                        const tickLen = isMajor ? 8 : 4;
+                        const innerR = radius - tickLen;
+                        const x1 = center + innerR * Math.cos(tickRad);
+                        const y1 = center + innerR * Math.sin(tickRad);
+                        const x2 = center + radius * Math.cos(tickRad);
+                        const y2 = center + radius * Math.sin(tickRad);
+                        return (
+                            <line
+                                key={angle}
+                                x1={x1}
+                                y1={y1}
+                                x2={x2}
+                                y2={y2}
+                                stroke="currentColor"
+                                strokeWidth={isMajor ? "1.75" : "1"}
+                                className={isMajor ? "text-[var(--text-secondary)]" : "text-[var(--text-tertiary)] opacity-60"}
+                            />
+                        );
+                    })}
+
+                    {/* Angle labels (0°, 90°, 180°, 270°) */}
+                    <text x={center + radius - 14} y={center + 3} className="fill-[var(--text-tertiary)] text-[9px] font-bold" textAnchor="end">0°</text>
+                    <text x={center} y={center - radius + 13} className="fill-[var(--text-tertiary)] text-[9px] font-bold" textAnchor="middle">90°</text>
+                    <text x={center - radius + 14} y={center + 3} className="fill-[var(--text-tertiary)] text-[9px] font-bold" textAnchor="start">180°</text>
+                    <text x={center} y={center + radius - 6} className="fill-[var(--text-tertiary)] text-[9px] font-bold" textAnchor="middle">270°</text>
+
+                    {/* Radius Needle Indicator */}
+                    <line
+                        x1={center}
+                        y1={center}
+                        x2={handleX}
+                        y2={handleY}
+                        className="stroke-[var(--accent-primary)]"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                    />
+
+                    {/* Center Hub */}
+                    <circle
+                        cx={center}
+                        cy={center}
+                        r="4"
+                        className="fill-[var(--accent-primary)]"
+                    />
+
+                    {/* Draggable Knob Handle */}
+                    <circle
+                        cx={handleX}
+                        cy={handleY}
+                        r={handleRadius}
+                        className="fill-[var(--accent-primary)] stroke-[var(--bg-primary)] shadow-md transition-transform"
+                        strokeWidth="2.5"
+                    />
+                </svg>
+
+                {/* Center Badge showing active angle value */}
+                <div className="absolute pointer-events-none flex flex-col items-center justify-center">
+                    <span className="text-xs font-black text-[var(--accent-primary)] bg-[var(--bg-primary)]/90 px-1.5 py-0.5 rounded shadow-xs border border-[var(--border-secondary)]">
+                        {safeAngle}°
+                    </span>
+                </div>
+            </div>
+
+            {/* Quick Angle Jump Actions */}
+            <div className="flex items-center justify-center gap-1 w-full pt-1">
+                <button
+                    type="button"
+                    onClick={() => {
+                        const next = safeAngle - 90;
+                        onChange(next, true);
+                        onChangeEnd?.(next);
+                    }}
+                    title={t('form.rotateCCW') || "Повернути на -90°"}
+                    className="px-1.5 py-1 text-[11px] font-semibold bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded border border-[var(--border-secondary)] transition-colors"
+                >
+                    ⟲ -90°
+                </button>
+                <button
+                    type="button"
+                    onClick={() => {
+                        const next = safeAngle + 90;
+                        onChange(next, true);
+                        onChangeEnd?.(next);
+                    }}
+                    title={t('form.rotateCW') || "Повернути на +90°"}
+                    className="px-1.5 py-1 text-[11px] font-semibold bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded border border-[var(--border-secondary)] transition-colors"
+                >
+                    ⟳ +90°
+                </button>
+                <button
+                    type="button"
+                    onClick={() => {
+                        const next = safeAngle === 0 ? 180 : 0;
+                        onChange(next, true);
+                        onChangeEnd?.(next);
+                    }}
+                    title="0° / 180°"
+                    className="px-1.5 py-1 text-[11px] font-semibold bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded border border-[var(--border-secondary)] transition-colors"
+                >
+                    {safeAngle === 0 ? '180°' : '0°'}
+                </button>
+            </div>
+        </div>
+    );
+};
+
+export const NumberInput = forwardRef<HTMLInputElement, { 
+    id: string; 
+    value: number | ''; 
+    onChange: (value: number, isFinal?: boolean) => void; 
+    onChangeEnd?: (value: number) => void;
+    disabled?: boolean; 
+    step?: number; 
+    min?: number; 
+    max?: number; 
+    onFocus?: React.FocusEventHandler<HTMLInputElement>; 
+    title?: string; 
+    className?: string; 
+    smartRound?: boolean; 
+    unit?: string; 
+    onBlur?: React.FocusEventHandler<HTMLInputElement>; 
+    onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>; 
+    autoFocus?: boolean; 
+    stepLogic?: 'grid'; 
+    placeholder?: string;
+    showSlider?: boolean;
+    sliderMin?: number;
+    sliderMax?: number;
+    presets?: number[];
+    showQuickPopup?: boolean;
+    isAngle?: boolean;
+}> (
+    ({ 
+        id, 
+        value, 
+        onChange, 
+        onChangeEnd,
+        disabled, 
+        step = 1, 
+        min, 
+        max, 
+        onFocus, 
+        title, 
+        className, 
+        smartRound = true, 
+        unit, 
+        onBlur, 
+        onKeyDown, 
+        autoFocus, 
+        stepLogic, 
+        placeholder, 
+        showSlider, 
+        sliderMin, 
+        sliderMax,
+        presets,
+        showQuickPopup = true,
+        isAngle
+    }, forwardedRef) => {
+    
+    const { t } = useLanguage();
     
     const getSafeString = (v: any) => {
         if (v === '' || v === null || v === undefined) return '';
@@ -23,7 +325,48 @@ export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: num
     };
 
     const [displayValue, setDisplayValue] = useState<string>(() => getSafeString(value));
+    const [isPopupOpen, setIsPopupOpen] = useState(false);
+    const [isScrubbing, setIsScrubbing] = useState(false);
+    const [isHolding, setIsHolding] = useState(false);
+    const [isTouchKeyboardOpen, setIsTouchKeyboardOpen] = useState(false);
+    const [isTouchDevice, setIsTouchDevice] = useState(false);
+    const [modifierState, setModifierState] = useState({ shift: false, alt: false, ctrl: false });
+    const dragStartedRef = useRef(false);
+    const holdTimeoutRef = useRef<any>(null);
+    const initialPopupValueRef = useRef<number | null>(null);
     const internalRef = useRef<HTMLInputElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const popupRef = useRef<HTMLDivElement>(null);
+
+    const isAngleField = Boolean(isAngle);
+
+    // Track modifier keys for dynamic button labels (+10, -10, +0.1, -0.1)
+    useEffect(() => {
+        const updateModifiers = (e: KeyboardEvent) => {
+            setModifierState({
+                shift: e.shiftKey,
+                alt: e.altKey,
+                ctrl: e.ctrlKey,
+            });
+        };
+
+        const handleWindowBlur = () => {
+            setModifierState({ shift: false, alt: false, ctrl: false });
+        };
+
+        window.addEventListener('keydown', updateModifiers);
+        window.addEventListener('keyup', updateModifiers);
+        window.addEventListener('blur', handleWindowBlur);
+
+        return () => {
+            window.removeEventListener('keydown', updateModifiers);
+            window.removeEventListener('keyup', updateModifiers);
+            window.removeEventListener('blur', handleWindowBlur);
+        };
+    }, []);
+
+    const activeMultiplier = modifierState.shift ? 10 : ((modifierState.alt || modifierState.ctrl) ? 0.1 : 1);
+    const computedStep = Math.round((step * activeMultiplier) * 100) / 100;
 
     // Combine forwardedRef and internalRef
     useEffect(() => {
@@ -36,9 +379,50 @@ export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: num
         }
     }, [forwardedRef]);
 
+    // Track initial value when popup opens
+    const handleTogglePopup = () => {
+        if (!isPopupOpen) {
+            const currentParsed = typeof value === 'number' && !isNaN(value) ? value : (parseFloat(displayValue) || 0);
+            initialPopupValueRef.current = currentParsed;
+            setIsPopupOpen(true);
+        } else {
+            setIsPopupOpen(false);
+        }
+    };
+
+    // Reset to value prior to opening the popup window
+    const handleResetToInitial = () => {
+        if (initialPopupValueRef.current === null) return;
+        const initialVal = initialPopupValueRef.current;
+        setDisplayValue(String(initialVal));
+        onChange(initialVal, true);
+        onChangeEnd?.(initialVal);
+    };
+
+    // Close popup on outside click
+    useEffect(() => {
+        if (!isPopupOpen) return;
+        const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
+            if (
+                popupRef.current && 
+                !popupRef.current.contains(e.target as Node) &&
+                containerRef.current &&
+                !containerRef.current.contains(e.target as Node)
+            ) {
+                setIsPopupOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleOutsideClick);
+        document.addEventListener('touchstart', handleOutsideClick);
+        return () => {
+            document.removeEventListener('mousedown', handleOutsideClick);
+            document.removeEventListener('touchstart', handleOutsideClick);
+        };
+    }, [isPopupOpen]);
+
     // Sync with external value changes, but only if not focused to avoid disrupting user input.
     useEffect(() => {
-        if (document.activeElement !== internalRef.current) {
+        if (document.activeElement !== internalRef.current && !isScrubbing) {
             const nextStr = getSafeString(value);
             if (nextStr === '' && displayValue !== '') {
                 setDisplayValue('');
@@ -46,22 +430,55 @@ export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: num
                 setDisplayValue(nextStr);
             }
         }
-    }, [value, displayValue]);
+    }, [value, displayValue, isScrubbing]);
+
+    // Safe math expression parser (e.g. "100/2", "45+15", "360-90", "2.5*4")
+    const evaluateExpression = (expr: string): number | null => {
+        const trimmed = expr.trim();
+        if (!trimmed) return null;
+        const directNum = Number(trimmed);
+        if (!isNaN(directNum)) return directNum;
+
+        // Allow basic arithmetic characters only
+        if (/^[0-9+\-*/().\s]+$/.test(trimmed)) {
+            try {
+                // eslint-disable-next-line no-new-func
+                const result = Function(`"use strict"; return (${trimmed});`)();
+                if (typeof result === 'number' && !isNaN(result) && isFinite(result)) {
+                    return result;
+                }
+            } catch {
+                return null;
+            }
+        }
+        return null;
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.value;
         setDisplayValue(newValue);
+        const parsed = evaluateExpression(newValue);
+        if (parsed !== null) {
+            let bounded = parsed;
+            if (min !== undefined) bounded = Math.max(min, bounded);
+            if (max !== undefined) bounded = Math.min(max, bounded);
+            // Live preview while typing (transient)
+            onChange(bounded, false);
+        }
     };
     
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-        let num = parseFloat(displayValue);
+        setIsHolding(false);
+        setIsTouchKeyboardOpen(false);
+        let num = evaluateExpression(displayValue);
 
         // If input is invalid or empty, revert to the last valid value from props.
-        if (isNaN(num) || (displayValue?.trim() || '') === '') {
+        if (num === null) {
             const safeValue = isNaN(value as any) ? 0 : value;
             setDisplayValue((safeValue as any) === '' ? '' : String(safeValue));
-            if((safeValue as any) !== '' && safeValue !== Number(displayValue)) {
-                onChange(Number(safeValue));
+            if ((safeValue as any) !== '' && safeValue !== Number(displayValue)) {
+                onChange(Number(safeValue), true);
+                onChangeEnd?.(Number(safeValue));
             }
             return;
         }
@@ -69,9 +486,11 @@ export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: num
         if (min !== undefined) num = Math.max(min, num);
         if (max !== undefined) num = Math.min(max, num);
 
-        if (num !== value) {
-            onChange(num);
-        }
+        // Smart round to hundredths for display if decimal
+        num = Math.round(num * 100) / 100;
+
+        onChange(num, true);
+        onChangeEnd?.(num);
         
         setDisplayValue(String(num));
         if (onBlur) {
@@ -79,51 +498,274 @@ export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: num
         }
     };
 
-    const handleStep = (direction: 'up' | 'down') => {
+    const handleStep = useCallback((direction: 'up' | 'down', multiplier = 1, isFinal = true) => {
         let currentValue = parseFloat(displayValue);
         if (isNaN(currentValue)) {
-            currentValue = min ?? 0;
+            currentValue = typeof value === 'number' && !isNaN(value) ? value : (min ?? 0);
         }
 
         let nextValue: number;
+        const effectiveStep = (step || 1) * multiplier;
         
         if (stepLogic === 'grid') {
             const isUp = direction === 'up';
             if (isUp) {
                 if (currentValue < 1) {
-                    nextValue = currentValue + 0.1;
+                    nextValue = currentValue + (0.1 * multiplier);
                 } else {
-                    nextValue = Math.floor(currentValue) + 1;
+                    nextValue = Math.floor(currentValue) + effectiveStep;
                 }
-            } else { // down
+            } else {
                 if (currentValue <= 1) {
-                    nextValue = currentValue - 0.1;
+                    nextValue = currentValue - (0.1 * multiplier);
                 } else {
-                    nextValue = Math.ceil(currentValue) - 1;
+                    nextValue = Math.ceil(currentValue) - effectiveStep;
                 }
             }
-            // fix floating point issues
             nextValue = Math.round(nextValue * 10) / 10;
-        } else if (smartRound && currentValue % 1 !== 0) {
+        } else if (smartRound && currentValue % 1 !== 0 && multiplier === 1) {
             nextValue = direction === 'up' ? Math.ceil(currentValue) : Math.floor(currentValue);
         } else {
-            nextValue = currentValue + (direction === 'up' ? step : -step);
+            nextValue = currentValue + (direction === 'up' ? effectiveStep : -effectiveStep);
+            nextValue = Math.round(nextValue * 100) / 100;
         }
 
         if (min !== undefined) nextValue = Math.max(min, nextValue);
         if (max !== undefined) nextValue = Math.min(max, nextValue);
         
         setDisplayValue(String(nextValue));
-        onChange(nextValue);
+        onChange(nextValue, isFinal);
+        if (isFinal) {
+            onChangeEnd?.(nextValue);
+        }
+    }, [displayValue, value, min, max, step, stepLogic, smartRound, onChange, onChangeEnd]);
+
+    // Continuous stepping with long-press acceleration
+    const startContinuousStep = (direction: 'up' | 'down', e: React.MouseEvent | React.TouchEvent) => {
+        e.preventDefault();
+        const isShift = ('shiftKey' in e && (e as React.MouseEvent).shiftKey) || modifierState.shift;
+        const isAlt = ('altKey' in e && ((e as React.MouseEvent).altKey || (e as React.MouseEvent).ctrlKey)) || modifierState.alt || modifierState.ctrl;
+        const mult = isShift ? 10 : (isAlt ? 0.1 : 1);
+        
+        let didContinuous = false;
+        let timeoutId: any = null;
+        let intervalId: any = null;
+        let count = 0;
+
+        const stop = () => {
+            if (timeoutId) clearTimeout(timeoutId);
+            if (intervalId) clearInterval(intervalId);
+            window.removeEventListener('mouseup', stop);
+            window.removeEventListener('touchend', stop);
+            window.removeEventListener('touchcancel', stop);
+
+            if (didContinuous) {
+                // Commit final value on release to history
+                handleStep(direction, 0, true);
+            }
+        };
+
+        window.addEventListener('mouseup', stop);
+        window.addEventListener('touchend', stop);
+        window.addEventListener('touchcancel', stop);
+
+        // Immediate single step with isFinal=true unless continuously held
+        handleStep(direction, mult, true);
+
+        timeoutId = setTimeout(() => {
+            didContinuous = true;
+            intervalId = setInterval(() => {
+                count++;
+                const accMult = count > 20 ? 5 : (count > 8 ? 2 : 1);
+                handleStep(direction, accMult * mult, false);
+            }, 60);
+        }, 280);
+    };
+
+    // Velocity-Sensitive Continuous Gesture Detection & Hold-to-Type
+    const handlePointerDown = (e: React.PointerEvent<HTMLInputElement>) => {
+        if (disabled || e.button !== 0) return;
+
+        const isTouch = e.pointerType === 'touch' || e.pointerType === 'pen';
+        if (isTouch) setIsTouchDevice(true);
+
+        const startX = e.clientX;
+        const startY = e.clientY;
+        let isDrag = false;
+        let lastX = startX;
+        let lastTime = performance.now();
+        let currentContinuousValue = parseFloat(displayValue);
+        if (isNaN(currentContinuousValue)) {
+            currentContinuousValue = typeof value === 'number' && !isNaN(value) ? value : (min ?? 0);
+        }
+
+        const targetInput = internalRef.current;
+        const wasFocused = document.activeElement === targetInput;
+
+        // Start Hold-to-Type timer (opens keyboard on long press for touch or holding still)
+        if (isTouch && !isTouchKeyboardOpen) {
+            setIsHolding(true);
+            holdTimeoutRef.current = setTimeout(() => {
+                setIsHolding(false);
+                if (targetInput && !isDrag) {
+                    setIsTouchKeyboardOpen(true);
+                    setTimeout(() => {
+                        targetInput.focus();
+                        targetInput.select();
+                        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                            try { navigator.vibrate(35); } catch {}
+                        }
+                    }, 20);
+                }
+            }, 380);
+        }
+
+        const onPointerMove = (moveE: PointerEvent) => {
+            const deltaTotalX = moveE.clientX - startX;
+            const deltaTotalY = moveE.clientY - startY;
+
+            if (!isDrag) {
+                // If moved beyond 4px, cancel hold timer and engage continuous drag
+                if (Math.abs(deltaTotalX) > 4 && Math.abs(deltaTotalX) >= Math.abs(deltaTotalY)) {
+                    isDrag = true;
+                    dragStartedRef.current = true;
+                    setIsScrubbing(true);
+                    setIsHolding(false);
+                    if (holdTimeoutRef.current) {
+                        clearTimeout(holdTimeoutRef.current);
+                        holdTimeoutRef.current = null;
+                    }
+                    if (isTouch && document.activeElement === targetInput) {
+                        targetInput?.blur();
+                    }
+                }
+            }
+
+            if (isDrag) {
+                moveE.preventDefault();
+                const now = performance.now();
+                const dt = Math.max(1, now - lastTime);
+                const deltaX = moveE.clientX - lastX;
+                lastX = moveE.clientX;
+                lastTime = now;
+
+                // Calculate movement speed in pixels per millisecond
+                const speed = Math.abs(deltaX) / dt;
+
+                // Dynamic velocity acceleration curve:
+                // - Slow gentle moves (<0.2 px/ms): high precision (0.25x - 0.7x step)
+                // - Normal moves (0.2 - 0.7 px/ms): standard step (1.0x - 2.0x)
+                // - Fast flicks (>0.8 px/ms): exponential acceleration up to 20x
+                let velocityMultiplier = 1;
+                if (speed < 0.2) {
+                    velocityMultiplier = 0.4;
+                } else if (speed < 0.6) {
+                    velocityMultiplier = 1.0 + (speed - 0.2) * 2.5;
+                } else {
+                    velocityMultiplier = 2.0 + Math.min(18, Math.pow(speed, 1.7) * 4.5);
+                }
+
+                const modifierMultiplier = moveE.shiftKey ? 10 : (moveE.altKey || moveE.ctrlKey ? 0.1 : 1);
+                const stepSize = step || 1;
+
+                // Continuous real-time value addition
+                const deltaValue = deltaX * stepSize * velocityMultiplier * modifierMultiplier * 0.15;
+                currentContinuousValue += deltaValue;
+
+                let next = currentContinuousValue;
+                if (min !== undefined) next = Math.max(min, next);
+                if (max !== undefined) next = Math.min(max, next);
+                currentContinuousValue = next;
+
+                // Round to hundredths or integer depending on step
+                const roundedNext = stepSize >= 1 ? Math.round(next * 10) / 10 : Math.round(next * 100) / 100;
+
+                setDisplayValue(String(roundedNext));
+                // Transient real-time update during drag gesture (isFinal = false)
+                onChange(roundedNext, false);
+            }
+        };
+
+        const onPointerUp = (upE: PointerEvent) => {
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+            window.removeEventListener('pointercancel', onPointerUp);
+
+            setIsHolding(false);
+            if (holdTimeoutRef.current) {
+                clearTimeout(holdTimeoutRef.current);
+                holdTimeoutRef.current = null;
+            }
+
+            if (isDrag) {
+                upE.preventDefault();
+                upE.stopPropagation();
+                setTimeout(() => {
+                    setIsScrubbing(false);
+                    dragStartedRef.current = false;
+                }, 60);
+
+                const stepSize = step || 1;
+                const roundedFinal = stepSize >= 1 ? Math.round(currentContinuousValue * 10) / 10 : Math.round(currentContinuousValue * 100) / 100;
+                setDisplayValue(String(roundedFinal));
+                // Final commit when finger / mouse is released!
+                onChange(roundedFinal, true);
+                onChangeEnd?.(roundedFinal);
+            } else {
+                setIsScrubbing(false);
+                dragStartedRef.current = false;
+                
+                if (isTouch) {
+                    if (wasFocused && !isTouchKeyboardOpen) {
+                        // Second tap on touch: open virtual keyboard
+                        setIsTouchKeyboardOpen(true);
+                        setTimeout(() => {
+                            targetInput?.focus();
+                            targetInput?.select();
+                        }, 20);
+                    } else if (!wasFocused) {
+                        // First tap on touch: focus visually, keep keyboard hidden (inputMode="none")
+                        targetInput?.focus();
+                    }
+                } else {
+                    // Mouse on PC single click: focus & place cursor where clicked
+                    if (!wasFocused && targetInput) {
+                        targetInput.focus();
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('pointermove', onPointerMove, { passive: false });
+        window.addEventListener('pointerup', onPointerUp);
+        window.addEventListener('pointercancel', onPointerUp);
+    };
+
+    // Double click to directly edit on PC / Touch
+    const handleDoubleClick = () => {
+        if (!disabled && internalRef.current) {
+            setIsTouchKeyboardOpen(true);
+            internalRef.current.focus();
+            internalRef.current.select();
+        }
+    };
+
+    // Mouse Wheel value adjustments on PC
+    const handleWheel = (e: React.WheelEvent<HTMLInputElement>) => {
+        if (disabled) return;
+        const mult = e.shiftKey ? 10 : (e.altKey || e.ctrlKey ? 0.1 : 1);
+        const direction = e.deltaY < 0 ? 'up' : 'down';
+        handleStep(direction, mult, true);
     };
 
     const handleLocalKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        const mult = e.shiftKey ? 10 : (e.altKey || e.ctrlKey ? 0.1 : 1);
         if (e.key === 'ArrowUp') {
             e.preventDefault();
-            handleStep('up');
+            handleStep('up', mult, true);
         } else if (e.key === 'ArrowDown') {
             e.preventDefault();
-            handleStep('down');
+            handleStep('down', mult, true);
         } else if (e.key === 'Enter') {
             e.preventDefault();
             (e.target as HTMLInputElement).blur();
@@ -134,37 +776,292 @@ export const NumberInput = forwardRef<HTMLInputElement, { id: string; value: num
         }
     };
 
+    const currentNum = typeof value === 'number' && !isNaN(value) ? value : (min ?? 0);
+    const effMin = sliderMin ?? min ?? (isAngleField ? -360 : 0);
+    const effMax = sliderMax ?? max ?? (isAngleField ? 360 : Math.max(100, Math.ceil((currentNum || 10) * 2)));
+    const shouldShowInlineSlider = Boolean(showSlider);
+    
+    // Effective presets list
+    const effectivePresets = useMemo(() => {
+        if (presets && presets.length > 0) return presets;
+        if (isAngleField) return [0, 30, 45, 60, 90, 120, 135, 180, 270, 360];
+        if (min !== undefined && max !== undefined && max > min) {
+            const span = max - min;
+            if (span <= 10) {
+                const list: number[] = [];
+                for (let v = min; v <= max; v += (step || 1)) list.push(v);
+                return list.length <= 8 ? list : undefined;
+            }
+            return [
+                min,
+                Math.round(min + span * 0.25),
+                Math.round(min + span * 0.5),
+                Math.round(min + span * 0.75),
+                max
+            ];
+        }
+        return undefined;
+    }, [presets, isAngleField, min, max, step]);
+
     return (
-        <div className={`relative w-full group ${disabled ? 'opacity-50' : ''}`}>
-            <input
-                ref={internalRef}
-                id={id}
-                type="text"
-                inputMode="decimal"
-                value={displayValue}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                disabled={disabled}
-                onFocus={onFocus}
-                title={title}
-                placeholder={placeholder}
-                className={`bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2 py-1 w-full h-8 border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none disabled:cursor-not-allowed ${unit ? 'pr-12' : 'pr-6'} ${className ?? ''}`}
-                onKeyDown={handleLocalKeyDown}
-                autoFocus={autoFocus}
-            />
-            {unit && !disabled && (
-                <span className="absolute right-7 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] pointer-events-none">
-                    {unit}
-                </span>
+        <div ref={containerRef} className={`relative flex items-center gap-1.5 w-full ${disabled ? 'opacity-50' : ''}`}>
+            <div className="relative flex-1 group min-w-[60px] flex items-center">
+                <input
+                    ref={internalRef}
+                    id={id}
+                    type="text"
+                    inputMode={isTouchKeyboardOpen ? "decimal" : (isTouchDevice ? "none" : "decimal")}
+                    value={displayValue}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    onPointerDown={handlePointerDown}
+                    onDoubleClick={handleDoubleClick}
+                    disabled={disabled}
+                    onFocus={onFocus}
+                    title={title || (t('form.dragToAdjust') || "Потягніть для плавного регулювання (швидкість впливає на крок). Затисніть (або 2x клік) для ручного вводу")}
+                    placeholder={placeholder}
+                    className={`bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2.5 py-1 w-full h-8 border border-[var(--border-secondary)] transition-all ${
+                        isScrubbing 
+                            ? 'ring-2 ring-[var(--accent-primary)] bg-[var(--accent-primary)]/15 cursor-ew-resize select-none border-[var(--accent-primary)] shadow-sm' 
+                            : isHolding 
+                                ? 'ring-2 ring-[var(--accent-primary)]/50 bg-[var(--accent-primary)]/10 scale-[1.02]'
+                                : 'focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none cursor-ew-resize sm:cursor-default'
+                    } disabled:cursor-not-allowed ${unit ? 'pr-14' : 'pr-7'} ${className ?? ''}`}
+                    onKeyDown={handleLocalKeyDown}
+                    autoFocus={autoFocus}
+                />
+                
+                {unit && !disabled && (
+                    <span className="absolute right-7 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] pointer-events-none text-xs font-semibold">
+                        {unit}
+                    </span>
+                )}
+
+                {/* Stepper Buttons (Up / Down) */}
+                {!disabled && (
+                    <div className="absolute right-1 top-0 h-full flex flex-col justify-center items-center opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+                        <button 
+                            onMouseDown={(e) => startContinuousStep('up', e)} 
+                            onTouchStart={(e) => startContinuousStep('up', e)}
+                            className="px-1 h-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] active:text-[var(--accent-primary)] select-none flex items-center justify-center" 
+                            tabIndex={-1}
+                            title={t('form.increaseValue') || "Збільшити (Shift=x10, Alt=x0.1, утримуйте для прискорення)"}
+                        >
+                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+                        </button>
+                        <button 
+                            onMouseDown={(e) => startContinuousStep('down', e)} 
+                            onTouchStart={(e) => startContinuousStep('down', e)}
+                            className="px-1 h-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] active:text-[var(--accent-primary)] select-none flex items-center justify-center" 
+                            tabIndex={-1}
+                            title={t('form.decreaseValue') || "Зменшити (Shift=x10, Alt=x0.1, утримуйте для прискорення)"}
+                        >
+                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* Inline Slider if enabled */}
+            {shouldShowInlineSlider && (
+                <input
+                    type="range"
+                    min={effMin}
+                    max={effMax}
+                    step={step}
+                    value={currentNum}
+                    disabled={disabled}
+                    onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        setDisplayValue(String(val));
+                        onChange(val, false);
+                    }}
+                    onPointerUp={(e) => {
+                        const val = parseFloat((e.target as HTMLInputElement).value);
+                        onChange(val, true);
+                        onChangeEnd?.(val);
+                    }}
+                    onTouchEnd={(e) => {
+                        const val = parseFloat((e.target as HTMLInputElement).value);
+                        onChange(val, true);
+                        onChangeEnd?.(val);
+                    }}
+                    onMouseUp={(e) => {
+                        const val = parseFloat((e.target as HTMLInputElement).value);
+                        onChange(val, true);
+                        onChangeEnd?.(val);
+                    }}
+                    className="w-16 sm:w-24 h-2 bg-[var(--bg-tertiary)] rounded-lg appearance-none cursor-pointer accent-[var(--accent-primary)] touch-none flex-shrink-0"
+                    title={title}
+                />
             )}
-            {!disabled && (
-                <div className="absolute right-1 top-0 h-full flex-col justify-center items-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity hidden sm:flex">
-                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleStep('up')} className="px-1 h-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]" tabIndex={-1}>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
-                    </button>
-                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => handleStep('down')} className="px-1 h-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]" tabIndex={-1}>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-                    </button>
+
+            {/* Quick Controls Popover Toggle Button (Mobile & Desktop) */}
+            {showQuickPopup && !shouldShowInlineSlider && !disabled && (
+                <button
+                    type="button"
+                    onClick={handleTogglePopup}
+                    title={t('form.quickSettings') || "Швидкі налаштування: слайдер, пресети та скидання"}
+                    className={`h-8 w-7 shrink-0 flex items-center justify-center rounded border transition-colors ${
+                        isPopupOpen 
+                            ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)] shadow-xs' 
+                            : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--border-secondary)]'
+                    }`}
+                >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="4" y1="21" x2="4" y2="14" />
+                        <line x1="4" y1="10" x2="4" y2="3" />
+                        <line x1="12" y1="21" x2="12" y2="12" />
+                        <line x1="12" y1="8" x2="12" y2="3" />
+                        <line x1="20" y1="21" x2="20" y2="16" />
+                        <line x1="20" y1="12" x2="20" y2="3" />
+                        <line x1="1" y1="14" x2="7" y2="14" />
+                        <line x1="9" y1="8" x2="15" y2="8" />
+                        <line x1="17" y1="16" x2="23" y2="16" />
+                    </svg>
+                </button>
+            )}
+
+            {/* Quick Floating Controls Popover */}
+            {isPopupOpen && !disabled && (
+                <div 
+                    ref={popupRef}
+                    className="absolute right-0 top-full mt-1.5 z-50 p-3 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl shadow-2xl space-y-3 min-w-[240px] max-w-[300px] backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
+                >
+                    {/* Header with Title, Reset Button & Current Value */}
+                    <div className="flex items-center justify-between text-xs border-b border-[var(--border-secondary)] pb-2 gap-2">
+                        <span className="font-bold text-[var(--text-secondary)] truncate max-w-[90px]">{title || (t('form.value') || 'Значення')}</span>
+                        
+                        <div className="flex items-center gap-1.5">
+                            {initialPopupValueRef.current !== null && (
+                                <button
+                                    type="button"
+                                    onClick={handleResetToInitial}
+                                    title={(t('form.resetToInitial') || "Скинути до початкового значення ({val})").replace('{val}', `${initialPopupValueRef.current}${unit || ''}`)}
+                                    className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] active:scale-95 text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-secondary)] transition-all shadow-xs"
+                                >
+                                    <RefreshIcon size={11} />
+                                    <span>{t('button.reset') || 'Скинути'}</span>
+                                </button>
+                            )}
+                            <span className="font-extrabold text-[var(--accent-primary)] bg-[var(--bg-secondary)] px-2 py-0.5 rounded border border-[var(--border-secondary)]">
+                                {displayValue}{unit || ''}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Circular Angle Dial if Angle Field */}
+                    {isAngleField ? (
+                        <div className="py-1">
+                            <CircularAnglePicker
+                                value={currentNum}
+                                onChange={(val, isFinal) => {
+                                    setDisplayValue(String(val));
+                                    onChange(val, isFinal);
+                                }}
+                                onChangeEnd={onChangeEnd}
+                                min={min ?? -360}
+                                max={max ?? 360}
+                                step={step}
+                                disabled={disabled}
+                            />
+                        </div>
+                    ) : (
+                        /* Touch-Friendly Steppers for non-angle fields */
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onMouseDown={(e) => startContinuousStep('down', e)}
+                                onTouchStart={(e) => startContinuousStep('down', e)}
+                                className={`touch-none flex-1 py-1.5 rounded-lg font-bold text-sm border transition-all shadow-xs flex items-center justify-center gap-1 select-none active:scale-95 ${
+                                    activeMultiplier !== 1
+                                        ? 'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] border-[var(--accent-primary)]/50'
+                                        : 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-primary)] border-[var(--border-secondary)]'
+                                }`}
+                                title={t('form.decreaseValue') || "Зменшити (Shift=x10, Alt=x0.1)"}
+                            >
+                                <span>−{computedStep}</span>
+                            </button>
+                            <button
+                                type="button"
+                                onMouseDown={(e) => startContinuousStep('up', e)}
+                                onTouchStart={(e) => startContinuousStep('up', e)}
+                                className={`touch-none flex-1 py-1.5 rounded-lg font-bold text-sm border transition-all shadow-xs flex items-center justify-center gap-1 select-none active:scale-95 ${
+                                    activeMultiplier !== 1
+                                        ? 'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] border-[var(--accent-primary)]/50'
+                                        : 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] text-[var(--text-primary)] border-[var(--border-secondary)]'
+                                }`}
+                                title={t('form.increaseValue') || "Збільшити (Shift=x10, Alt=x0.1)"}
+                            >
+                                <span>+{computedStep}</span>
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Range Slider */}
+                    <div className="space-y-1">
+                        <div className="flex justify-between text-[10px] font-semibold text-[var(--text-tertiary)]">
+                            <span>{effMin}{unit || ''}</span>
+                            <span>{effMax}{unit || ''}</span>
+                        </div>
+                        <input
+                            type="range"
+                            min={effMin}
+                            max={effMax}
+                            step={step}
+                            value={currentNum}
+                            onChange={(e) => {
+                                const val = parseFloat(e.target.value);
+                                setDisplayValue(String(val));
+                                onChange(val, false);
+                            }}
+                            onPointerUp={(e) => {
+                                const val = parseFloat((e.target as HTMLInputElement).value);
+                                onChange(val, true);
+                                onChangeEnd?.(val);
+                            }}
+                            onTouchEnd={(e) => {
+                                const val = parseFloat((e.target as HTMLInputElement).value);
+                                onChange(val, true);
+                                onChangeEnd?.(val);
+                            }}
+                            onMouseUp={(e) => {
+                                const val = parseFloat((e.target as HTMLInputElement).value);
+                                onChange(val, true);
+                                onChangeEnd?.(val);
+                            }}
+                            className="w-full h-2.5 bg-[var(--bg-tertiary)] rounded-lg appearance-none cursor-pointer accent-[var(--accent-primary)] touch-none"
+                        />
+                    </div>
+
+                    {/* Quick Preset Chips */}
+                    {effectivePresets && effectivePresets.length > 0 && (
+                        <div className="space-y-1 pt-1 border-t border-[var(--border-secondary)]">
+                            <div className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">
+                                {t('form.quickValues') || 'Швидкі значення:'}
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                                {effectivePresets.map((presetVal) => (
+                                    <button
+                                        key={presetVal}
+                                        type="button"
+                                        onClick={() => {
+                                            setDisplayValue(String(presetVal));
+                                            onChange(presetVal, true);
+                                            onChangeEnd?.(presetVal);
+                                        }}
+                                        className={`px-2 py-1 text-xs font-semibold rounded-md border transition-all ${
+                                            Number(displayValue) === presetVal
+                                                ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]'
+                                                : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] border-[var(--border-secondary)]'
+                                        }`}
+                                    >
+                                        {presetVal}{unit || ''}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

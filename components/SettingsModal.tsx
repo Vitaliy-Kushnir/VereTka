@@ -199,11 +199,11 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <InputWrapper>
                                         <Label htmlFor="canvasWidth">{t('settings.canvas.width')}</Label>
-                                        <NumberInput id="canvasWidth" value={props.canvasWidth} onChange={props.setCanvasWidth} min={100} max={5000} />
+                                        <NumberInput id="canvasWidth" value={props.canvasWidth} onChange={props.setCanvasWidth} min={100} max={5000} unit="px" presets={[640, 800, 1024, 1280, 1920]} />
                                     </InputWrapper>
                                     <InputWrapper>
                                         <Label htmlFor="canvasHeight">{t('settings.canvas.height')}</Label>
-                                        <NumberInput id="canvasHeight" value={props.canvasHeight} onChange={props.setCanvasHeight} min={100} max={5000} />
+                                        <NumberInput id="canvasHeight" value={props.canvasHeight} onChange={props.setCanvasHeight} min={100} max={5000} unit="px" presets={[480, 600, 720, 1080]} />
                                     </InputWrapper>
                                 </div>
 
@@ -231,11 +231,11 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <InputWrapper>
                                         <Label htmlFor="gridSize">{t('settings.grid.size')}</Label>
-                                        <NumberInput id="gridSize" value={props.gridSize} onChange={props.setGridSize} min={5} max={100} />
+                                        <NumberInput id="gridSize" value={props.gridSize} onChange={props.setGridSize} min={5} max={100} unit="px" presets={[5, 10, 20, 25, 50]} />
                                     </InputWrapper>
                                     <InputWrapper>
                                         <Label htmlFor="gridSnapStep">{t('settings.grid.snapStep')}</Label>
-                                        <NumberInput id="gridSnapStep" value={props.gridSnapStep} onChange={props.setGridSnapStep} min={1} max={50} />
+                                        <NumberInput id="gridSnapStep" value={props.gridSnapStep} onChange={props.setGridSnapStep} min={1} max={50} unit="px" presets={[1, 2, 5, 10, 20]} />
                                     </InputWrapper>
                                 </div>
                                 <div className="flex items-start pt-2">
@@ -308,7 +308,7 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <InputWrapper>
                                         <Label htmlFor="maxRecentProjects">{t('settings.appearance.maxRecentProjects')}</Label>
-                                        <NumberInput id="maxRecentProjects" value={props.maxRecentProjects} onChange={props.setMaxRecentProjects} min={0} max={50} step={1} />
+                                        <NumberInput id="maxRecentProjects" value={props.maxRecentProjects} onChange={props.setMaxRecentProjects} min={0} max={120} step={1} showQuickPopup={false} />
                                     </InputWrapper>
                                 </div>
                                 <p className="text-xs text-[var(--text-tertiary)] -mt-2">{t('settings.appearance.maxRecentProjectsDesc')}</p>

@@ -58,14 +58,14 @@ export const MobileShapesSheet: React.FC<MobileShapesSheetProps> = ({
 
     const categories = [
         {
-            title: 'Основні інструменти',
+            title: t('mobile.shapes.basic') || 'Основні інструменти',
             tools: [
-                { id: 'select', label: 'Вибір', icon: <SelectIcon size={22} /> },
-                { id: 'edit-points', label: 'Вузли', icon: <EditPointsIcon size={22} /> },
+                { id: 'select', label: t('tool.select') || 'Вибір', icon: <SelectIcon size={22} /> },
+                { id: 'edit-points', label: t('tool.editPoints') || 'Вузли', icon: <EditPointsIcon size={22} /> },
             ]
         },
         {
-            title: 'Примітиви',
+            title: t('mobile.shapes.primitives') || 'Примітиви',
             tools: [
                 { id: 'rectangle', label: t('tool.rectangle') || 'Прямокутник', icon: <RectangleIcon size={22} /> },
                 { id: 'square', label: t('tool.square') || 'Квадрат', icon: <SquareIcon size={22} /> },
@@ -74,7 +74,7 @@ export const MobileShapesSheet: React.FC<MobileShapesSheetProps> = ({
             ]
         },
         {
-            title: 'Лінії та Дуги',
+            title: t('mobile.shapes.linesArcs') || 'Лінії та Дуги',
             tools: [
                 { id: 'line', label: t('tool.line') || 'Лінія', icon: <LineIcon size={22} /> },
                 { id: 'polyline', label: t('tool.polyline') || 'Полілінія', icon: <PolylineIcon size={22} /> },
@@ -86,7 +86,7 @@ export const MobileShapesSheet: React.FC<MobileShapesSheetProps> = ({
             ]
         },
         {
-            title: 'Багатокутники',
+            title: t('mobile.shapes.polygons') || 'Багатокутники',
             tools: [
                 { id: 'polygon', label: t('tool.polygon') || 'Багатокутник', icon: <PolygonIcon size={22} /> },
                 { id: 'star', label: t('tool.star') || 'Зірка', icon: <StarIcon size={22} /> },
@@ -98,7 +98,7 @@ export const MobileShapesSheet: React.FC<MobileShapesSheetProps> = ({
             ]
         },
         {
-            title: 'Текст та Медіа',
+            title: t('mobile.shapes.textMedia') || 'Текст та Медіа',
             tools: [
                 { id: 'text', label: t('tool.text') || 'Текст', icon: <TextIcon size={22} /> },
                 { 
@@ -116,7 +116,7 @@ export const MobileShapesSheet: React.FC<MobileShapesSheetProps> = ({
             {/* Draw Mode & Quick Settings */}
             <div className="bg-[var(--bg-secondary)] p-3 rounded-2xl space-y-3 border border-[var(--border-secondary)]">
                 <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold text-[var(--text-secondary)]">Режим побудови:</span>
+                    <span className="text-xs font-bold text-[var(--text-secondary)]">{t('mobile.shapes.drawMode') || 'Режим побудови:'}</span>
                     <div className="flex bg-[var(--bg-primary)] p-0.5 rounded-xl border border-[var(--border-secondary)]">
                         <button
                             onClick={() => setDrawMode('corner')}
@@ -127,7 +127,7 @@ export const MobileShapesSheet: React.FC<MobileShapesSheetProps> = ({
                             }`}
                         >
                             <DrawFromCornerIcon size={14} />
-                            <span>Від кута</span>
+                            <span>{t('toolbar.drawMode.corner') || 'Від кута'}</span>
                         </button>
                         <button
                             onClick={() => setDrawMode('center')}
@@ -138,7 +138,7 @@ export const MobileShapesSheet: React.FC<MobileShapesSheetProps> = ({
                             }`}
                         >
                             <DrawFromCenterIcon size={14} />
-                            <span>Від центру</span>
+                            <span>{t('toolbar.drawMode.center') || 'Від центру'}</span>
                         </button>
                     </div>
                 </div>
@@ -147,7 +147,7 @@ export const MobileShapesSheet: React.FC<MobileShapesSheetProps> = ({
                 {(activeTool === 'polygon' || activeTool === 'star') && (
                     <div className="flex items-center justify-between pt-2 border-t border-[var(--border-secondary)]">
                         <span className="text-xs font-semibold text-[var(--text-secondary)]">
-                            Кількість вершин: <strong className="text-[var(--text-primary)]">{numberOfSides}</strong>
+                            {t('prop.sides') || 'Кількість вершин'}: <strong className="text-[var(--text-primary)]">{numberOfSides}</strong>
                         </span>
                         <div className="flex items-center gap-2">
                             <input

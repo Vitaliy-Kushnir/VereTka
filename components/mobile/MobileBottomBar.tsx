@@ -17,6 +17,7 @@ import {
 import { MoreHorizontal, ChevronRight, ChevronLeft } from 'lucide-react';
 import { Tool } from '../../types';
 import { useIsLandscape } from '../../hooks/useIsMobile';
+import { useLanguage } from '../LanguageContext';
 
 interface MobileBottomBarProps {
     activeTool: Tool;
@@ -68,6 +69,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
     activeSheet = null,
     isLandscape: isLandscapeProp
 }) => {
+    const { t } = useLanguage();
     const isLandscapeDetected = useIsLandscape();
     const isLandscape = isLandscapeProp !== undefined ? isLandscapeProp : isLandscapeDetected;
     const [isActionsExpanded, setIsActionsExpanded] = useState<boolean>(false);
@@ -86,7 +88,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
         return (
             <aside 
                 className="fixed top-12 bottom-0 right-0 w-14 sm:w-16 bg-[var(--bg-primary)] border-l border-[var(--border-primary)] z-[120] shadow-[-6px_0_20px_rgba(0,0,0,0.35)] flex flex-col justify-between items-center py-2 px-1 pb-[max(6px,env(safe-area-inset-bottom,0px))] pr-[max(4px,env(safe-area-inset-right,0px))] select-none"
-                aria-label="Панель керування"
+                aria-label={t('mobile.bottomBar.label') || 'Панель керування'}
             >
                 {/* Top Section: Main Navigation Tools (Top to Bottom) */}
                 <div className="flex flex-col items-center gap-1.5 w-full">
@@ -99,7 +101,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                                 setActiveTool('select');
                             }
                         }}
-                        title={activeTool === 'edit-points' ? 'Режим вузлів' : 'Режим вибору'}
+                        title={activeTool === 'edit-points' ? (t('mobile.nav.nodes') || 'Вузли') : (t('mobile.nav.select') || 'Вибір')}
                         className={`relative w-full py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center transition-all ${
                             isSelectActive 
                                 ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/15 font-bold shadow-xs border border-[var(--accent-primary)]/30' 
@@ -108,7 +110,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                     >
                         {activeTool === 'edit-points' ? <EditPointsIcon size={18} /> : <SelectIcon size={18} />}
                         <span className="text-[10px] mt-0.5 leading-none tracking-tight truncate max-w-full">
-                            {activeTool === 'edit-points' ? 'Вузли' : 'Вибір'}
+                            {activeTool === 'edit-points' ? (t('mobile.nav.nodes') || 'Вузли') : (t('mobile.nav.select') || 'Вибір')}
                         </span>
                         {isSelectActive && (
                             <span className="absolute left-0.5 top-1.5 bottom-1.5 w-1 rounded-r bg-[var(--accent-primary)]" />
@@ -118,7 +120,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                     {/* 2. Shapes Sheet */}
                     <button 
                         onClick={onOpenShapes}
-                        title="Фігури та інструменти"
+                        title={t('mobile.nav.shapesTitle') || 'Фігури та інструменти'}
                         className={`relative w-full py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center transition-all ${
                             isShapesActive
                                 ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/15 font-bold shadow-xs border border-[var(--accent-primary)]/30' 
@@ -127,7 +129,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                     >
                         <RectangleIcon size={18} />
                         <span className="text-[10px] mt-0.5 leading-none tracking-tight truncate max-w-full">
-                            Фігури
+                            {t('mobile.nav.shapes') || 'Фігури'}
                         </span>
                         {activeSheet === 'shapes' && (
                             <span className="absolute left-0.5 top-1.5 bottom-1.5 w-1 rounded-r bg-[var(--accent-primary)]" />
@@ -137,7 +139,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                     {/* 3. Style / Palette Sheet */}
                     <button 
                         onClick={onOpenPalette}
-                        title="Стиль та колір"
+                        title={t('mobile.nav.styleTitle') || 'Стиль та колір'}
                         className={`relative w-full py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center transition-all ${
                             isStyleActive
                                 ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/15 font-bold shadow-xs border border-[var(--accent-primary)]/30' 
@@ -146,7 +148,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                     >
                         <PaletteIcon size={18} />
                         <span className="text-[10px] mt-0.5 leading-none tracking-tight truncate max-w-full">
-                            Стиль
+                            {t('mobile.nav.style') || 'Стиль'}
                         </span>
                         {isStyleActive && (
                             <span className="absolute left-0.5 top-1.5 bottom-1.5 w-1 rounded-r bg-[var(--accent-primary)]" />
@@ -156,7 +158,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                     {/* 4. Objects / Layers Sheet */}
                     <button 
                         onClick={onOpenLayers}
-                        title="Об'єкти та шари"
+                        title={t('mobile.nav.objectsTitle') || 'Обʼєкти та шари'}
                         className={`relative w-full py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center transition-all ${
                             isLayersActive
                                 ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/15 font-bold shadow-xs border border-[var(--accent-primary)]/30' 
@@ -165,7 +167,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                     >
                         <LayersIcon size={18} />
                         <span className="text-[10px] mt-0.5 leading-none tracking-tight truncate max-w-full">
-                            Об&apos;єкти
+                            {t('mobile.nav.objects') || 'Обʼєкти'}
                         </span>
                         {isLayersActive && (
                             <span className="absolute left-0.5 top-1.5 bottom-1.5 w-1 rounded-r bg-[var(--accent-primary)]" />
@@ -175,7 +177,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                     {/* 5. Tkinter Code Sheet */}
                     <button 
                         onClick={onOpenCode}
-                        title="Код Tkinter"
+                        title={t('mobile.nav.codeTitle') || 'Код Tkinter'}
                         className={`relative w-full py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center transition-all ${
                             isCodeActive
                                 ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/15 font-bold shadow-xs border border-[var(--accent-primary)]/30' 
@@ -184,7 +186,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                     >
                         <CodeIcon size={18} />
                         <span className="text-[10px] mt-0.5 leading-none tracking-tight truncate max-w-full">
-                            Код
+                            {t('mobile.nav.code') || 'Код'}
                         </span>
                         {isCodeActive && (
                             <span className="absolute left-0.5 top-1.5 bottom-1.5 w-1 rounded-r bg-[var(--accent-primary)]" />
@@ -198,7 +200,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                         {/* Count Badge & Expand Toggle */}
                         <div className="flex items-center justify-center w-full">
                             <span 
-                                title={`Вибрано фігур: ${selectedShapesCount}`}
+                                title={(t('mobile.selected.title') || 'Вибрано фігур: {count}').replace('{count}', String(selectedShapesCount))}
                                 className="text-[10px] font-bold text-[var(--accent-primary)] bg-[var(--accent-primary)]/15 px-1.5 py-0.5 rounded-full border border-[var(--accent-primary)]/30 text-center"
                             >
                                 {selectedShapesCount}
@@ -209,7 +211,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                         {onOpenAlign && (
                             <button
                                 onClick={onOpenAlign}
-                                title="Вирівнювання та розподіл"
+                                title={t('mobile.action.alignTitle') || 'Вирівнювання та розподіл'}
                                 className={`p-1.5 rounded-lg transition-all active:scale-95 flex items-center justify-center ${
                                     isAlignActive 
                                         ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] ring-2 ring-[var(--accent-primary)]/40' 
@@ -223,7 +225,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                         {/* Duplicate */}
                         <button
                             onClick={onDuplicateShape}
-                            title="Дублювати"
+                            title={t('menu.edit.duplicate') || 'Дублювати'}
                             className="p-1.5 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-secondary)] active:scale-95 transition-all"
                         >
                             <DuplicateIcon size={15} />
@@ -234,7 +236,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                             <div className="relative">
                                 <button
                                     onClick={() => setIsActionsExpanded(prev => !prev)}
-                                    title="Додаткові дії з виділенням"
+                                    title={t('mobile.moreActions') || 'Додаткові дії з виділенням'}
                                     className={`p-1.5 rounded-lg border transition-all active:scale-95 ${
                                         isActionsExpanded 
                                             ? 'bg-[var(--accent-primary)]/20 border-[var(--accent-primary)] text-[var(--accent-primary)]' 
@@ -253,7 +255,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                                                 className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-[var(--bg-hover)] text-xs text-[var(--text-primary)]"
                                             >
                                                 <FlipHorizontalIcon size={14} />
-                                                <span>Віддзеркалити H</span>
+                                                <span>{t('menu.object.flipHorizontal') || 'Віддзеркалити H'}</span>
                                             </button>
                                         )}
                                         {canFlip && onFlipV && (
@@ -262,7 +264,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                                                 className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-[var(--bg-hover)] text-xs text-[var(--text-primary)]"
                                             >
                                                 <FlipVerticalIcon size={14} />
-                                                <span>Віддзеркалити V</span>
+                                                <span>{t('menu.object.flipVertical') || 'Віддзеркалити V'}</span>
                                             </button>
                                         )}
                                         {canGroup && onGroup && (
@@ -271,7 +273,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                                                 className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-[var(--bg-hover)] text-xs text-[var(--text-primary)]"
                                             >
                                                 <GroupIcon size={14} />
-                                                <span>Згрупувати</span>
+                                                <span>{t('menu.object.group') || 'Згрупувати'}</span>
                                             </button>
                                         )}
                                         {canUngroup && onUngroup && (
@@ -280,7 +282,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                                                 className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-[var(--bg-hover)] text-xs text-[var(--text-primary)]"
                                             >
                                                 <UngroupIcon size={14} />
-                                                <span>Розгрупувати</span>
+                                                <span>{t('menu.object.ungroup') || 'Розгрупувати'}</span>
                                             </button>
                                         )}
                                     </div>
@@ -291,7 +293,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                         {/* Delete Shape */}
                         <button
                             onClick={onDeleteShape}
-                            title="Видалити фігуру"
+                            title={t('menu.edit.delete') || 'Видалити'}
                             className="p-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/30 active:scale-95 transition-all"
                         >
                             <TrashIcon size={15} />
@@ -311,14 +313,14 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
             {hasSelectedShapes && (
                 <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-[var(--border-primary)] bg-[var(--bg-secondary)]/95 backdrop-blur-md overflow-x-auto gap-2 no-scrollbar">
                     <div className="flex items-center gap-1 shrink-0 text-[11px] font-bold text-[var(--accent-primary)] px-2 py-1 rounded-lg bg-[var(--accent-primary)]/12 border border-[var(--accent-primary)]/20">
-                        <span>Вибрано: {selectedShapesCount}</span>
+                        <span>{(t('mobile.selected.count') || 'Вибрано: {count}').replace('{count}', String(selectedShapesCount))}</span>
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
                         {onOpenAlign && (
                             <button 
                                 onClick={onOpenAlign} 
-                                title="Вирівнювання та розподіл"
+                                title={t('mobile.action.alignTitle') || 'Вирівнювання та розподіл'}
                                 className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold text-xs transition-all shadow-xs active:scale-95 shrink-0 ${
                                     isAlignActive 
                                         ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] ring-2 ring-[var(--accent-primary)]/40' 
@@ -326,31 +328,31 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                                 }`}
                             >
                                 <AlignShapesCenterHIcon size={14} />
-                                <span>Вирівняти</span>
+                                <span>{t('mobile.action.align') || 'Вирівняти'}</span>
                             </button>
                         )}
 
                         <button 
                             onClick={onDuplicateShape} 
-                            title="Дублювати"
+                            title={t('menu.edit.duplicate') || 'Дублювати'}
                             className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] text-xs font-medium border border-[var(--border-secondary)] transition-all active:scale-95 shrink-0"
                         >
                             <DuplicateIcon size={14} />
-                            <span>Дублювати</span>
+                            <span>{t('menu.edit.duplicate') || 'Дублювати'}</span>
                         </button>
 
                         {canFlip && onFlipH && onFlipV && (
                             <div className="flex items-center gap-1 shrink-0">
                                 <button 
                                     onClick={onFlipH} 
-                                    title="Віддзеркалити горизонтально"
+                                    title={t('menu.object.flipHorizontal') || 'Віддзеркалити горизонтально'}
                                     className="p-1.5 rounded-lg bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-secondary)] active:scale-95"
                                 >
                                     <FlipHorizontalIcon size={14} />
                                 </button>
                                 <button 
                                     onClick={onFlipV} 
-                                    title="Віддзеркалити вертикально"
+                                    title={t('menu.object.flipVertical') || 'Віддзеркалити вертикально'}
                                     className="p-1.5 rounded-lg bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-secondary)] active:scale-95"
                                 >
                                     <FlipVerticalIcon size={14} />
@@ -361,32 +363,32 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                         {canGroup && onGroup && (
                             <button 
                                 onClick={onGroup} 
-                                title="Згрупувати"
+                                title={t('menu.object.group') || 'Згрупувати'}
                                 className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] text-xs font-medium border border-[var(--border-secondary)] active:scale-95 shrink-0"
                             >
                                 <GroupIcon size={14} />
-                                <span>Група</span>
+                                <span>{t('prop.group') || 'Група'}</span>
                             </button>
                         )}
 
                         {canUngroup && onUngroup && (
                             <button 
                                 onClick={onUngroup} 
-                                title="Розгрупувати"
+                                title={t('menu.object.ungroup') || 'Розгрупувати'}
                                 className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] text-xs font-medium border border-[var(--border-secondary)] active:scale-95 shrink-0"
                             >
                                 <UngroupIcon size={14} />
-                                <span>Розгрупувати</span>
+                                <span>{t('menu.object.ungroup') || 'Розгрупувати'}</span>
                             </button>
                         )}
 
                         <button 
                             onClick={onDeleteShape} 
-                            title="Видалити"
+                            title={t('menu.edit.delete') || 'Видалити'}
                             className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 text-xs font-semibold border border-red-500/30 active:scale-95 transition-all shrink-0"
                         >
                             <TrashIcon size={14} />
-                            <span>Видалити</span>
+                            <span>{t('menu.edit.delete') || 'Видалити'}</span>
                         </button>
                     </div>
                 </div>
@@ -411,7 +413,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                 >
                     {activeTool === 'edit-points' ? <EditPointsIcon size={19} /> : <SelectIcon size={19} />}
                     <span className="text-[11px] mt-0.5 leading-tight tracking-tight truncate max-w-full">
-                        {activeTool === 'edit-points' ? 'Вузли' : 'Вибір'}
+                        {activeTool === 'edit-points' ? (t('mobile.nav.nodes') || 'Вузли') : (t('mobile.nav.select') || 'Вибір')}
                     </span>
                     {isSelectActive && (
                         <span className="absolute bottom-0.5 w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)]" />
@@ -429,7 +431,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                 >
                     <RectangleIcon size={19} />
                     <span className="text-[11px] mt-0.5 leading-tight tracking-tight truncate max-w-full">
-                        Фігури
+                        {t('mobile.nav.shapes') || 'Фігури'}
                     </span>
                     {activeSheet === 'shapes' && (
                         <span className="absolute bottom-0.5 w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)]" />
@@ -447,7 +449,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                 >
                     <PaletteIcon size={19} />
                     <span className="text-[11px] mt-0.5 leading-tight tracking-tight truncate max-w-full">
-                        Стиль
+                        {t('mobile.nav.style') || 'Стиль'}
                     </span>
                     {isStyleActive && (
                         <span className="absolute bottom-0.5 w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)]" />
@@ -465,7 +467,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                 >
                     <LayersIcon size={19} />
                     <span className="text-[11px] mt-0.5 leading-tight tracking-tight truncate max-w-full">
-                        Об&apos;єкти
+                        {t('mobile.nav.objects') || 'Обʼєкти'}
                     </span>
                     {isLayersActive && (
                         <span className="absolute bottom-0.5 w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)]" />
@@ -483,7 +485,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                 >
                     <CodeIcon size={19} />
                     <span className="text-[11px] mt-0.5 leading-tight tracking-tight truncate max-w-full">
-                        Код
+                        {t('mobile.nav.code') || 'Код'}
                     </span>
                     {isCodeActive && (
                         <span className="absolute bottom-0.5 w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)]" />

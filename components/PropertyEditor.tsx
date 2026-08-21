@@ -10,8 +10,8 @@ import { useLanguage } from './LanguageContext';
 interface PropertyEditorProps {
   selectedShapes: Shape[];
   allShapes: Shape[];
-  updateShape: (shape: Shape) => void;
-  updateShapes?: (shapes: Shape[]) => void;
+  updateShape: (shape: Shape, isTransient?: boolean) => void;
+  updateShapes?: (shapes: Shape[], isTransient?: boolean) => void;
   deleteShape: (id: string | string[]) => void;
   duplicateShape: (id: string) => void;
   onExtractFromGroup?: () => void;
@@ -28,7 +28,7 @@ interface PropertyEditorProps {
   fillColor: string;
   strokeColor: string;
   distributePathState?: import('../types').DistributePathState | null;
-  onDistributePathChange?: (state: import('../types').DistributePathState) => void;
+  onDistributePathChange?: (state: import('../types').DistributePathState, isTransient?: boolean) => void;
   onConfirmDistributePath?: () => void;
   onCancelDistributePath?: () => void;
   showSystemTags?: boolean;
@@ -78,7 +78,7 @@ type DashableShape = Extract<Shape, { dash?: number[] }>;
 
 const DashControls: React.FC<{
     shape: DashableShape;
-    updateShape: (shape: Shape) => void;
+    updateShape: (shape: Shape, isTransient?: boolean) => void;
     roundFn: (num: number) => number;
 }> = ({ shape, updateShape, roundFn }) => {
     const isStrokeDisabled = shape.stroke === 'none' || isNaN(shape.strokeWidth) || shape.strokeWidth === 0;
@@ -94,12 +94,12 @@ const DashControls: React.FC<{
         updateShape({ ...shape, dash: newDash, dashoffset: newDash ? (shape.dashoffset ?? 0) : undefined });
     };
 
-    const handleSegmentChange = (index: number, absoluteValue: number) => {
+    const handleSegmentChange = (index: number, absoluteValue: number, isFinal?: boolean) => {
         if (!shape.dash) return;
         const newDash = [...shape.dash];
         const newMultiplier = absoluteValue >= 0 ? (strokeWidth > 0 ? absoluteValue / strokeWidth : 0) : 0;
         newDash[index] = isNaN(newMultiplier) ? 0 : newMultiplier;
-        updateShape({ ...shape, dash: newDash });
+        updateShape({ ...shape, dash: newDash }, isFinal === false);
     };
 
     const addSegment = () => {
@@ -131,7 +131,7 @@ const DashControls: React.FC<{
                                 <NumberInput 
                                   id={`${shape.id}-dash-${index}`} 
                                   value={isNaN(val * strokeWidth) ? 0 : roundFn(val * strokeWidth)} 
-                                  onChange={v => handleSegmentChange(index, v)} 
+                                  onChange={(v, isFinal) => handleSegmentChange(index, v, isFinal)} 
                                   min={0}
                                   disabled={isStrokeDisabled}
                                   title={index % 2 === 0 ? t('prop.dash.strokeLenTitle') : t('prop.dash.gapLenTitle')}
@@ -157,7 +157,7 @@ const DashControls: React.FC<{
                         <NumberInput 
                           id={`${shape.id}-dashoffset`} 
                           value={roundFn(shape.dashoffset ?? 0)} 
-                          onChange={v => updateShape({ ...shape, dashoffset: v })}
+                          onChange={(v, isFinal) => updateShape({ ...shape, dashoffset: v }, isFinal === false)}
                           disabled={isStrokeDisabled}
                           title={t('props.dashOffsetDesc')}
                         />
@@ -170,7 +170,7 @@ const DashControls: React.FC<{
 
 const StippleControls: React.FC<{
     shape: StippleableShape;
-    updateShape: (shape: Shape) => void;
+    updateShape: (shape: Shape, isTransient?: boolean) => void;
 }> = ({ shape, updateShape }) => {
     const hasFill = 'fill' in shape && shape.fill !== 'none';
     const { t } = useLanguage();
@@ -194,7 +194,7 @@ const StippleControls: React.FC<{
 
 const FillControls: React.FC<{
     shape: FillableShape;
-    updateShape: (shape: Shape) => void;
+    updateShape: (shape: Shape, isTransient?: boolean) => void;
     setShapePreview: (shapeId: string, overrides: Partial<Shape>) => void;
     cancelShapePreview: () => void;
     fillColor: string;
@@ -240,7 +240,7 @@ const FillControls: React.FC<{
 
 const StrokeControls: React.FC<{
     shape: Shape;
-    updateShape: (shape: Shape) => void;
+    updateShape: (shape: Shape, isTransient?: boolean) => void;
     setShapePreview: (shapeId: string, overrides: Partial<Shape>) => void;
     cancelShapePreview: () => void;
     roundFn: (num: number) => number;
@@ -287,8 +287,11 @@ const StrokeControls: React.FC<{
                 <NumberInput 
                     id={`${shape.id}-stroke-width`} 
                     value={isNaN(shape.strokeWidth) ? 1 : roundFn(shape.strokeWidth)} 
-                    onChange={v => updateShape({ ...shape, strokeWidth: v })} 
+                    onChange={(v, isFinal) => updateShape({ ...shape, strokeWidth: v }, isFinal === false)} 
                     min={0} 
+                    max={50}
+                    unit="px"
+                    presets={[0, 1, 2, 3, 5, 8, 12, 16, 24]}
                     disabled={isStrokeNone} 
                     title={t('prop.title.strokeWidthLine')}
                     smartRound={false}
@@ -302,7 +305,7 @@ const StrokeControls: React.FC<{
 
 const PointsEditor: React.FC<{
     points: { x: number; y: number }[];
-    onPointsChange: (newPoints: { x: number; y: number }[]) => void;
+    onPointsChange: (newPoints: { x: number; y: number }[], isTransient?: boolean) => void;
     shapeId: string;
     selectedShape: Shape;
     isEditing: boolean;
@@ -341,13 +344,13 @@ const PointsEditor: React.FC<{
         return points.map(p => rotatePoint(p, center, rotation));
     }, [points, center, rotation]);
 
-    const handlePointChange = (index: number, axis: 'x' | 'y', value: number) => {
+    const handlePointChange = (index: number, axis: 'x' | 'y', value: number, isFinal?: boolean) => {
         if (!center) return;
 
         if (rotation === 0) {
             const newPoints = [...points];
             newPoints[index] = { ...newPoints[index], [axis]: value };
-            onPointsChange(newPoints);
+            onPointsChange(newPoints, isFinal === false);
             return;
         }
 
@@ -358,7 +361,7 @@ const PointsEditor: React.FC<{
         
         const newLocalPoints = [...points];
         newLocalPoints[index] = newLocalPoint;
-        onPointsChange(newLocalPoints);
+        onPointsChange(newLocalPoints, isFinal === false);
     };
 
     return (
@@ -381,7 +384,7 @@ const PointsEditor: React.FC<{
                                     ref={el => { xInputRefs.current[i] = el; }}
                                     id={`${shapeId}-point-${i}-x`} 
                                     value={roundFn(displayedPoints[i].x)} 
-                                    onChange={v => handlePointChange(i, 'x', v)} 
+                                    onChange={(v, isFinal) => handlePointChange(i, 'x', v, isFinal)} 
                                     disabled={!isEditing}
                                     title={t('prop.title.nodeX').replace('{i}', i.toString())}
                                     className={activePointIndex === i ? 'bg-[#4f46e5]/30' : ''}
@@ -390,7 +393,7 @@ const PointsEditor: React.FC<{
                                 <NumberInput 
                                     id={`${shapeId}-point-${i}-y`} 
                                     value={roundFn(displayedPoints[i].y)} 
-                                    onChange={v => handlePointChange(i, 'y', v)} 
+                                    onChange={(v, isFinal) => handlePointChange(i, 'y', v, isFinal)} 
                                     disabled={!isEditing}
                                     title={t('prop.title.nodeY').replace('{i}', i.toString())}
                                     className={activePointIndex === i ? 'bg-[#4f46e5]/30' : ''}
@@ -432,7 +435,7 @@ const PointsEditor: React.FC<{
 
 const TkinterBboxEditor: React.FC<{
   shape: RectangleShape | EllipseShape | ArcShape;
-  updateShape: (shape: Shape) => void;
+  updateShape: (shape: Shape, isTransient?: boolean) => void;
   roundFn: (num: number) => number;
 }> = ({ shape, updateShape, roundFn }) => {
     const { t } = useLanguage();
@@ -451,7 +454,7 @@ const TkinterBboxEditor: React.FC<{
         y2 = shape.cy + shape.ry;
     }
 
-    const handleTkinterCoordChange = (coord: 'x1' | 'y1' | 'x2' | 'y2', value: number) => {
+    const handleTkinterCoordChange = (coord: 'x1' | 'y1' | 'x2' | 'y2', value: number, isFinal?: boolean) => {
         if (shape.type === 'rectangle' || shape.type === 'arc') {
             let { x, y, width, height } = shape;
             switch(coord) {
@@ -471,7 +474,7 @@ const TkinterBboxEditor: React.FC<{
                     break;
             }
             if (width >= 0 && height >= 0) {
-                 updateShape({ ...shape, x, y, width, height });
+                 updateShape({ ...shape, x, y, width, height }, isFinal === false);
             }
         } else if (shape.type === 'ellipse') {
             let currentX1 = shape.cx - shape.rx;
@@ -492,7 +495,7 @@ const TkinterBboxEditor: React.FC<{
             const newRy = (currentY2 - currentY1) / 2;
             
             if (newRx >= 0 && newRy >= 0) {
-                updateShape({ ...shape, cx: newCx, cy: newCy, rx: newRx, ry: newRy });
+                updateShape({ ...shape, cx: newCx, cy: newCy, rx: newRx, ry: newRy }, isFinal === false);
             }
         }
     };
@@ -501,19 +504,19 @@ const TkinterBboxEditor: React.FC<{
         <div className="space-y-2">
              <InputWrapper>
                 <Label htmlFor={`${shape.id}-tk-x1`} title={t('prop.title.tkX1')}>x1:</Label>
-                <NumberInput id={`${shape.id}-tk-x1`} value={roundFn(x1)} onChange={v => handleTkinterCoordChange('x1', v)} smartRound={false} />
+                <NumberInput id={`${shape.id}-tk-x1`} value={roundFn(x1)} onChange={(v, isFinal) => handleTkinterCoordChange('x1', v, isFinal)} smartRound={false} />
             </InputWrapper>
              <InputWrapper>
                 <Label htmlFor={`${shape.id}-tk-y1`} title={t('prop.title.tkY1')}>y1:</Label>
-                <NumberInput id={`${shape.id}-tk-y1`} value={roundFn(y1)} onChange={v => handleTkinterCoordChange('y1', v)} smartRound={false} />
+                <NumberInput id={`${shape.id}-tk-y1`} value={roundFn(y1)} onChange={(v, isFinal) => handleTkinterCoordChange('y1', v, isFinal)} smartRound={false} />
             </InputWrapper>
              <InputWrapper>
                 <Label htmlFor={`${shape.id}-tk-x2`} title={t('prop.title.tkX2')}>x2:</Label>
-                <NumberInput id={`${shape.id}-tk-x2`} value={roundFn(x2)} onChange={v => handleTkinterCoordChange('x2', v)} smartRound={false} />
+                <NumberInput id={`${shape.id}-tk-x2`} value={roundFn(x2)} onChange={(v, isFinal) => handleTkinterCoordChange('x2', v, isFinal)} smartRound={false} />
             </InputWrapper>
              <InputWrapper>
                 <Label htmlFor={`${shape.id}-tk-y2`} title={t('prop.title.tkY2')}>y2:</Label>
-                <NumberInput id={`${shape.id}-tk-y2`} value={roundFn(y2)} onChange={v => handleTkinterCoordChange('y2', v)} smartRound={false} />
+                <NumberInput id={`${shape.id}-tk-y2`} value={roundFn(y2)} onChange={(v, isFinal) => handleTkinterCoordChange('y2', v, isFinal)} smartRound={false} />
             </InputWrapper>
         </div>
     );
@@ -553,7 +556,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
     return getBoundingBox('rotation' in selectedShape ? { ...selectedShape, rotation: 0 } as Shape : selectedShape, allShapes);
   }, [selectedShape, allShapes]);
   
-    const handleVisualPosChange = (axis: 'x' | 'y', value: number) => {
+    const handleVisualPosChange = (axis: 'x' | 'y', value: number, isFinal?: boolean) => {
         if (!selectedShape || !visualBounds) return;
         const oldVisualPos = axis === 'x' ? visualBounds.x : visualBounds.y;
         const delta = value - oldVisualPos;
@@ -605,14 +608,14 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                         }
                         return c;
                     });
-                    updateShapes(movedChildren);
+                    updateShapes(movedChildren, isFinal === false);
                 }
                 return; // Group itself doesn't need to be updated in state for position
         }
-        updateShape(newShape);
+        updateShape(newShape, isFinal === false);
     };
     
-    const updateGeometricSize = (axis: 'width' | 'height', value: number) => {
+    const updateGeometricSize = (axis: 'width' | 'height', value: number, isFinal?: boolean) => {
         if (!selectedShape || !geometricBounds) return;
 
         const oldValue = axis === 'width' ? geometricBounds.width : geometricBounds.height;
@@ -697,14 +700,14 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                 }
             }
         }
-        updateShape(newShape as Shape);
+        updateShape(newShape as Shape, isFinal === false);
     };
 
-  const handlePointsChange = (newPoints: {x:number, y:number}[]) => {
+  const handlePointsChange = (newPoints: {x:number, y:number}[], isTransient?: boolean) => {
     if (!selectedShape) return;
 
     if (selectedShape.type === 'polyline' || selectedShape.type === 'bezier' || selectedShape.type === 'pencil' || selectedShape.type === 'line') {
-        updateShape({ ...selectedShape, points: newPoints as any });
+        updateShape({ ...selectedShape, points: newPoints as any }, isTransient);
     } else {
         const editablePoints = getFinalPoints(selectedShape);
         if (!editablePoints) return;
@@ -726,7 +729,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
             dashoffset: 'dashoffset' in selectedShape ? (selectedShape as any).dashoffset : undefined,
             isAspectRatioLocked: 'isAspectRatioLocked' in selectedShape ? (selectedShape as any).isAspectRatioLocked : false,
         };
-        updateShape(newPolyline);
+        updateShape(newPolyline, isTransient);
     }
   };
 
@@ -840,14 +843,12 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
         if (isClosed) return null;
 
         const strokeWidth = !isNaN(shape.strokeWidth) && shape.strokeWidth > 0 ? shape.strokeWidth : 1;
-        const [d1m, d2m, d3m] = shape.arrowshape ?? [8, 10, 3];
-
-        const handleArrowChange = (index: number, absoluteValue: number) => {
+        const [d1m, d2m, d3m] = shape.arrowshape ?? [8, 10, 3];        const handleArrowChange = (index: number, absoluteValue: number, isFinal?: boolean) => {
             if (strokeWidth === 0) return;
             const newMultipliers = [...(shape.arrowshape ?? [8, 10, 3])];
             const newMultiplier = absoluteValue / strokeWidth;
             newMultipliers[index] = isNaN(newMultiplier) ? 0 : parseFloat(newMultiplier.toFixed(2));
-            updateShape({ ...shape, arrowshape: newMultipliers as [number, number, number] });
+            updateShape({ ...shape, arrowshape: newMultipliers as [number, number, number] }, isFinal === false);
         };
         
         return (
@@ -878,9 +879,9 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                 </InputWrapper>
                 {shape.arrow && shape.arrow !== 'none' && (
                     <div className="space-y-2 pl-4 border-l-2 border-[var(--border-secondary)] ml-2 mt-2 pt-2">
-                        <InputWrapper><Label htmlFor={`${shape.id}-arrow-d1`} title={t('prop.title.arrowTipOffset')}>{t('props.arrowTipOffset')}</Label><NumberInput id={`${shape.id}-arrow-d1`} value={isNaN(d1m * strokeWidth) ? 0 : roundToHundredths(d1m * strokeWidth)} onChange={v => handleArrowChange(0, v)} min={0} smartRound={false} /></InputWrapper>
-                        <InputWrapper><Label htmlFor={`${shape.id}-arrow-d2`} title={t('prop.title.arrowWingsOffset')}>{t('props.arrowWingsOffset')}</Label><NumberInput id={`${shape.id}-arrow-d2`} value={isNaN(d2m * strokeWidth) ? 0 : roundToHundredths(d2m * strokeWidth)} onChange={v => handleArrowChange(1, v)} min={0} smartRound={false} /></InputWrapper>
-                        <InputWrapper><Label htmlFor={`${shape.id}-arrow-d3`} title={t('prop.title.arrowWingWidth')}>{t('props.arrowWingWidth')}</Label><NumberInput id={`${shape.id}-arrow-d3`} value={isNaN(d3m * strokeWidth) ? 0 : roundToHundredths(d3m * strokeWidth)} onChange={v => handleArrowChange(2, v)} min={0} smartRound={false} /></InputWrapper>
+                        <InputWrapper><Label htmlFor={`${shape.id}-arrow-d1`} title={t('prop.title.arrowTipOffset')}>{t('props.arrowTipOffset')}</Label><NumberInput id={`${shape.id}-arrow-d1`} value={isNaN(d1m * strokeWidth) ? 0 : roundToHundredths(d1m * strokeWidth)} onChange={(v, isFinal) => handleArrowChange(0, v, isFinal)} min={0} smartRound={false} /></InputWrapper>
+                        <InputWrapper><Label htmlFor={`${shape.id}-arrow-d2`} title={t('prop.title.arrowWingsOffset')}>{t('props.arrowWingsOffset')}</Label><NumberInput id={`${shape.id}-arrow-d2`} value={isNaN(d2m * strokeWidth) ? 0 : roundToHundredths(d2m * strokeWidth)} onChange={(v, isFinal) => handleArrowChange(1, v, isFinal)} min={0} smartRound={false} /></InputWrapper>
+                        <InputWrapper><Label htmlFor={`${shape.id}-arrow-d3`} title={t('prop.title.arrowWingWidth')}>{t('props.arrowWingWidth')}</Label><NumberInput id={`${shape.id}-arrow-d3`} value={isNaN(d3m * strokeWidth) ? 0 : roundToHundredths(d3m * strokeWidth)} onChange={(v, isFinal) => handleArrowChange(2, v, isFinal)} min={0} smartRound={false} /></InputWrapper>
                     </div>
                 )}
             </>
@@ -917,9 +918,9 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
             const sideLength = getPolygonSideLength(poly);
             return <>
                 {commonProperties}
-                <InputWrapper><Label htmlFor={`${poly.id}-sides`} title={t('prop.title.sides')}>{t('prop.sides')}:</Label><NumberInput id={`${poly.id}-sides`} value={poly.sides} onChange={v => updateShape({ ...poly, sides: v })} min={3} /></InputWrapper>
-                {poly.type === 'star' && <InputWrapper><Label htmlFor={`${poly.id}-inner-radius`} title={t('prop.title.innerRadius')}>{t('props.innerRadius')}</Label><NumberInput id={`${poly.id}-inner-radius`} value={roundToHundredths(poly.innerRadius ?? 0)} onChange={v => updateShape({ ...poly, innerRadius: v })} min={0} smartRound={false} /></InputWrapper>}
-                <InputWrapper><Label htmlFor={`${poly.id}-side-length`} title={t('prop.title.sideLength')}>{t('props.sideLength')}</Label><NumberInput id={`${poly.id}-side-length`} value={roundToHundredths(sideLength)} onChange={v => updateShape({ ...poly, radius: getPolygonRadiusFromSideLength({ sideLength: v, sides: poly.sides }) })} smartRound={false} /></InputWrapper>
+                <InputWrapper><Label htmlFor={`${poly.id}-sides`} title={t('prop.title.sides')}>{t('prop.sides')}:</Label><NumberInput id={`${poly.id}-sides`} value={poly.sides} onChange={(v, isFinal) => updateShape({ ...poly, sides: v }, isFinal === false)} min={3} max={36} presets={[3, 4, 5, 6, 7, 8, 10, 12]} /></InputWrapper>
+                {poly.type === 'star' && <InputWrapper><Label htmlFor={`${poly.id}-inner-radius`} title={t('prop.title.innerRadius')}>{t('props.innerRadius')}</Label><NumberInput id={`${poly.id}-inner-radius`} value={roundToHundredths(poly.innerRadius ?? 0)} onChange={(v, isFinal) => updateShape({ ...poly, innerRadius: v }, isFinal === false)} min={0} unit="px" presets={[10, 20, 30, 40, 50, 75, 100]} smartRound={false} /></InputWrapper>}
+                <InputWrapper><Label htmlFor={`${poly.id}-side-length`} title={t('prop.title.sideLength')}>{t('props.sideLength')}</Label><NumberInput id={`${poly.id}-side-length`} value={roundToHundredths(sideLength)} onChange={(v, isFinal) => updateShape({ ...poly, radius: getPolygonRadiusFromSideLength({ sideLength: v, sides: poly.sides }) }, isFinal === false)} min={1} unit="px" smartRound={false} /></InputWrapper>
                 <hr className="border-[var(--border-secondary)] my-2" />
                 <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">{t('prop.fill')}</h3>
                 <FillControls shape={poly} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} fillColor={fillColor} showNotification={showNotification} />
@@ -932,7 +933,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
             const triangle = selectedShape as IsoscelesTriangleShape;
             return <>
                 {commonProperties}
-                <InputWrapper><Label htmlFor={`${triangle.id}-top-offset`} title={t('prop.title.topOffset')}>{t('props.topOffset')}</Label><NumberInput id={`${triangle.id}-top-offset`} value={roundToHundredths(triangle.topVertexOffset ?? 0)} onChange={v => updateShape({ ...triangle, topVertexOffset: v })} step={0.01} smartRound={false} /></InputWrapper>
+                <InputWrapper><Label htmlFor={`${triangle.id}-top-offset`} title={t('prop.title.topOffset')}>{t('props.topOffset')}</Label><NumberInput id={`${triangle.id}-top-offset`} value={roundToHundredths(triangle.topVertexOffset ?? 0)} onChange={(v, isFinal) => updateShape({ ...triangle, topVertexOffset: v }, isFinal === false)} step={0.01} smartRound={false} /></InputWrapper>
                 <hr className="border-[var(--border-secondary)] my-2" />
                 <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">{t('prop.fill')}</h3>
                 <FillControls shape={triangle} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} fillColor={fillColor} showNotification={showNotification} />
@@ -967,7 +968,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
         }
         case 'trapezoid': {
              const trapezoid = selectedShape as TrapezoidShape;
-             const handleOffsetChange = (side: 'left' | 'right', v_percent: number) => {
+             const handleOffsetChange = (side: 'left' | 'right', v_percent: number, isFinal?: boolean) => {
                 let newRatio = v_percent / 100;
                 const updates: Partial<TrapezoidShape> = {};
 
@@ -988,7 +989,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                         updates.topRightOffsetRatio = newRatio;
                     }
                 }
-                updateShape({ ...trapezoid, ...updates });
+                updateShape({ ...trapezoid, ...updates }, isFinal === false);
             };
             const handleSymmetricalChange = (checked: boolean) => {
                 const newShape = { ...trapezoid, isSymmetrical: checked };
@@ -1007,8 +1008,8 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                  <InputWrapper>
                     <Checkbox id={`${trapezoid.id}-symm`} checked={!!trapezoid.isSymmetrical} onChange={handleSymmetricalChange} label={t('props.symmetric')} title={t('prop.title.symmetric')}/>
                 </InputWrapper>
-                <InputWrapper><Label htmlFor={`${trapezoid.id}-topleft`} title={t('prop.title.offsetL')}>{t('props.offsetL')}</Label><NumberInput id={`${trapezoid.id}-topleft`} value={roundToHundredths(trapezoid.topLeftOffsetRatio * 100)} onChange={v => handleOffsetChange('left', v)} smartRound={false} /></InputWrapper>
-                <InputWrapper><Label htmlFor={`${trapezoid.id}-topright`} title={t('prop.title.offsetR')}>{t('props.offsetR')}</Label><NumberInput id={`${trapezoid.id}-topright`} value={roundToHundredths(trapezoid.topRightOffsetRatio * 100)} onChange={v => handleOffsetChange('right', v)} disabled={!!trapezoid.isSymmetrical} smartRound={false} /></InputWrapper>
+                <InputWrapper><Label htmlFor={`${trapezoid.id}-topleft`} title={t('prop.title.offsetL')}>{t('props.offsetL')}</Label><NumberInput id={`${trapezoid.id}-topleft`} value={roundToHundredths(trapezoid.topLeftOffsetRatio * 100)} onChange={(v, isFinal) => handleOffsetChange('left', v, isFinal)} min={0} max={99} unit="%" presets={[0, 10, 20, 25, 33, 50]} smartRound={false} /></InputWrapper>
+                <InputWrapper><Label htmlFor={`${trapezoid.id}-topright`} title={t('prop.title.offsetR')}>{t('props.offsetR')}</Label><NumberInput id={`${trapezoid.id}-topright`} value={roundToHundredths(trapezoid.topRightOffsetRatio * 100)} onChange={(v, isFinal) => handleOffsetChange('right', v, isFinal)} min={0} max={99} unit="%" presets={[0, 10, 20, 25, 33, 50]} disabled={!!trapezoid.isSymmetrical} smartRound={false} /></InputWrapper>
                 <hr className="border-[var(--border-secondary)] my-2" />
                 <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">{t('prop.fill')}</h3>
                 <FillControls shape={trapezoid} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} fillColor={fillColor} showNotification={showNotification} />
@@ -1021,7 +1022,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
              const parallelogram = selectedShape as ParallelogramShape;
             return <>
                 {commonProperties}
-                <InputWrapper><Label htmlFor={`${parallelogram.id}-angle`} title={t('prop.title.angle')}>{t('props.angle')}</Label><NumberInput id={`${parallelogram.id}-angle`} value={roundToHundredths(parallelogram.angle)} onChange={v => updateShape({ ...parallelogram, angle: v })} min={1} max={179} smartRound={false} /></InputWrapper>
+                <InputWrapper><Label htmlFor={`${parallelogram.id}-angle`} title={t('prop.title.angle')}>{t('props.angle')}</Label><NumberInput id={`${parallelogram.id}-angle`} value={roundToHundredths(parallelogram.angle)} onChange={(v, isFinal) => updateShape({ ...parallelogram, angle: v }, isFinal === false)} min={1} max={179} unit="°" presets={[30, 45, 60, 75, 90, 105, 120, 135, 150]} smartRound={false} /></InputWrapper>
                 <hr className="border-[var(--border-secondary)] my-2" />
                 <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">{t('prop.fill')}</h3>
                 <FillControls shape={parallelogram} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} fillColor={fillColor} showNotification={showNotification} />
@@ -1047,7 +1048,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                         />
                     </div>
                 </div>
-                <InputWrapper><Label htmlFor={`${line.id}-stroke-width`} title={t('prop.title.width')}>{t('prop.width')}:</Label><NumberInput id={`${line.id}-stroke-width`} value={isNaN(line.strokeWidth) ? 1 : roundToHundredths(line.strokeWidth)} onChange={v => updateShape({ ...line, strokeWidth: v })} min={0} smartRound={false} /></InputWrapper>
+                <InputWrapper><Label htmlFor={`${line.id}-stroke-width`} title={t('prop.title.width')}>{t('prop.width')}:</Label><NumberInput id={`${line.id}-stroke-width`} value={isNaN(line.strokeWidth) ? 1 : roundToHundredths(line.strokeWidth)} onChange={(v, isFinal) => updateShape({ ...line, strokeWidth: v }, isFinal === false)} min={0} max={50} unit="px" presets={[0, 1, 2, 3, 5, 8, 12, 16, 24]} smartRound={false} /></InputWrapper>
                 <DashControls shape={line} updateShape={updateShape} roundFn={roundToHundredths} />
                 {lineLikeControls(line)}
             </>;
@@ -1069,7 +1070,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                         />
                     </div>
                 </div>
-                <InputWrapper><Label htmlFor={`${path.id}-stroke-width`} title={t('prop.title.width')}>{t('prop.width')}:</Label><NumberInput id={`${path.id}-stroke-width`} value={isNaN(path.strokeWidth) ? 1 : roundToHundredths(path.strokeWidth)} onChange={v => updateShape({ ...path, strokeWidth: v })} min={0} smartRound={false} /></InputWrapper>
+                <InputWrapper><Label htmlFor={`${path.id}-stroke-width`} title={t('prop.title.width')}>{t('prop.width')}:</Label><NumberInput id={`${path.id}-stroke-width`} value={isNaN(path.strokeWidth) ? 1 : roundToHundredths(path.strokeWidth)} onChange={(v, isFinal) => updateShape({ ...path, strokeWidth: v }, isFinal === false)} min={0} max={50} unit="px" presets={[0, 1, 2, 3, 5, 8, 12, 16, 24]} smartRound={false} /></InputWrapper>
                 <DashControls shape={path} updateShape={updateShape} roundFn={roundToHundredths} />
                 {joinStyleControls(path)}
                 {lineLikeControls(path)}
@@ -1090,9 +1091,10 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                     <NumberInput 
                         id={`${polyline.id}-splinesteps`} 
                         value={polyline.splinesteps ?? 12} 
-                        onChange={v => updateShape({ ...polyline, splinesteps: v })} 
+                        onChange={(v, isFinal) => updateShape({ ...polyline, splinesteps: v }, isFinal === false)} 
                         min={1} 
                         max={100} 
+                        presets={[4, 8, 12, 16, 24, 32, 48]}
                         disabled={!polyline.smooth} 
                     />
                 </InputWrapper>
@@ -1117,7 +1119,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                 </InputWrapper>
                 <InputWrapper>
                     <Label htmlFor={`${bezier.id}-splinesteps`} title={t('prop.title.splinesteps')}>{t('props.splinesteps')}:</Label>
-                    <NumberInput id={`${bezier.id}-splinesteps`} value={bezier.splinesteps} onChange={v => updateShape({ ...bezier, splinesteps: v })} min={1} max={100} disabled={!bezier.smooth} />
+                    <NumberInput id={`${bezier.id}-splinesteps`} value={bezier.splinesteps} onChange={(v, isFinal) => updateShape({ ...bezier, splinesteps: v }, isFinal === false)} min={1} max={100} presets={[4, 8, 12, 16, 24, 32, 48]} disabled={!bezier.smooth} />
                 </InputWrapper>
                 <hr className="border-[var(--border-secondary)] my-2" />
                 <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">{t('prop.fill')}</h3>
@@ -1132,21 +1134,21 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
             const arc = selectedShape as ArcShape;
             const endAngle = arc.start + arc.extent;
 
-            const handleStartChange = (v: number) => {
+            const handleStartChange = (v: number, isFinal?: boolean) => {
                 if (arc.isExtentLocked) {
-                    updateShape({ ...arc, start: v });
+                    updateShape({ ...arc, start: v }, isFinal === false);
                 } else {
                     const newExtent = endAngle - v;
-                    updateShape({ ...arc, start: v, extent: newExtent });
+                    updateShape({ ...arc, start: v, extent: newExtent }, isFinal === false);
                 }
             };
-            const handleEndChange = (v: number) => {
+            const handleEndChange = (v: number, isFinal?: boolean) => {
                 if (arc.isExtentLocked) {
                     const newStart = v - arc.extent;
-                    updateShape({ ...arc, start: newStart });
+                    updateShape({ ...arc, start: newStart }, isFinal === false);
                 } else {
                     const newExtent = v - arc.start;
-                    updateShape({ ...arc, extent: newExtent });
+                    updateShape({ ...arc, extent: newExtent }, isFinal === false);
                 }
             };
 
@@ -1163,11 +1165,11 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                         <option value="arc">{t('tool.arc')}</option>
                     </Select>
                 </InputWrapper>
-                <InputWrapper><Label htmlFor={`${arc.id}-start`} title={t('prop.title.startAngle')}>{t('props.startAngle')}</Label><NumberInput id={`${arc.id}-start`} value={roundToHundredths(arc.start)} onChange={handleStartChange} smartRound={false} /></InputWrapper>
-                <InputWrapper><Label htmlFor={`${arc.id}-end`} title={t('prop.title.endAngle')}>{t('props.endAngle')}</Label><NumberInput id={`${arc.id}-end`} value={roundToHundredths(endAngle)} onChange={handleEndChange} smartRound={false} /></InputWrapper>
+                <InputWrapper><Label htmlFor={`${arc.id}-start`} title={t('prop.title.startAngle')}>{t('props.startAngle')}</Label><NumberInput id={`${arc.id}-start`} value={roundToHundredths(arc.start)} onChange={handleStartChange} unit="°" min={-360} max={360} isAngle={true} presets={[0, 45, 90, 135, 180, 225, 270, 360]} smartRound={false} /></InputWrapper>
+                <InputWrapper><Label htmlFor={`${arc.id}-end`} title={t('prop.title.endAngle')}>{t('props.endAngle')}</Label><NumberInput id={`${arc.id}-end`} value={roundToHundredths(endAngle)} onChange={handleEndChange} unit="°" min={-360} max={360} isAngle={true} presets={[0, 45, 90, 135, 180, 225, 270, 360]} smartRound={false} /></InputWrapper>
                 <InputWrapper>
                     <Label htmlFor={`${arc.id}-extent`} title={t('prop.title.extent')}>{t('props.extent')}</Label>
-                    <NumberInput id={`${arc.id}-extent`} value={roundToHundredths(arc.extent)} onChange={v => updateShape({ ...arc, extent: v })} disabled={arc.isExtentLocked} smartRound={false} />
+                    <NumberInput id={`${arc.id}-extent`} value={roundToHundredths(arc.extent)} onChange={(v, isFinal) => updateShape({ ...arc, extent: v }, isFinal === false)} unit="°" min={-360} max={360} isAngle={true} presets={[30, 45, 60, 90, 120, 180, 270, 360]} disabled={arc.isExtentLocked} smartRound={false} />
                 </InputWrapper>
                  <InputWrapper>
                     <Label htmlFor={`${arc.id}-extent-lock`} />
@@ -1214,7 +1216,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                         </optgroup>
                     </Select>
                 </InputWrapper>
-                <InputWrapper><Label htmlFor={`${text.id}-fontSize`} title={t('prop.title.fontSize')}>{t('prop.size')}:</Label><NumberInput id={`${text.id}-fontSize`} value={roundToHundredths(text.fontSize)} onChange={v => updateShape({ ...text, fontSize: v })} min={1} smartRound={false} /></InputWrapper>
+                <InputWrapper><Label htmlFor={`${text.id}-fontSize`} title={t('prop.title.fontSize')}>{t('prop.size')}:</Label><NumberInput id={`${text.id}-fontSize`} value={roundToHundredths(text.fontSize)} onChange={(v, isFinal) => updateShape({ ...text, fontSize: v }, isFinal === false)} min={1} max={144} unit="pt" presets={[8, 10, 12, 14, 16, 18, 24, 32, 48, 72]} smartRound={false} /></InputWrapper>
                 
                 <hr className="border-[var(--border-secondary)] my-2" />
                 <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">{t('prop.fill')}</h3>
@@ -1258,18 +1260,18 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                 </InputWrapper>
                 <InputWrapper>
                     <Label htmlFor={`${text.id}-anchor-x`} title={t('prop.title.anchorX')}>{t('props.anchorX')}</Label>
-                    <NumberInput id={`${text.id}-anchor-x`} value={roundToHundredths(text.x)} onChange={v => updateShape({ ...text, x: v })} smartRound={false} />
+                    <NumberInput id={`${text.id}-anchor-x`} value={roundToHundredths(text.x)} onChange={(v, isFinal) => updateShape({ ...text, x: v }, isFinal === false)} unit="px" smartRound={false} />
                 </InputWrapper>
                 <InputWrapper>
                     <Label htmlFor={`${text.id}-anchor-y`} title={t('prop.title.anchorY')}>{t('props.anchorY')}</Label>
-                    <NumberInput id={`${text.id}-anchor-y`} value={roundToHundredths(text.y)} onChange={v => updateShape({ ...text, y: v })} smartRound={false} />
+                    <NumberInput id={`${text.id}-anchor-y`} value={roundToHundredths(text.y)} onChange={(v, isFinal) => updateShape({ ...text, y: v }, isFinal === false)} unit="px" smartRound={false} />
                 </InputWrapper>
                 <InputWrapper><Label htmlFor={`${text.id}-justify`} title={t('prop.title.justify')}>{t('props.justify')}</Label>
                     <Select id={`${text.id}-justify`} value={text.justify} onChange={v => updateShape({ ...text, justify: v as any })}>
                         <option value="left">{t('align.left')}</option><option value="center">{t('align.center')}</option><option value="right">{t('align.right')}</option>
                     </Select>
                 </InputWrapper>
-                <InputWrapper><Label htmlFor={`${text.id}-width`} title={t('prop.title.blockWidth')}>{t('props.blockWidth')}</Label><NumberInput id={`${text.id}-width`} value={roundToHundredths(text.width)} onChange={v => updateShape({ ...text, width: v })} min={0} /></InputWrapper>
+                <InputWrapper><Label htmlFor={`${text.id}-width`} title={t('prop.title.blockWidth')}>{t('props.blockWidth')}</Label><NumberInput id={`${text.id}-width`} value={roundToHundredths(text.width)} onChange={(v, isFinal) => updateShape({ ...text, width: v }, isFinal === false)} min={0} unit="px" presets={[0, 100, 200, 300, 400]} /></InputWrapper>
             </>;
         }
         case 'image': {
@@ -1327,7 +1329,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
           <div className="flex justify-between items-center pb-2 border-b border-[var(--border-primary)]">
             <h2 className="font-semibold text-[var(--text-primary)] text-sm">{t('tool.distributePath.title') || 'Розподіл за шляхом'}</h2>
           </div>
-          <div className="flex-grow overflow-y-auto pt-4 space-y-4">
+          <div className="flex-grow pt-4 space-y-4">
               <InputWrapper>
                   <Label htmlFor='dist-type' title={t('tool.distributePath.type') || 'Тип шляху'}>{t('tool.distributePath.type') || 'Тип шляху'}</Label>
                   <Select id="dist-type" 
@@ -1384,7 +1386,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                                   id='dist-path-sides' 
                                   value={(distributePathState.shapePathParams.pathShape as PolygonShape).sides} 
                                   min={3}
-                                  onChange={v => onDistributePathChange({
+                                  onChange={(v, isFinal) => onDistributePathChange({
                                       ...distributePathState,
                                       shapePathParams: {
                                           ...distributePathState.shapePathParams,
@@ -1393,7 +1395,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                                               sides: v
                                           } as any
                                       }
-                                  })} 
+                                  }, isFinal === false)} 
                               />
                           </InputWrapper>
                       )}
@@ -1405,7 +1407,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                                   id='dist-path-inner-radius' 
                                   value={Math.round((distributePathState.shapePathParams.pathShape as PolygonShape).innerRadius ?? ((distributePathState.shapePathParams.pathShape as PolygonShape).radius / 2))} 
                                   min={0}
-                                  onChange={v => onDistributePathChange({
+                                  onChange={(v, isFinal) => onDistributePathChange({
                                       ...distributePathState,
                                       shapePathParams: {
                                           ...distributePathState.shapePathParams,
@@ -1414,7 +1416,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                                               innerRadius: v
                                           } as any
                                       }
-                                  })} 
+                                  }, isFinal === false)} 
                               />
                           </InputWrapper>
                       )}
@@ -1427,13 +1429,13 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                                   value={Math.round(distributePathState.shapePathParams?.contourShift || 0)} 
                                   min={0} 
                                   max={100}
-                                  onChange={v => onDistributePathChange({
+                                  onChange={(v, isFinal) => onDistributePathChange({
                                       ...distributePathState,
                                       shapePathParams: {
                                           ...distributePathState.shapePathParams,
                                           contourShift: Math.max(0, Math.min(100, v))
                                       }
-                                  })} 
+                                  }, isFinal === false)} 
                               />
                           </InputWrapper>
                       )}
@@ -1442,7 +1444,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
               
               <InputWrapper>
                   <Label htmlFor='dist-rotation'>{t('prop.rotation') || 'Кут обертання'}</Label>
-                  <NumberInput id='dist-rotation' value={Math.round(distributePathState.angleOffset || 0)} onChange={v => onDistributePathChange({ ...distributePathState, angleOffset: v })} />
+                  <NumberInput id='dist-rotation' value={Math.round(distributePathState.angleOffset || 0)} onChange={(v, isFinal) => onDistributePathChange({ ...distributePathState, angleOffset: v }, isFinal === false)} unit="°" min={-360} max={360} presets={[0, 45, 90, 135, 180, 225, 270, 315, 360]} />
               </InputWrapper>
               
               <div className="flex flex-col gap-2 pt-2">
@@ -1480,7 +1482,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                           {distributePathState.orientationType === 'custom' && (
                               <NumberInput id="dist-orient-angle" 
                                   value={Number.isNaN(distributePathState.orientationAngle) ? 0 : Number(distributePathState.orientationAngle)} 
-                                  onChange={v => onDistributePathChange({ ...distributePathState, orientationAngle: v })} 
+                                  onChange={(v, isFinal) => onDistributePathChange({ ...distributePathState, orientationAngle: v }, isFinal === false)} 
                                   min={-360} max={360} 
                               />
                           )}
@@ -1505,15 +1507,15 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                   <div className="space-y-2 pt-4 border-t border-[var(--border-secondary)]">
                       <InputWrapper>
                           <Label htmlFor="dist-cx">{t('prop.cx')}</Label>
-                          <NumberInput id="dist-cx" value={Math.round(distributePathState.circleParams.cx)} onChange={v => onDistributePathChange({ ...distributePathState, circleParams: { ...distributePathState.circleParams, cx: v } })} />
+                          <NumberInput id="dist-cx" value={Math.round(distributePathState.circleParams.cx)} onChange={(v, isFinal) => onDistributePathChange({ ...distributePathState, circleParams: { ...distributePathState.circleParams, cx: v } }, isFinal === false)} />
                       </InputWrapper>
                       <InputWrapper>
                           <Label htmlFor="dist-cy">{t('prop.cy')}</Label>
-                          <NumberInput id="dist-cy" value={Math.round(distributePathState.circleParams.cy)} onChange={v => onDistributePathChange({ ...distributePathState, circleParams: { ...distributePathState.circleParams, cy: v } })} />
+                          <NumberInput id="dist-cy" value={Math.round(distributePathState.circleParams.cy)} onChange={(v, isFinal) => onDistributePathChange({ ...distributePathState, circleParams: { ...distributePathState.circleParams, cy: v } }, isFinal === false)} />
                       </InputWrapper>
                       <InputWrapper>
                           <Label htmlFor="dist-r">{t('prop.r')}</Label>
-                          <NumberInput id="dist-r" value={Math.round(distributePathState.circleParams.radius)} onChange={v => onDistributePathChange({ ...distributePathState, circleParams: { ...distributePathState.circleParams, radius: Math.max(10, v) } })} />
+                          <NumberInput id="dist-r" value={Math.round(distributePathState.circleParams.radius)} onChange={(v, isFinal) => onDistributePathChange({ ...distributePathState, circleParams: { ...distributePathState.circleParams, radius: Math.max(10, v) } }, isFinal === false)} />
                       </InputWrapper>
                   </div>
               )}
@@ -1521,19 +1523,19 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                   <div className="space-y-2 pt-4 border-t border-[var(--border-secondary)]">
                       <InputWrapper>
                           <Label htmlFor="dist-x1">X1</Label>
-                          <NumberInput id="dist-x1" value={Math.round(distributePathState.lineParams.x1)} onChange={v => onDistributePathChange({ ...distributePathState, lineParams: { ...distributePathState.lineParams, x1: v } })} />
+                          <NumberInput id="dist-x1" value={Math.round(distributePathState.lineParams.x1)} onChange={(v, isFinal) => onDistributePathChange({ ...distributePathState, lineParams: { ...distributePathState.lineParams, x1: v } }, isFinal === false)} />
                       </InputWrapper>
                       <InputWrapper>
                           <Label htmlFor="dist-y1">Y1</Label>
-                          <NumberInput id="dist-y1" value={Math.round(distributePathState.lineParams.y1)} onChange={v => onDistributePathChange({ ...distributePathState, lineParams: { ...distributePathState.lineParams, y1: v } })} />
+                          <NumberInput id="dist-y1" value={Math.round(distributePathState.lineParams.y1)} onChange={(v, isFinal) => onDistributePathChange({ ...distributePathState, lineParams: { ...distributePathState.lineParams, y1: v } }, isFinal === false)} />
                       </InputWrapper>
                       <InputWrapper>
                           <Label htmlFor="dist-x2">X2</Label>
-                          <NumberInput id="dist-x2" value={Math.round(distributePathState.lineParams.x2)} onChange={v => onDistributePathChange({ ...distributePathState, lineParams: { ...distributePathState.lineParams, x2: v } })} />
+                          <NumberInput id="dist-x2" value={Math.round(distributePathState.lineParams.x2)} onChange={(v, isFinal) => onDistributePathChange({ ...distributePathState, lineParams: { ...distributePathState.lineParams, x2: v } }, isFinal === false)} />
                       </InputWrapper>
                       <InputWrapper>
                           <Label htmlFor="dist-y2">Y2</Label>
-                          <NumberInput id="dist-y2" value={Math.round(distributePathState.lineParams.y2)} onChange={v => onDistributePathChange({ ...distributePathState, lineParams: { ...distributePathState.lineParams, y2: v } })} />
+                          <NumberInput id="dist-y2" value={Math.round(distributePathState.lineParams.y2)} onChange={(v, isFinal) => onDistributePathChange({ ...distributePathState, lineParams: { ...distributePathState.lineParams, y2: v } }, isFinal === false)} />
                       </InputWrapper>
                   </div>
               )}
@@ -1560,11 +1562,11 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
   const hasHiddenShapes = selectedShapes.some(s => s.state === 'hidden');
   if (hasHiddenShapes) {
     return (
-      <div className="shadow-lg h-full flex flex-col rounded-lg bg-[var(--bg-primary)] p-4">
-        <div className="flex justify-between items-center pb-2 border-b border-[var(--border-primary)]">
+      <div className="shadow-lg h-full flex flex-col rounded-lg bg-[var(--bg-primary)] p-4 overflow-hidden">
+        <div className="flex justify-between items-center pb-2 border-b border-[var(--border-primary)] flex-shrink-0">
           <h2 className="font-semibold text-[var(--text-primary)] text-sm">{t('props.title')}</h2>
         </div>
-        <div className="flex-grow flex items-center justify-center text-center text-[var(--text-tertiary)] px-2">
+        <div className="flex-grow flex items-center justify-center text-center text-[var(--text-tertiary)] px-2 overflow-y-auto min-h-0">
           <p className="text-sm">{t('props.hiddenWarning') || "Об'єкт прихований (або знаходиться на прихованому шарі). Щоб редагувати його, зробіть об'єкт або його шар видимим."}</p>
         </div>
       </div>
@@ -1573,11 +1575,11 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
 
   if (!selectedShape && !isMultiSelection) {
     return (
-      <div className="shadow-lg h-full flex flex-col rounded-lg bg-[var(--bg-primary)] p-4">
-        <div className="flex justify-between items-center pb-2 border-b border-[var(--border-primary)]">
+      <div className="shadow-lg h-full flex flex-col rounded-lg bg-[var(--bg-primary)] p-4 overflow-hidden">
+        <div className="flex justify-between items-center pb-2 border-b border-[var(--border-primary)] flex-shrink-0">
           <h2 className="font-semibold text-[var(--text-primary)] text-sm">{t('props.title')}</h2>
         </div>
-        <div className="flex-grow flex items-center justify-center text-center text-[var(--text-tertiary)]">
+        <div className="flex-grow flex items-center justify-center text-center text-[var(--text-tertiary)] overflow-y-auto min-h-0">
           <p className="text-sm">{t('props.empty')}</p>
         </div>
       </div>
@@ -1585,13 +1587,13 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
   }
 
   if (isMultiSelection) {
-    const handleMultiUpdate = (updates: Partial<Shape>) => {
+    const handleMultiUpdate = (updates: Partial<Shape>, isTransient?: boolean) => {
         if (typeof updateShapes === 'function') {
             const updatedShapes = selectedShapes.map(shape => ({ ...shape, ...updates } as Shape));
-            updateShapes(updatedShapes);
+            updateShapes(updatedShapes, isTransient);
         } else {
             selectedShapes.forEach(shape => {
-                if (shape) updateShape({ ...shape, ...updates } as Shape);
+                if (shape) updateShape({ ...shape, ...updates } as Shape, isTransient);
             });
         }
     };
@@ -1722,7 +1724,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
         return results;
     };
 
-    const handleMultiVisualChange = (property: 'x'|'y'|'width'|'height', value: number) => {
+    const handleMultiVisualChange = (property: 'x'|'y'|'width'|'height', value: number, isFinal?: boolean) => {
         if (typeof updateShapes !== 'function') return;
         let allUpdated: Shape[] = [];
         selectedShapes.forEach(shape => {
@@ -1748,7 +1750,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
             const transformed = getTransformedShapes(shape, dx, dy, scaleX, scaleY, bbox, allShapes);
             allUpdated = allUpdated.concat(transformed);
         });
-        if (allUpdated.length > 0) updateShapes(allUpdated);
+        if (allUpdated.length > 0) updateShapes(allUpdated, isFinal === false);
     };
 
     
@@ -1758,7 +1760,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
     const commonFill = showFill && fillableShapes.every(s => s.fill === fillableShapes[0].fill) ? fillableShapes[0].fill : '';
 
     return (
-      <div className="shadow-lg h-full flex flex-col rounded-lg bg-[var(--bg-primary)]">
+      <div className="shadow-lg h-full flex flex-col rounded-lg bg-[var(--bg-primary)] overflow-hidden">
           <div className="flex justify-between items-center p-2 px-3 bg-[var(--bg-app)]/50 rounded-t-lg border-b border-[var(--border-primary)] flex-shrink-0">
               <h2 className="font-semibold text-[var(--text-primary)] text-sm">{t('props.title')} ({t('props.objectsCount') || 'Objects:'} {selectedShapes.length})</h2>
               <div className="flex items-center gap-1">
@@ -1773,7 +1775,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
               </div>
           </div>
           
-          <div className="flex-grow overflow-y-auto px-3 py-2 space-y-3 p-scrollbar">
+          <div className="flex-grow px-3 py-2 space-y-3 overflow-y-auto min-h-0 p-scrollbar">
             <h3 className="font-semibold text-[var(--text-secondary)] text-sm pt-2">{t('props.commonTitle') || 'Спільні властивості'}</h3>
             
             <hr className="border-[var(--border-secondary)] my-2" />
@@ -1782,19 +1784,19 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
             <div className="space-y-2">
                 <InputWrapper>
                     <Label htmlFor="multi-pos-x">{t('props.x')}</Label>
-                    <NumberInput id="multi-pos-x" value={commonX as any} onChange={v => handleMultiVisualChange('x', v)} placeholder={commonX === '' ? (t('props.mixed') || 'Різні') : undefined} />
+                    <NumberInput id="multi-pos-x" value={commonX as any} onChange={(v, isFinal) => handleMultiVisualChange('x', v, isFinal)} placeholder={commonX === '' ? (t('props.mixed') || 'Різні') : undefined} />
                 </InputWrapper>
                 <InputWrapper>
                     <Label htmlFor="multi-pos-y">{t('props.y')}</Label>
-                    <NumberInput id="multi-pos-y" value={commonY as any} onChange={v => handleMultiVisualChange('y', v)} placeholder={commonY === '' ? (t('props.mixed') || 'Різні') : undefined} />
+                    <NumberInput id="multi-pos-y" value={commonY as any} onChange={(v, isFinal) => handleMultiVisualChange('y', v, isFinal)} placeholder={commonY === '' ? (t('props.mixed') || 'Різні') : undefined} />
                 </InputWrapper>
                 <InputWrapper>
                     <Label htmlFor="multi-width">{t('props.width')}</Label>
-                    <NumberInput id="multi-width" value={commonW as any} onChange={v => handleMultiVisualChange('width', v)} min={1} placeholder={commonW === '' ? (t('props.mixed') || 'Різні') : undefined} />
+                    <NumberInput id="multi-width" value={commonW as any} onChange={(v, isFinal) => handleMultiVisualChange('width', v, isFinal)} min={1} placeholder={commonW === '' ? (t('props.mixed') || 'Різні') : undefined} />
                 </InputWrapper>
                 <InputWrapper>
                     <Label htmlFor="multi-height">{t('props.height')}</Label>
-                    <NumberInput id="multi-height" value={commonH as any} onChange={v => handleMultiVisualChange('height', v)} min={1} placeholder={commonH === '' ? (t('props.mixed') || 'Різні') : undefined} />
+                    <NumberInput id="multi-height" value={commonH as any} onChange={(v, isFinal) => handleMultiVisualChange('height', v, isFinal)} min={1} placeholder={commonH === '' ? (t('props.mixed') || 'Різні') : undefined} />
                 </InputWrapper>
 
                 <InputWrapper>
@@ -1807,13 +1809,17 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                     </Select>
                 </InputWrapper>
 
-                {showRotation && (
+                        {showRotation && (
                      <InputWrapper>
                         <Label htmlFor="multi-rotation">{t('props.rotation')}</Label>
                         <NumberInput 
                             id="multi-rotation"
                             value={commonRotation as any} 
-                            onChange={(val) => handleMultiUpdate({ rotation: val })}
+                            onChange={(val, isFinal) => handleMultiUpdate({ rotation: val }, isFinal === false)}
+                            unit="°"
+                            min={-360}
+                            max={360}
+                            presets={[0, 45, 90, 135, 180, 225, 270, 315, 360]}
                             placeholder={commonRotation === '' ? (t('props.mixed') || 'Різні') : undefined}
                         />
                     </InputWrapper>
@@ -1920,7 +1926,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                     <NumberInput 
                         id="multi-stroke-width"
                         value={commonStrokeWidth as any} 
-                        onChange={(val) => handleMultiUpdate({ strokeWidth: val })}
+                        onChange={(val, isFinal) => handleMultiUpdate({ strokeWidth: val }, isFinal === false)}
                         min={0}
                         placeholder={commonStrokeWidth === '' ? (t('props.mixed') || 'Різні') : undefined}
                     />
@@ -1939,15 +1945,15 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                                 return (
                                     <InputWrapper key={index}>
                                         <Label htmlFor={`multi-dash-${index}`} title={index % 2 === 0 ? t('prop.dash.strokeLen', {i: index/2 + 1}) : t('prop.dash.gapLen', {i: Math.ceil(index/2)})}>
-                                            {index % 2 === 0 ? t('prop.dash.stroke', {i: index/2+1}) : t('prop.dash.gap', {i: Math.ceil(index/2)})}
+                                             {index % 2 === 0 ? t('prop.dash.stroke', {i: index/2+1}) : t('prop.dash.gap', {i: Math.ceil(index/2)})}
                                         </Label>
                                         <NumberInput 
                                             id={`multi-dash-${index}`} 
                                             value={roundToHundredths(val * activeStrokeWidth)} 
-                                            onChange={v => {
+                                            onChange={(v, isFinal) => {
                                                 const newDash = [...commonDashArray];
                                                 newDash[index] = v >= 0 ? v / activeStrokeWidth : 0;
-                                                handleMultiUpdate({ dash: newDash } as any);
+                                                handleMultiUpdate({ dash: newDash } as any, isFinal === false);
                                             }} 
                                             min={0}
                                             disabled={commonStroke === 'none'}
@@ -1984,7 +1990,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                             <NumberInput 
                                 id="multi-dash-offset" 
                                 value={commonDashOffset as any} 
-                                onChange={v => handleMultiUpdate({ dashoffset: v } as any)} 
+                                onChange={(v, isFinal) => handleMultiUpdate({ dashoffset: v } as any, isFinal === false)} 
                                 placeholder={commonDashOffset === '' ? (t('props.mixed') || 'Різні') : undefined}
                             />
                         </InputWrapper>
@@ -2037,23 +2043,23 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                             <div className="space-y-2 pl-4 border-l-2 border-[var(--border-secondary)] ml-2 mt-2 pt-2">
                                 <InputWrapper>
                                     <Label htmlFor="multi-arrow-d1" title={t('prop.title.arrowTipOffset')}>{t('props.arrowTipOffset')}</Label>
-                                    <NumberInput id="multi-arrow-d1" value={roundToHundredths(commonArrowshape[0] * (typeof commonStrokeWidth === 'number' && commonStrokeWidth > 0 ? commonStrokeWidth : 1))} onChange={v => {
+                                    <NumberInput id="multi-arrow-d1" value={roundToHundredths(commonArrowshape[0] * (typeof commonStrokeWidth === 'number' && commonStrokeWidth > 0 ? commonStrokeWidth : 1))} onChange={(v, isFinal) => {
                                         const strokeWidth = typeof commonStrokeWidth === 'number' && commonStrokeWidth > 0 ? commonStrokeWidth : 1;
-                                        handleMultiUpdate({ arrowshape: [v >= 0 ? parseFloat((v / strokeWidth).toFixed(2)) : 0, commonArrowshape[1], commonArrowshape[2]] } as any);
+                                        handleMultiUpdate({ arrowshape: [v >= 0 ? parseFloat((v / strokeWidth).toFixed(2)) : 0, commonArrowshape[1], commonArrowshape[2]] } as any, isFinal === false);
                                     }} min={0} smartRound={false} />
                                 </InputWrapper>
                                 <InputWrapper>
                                     <Label htmlFor="multi-arrow-d2" title={t('prop.title.arrowWingsOffset')}>{t('props.arrowWingsOffset')}</Label>
-                                    <NumberInput id="multi-arrow-d2" value={roundToHundredths(commonArrowshape[1] * (typeof commonStrokeWidth === 'number' && commonStrokeWidth > 0 ? commonStrokeWidth : 1))} onChange={v => {
+                                    <NumberInput id="multi-arrow-d2" value={roundToHundredths(commonArrowshape[1] * (typeof commonStrokeWidth === 'number' && commonStrokeWidth > 0 ? commonStrokeWidth : 1))} onChange={(v, isFinal) => {
                                         const strokeWidth = typeof commonStrokeWidth === 'number' && commonStrokeWidth > 0 ? commonStrokeWidth : 1;
-                                        handleMultiUpdate({ arrowshape: [commonArrowshape[0], v >= 0 ? parseFloat((v / strokeWidth).toFixed(2)) : 0, commonArrowshape[2]] } as any);
+                                        handleMultiUpdate({ arrowshape: [commonArrowshape[0], v >= 0 ? parseFloat((v / strokeWidth).toFixed(2)) : 0, commonArrowshape[2]] } as any, isFinal === false);
                                     }} min={0} smartRound={false} />
                                 </InputWrapper>
                                 <InputWrapper>
                                     <Label htmlFor="multi-arrow-d3" title={t('prop.title.arrowWingWidth')}>{t('props.arrowWingWidth')}</Label>
-                                    <NumberInput id="multi-arrow-d3" value={roundToHundredths(commonArrowshape[2] * (typeof commonStrokeWidth === 'number' && commonStrokeWidth > 0 ? commonStrokeWidth : 1))} onChange={v => {
+                                    <NumberInput id="multi-arrow-d3" value={roundToHundredths(commonArrowshape[2] * (typeof commonStrokeWidth === 'number' && commonStrokeWidth > 0 ? commonStrokeWidth : 1))} onChange={(v, isFinal) => {
                                         const strokeWidth = typeof commonStrokeWidth === 'number' && commonStrokeWidth > 0 ? commonStrokeWidth : 1;
-                                        handleMultiUpdate({ arrowshape: [commonArrowshape[0], commonArrowshape[1], v >= 0 ? parseFloat((v / strokeWidth).toFixed(2)) : 0] } as any);
+                                        handleMultiUpdate({ arrowshape: [commonArrowshape[0], commonArrowshape[1], v >= 0 ? parseFloat((v / strokeWidth).toFixed(2)) : 0] } as any, isFinal === false);
                                     }} min={0} smartRound={false} />
                                 </InputWrapper>
                             </div>
@@ -2079,7 +2085,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
   const isSelectedShapeClosed = selectedShape ? isShapeClosed(selectedShape) : false;
 
   return (
-    <div className="shadow-lg h-full flex flex-col rounded-lg bg-[var(--bg-primary)]">
+    <div className="shadow-lg h-full flex flex-col rounded-lg bg-[var(--bg-primary)] overflow-hidden">
         {/* Header */}
         <div className="flex justify-between items-center p-2 px-3 bg-[var(--bg-app)]/50 rounded-t-lg border-b border-[var(--border-primary)] flex-shrink-0">
             <h2 className="font-semibold text-[var(--text-primary)] text-sm">{t('props.title')}</h2>
@@ -2099,7 +2105,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
             </div>
         </div>
         {/* Body */}
-        <div className="flex-grow overflow-y-auto p-3 space-y-2">
+        <div className="flex-grow p-3 space-y-2 overflow-y-auto min-h-0 p-scrollbar">
             <InputWrapper>
                 <Label htmlFor={`${selectedShape.id}-name`} title={t('props.nameDesc')}>{t('props.name')}</Label>
                 <input
@@ -2122,19 +2128,19 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                 />
             </InputWrapper>
             <InputWrapper>
-                <Label htmlFor={`${selectedShape.id}-tags`} title="Різні теги записувати у різних стрічках поля">Теги:</Label>
+                <Label htmlFor={`${selectedShape.id}-tags`} title={t('prop.tags.title') || "Різні теги записувати у різних стрічках поля"}>{t('prop.tags') || "Теги"}:</Label>
                 <TextArea
                     id={`${selectedShape.id}-tags`}
                     value={selectedShape.tags ?? ''}
                     onChange={(v) => updateShape({ ...selectedShape, tags: v })}
-                    placeholder="Власні теги..."
+                    placeholder={t('prop.tags.placeholder') || "Власні теги..."}
                     rows={3}
                 />
                 {(showSystemTags || selectedShape.groupId) && (
                     <div className="mt-1 text-xs text-[var(--text-tertiary)] bg-[var(--bg-tertiary)] p-2 rounded">
-                        {showSystemTags && <div><strong>Системні теги:</strong><br/>{selectedShape.id}{selectedShape.groupId ? <><br/>{selectedShape.groupId}</> : null}</div>}
+                        {showSystemTags && <div><strong>{t('prop.tags.system') || "Системні теги:"}</strong><br/>{selectedShape.id}{selectedShape.groupId ? <><br/>{selectedShape.groupId}</> : null}</div>}
                         {selectedShape.groupId && allShapes.find(s => s.id === selectedShape.groupId)?.tags && (
-                            <div className={showSystemTags ? "mt-1" : ""}><strong>Теги групи:</strong><br/><span className="whitespace-pre-line">{allShapes.find(s => s.id === selectedShape.groupId)?.tags}</span></div>
+                            <div className={showSystemTags ? "mt-1" : ""}><strong>{t('prop.tags.group') || "Теги групи:"}</strong><br/><span className="whitespace-pre-line">{allShapes.find(s => s.id === selectedShape.groupId)?.tags}</span></div>
                         )}
                     </div>
                 )}
@@ -2158,19 +2164,21 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                     <>
                         <InputWrapper>
                             <Label htmlFor={`${selectedShape.id}-pos-x`} title={t('props.xDesc')}>{t('props.x')}</Label>
-                            <NumberInput id={`${selectedShape.id}-pos-x`} value={roundToHundredths(visualBounds.x)} onChange={v => handleVisualPosChange('x', v)} smartRound={false} />
+                            <NumberInput id={`${selectedShape.id}-pos-x`} value={roundToHundredths(visualBounds.x)} onChange={(v, isFinal) => handleVisualPosChange('x', v, isFinal)} unit="px" smartRound={false} />
                         </InputWrapper>
                         <InputWrapper>
                             <Label htmlFor={`${selectedShape.id}-pos-y`} title={t('prop.title.posY')}>{t('props.y')}</Label>
-                            <NumberInput id={`${selectedShape.id}-pos-y`} value={roundToHundredths(visualBounds.y)} onChange={v => handleVisualPosChange('y', v)} smartRound={false} />
+                            <NumberInput id={`${selectedShape.id}-pos-y`} value={roundToHundredths(visualBounds.y)} onChange={(v, isFinal) => handleVisualPosChange('y', v, isFinal)} unit="px" smartRound={false} />
                         </InputWrapper>
                         <InputWrapper>
                             <Label htmlFor={`${selectedShape.id}-width`} title={t('prop.title.widthGeom')}>{t('props.width')}</Label>
                             <NumberInput 
                                 id={`${selectedShape.id}-width`} 
                                 value={roundToHundredths(geometricBounds.width)} 
-                                onChange={v => updateGeometricSize('width', v)}
+                                onChange={(v, isFinal) => updateGeometricSize('width', v, isFinal)}
                                 min={isCollapsible(selectedShape) ? 1 : 0} 
+                                unit="px"
+                                presets={[50, 100, 150, 200, 300, 400, 500]}
                                 smartRound={false}
                             />
                         </InputWrapper>
@@ -2179,8 +2187,10 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                             <NumberInput 
                                 id={`${selectedShape.id}-height`} 
                                 value={roundToHundredths(geometricBounds.height)} 
-                                onChange={v => updateGeometricSize('height', v)}
+                                onChange={(v, isFinal) => updateGeometricSize('height', v, isFinal)}
                                 min={isCollapsible(selectedShape) ? 1 : 0} 
+                                unit="px"
+                                presets={[50, 100, 150, 200, 300, 400, 500]}
                                 smartRound={false}
                             />
                         </InputWrapper>
@@ -2196,7 +2206,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                         {'rotation' in selectedShape && (
                              <InputWrapper>
                                 <Label htmlFor={`${selectedShape.id}-rotation`} title={t('props.rotationDesc')}>{t('props.rotation')}</Label>
-                                <NumberInput id={`${selectedShape.id}-rotation`} value={roundToHundredths(selectedShape.rotation)} onChange={v => updateShape({ ...selectedShape, rotation: v })} smartRound={false} />
+                                <NumberInput id={`${selectedShape.id}-rotation`} value={roundToHundredths(selectedShape.rotation)} onChange={(v, isFinal) => updateShape({ ...selectedShape, rotation: v }, isFinal === false)} unit="°" min={-360} max={360} presets={[0, 45, 90, 135, 180, 225, 270, 315, 360]} smartRound={false} />
                             </InputWrapper>
                         )}
                     </>

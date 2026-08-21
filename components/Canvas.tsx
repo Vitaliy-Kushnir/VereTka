@@ -720,6 +720,41 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         }
                     }
                 }
+
+                // Snap to canvas edges
+                const canvasXTargets = [
+                    { moving: movingBox.x, target: 0 },
+                    { moving: movingBox.x + movingBox.width, target: 0 },
+                    { moving: movingCenters.x, target: 0 },
+                    { moving: movingBox.x, target: width },
+                    { moving: movingBox.x + movingBox.width, target: width },
+                    { moving: movingCenters.x, target: width }
+                ];
+                for (const t of canvasXTargets) {
+                    const diff = Math.abs(t.moving - t.target);
+                    if (diff < minSnapDistX) {
+                        minSnapDistX = diff;
+                        bestDx = dx - (t.moving - t.target);
+                        newSnapLines.x = t.target;
+                    }
+                }
+
+                const canvasYTargets = [
+                    { moving: movingBox.y, target: 0 },
+                    { moving: movingBox.y + movingBox.height, target: 0 },
+                    { moving: movingCenters.y, target: 0 },
+                    { moving: movingBox.y, target: height },
+                    { moving: movingBox.y + movingBox.height, target: height },
+                    { moving: movingCenters.y, target: height }
+                ];
+                for (const t of canvasYTargets) {
+                    const diff = Math.abs(t.moving - t.target);
+                    if (diff < minSnapDistY) {
+                        minSnapDistY = diff;
+                        bestDy = dy - (t.moving - t.target);
+                        newSnapLines.y = t.target;
+                    }
+                }
             }
 
             if (showCenterGuides) {
@@ -985,6 +1020,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     if (snapX) xTargets.push(otherBox.x, otherBox.x + otherBox.width, otherCenters.x);
                     if (snapY) yTargets.push(otherBox.y, otherBox.y + otherBox.height, otherCenters.y);
                 }
+                // Snap to canvas edges
+                if (snapX) xTargets.push(0, width);
+                if (snapY) yTargets.push(0, height);
             }
             if (showCenterGuides) {
                 if (snapX) xTargets.push(width / 2);
@@ -1175,6 +1213,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         
         case 'arc-angle-editing': {
             const { initialShape, handle, center, initialMouseAngle } = action;
+            const isChiralityFlipped = (!!initialShape.isFlippedHorizontally) !== (!!initialShape.isFlippedVertically);
+
             // Get current angle in a CCW system (Y-up)
             const currentMouseAngle = Math.atan2(-(pos.y - center.y), pos.x - center.x) * 180 / Math.PI;
             
@@ -1182,16 +1222,18 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             let angleDelta = currentMouseAngle - initialMouseAngle;
             if (angleDelta > 180) angleDelta -= 360;
             if (angleDelta < -180) angleDelta += 360;
+
+            const effectiveDelta = isChiralityFlipped ? -angleDelta : angleDelta;
     
             if (handle === 'move' || initialShape.isExtentLocked) {
-                updatedShape = { ...initialShape, start: initialShape.start + angleDelta };
+                updatedShape = { ...initialShape, start: initialShape.start + effectiveDelta };
             } else { // Unlocked and start/end handle
                 if (handle === 'start') {
-                    const newStart = initialShape.start + angleDelta;
-                    const newExtent = initialShape.extent - angleDelta;
+                    const newStart = initialShape.start + effectiveDelta;
+                    const newExtent = initialShape.extent - effectiveDelta;
                     updatedShape = { ...initialShape, start: newStart, extent: wrapAngle(newExtent) };
                 } else { // handle === 'end'
-                    const newExtent = initialShape.extent + angleDelta;
+                    const newExtent = initialShape.extent + effectiveDelta;
                     updatedShape = { ...initialShape, extent: wrapAngle(newExtent) };
                 }
             }
