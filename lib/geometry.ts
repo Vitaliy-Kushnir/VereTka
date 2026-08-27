@@ -619,8 +619,10 @@ export function getFinalPoints(shape: Shape, overrideCenter?: { x: number; y: nu
 
     switch (shape.type) {
         case 'line':
-        case 'pencil':
             points = shape.points.filter(p => p);
+            break;
+        case 'pencil':
+            points = shape.smooth ? getSplineApproximation(shape as any) : shape.points.filter(p => p);
             break;
         case 'polyline':
         case 'bezier':

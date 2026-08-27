@@ -75,7 +75,6 @@ interface MobileMenuDrawerProps {
     onOpenHelp: () => void;
     onOpenShortcuts: () => void;
     onOpenFeedback: () => void;
-    onOpenCheatCodes?: () => void;
 }
 
 export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
@@ -120,8 +119,7 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
     onOpenAbout,
     onOpenHelp,
     onOpenShortcuts,
-    onOpenFeedback,
-    onOpenCheatCodes
+    onOpenFeedback
 }) => {
     const { t } = useLanguage();
     const touchStartXRef = React.useRef<number>(0);
@@ -483,15 +481,6 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                                 <KeyIcon size={18} className="text-blue-400" />
                                 <span>{t('menu.help.shortcuts') || 'Гарячі клавіші'}</span>
                             </button>
-                            {onOpenCheatCodes && (
-                                <button
-                                    onClick={() => handleAction(onOpenCheatCodes)}
-                                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[var(--bg-secondary)] text-left text-purple-400"
-                                >
-                                    <KeyIcon size={18} />
-                                    <span>{t('menu.help.cheatCodes') || 'Чит-коди'}</span>
-                                </button>
-                            )}
                             <button
                                 onClick={() => handleAction(onOpenAbout)}
                                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[var(--bg-secondary)] text-left"

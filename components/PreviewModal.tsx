@@ -247,7 +247,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
                                     const fill = shape.isClosed ? shape.fill : 'none';
                                     return <path key={shape.id} {...staticProps} strokeWidth={safeStrokeWidth} d={getSmoothedPathData(shape.points, shape.smooth, shape.isClosed)} fill={fill} {...lineLikeProps(shape)} {...joinStyleProps(shape)} />;
                                 case 'pencil':
-                                    return <path key={shape.id} {...staticProps} strokeWidth={safeStrokeWidth} d={getPolylinePointsAsPath(shape.points)} fill="none" {...joinStyleProps(shape)} {...lineLikeProps(shape)} />;
+                                    return <path key={shape.id} {...staticProps} strokeWidth={safeStrokeWidth} d={shape.smooth ? getSmoothedPathData(shape.points, true, false) : getPolylinePointsAsPath(shape.points)} fill="none" {...joinStyleProps(shape)} {...lineLikeProps(shape)} />;
                                 case 'polyline': {
                                     const polyProps: React.SVGProps<any> = { ...staticProps, strokeWidth: safeStrokeWidth, ...joinStyleProps(shape) };
                                     if (shape.stipple && shape.isClosed && shape.fill !== 'none') polyProps.mask = `url(#mask-${shape.stipple})`;

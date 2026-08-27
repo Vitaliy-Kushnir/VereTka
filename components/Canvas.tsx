@@ -2,11 +2,13 @@
 import React, {useContext} from 'react';
 import { useLanguage } from './LanguageContext';
 import { useState, useRef, useMemo, useCallback, useEffect } from 'react';
-import { type Shape, type Tool, type CanvasAction, type RotatableShape, type RectangleShape, type EllipseShape, type PathShape, type LineShape, PolylineShape, PolygonShape, DrawMode, IsoscelesTriangleShape, RhombusShape, ParallelogramShape, TrapezoidShape, BezierCurveShape, ViewTransform, JoinStyle, ArcShape, RightTriangleShape, TransformHandle, TextShape, ImageShape, BitmapShape } from '../types';
+import { type Shape, type Tool, type CanvasAction, type RotatableShape, type RectangleShape, type EllipseShape, type PathShape, type LineShape, PolylineShape, PolygonShape, DrawMode, IsoscelesTriangleShape, RhombusShape, ParallelogramShape, TrapezoidShape, BezierCurveShape, ViewTransform, JoinStyle, ArcShape, RightTriangleShape, TransformHandle, TextShape, ImageShape, BitmapShape, MagnifierMode } from '../types';
 import { SelectionControls } from './SelectionControls';
 import { getShapeCenter, rotatePoint, getBoundingBox, getIsoscelesTrianglePoints, getPolylinePointsAsPath, getPolygonPointsAsArray, getRhombusPoints, getTrapezoidPoints, getParallelogramPoints, getSmoothedPathData, getFinalPoints, getArcPathData, getRightTrianglePoints, getTextBoundingBox, processTextLines, getVisualBoundingBox, isShapeClosed, getClosestPointOnShapeContour, evaluateShapeContourPointAndTangent, isShapeIntersectingRect } from '../lib/geometry';
-import { CheckSquareIcon, ClosePathIcon, XSquareIcon } from './icons';
+import { CheckSquareIcon, ClosePathIcon, XSquareIcon, UndoIcon } from './icons';
 import { TOOL_TYPE_TO_NAME, ROTATE_CURSOR_STYLE, ADJUST_CURSOR_STYLE, getDefaultNameForShape, getVisualFontFamily, isDefaultName, DUPLICATE_CURSOR_STYLE } from '../lib/constants';
+import { Magnifier } from './Magnifier';
+import { VirtualJoystick } from './VirtualJoystick';
 
 interface CanvasProps {
   onDrawingAttempt?: () => boolean;
@@ -30,16 +32,22 @@ interface CanvasProps {
   numberOfSides: number;
   selectedShapeIds: string[];
   onSelectShape: (id: string | string[] | null, isCtrlPressed?: boolean, isShiftPressed?: boolean, ignoreGroup?: boolean) => void;
+  touchDrawingMode?: 'tap-drag' | 'virtual-joystick';
+  setTouchDrawingMode?: (mode: 'tap-drag' | 'virtual-joystick') => void;
+  showMagnifier?: MagnifierMode | boolean;
+  setShowMagnifier?: (mode: MagnifierMode) => void;
   isDrawingPolyline: boolean;
   polylinePoints: {x: number, y: number}[];
   setPolylinePoints: React.Dispatch<React.SetStateAction<{x: number, y: number}[]>>;
   onCompletePolyline: (isClosed: boolean) => void;
   onCancelPolyline: () => void;
+  onUndoPolylinePoint?: () => void;
   isDrawingBezier: boolean;
   bezierPoints: {x: number, y: number}[];
   setBezierPoints: React.Dispatch<React.SetStateAction<{x: number, y: number}[]>>;
   onCompleteBezier: (isClosed: boolean) => void;
   onCancelBezier: () => void;
+  onUndoBezierPoint?: () => void;
   showGrid: boolean;
   gridSize: number;
   snapStep: number;
@@ -64,6 +72,8 @@ interface CanvasProps {
   onDistributePathChangeEnd?: () => void;
   isSelectingPathShape?: boolean;
   onSelectPathShape?: (shape: Shape) => void;
+  isMultiSelectMode?: boolean;
+  setIsMultiSelectMode?: (val: boolean | ((prev: boolean) => boolean)) => void;
 }
 
 function translateShape(shape: Shape, dx: number, dy: number): Shape {
@@ -262,6 +272,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         keyboardSnapLines,
         showCenterGuides,
         enableSnapping,
+        isMultiSelectMode = false,
+        setIsMultiSelectMode,
     } = props;
     
   const [action, setAction] = useState<CanvasAction>(null);
@@ -281,12 +293,46 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   const [previewMousePos, setPreviewMousePos] = useState<{x: number, y: number} | null>(null);
   const [rawMousePos, setRawMousePos] = useState<{x: number; y: number } | null>(null);
   const [snapLines, setSnapLines] = useState<{x: number | null, y: number | null}>({x: null, y: null});
+  const [isTouchDown, setIsTouchDown] = useState(false);
+  const [aimPos, setAimPos] = useState<{ x: number; y: number }>(() => ({
+    x: Math.round(width / 2),
+    y: Math.round(height / 2)
+  }));
+  const [lastKnownCanvasPos, setLastKnownCanvasPos] = useState<{ x: number; y: number } | null>(null);
+  const [anchorTarget, setAnchorTarget] = useState<{ x: number; y: number } | null>(null);
+  const [isDraggingAnchor, setIsDraggingAnchor] = useState(false);
+  const isDraggingAnchorRef = useRef(false);
+  const [magnifierCenter, setMagnifierCenter] = useState<{ x: number; y: number; radius: number } | null>(null);
+
+  const handleMagnifierCenterChange = useCallback((center: { x: number; y: number; radius: number }) => {
+    setMagnifierCenter(prev => {
+      if (prev && Math.abs(prev.x - center.x) < 0.5 && Math.abs(prev.y - center.y) < 0.5 && prev.radius === center.radius) {
+        return prev;
+      }
+      return center;
+    });
+  }, []);
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const hasDraggedRef = useRef(false);
   const mouseDownPosRef = useRef<{x: number, y: number} | null>(null);
   const touchStateRef = useRef<{ initialDist: number, initialMidpoint: {x:number, y:number}, initialTransform: ViewTransform } | null>(null);
   const lastTapRef = useRef<{ time: number; x: number; y: number; shapeId?: string } | null>(null);
+  const pendingTouchRef = useRef<{
+    clientX: number;
+    clientY: number;
+    time: number;
+    shapeId?: string;
+    resolvedShapeId?: string;
+    isAlreadySelected: boolean;
+    isHandle: boolean;
+    startCanvasPos: { x: number; y: number };
+    hasMoved: boolean;
+  } | null>(null);
+  const isMultiTouchGestureRef = useRef<boolean>(false);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const longPressPosRef = useRef<{ x: number; y: number; shapeId?: string } | null>(null);
+  const isLongPressTriggeredRef = useRef<boolean>(false);
   const isSpacePressedRef = useRef(false);
   const [isSpacePressed, setIsSpacePressed] = useState(false);
 
@@ -341,6 +387,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   }, [viewTransform, snapStep]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement | undefined)?.closest?.('[data-magnifier="true"]') || (e.target as Element | undefined)?.closest?.('#magnifier-anchor-layer') || isDraggingAnchorRef.current) {
+        return;
+    }
     if (e.button === 1 || (e.button === 0 && isSpacePressedRef.current)) { // Middle mouse button or Space+Left for panning
         setAction({ type: 'panning', initialPos: { x: e.clientX, y: e.clientY } });
         return;
@@ -350,12 +399,17 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     const pos = getTransformedPointerPosition(getPointerPosition(e));
     mouseDownPosRef.current = pos;
 
+    if (props.touchDrawingMode === 'virtual-joystick') {
+        setAimPos(pos);
+        setPreviewMousePos(pos);
+    }
+
     if (e.button === 2) { // Right mouse button for duplicating
         if (props.distributePathState) {
             e.preventDefault();
             return;
         }
-        const clickedShapeId = (e.target as SVGElement).dataset.id;
+        const clickedShapeId = (e.target as SVGElement)?.dataset?.id;
         
         let rootShapeId = clickedShapeId;
         if (clickedShapeId) {
@@ -404,19 +458,27 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         }
     }
     
-    const targetElement = e.target as SVGElement;
-    // Important: Check if the click is on a resize/rotate handle *first*.
-    if (targetElement.closest('[data-handle="true"]')) {
-      // The logic for this is handled by the onMouseDown in SelectionControls
+    const targetElement = e.target as SVGElement | undefined;
+    // Important: Check if the click is on a resize/rotate handle or anchor layer *first*.
+    if (targetElement?.closest?.('[data-handle="true"]') || targetElement?.closest?.('#magnifier-anchor-layer') || isDraggingAnchorRef.current) {
+      // The logic for this is handled by the dedicated control handles
       return;
     }
 
     if (isDrawingBezier) {
-        setBezierPoints(prev => [...prev, pos]);
+        if (props.touchDrawingMode === 'tap-drag' && (e as any).type === 'touchstart') {
+            setPreviewMousePos(pos); // Wait for touchend
+        } else {
+            setBezierPoints(prev => [...prev, pos]);
+        }
         return;
     }
     if (isDrawingPolyline) {
-        setPolylinePoints(prev => [...prev, pos]);
+        if (props.touchDrawingMode === 'tap-drag' && (e as any).type === 'touchstart') {
+            setPreviewMousePos(pos); // Wait for touchend
+        } else {
+            setPolylinePoints(prev => [...prev, pos]);
+        }
         return;
     }
 
@@ -459,7 +521,10 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             const resolvedClickedId = getRootId(clickedShape.id);
             const isAlreadySelected = selectedShapeIds.includes(resolvedClickedId) || selectedShapeIds.includes(clickedShape.id);
 
-            if (!isAlreadySelected) {
+            if (isMultiSelectMode) {
+                // In multi-select mode, clicking a shape toggles it in the selection (Ctrl behavior)
+                onSelectShape(clickedShape.id, true, e.shiftKey);
+            } else if (!isAlreadySelected) {
                 // First click: only select the shape/group, do not initiate dragging
                 onSelectShape(clickedShape.id, e.ctrlKey || e.metaKey, e.shiftKey);
             } else {
@@ -599,11 +664,18 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   }, [activeTool, shapes, onSelectShape, fillColor, strokeColor, strokeWidth, textColor, textFont, textFontSize, numberOfSides, isDrawingPolyline, setPolylinePoints, isDrawingBezier, setBezierPoints, getTransformedPointerPosition, getPointerPosition, selectedShapeIds, pendingImage, setPendingImage, addShape, isImportingImage, props.onDrawingAttempt, props.distributePathState]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement | undefined)?.closest?.('[data-magnifier="true"]') || isDraggingAnchorRef.current) {
+        return;
+    }
     const rawPos = getPointerPosition(e);
     setRawMousePos(rawPos);
     let pos = getTransformedPointerPosition(rawPos);
     setPreviewMousePos(pos);
+    setLastKnownCanvasPos(pos);
     setCursorPos(pos);
+    if (props.touchDrawingMode === 'virtual-joystick') {
+        setAimPos(pos);
+    }
     
     if (!hasDraggedRef.current && mouseDownPosRef.current) {
         const dist = Math.hypot(pos.x - mouseDownPosRef.current.x, pos.y - mouseDownPosRef.current.y);
@@ -1140,7 +1212,12 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 break;
             }
             case 'pencil': {
-                updatedShape = { ...shape, points: [...shape.points, pos] };
+                const lastPoint = shape.points[shape.points.length - 1];
+                if (!lastPoint || Math.hypot(pos.x - lastPoint.x, pos.y - lastPoint.y) >= 2) {
+                    updatedShape = { ...shape, points: [...shape.points, pos] };
+                } else {
+                    return;
+                }
                 break;
             }
             case 'polygon': case 'star': {
@@ -1914,6 +1991,22 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   }, [action, drawMode, activeTransformShape, getTransformedPointerPosition, setViewTransform, getPointerPosition, setCursorPos, shapes, selectedShapeIds]);
 
   const handleMouseUp = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (isDraggingAnchorRef.current) {
+        return;
+    }
+    if ((e as any).type === 'touchend' && props.touchDrawingMode === 'tap-drag') {
+        const rawPos = getPointerPosition(e);
+        const pos = getTransformedPointerPosition(rawPos);
+        if (isDrawingBezier) {
+            setBezierPoints(prev => [...prev, pos]);
+            return;
+        }
+        if (isDrawingPolyline) {
+            setPolylinePoints(prev => [...prev, pos]);
+            return;
+        }
+    }
+
     // If a pan was started with the left mouse but not dragged, it's a click on empty space -> deselect.
     // This prevents deselecting when middle-mouse panning.
     if (action?.type === 'panning' && !hasDraggedRef.current && e.button === 0) {
@@ -1956,13 +2049,17 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             });
 
             let selectedIds = Array.from(selectedSet);
-            if (e.shiftKey || e.ctrlKey || e.metaKey) {
+            if (isMultiSelectMode || e.shiftKey || e.ctrlKey || e.metaKey) {
                 selectedIds = Array.from(new Set([...selectedShapeIds, ...selectedIds]));
+            }
+            if (selectedIds.length > 1) {
+                setIsMultiSelectMode?.(true);
             }
 
             onSelectShape(selectedIds.length > 0 ? selectedIds : null);
         } else {
             onSelectShape(null);
+            setIsMultiSelectMode?.(false);
         }
     }
     
@@ -2141,11 +2238,23 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
   // --- TOUCH EVENTS ---
     const handleTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+        if ((e.target as HTMLElement | undefined)?.closest?.('[data-magnifier="true"]') || (e.target as Element | undefined)?.closest?.('#magnifier-anchor-layer') || isDraggingAnchorRef.current) {
+            return;
+        }
         e.preventDefault();
         
-        // If it's a multi-touch gesture, handle pan/zoom and stop.
-        // This prevents the single-touch logic from deselecting the shape.
+        // If it's a multi-touch gesture (e.g. 2+ fingers for pinch-zoom/pan):
+        // Cancel any pending single-touch actions and DO NOT alter existing shape selections!
         if (e.touches.length >= 2) {
+            if (longPressTimerRef.current) {
+                clearTimeout(longPressTimerRef.current);
+                longPressTimerRef.current = null;
+            }
+            isMultiTouchGestureRef.current = true;
+            isLongPressTriggeredRef.current = false;
+            pendingTouchRef.current = null;
+            setAction(null); // Cancel any drag or drawing action immediately
+
             const [t1, t2] = [e.touches[0], e.touches[1]];
             const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
 
@@ -2157,102 +2266,375 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
             const midpoint = { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
             touchStateRef.current = { initialDist: dist, initialMidpoint: midpoint, initialTransform: viewTransform };
-            setAction(null); // Cancel any drawing/dragging action
             return;
         }
 
-        // Only handle single touches from here
+        // Single touch start
+        if (isMultiTouchGestureRef.current) {
+            // Releasing multi-touch fingers, ignore intermediate single-touch
+            return;
+        }
+
         const touch = e.touches[0];
         const now = Date.now();
         const targetElement = e.target as SVGElement;
+        const isHandle = Boolean(targetElement?.closest?.('[data-handle="true"]'));
         const clickedShapeId = targetElement?.dataset?.id;
+        const clickedShape = clickedShapeId ? shapes.find(s => s?.id === clickedShapeId) : null;
 
-        // Double-tap detection for touch/smartphone mode
+        const getRootId = (id: string): string => {
+            const shape = shapes.find(s => s.id === id);
+            if (shape && shape.groupId) return getRootId(shape.groupId);
+            const groupParent = shapes.find(g => g.type === 'group' && g.shapeIds?.includes(id));
+            if (groupParent) return getRootId(groupParent.id);
+            return id;
+        };
+        const resolvedClickedId = clickedShapeId ? getRootId(clickedShapeId) : undefined;
+        const isAlreadySelected = resolvedClickedId ? (selectedShapeIds.includes(resolvedClickedId) || selectedShapeIds.includes(clickedShapeId!)) : false;
+
+        const rawPos = getPointerPosition({ clientX: touch.clientX, clientY: touch.clientY } as any);
+        const pos = getTransformedPointerPosition(rawPos);
+        mouseDownPosRef.current = pos;
+        hasDraggedRef.current = false;
+
+        pendingTouchRef.current = {
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            time: now,
+            shapeId: clickedShapeId,
+            resolvedShapeId: resolvedClickedId,
+            isAlreadySelected,
+            isHandle,
+            startCanvasPos: pos,
+            hasMoved: false,
+        };
+
+        longPressPosRef.current = { x: touch.clientX, y: touch.clientY, shapeId: clickedShapeId };
+        isLongPressTriggeredRef.current = false;
+        if (longPressTimerRef.current) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = null;
+        }
+
+        // Detect long press on shape in select mode (or when no active drawing tool)
+        if (clickedShapeId && activeTool === 'select' && !isHandle) {
+            longPressTimerRef.current = setTimeout(() => {
+                isLongPressTriggeredRef.current = true;
+                if (typeof navigator !== 'undefined' && navigator?.vibrate) {
+                    try { navigator.vibrate(40); } catch (_) {}
+                }
+                const shape = shapes.find(s => s?.id === clickedShapeId);
+                if (shape && shape.state !== 'disabled' && shape.state !== 'hidden' && !lockedShapeIds.has(shape.id)) {
+                    if (isMultiSelectMode && selectedShapeIds.length > 0 && !selectedShapeIds.includes(clickedShapeId)) {
+                        // Long press on another shape in multi-select mode: RANGE select (Shift analog)
+                        onSelectShape(clickedShapeId, false, true);
+                    } else {
+                        // First long-press: enable multi-select mode (Ctrl analog)
+                        setIsMultiSelectMode?.(true);
+                        onSelectShape(clickedShapeId, true, false);
+                    }
+                    showNotification(t('shape.multiSelectEnabled') || 'Режим мультивибору увімкнено', 'info');
+                }
+            }, 450);
+        }
+
+        // Double-tap detection for polyline / bezier
         if (
             lastTapRef.current && 
             now - lastTapRef.current.time < 350 &&
             Math.hypot(touch.clientX - lastTapRef.current.x, touch.clientY - lastTapRef.current.y) < 30
         ) {
-            lastTapRef.current = null;
-            const shape = clickedShapeId ? shapes.find(s => s?.id === clickedShapeId) : null;
-            if (shape && shape.type === 'text') {
-                onStartInlineEdit(shape.id);
-                return;
-            } else if (shape && shape.groupId) {
-                onSelectShape(shape.id, false, false, true);
-                return;
-            } else if (isDrawingPolyline) {
+            if (isDrawingPolyline) {
+                if (longPressTimerRef.current) {
+                    clearTimeout(longPressTimerRef.current);
+                    longPressTimerRef.current = null;
+                }
+                lastTapRef.current = null;
                 onCompletePolyline(false);
                 return;
             } else if (isDrawingBezier) {
+                if (longPressTimerRef.current) {
+                    clearTimeout(longPressTimerRef.current);
+                    longPressTimerRef.current = null;
+                }
+                lastTapRef.current = null;
                 onCompleteBezier(false);
                 return;
             }
-        } else {
-            lastTapRef.current = { time: now, x: touch.clientX, y: touch.clientY, shapeId: clickedShapeId };
+        }
+
+        setIsTouchDown(true);
+
+        if (activeTool === 'select') {
+            if (isHandle) {
+                // User touched a transform handle
+                const mockMouseEvent = { 
+                    type: 'touchstart',
+                    clientX: touch.clientX, 
+                    clientY: touch.clientY, 
+                    button: 0, 
+                    target: e.target 
+                } as unknown as React.MouseEvent<HTMLDivElement>;
+                handleMouseDown(mockMouseEvent);
+            } else if (isAlreadySelected && clickedShape && clickedShape.state !== 'disabled' && clickedShape.state !== 'hidden') {
+                if (props.distributePathState) {
+                    const clickedEntity = props.distributePathState.entities.find(ent => ent.ids.includes(clickedShape.id));
+                    if (clickedEntity) {
+                        setAction({ type: 'edit-distribute-path', handle: 'move-all', startPoint: pos, initialDistributePath: props.distributePathState });
+                        return;
+                    }
+                }
+                // Shape is already selected: prepare drag action if user moves finger
+                setAction({ type: 'dragging', initialShape: clickedShape, startPos: pos });
+            } else {
+                // Unselected shape or empty canvas: DO NOT select immediately!
+                // Wait for clean tap or deliberate drag gesture to avoid accidental selections during swipes/pinches.
+                setAction(null);
+            }
+            return;
         }
 
         const mockMouseEvent = { 
+            type: 'touchstart',
             clientX: touch.clientX, 
             clientY: touch.clientY, 
             button: 0, 
             target: e.target 
         } as unknown as React.MouseEvent<HTMLDivElement>;
         handleMouseDown(mockMouseEvent);
-
-    }, [handleMouseDown, viewTransform, shapes, onStartInlineEdit, onSelectShape, isDrawingPolyline, isDrawingBezier, onCompletePolyline, onCompleteBezier]);
+    }, [handleMouseDown, viewTransform, shapes, onSelectShape, isDrawingPolyline, isDrawingBezier, onCompletePolyline, onCompleteBezier, activeTool, isMultiSelectMode, selectedShapeIds, lockedShapeIds, setIsMultiSelectMode, showNotification, t, getPointerPosition, getTransformedPointerPosition, props.distributePathState]);
 
     const handleTouchMove = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        if (e.touches.length === 1) {
-            const touch = e.touches[0];
-            const mockMouseEvent = { clientX: touch.clientX, clientY: touch.clientY, button: 0 } as unknown as React.MouseEvent<HTMLDivElement>;
-            handleMouseMove(mockMouseEvent);
-        } else if (e.touches.length === 2 && touchStateRef.current) {
-            const { initialDist, initialMidpoint, initialTransform } = touchStateRef.current;
-            
-            // Guard against division by zero
-            if (initialDist === 0) return;
-
-            const [t1, t2] = [e.touches[0], e.touches[1]];
-            const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
-            const currentMidpoint = { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
-
-            let scale = initialTransform.scale * (currentDist / initialDist);
-            scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
-
-            const dx = currentMidpoint.x - initialMidpoint.x;
-            const dy = currentMidpoint.y - initialMidpoint.y;
-            
-            const newX = currentMidpoint.x - (currentMidpoint.x - (initialTransform.x + dx)) * (scale / initialTransform.scale);
-            const newY = currentMidpoint.y - (currentMidpoint.y - (initialTransform.y + dy)) * (scale / initialTransform.scale);
-
-            setViewTransform({ scale, x: newX, y: newY });
+        if ((e.target as HTMLElement | undefined)?.closest?.('[data-magnifier="true"]') || isDraggingAnchorRef.current) {
+            return;
         }
-    }, [handleMouseMove, setViewTransform, getPointerPosition]);
+        e.preventDefault();
+
+        // Multi-touch gestures (pinch zoom & pan)
+        if (e.touches.length >= 2) {
+            if (longPressTimerRef.current) {
+                clearTimeout(longPressTimerRef.current);
+                longPressTimerRef.current = null;
+            }
+            isMultiTouchGestureRef.current = true;
+            isLongPressTriggeredRef.current = false;
+            pendingTouchRef.current = null;
+            setAction(null);
+
+            if (touchStateRef.current) {
+                const { initialDist, initialMidpoint, initialTransform } = touchStateRef.current;
+                if (initialDist === 0) return;
+
+                const [t1, t2] = [e.touches[0], e.touches[1]];
+                const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+                const currentMidpoint = { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
+
+                let scale = initialTransform.scale * (currentDist / initialDist);
+                scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
+
+                const dx = currentMidpoint.x - initialMidpoint.x;
+                const dy = currentMidpoint.y - initialMidpoint.y;
+                
+                const newX = currentMidpoint.x - (currentMidpoint.x - (initialTransform.x + dx)) * (scale / initialTransform.scale);
+                const newY = currentMidpoint.y - (currentMidpoint.y - (initialTransform.y + dy)) * (scale / initialTransform.scale);
+
+                setViewTransform({ scale, x: newX, y: newY });
+            }
+            return;
+        }
+
+        if (isMultiTouchGestureRef.current) {
+            // Ignore single-finger tracking during/immediately after multi-touch
+            return;
+        }
+
+        const touch = e.touches[0];
+        if (!touch) return;
+
+        if (longPressPosRef.current && longPressTimerRef.current) {
+            if (Math.hypot(touch.clientX - longPressPosRef.current.x, touch.clientY - longPressPosRef.current.y) > 10) {
+                clearTimeout(longPressTimerRef.current);
+                longPressTimerRef.current = null;
+            }
+        }
+
+        const rawPos = getPointerPosition({ clientX: touch.clientX, clientY: touch.clientY } as any);
+        const pos = getTransformedPointerPosition(rawPos);
+
+        if (pendingTouchRef.current) {
+            const moveDist = Math.hypot(touch.clientX - pendingTouchRef.current.clientX, touch.clientY - pendingTouchRef.current.clientY);
+            if (moveDist > 10) {
+                pendingTouchRef.current.hasMoved = true;
+                hasDraggedRef.current = true;
+                if (longPressTimerRef.current) {
+                    clearTimeout(longPressTimerRef.current);
+                    longPressTimerRef.current = null;
+                }
+
+                if (activeTool === 'select' && !pendingTouchRef.current.isAlreadySelected && !pendingTouchRef.current.isHandle) {
+                    if (!pendingTouchRef.current.shapeId) {
+                        // Touched empty space and dragged -> start rubberband selection box
+                        if (!action) {
+                            setAction({ type: 'selecting', startPos: pendingTouchRef.current.startCanvasPos, currentPos: pos });
+                        }
+                    } else {
+                        // Accidental swipe across an UNSELECTED shape -> do not drag or select it
+                    }
+                }
+            }
+        }
+
+        const mockMouseEvent = { 
+            type: 'touchmove', 
+            clientX: touch.clientX, 
+            clientY: touch.clientY, 
+            button: 0 
+        } as unknown as React.MouseEvent<HTMLDivElement>;
+        handleMouseMove(mockMouseEvent);
+    }, [handleMouseMove, setViewTransform, activeTool, action, getPointerPosition, getTransformedPointerPosition]);
 
     const handleTouchEnd = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
         e.preventDefault();
-        if (e.touches.length < 2) {
-            touchStateRef.current = null;
+
+        if (longPressTimerRef.current) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = null;
         }
-        
-        // When the last touch ends, we need to get its position to register a "click" or "tap".
+
+        // If multi-touch gesture was active, do not trigger tap or selection changes on release
+        if (isMultiTouchGestureRef.current) {
+            if (e.touches.length === 0) {
+                isMultiTouchGestureRef.current = false;
+                touchStateRef.current = null;
+                pendingTouchRef.current = null;
+                setIsTouchDown(false);
+                setRawMousePos(null);
+                setPreviewMousePos(null);
+                setCursorPos(null);
+            } else if (e.touches.length < 2) {
+                touchStateRef.current = null;
+            }
+            return;
+        }
+
+        setIsTouchDown(false);
+
+        if (e.changedTouches && e.changedTouches.length > 0) {
+            const touch = e.changedTouches[0];
+            const raw = getPointerPosition({ clientX: touch.clientX, clientY: touch.clientY } as any);
+            const canvasPt = getTransformedPointerPosition(raw);
+            setLastKnownCanvasPos(canvasPt);
+        }
+
+        if (e.touches.length === 0) {
+            setRawMousePos(null);
+            setPreviewMousePos(null);
+            setCursorPos(null);
+        }
+
+        if (isLongPressTriggeredRef.current) {
+            isLongPressTriggeredRef.current = false;
+            pendingTouchRef.current = null;
+            return;
+        }
+
+        const pending = pendingTouchRef.current;
+        pendingTouchRef.current = null;
+
         const touch = e.changedTouches[0];
+
+        if (activeTool === 'select') {
+            if (pending && !pending.hasMoved) {
+                // --- CLEAN SINGLE TAP GESTURE ---
+                const now = Date.now();
+                const clickedShapeId = pending.shapeId;
+                const clickedShape = clickedShapeId ? shapes.find(s => s?.id === clickedShapeId) : null;
+
+                // Double tap check on shape
+                if (
+                    lastTapRef.current && 
+                    now - lastTapRef.current.time < 350 &&
+                    Math.hypot(pending.clientX - lastTapRef.current.x, pending.clientY - lastTapRef.current.y) < 30
+                ) {
+                    lastTapRef.current = null;
+                    if (clickedShape && clickedShape.type === 'text') {
+                        onStartInlineEdit(clickedShape.id);
+                        return;
+                    } else if (clickedShape && clickedShape.groupId) {
+                        onSelectShape(clickedShape.id, false, false, true);
+                        return;
+                    }
+                } else {
+                    lastTapRef.current = { time: now, x: pending.clientX, y: pending.clientY, shapeId: clickedShapeId };
+                }
+
+                if (clickedShape && clickedShape.state !== 'disabled' && clickedShape.state !== 'hidden' && !lockedShapeIds.has(clickedShape.id)) {
+                    if (props.distributePathState) {
+                        const clickedEntity = props.distributePathState.entities.find(ent => ent.ids.includes(clickedShape.id));
+                        if (clickedEntity) {
+                            // Keep distribution entity selection
+                            return;
+                        } else if (props.distributePathState.type === 'shape' || props.isSelectingPathShape) {
+                            props.onSelectPathShape?.(clickedShape);
+                            return;
+                        }
+                    } else if (props.isSelectingPathShape) {
+                        props.onSelectPathShape?.(clickedShape);
+                        return;
+                    }
+
+                    if (isMultiSelectMode) {
+                        // In multi-select mode, tap toggles this shape in selection
+                        onSelectShape(clickedShape.id, true, false);
+                    } else {
+                        // Standard tap selects this shape cleanly
+                        onSelectShape(clickedShape.id, false, false);
+                    }
+                } else if (!clickedShape && !pending.isHandle) {
+                    // Clean tap on empty canvas space -> deselect all
+                    onSelectShape(null);
+                    if (isMultiSelectMode) {
+                        setIsMultiSelectMode?.(false);
+                    }
+                }
+                return;
+            } else if (pending?.hasMoved) {
+                // Finger was swiped/dragged
+                if (action?.type === 'dragging' || action?.type === 'selecting' || action?.type === 'resizing' || action?.type === 'rotating' || action?.type === 'edit-distribute-path') {
+                    if (touch) {
+                        const mockMouseEvent = {
+                            type: 'touchend',
+                            clientX: touch.clientX,
+                            clientY: touch.clientY,
+                            button: 0,
+                            target: e.target
+                        } as unknown as React.MouseEvent<HTMLDivElement>;
+                        handleMouseUp(mockMouseEvent);
+                    }
+                } else {
+                    // If it was an accidental swipe across an unselected shape with no active action,
+                    // do nothing! Selection remains intact.
+                    setAction(null);
+                }
+                return;
+            }
+        }
+
+        // When other tools are active (drawing shapes, bezier, polyline, etc.)
         if (touch) {
             const mockMouseEvent = { 
+                type: 'touchend',
                 clientX: touch.clientX, 
                 clientY: touch.clientY, 
-                button: 0,
-                target: e.target, // Pass target for selection logic
+                button: 0, 
+                target: e.target,
             } as unknown as React.MouseEvent<HTMLDivElement>;
             handleMouseUp(mockMouseEvent);
         } else {
-            // Fallback if there are no changed touches, though this is unlikely
-            const mockMouseEvent = { button: 0 } as unknown as React.MouseEvent<HTMLDivElement>;
+            const mockMouseEvent = { type: 'touchend', button: 0 } as unknown as React.MouseEvent<HTMLDivElement>;
             handleMouseUp(mockMouseEvent);
         }
-    }, [handleMouseUp]);
+    }, [handleMouseUp, setCursorPos, activeTool, shapes, lockedShapeIds, isMultiSelectMode, onSelectShape, onStartInlineEdit, setIsMultiSelectMode, props.distributePathState, props.isSelectingPathShape, props.onSelectPathShape, action]);
   
     const itemsToRender = useMemo(() => {
         let items = [...shapes];
@@ -2277,7 +2659,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             }
         });
     
-    if (isDrawingPolyline && polylinePoints.length > 0 && previewMousePos) {
+    const activePreviewPos = previewMousePos || (props.touchDrawingMode === 'virtual-joystick' ? aimPos : null);
+
+    if (isDrawingPolyline && polylinePoints.length > 0 && activePreviewPos) {
       const cleanPoints = polylinePoints.filter(Boolean);
       if (cleanPoints.length > 0) {
           items.push({
@@ -2285,16 +2669,16 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             stroke: strokeColor, strokeWidth: strokeWidth, fill: 'none', state: 'normal', joinstyle: 'round', rotation: 0, capstyle: 'round'
           });
           items.push({
-            id: 'temp-polyline-rubberband', type: 'line', points: [cleanPoints[cleanPoints.length-1], previewMousePos],
+            id: 'temp-polyline-rubberband', type: 'line', points: [cleanPoints[cleanPoints.length-1], activePreviewPos],
             stroke: strokeColor, strokeWidth: 1, rotation: 0, state: 'normal', dash: [4, 4]
           } as LineShape);
       }
     }
     
-    if (isDrawingBezier && bezierPoints.length > 0 && previewMousePos) {
+    if (isDrawingBezier && bezierPoints.length > 0 && activePreviewPos) {
         const cleanPoints = bezierPoints.filter(Boolean);
         if (cleanPoints.length > 0) {
-            const allPoints = [...cleanPoints, previewMousePos];
+            const allPoints = [...cleanPoints, activePreviewPos];
             
             items.push({
                 id: 'temp-bezier-preview-dashed',
@@ -2483,47 +2867,118 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
         const canComplete = points.length >= 2;
         const canClose = points.length >= 3;
+        const canUndo = points.length >= 1;
         
-        const buttonBaseClass = "flex items-center gap-2 px-3 py-1.5 rounded-md transition-colors duration-200 text-sm font-semibold";
-        const enabledBlueClass = "bg-[var(--accent-primary)] text-[var(--accent-text)] hover:bg-[var(--accent-primary-hover)]";
-        const enabledRedClass = "bg-[var(--destructive-bg)] text-[var(--accent-text)] hover:bg-[var(--destructive-bg-hover)]";
-        const disabledClass = "bg-[var(--bg-disabled)] text-[var(--text-disabled)] cursor-not-allowed";
+        const buttonBaseClass = "flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all text-xs font-bold select-none active:scale-95 shadow-sm";
+        const enabledBlueClass = "bg-[var(--accent-primary)] text-white hover:brightness-110 shadow-[0_2px_10px_rgba(59,130,246,0.3)]";
+        const enabledCyanClass = "bg-cyan-600 text-white hover:bg-cyan-500 shadow-[0_2px_10px_rgba(6,182,212,0.3)]";
+        const enabledAmberClass = "bg-amber-600/90 text-white hover:bg-amber-500 shadow-[0_2px_10px_rgba(245,158,11,0.3)]";
+        const enabledRedClass = "bg-red-600 text-white hover:bg-red-500 shadow-[0_2px_10px_rgba(239,68,68,0.3)]";
+        const disabledClass = "bg-neutral-800 text-neutral-500 opacity-50 cursor-not-allowed pointer-events-none";
+
+        const handleFinish = (e: React.SyntheticEvent, isClosed: boolean) => {
+            e.stopPropagation();
+            e.preventDefault();
+            if (isDrawingPolyline) {
+                onCompletePolyline(isClosed);
+            } else {
+                onCompleteBezier(isClosed);
+            }
+        };
+
+        const handleUndo = (e: React.SyntheticEvent) => {
+            e.stopPropagation();
+            e.preventDefault();
+            if (isDrawingPolyline) {
+                if (props.onUndoPolylinePoint) props.onUndoPolylinePoint();
+                else setPolylinePoints(prev => prev.slice(0, -1));
+            } else {
+                if (props.onUndoBezierPoint) props.onUndoBezierPoint();
+                else setBezierPoints(prev => prev.slice(0, -1));
+            }
+        };
+
+        const handleCancel = (e: React.SyntheticEvent) => {
+            e.stopPropagation();
+            e.preventDefault();
+            if (isDrawingPolyline) {
+                onCancelPolyline();
+            } else {
+                onCancelBezier();
+            }
+        };
 
         return (
             <div
-              className="absolute top-2 left-1/2 -translate-x-1/2 bg-[var(--bg-primary)]/80 backdrop-blur-sm p-1 rounded-lg shadow-lg flex items-center gap-2 z-10"
+              className="absolute top-3 left-1/2 -translate-x-1/2 bg-neutral-950/90 backdrop-blur-xl border border-white/20 p-1.5 rounded-2xl shadow-2xl flex items-center gap-1.5 z-40 select-none animate-in fade-in slide-in-from-top-2"
+              onPointerDown={e => e.stopPropagation()}
               onMouseDown={e => e.stopPropagation()}
+              onMouseUp={e => e.stopPropagation()}
               onTouchStart={e => e.stopPropagation()}
+              onTouchMove={e => e.stopPropagation()}
+              onTouchEnd={e => e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
             >
+              {/* Points counter badge */}
+              <div className="flex items-center gap-1 px-2 py-1 bg-white/10 rounded-lg text-[11px] font-mono font-bold text-cyan-300">
+                <span>{isDrawingPolyline ? 'Ламана' : 'Крива'}:</span>
+                <span>{points.length} т.</span>
+              </div>
+
+              {/* Complete (Open Path) */}
               <button
-                onClick={() => isDrawingPolyline ? onCompletePolyline(false) : onCompleteBezier(false)}
-                title={t('canvas.finish')}
+                type="button"
+                onTouchEnd={(e) => canComplete && handleFinish(e, false)}
+                onClick={(e) => canComplete && handleFinish(e, false)}
+                title={t('canvas.finish') || 'Завершити відкритий контур'}
                 disabled={!canComplete}
                 className={`${buttonBaseClass} ${canComplete ? enabledBlueClass : disabledClass}`}
               >
-                <CheckSquareIcon />
-                <span>{t('canvas.finish')}</span>
+                <CheckSquareIcon size={14} />
+                <span>{t('canvas.finish') || 'Завершити'}</span>
               </button>
+
+              {/* Close (Closed Path) */}
               <button
-                onClick={() => isDrawingPolyline ? onCompletePolyline(true) : onCompleteBezier(true)}
-                title={t('canvas.closePoly')}
+                type="button"
+                onTouchEnd={(e) => canClose && handleFinish(e, true)}
+                onClick={(e) => canClose && handleFinish(e, true)}
+                title={t('canvas.closePoly') || 'Замкнути фігуру'}
                 disabled={!canClose}
-                className={`${buttonBaseClass} ${canClose ? enabledBlueClass : disabledClass}`}
+                className={`${buttonBaseClass} ${canClose ? enabledCyanClass : disabledClass}`}
               >
-                <ClosePathIcon />
-                <span>{t('canvas.closePoly')}</span>
+                <ClosePathIcon size={14} />
+                <span>{t('canvas.closePoly') || 'Замкнути'}</span>
               </button>
+
+              {/* Undo Last Point */}
+              {canUndo && (
+                <button
+                  type="button"
+                  onTouchEnd={handleUndo}
+                  onClick={handleUndo}
+                  title="Скасувати останню точку"
+                  className={`${buttonBaseClass} ${enabledAmberClass}`}
+                >
+                  <UndoIcon size={14} />
+                  <span className="hidden sm:inline">Крок назад</span>
+                </button>
+              )}
+
+              {/* Cancel Drawing */}
               <button
-                onClick={() => isDrawingPolyline ? onCancelPolyline() : onCancelBezier()}
-                title={t('action.cancel')}
+                type="button"
+                onTouchEnd={handleCancel}
+                onClick={handleCancel}
+                title={t('action.cancel') || 'Скасувати малювання'}
                 className={`${buttonBaseClass} ${enabledRedClass}`}
               >
-                <XSquareIcon />
-                <span>{t('action.cancel')}</span>
+                <XSquareIcon size={14} />
+                <span>{t('action.cancel') || 'Скасувати'}</span>
               </button>
             </div>
         );
-    }, [isDrawingPolyline, isDrawingBezier, polylinePoints, bezierPoints, onCompletePolyline, onCompleteBezier, onCancelPolyline, onCancelBezier]);
+    }, [isDrawingPolyline, isDrawingBezier, polylinePoints, bezierPoints, onCompletePolyline, onCompleteBezier, onCancelPolyline, onCancelBezier, props.onUndoPolylinePoint, props.onUndoBezierPoint, setPolylinePoints, setBezierPoints, t]);
 
     const gridStrokeColor = useMemo(() => {
         const hex = backgroundColor.replace('#', '');
@@ -2742,7 +3197,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 })}
             </defs>
 
-            <g transform={`translate(${viewTransform.x} ${viewTransform.y}) scale(${viewTransform.scale})`}>
+            <g id="canvas-main-content" transform={`translate(${viewTransform.x} ${viewTransform.y}) scale(${viewTransform.scale})`}>
                 {/* Canvas background rect */}
                 <rect 
                     x="0" 
@@ -2758,6 +3213,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     <rect x="0" y="0" width={width} height={height} fill="url(#fine-grid)" style={{ pointerEvents: 'none' }} />
                 )}
 
+            <g id="canvas-shapes-layer">
             {itemsToRender.filter(Boolean).map(shape => {
                 const isSelected = selectedShapeIds.includes(shape.id) || (!!shape.groupId && selectedShapeIds.includes(shape.groupId));
                 const isHidden = shape.state === 'hidden';
@@ -2863,7 +3319,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         return <path key={shape.id} {...arcProps} />;
                     }
                     case 'line':
-                        if (!shape.points || !shape.points[0] || !shape.points[1]) return null;
+                        if (!shape.points || !shape.points[0] || !shape.points[1] || isNaN(shape.points[0].x) || isNaN(shape.points[0].y) || isNaN(shape.points[1].x) || isNaN(shape.points[1].y)) return null;
                         return (
                             <React.Fragment key={shape.id}>
                                 <line 
@@ -2902,7 +3358,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         return <path key={shape.id} {...finalStaticProps} stroke={shape.stroke} strokeWidth={safeStrokeWidth} d={pathData} fill={fill} {...lineLikeProps(shape)} {...joinStyleProps(shape)} />;
                     }
                     case 'pencil': {
-                        const d = getPolylinePointsAsPath(shape.points);
+                        const d = shape.smooth ? getSmoothedPathData(shape.points, true, false) : getPolylinePointsAsPath(shape.points);
                         return (
                             <React.Fragment key={shape.id}>
                                  <path 
@@ -2910,7 +3366,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                     stroke="transparent" 
                                     strokeWidth={hitboxStrokeWidth} 
                                     fill="none" 
-                                    
+                                    strokeLinecap={shape.capstyle === 'projecting' ? 'square' : (shape.capstyle ?? 'round')}
                                     strokeLinejoin={shape.joinstyle ?? 'round'}
                                     transform={finalStaticProps.transform}
                                     data-id={shape.id}
@@ -3104,6 +3560,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
                 return <g key={`g-${shape.id}`} id={`shape-render-${shape.id}`}>{renderedShape}</g>;
             })}
+            </g>
              {action?.type === 'selecting' && action.startPos && action.currentPos && !isNaN(action.startPos.x) && !isNaN(action.startPos.y) && !isNaN(action.currentPos.x) && !isNaN(action.currentPos.y) && (
                  <rect 
                      x={Math.min(action.startPos.x, action.currentPos.x)}
@@ -3206,17 +3663,20 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         </>
                     )}
                     {props.distributePathState.type === 'line' && (() => {
-                        const mx = (props.distributePathState.lineParams.x1 + props.distributePathState.lineParams.x2) / 2;
-                        const my = (props.distributePathState.lineParams.y1 + props.distributePathState.lineParams.y2) / 2;
-                        const len = Math.hypot(props.distributePathState.lineParams.x2 - props.distributePathState.lineParams.x1, props.distributePathState.lineParams.y2 - props.distributePathState.lineParams.y1);
-                        const baseAngle = Math.atan2(props.distributePathState.lineParams.y2 - props.distributePathState.lineParams.y1, props.distributePathState.lineParams.x2 - props.distributePathState.lineParams.x1);
-                        const finalAngle = baseAngle + props.distributePathState.angleOffset * Math.PI / 180;
+                        const lp = props.distributePathState.lineParams;
+                        if (!lp || isNaN(lp.x1) || isNaN(lp.y1) || isNaN(lp.x2) || isNaN(lp.y2)) return null;
+                        const mx = (lp.x1 + lp.x2) / 2;
+                        const my = (lp.y1 + lp.y2) / 2;
+                        const len = Math.hypot(lp.x2 - lp.x1, lp.y2 - lp.y1);
+                        const baseAngle = Math.atan2(lp.y2 - lp.y1, lp.x2 - lp.x1);
+                        const finalAngle = baseAngle + (props.distributePathState.angleOffset || 0) * Math.PI / 180;
                         const startX = mx - Math.cos(finalAngle) * (len / 2);
                         const startY = my - Math.sin(finalAngle) * (len / 2);
                         const endX = mx + Math.cos(finalAngle) * (len / 2);
                         const endY = my + Math.sin(finalAngle) * (len / 2);
                         const rotX = mx + Math.cos(finalAngle - Math.PI / 2) * (30 / safeScale);
                         const rotY = my + Math.sin(finalAngle - Math.PI / 2) * (30 / safeScale);
+                        if (isNaN(startX) || isNaN(startY) || isNaN(endX) || isNaN(endY) || isNaN(rotX) || isNaN(rotY)) return null;
                         return (
                         <>
                             <line x1={startX} y1={startY} x2={endX} y2={endY} stroke="#00d2ff" strokeWidth={2 / safeScale} strokeDasharray={`${5 / safeScale},${5 / safeScale}`} style={{ pointerEvents: 'none' }} />
@@ -3280,11 +3740,13 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         const maxX = Math.max(...xs);
                         const minY = Math.min(...ys);
                         const maxY = Math.max(...ys);
+                        if (!xs.length || !ys.length || isNaN(minX) || isNaN(minY) || isNaN(maxX) || isNaN(maxY) || !isFinite(minX) || !isFinite(minY)) return null;
                         const midX = (minX + maxX) / 2;
                         const midY = (minY + maxY) / 2;
 
                         const rotX = midX;
                         const rotY = minY - 30 / safeScale;
+                        if (isNaN(rotX) || isNaN(rotY)) return null;
 
                         const angleOffset = props.distributePathState.angleOffset || 0;
                         const nodePoints = (('points' in pShape && Array.isArray((pShape as any).points)) ? (pShape as any).points : pts);
@@ -3551,10 +4013,395 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     />
                 );
             })()}
+            {/* Virtual Joystick Precision Reticle */}
+            {props.touchDrawingMode === 'virtual-joystick' && (
+              <g id="virtual-joystick-reticle" className="pointer-events-none select-none">
+                {/* Horizontal Guide */}
+                <line 
+                  x1={0} y1={aimPos.y} x2={width} y2={aimPos.y} 
+                  stroke="#00d2ff" 
+                  strokeWidth={1 / safeScale} 
+                  strokeDasharray={`${4 / safeScale},${4 / safeScale}`} 
+                  opacity={0.65}
+                />
+                {/* Vertical Guide */}
+                <line 
+                  x1={aimPos.x} y1={0} x2={aimPos.x} y2={height} 
+                  stroke="#00d2ff" 
+                  strokeWidth={1 / safeScale} 
+                  strokeDasharray={`${4 / safeScale},${4 / safeScale}`} 
+                  opacity={0.65}
+                />
+
+                {/* Outer Crosshair Ring */}
+                <circle 
+                  cx={aimPos.x} 
+                  cy={aimPos.y} 
+                  r={16 / safeScale} 
+                  fill="none" 
+                  stroke="#00d2ff" 
+                  strokeWidth={1.5 / safeScale} 
+                  opacity={0.85}
+                />
+                {/* Inner Crosshair Ring */}
+                <circle 
+                  cx={aimPos.x} 
+                  cy={aimPos.y} 
+                  r={6 / safeScale} 
+                  fill="rgba(0, 210, 255, 0.2)" 
+                  stroke="#ffffff" 
+                  strokeWidth={1 / safeScale} 
+                />
+                {/* Center laser point */}
+                <circle 
+                  cx={aimPos.x} 
+                  cy={aimPos.y} 
+                  r={2.2 / safeScale} 
+                  fill="#00d2ff" 
+                  stroke="#ffffff" 
+                  strokeWidth={0.6 / safeScale}
+                />
+                {/* 4 Cardinal Tick Marks */}
+                <line 
+                  x1={aimPos.x} y1={aimPos.y - 20 / safeScale} 
+                  x2={aimPos.x} y2={aimPos.y - 10 / safeScale} 
+                  stroke="#00d2ff" strokeWidth={1.5 / safeScale} 
+                />
+                <line 
+                  x1={aimPos.x} y1={aimPos.y + 10 / safeScale} 
+                  x2={aimPos.x} y2={aimPos.y + 20 / safeScale} 
+                  stroke="#00d2ff" strokeWidth={1.5 / safeScale} 
+                />
+                <line 
+                  x1={aimPos.x - 20 / safeScale} y1={aimPos.y} 
+                  x2={aimPos.x - 10 / safeScale} y2={aimPos.y} 
+                  stroke="#00d2ff" strokeWidth={1.5 / safeScale} 
+                />
+                <line 
+                  x1={aimPos.x + 10 / safeScale} y1={aimPos.y} 
+                  x2={aimPos.x + 20 / safeScale} y2={aimPos.y} 
+                  stroke="#00d2ff" strokeWidth={1.5 / safeScale} 
+                />
+              </g>
+            )}
+            {/* Draggable Anchor Target Marker & Visual Tether Line (Option 1 + Option 4) */}
+            {anchorTarget && (() => {
+              const magProp = props.showMagnifier;
+              const magMode: MagnifierMode = typeof magProp === 'string' ? magProp : (magProp === false ? 'off' : 'auto');
+              if (magMode === 'off') return null;
+
+              const ax = anchorTarget.x;
+              const ay = anchorTarget.y;
+
+              // Compute Magnifier lens perimeter connection point in canvas space
+              let tetherPath: { startX: number; startY: number; endX: number; endY: number } | null = null;
+
+              if (magnifierCenter) {
+                const magCanvasX = (magnifierCenter.x - viewTransform.x) / safeScale;
+                const magCanvasY = (magnifierCenter.y - viewTransform.y) / safeScale;
+                const magCanvasRadius = magnifierCenter.radius / safeScale;
+
+                const dx = ax - magCanvasX;
+                const dy = ay - magCanvasY;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist > magCanvasRadius + 2) {
+                  const startX = magCanvasX + (dx / dist) * magCanvasRadius;
+                  const startY = magCanvasY + (dy / dist) * magCanvasRadius;
+                  tetherPath = { startX, startY, endX: ax, endY: ay };
+                }
+              }
+
+              return (
+                <g id="magnifier-anchor-layer">
+                  {/* Laser / Tether Line connecting Lens to Anchor Target */}
+                  {tetherPath && (
+                    <g className="pointer-events-none select-none">
+                      {/* Outer soft ambient glow */}
+                      <line
+                        x1={tetherPath.startX}
+                        y1={tetherPath.startY}
+                        x2={tetherPath.endX}
+                        y2={tetherPath.endY}
+                        stroke="rgba(16, 185, 129, 0.4)"
+                        strokeWidth={4 / safeScale}
+                        strokeLinecap="round"
+                      />
+                      {/* Inner dashed laser tether line */}
+                      <line
+                        x1={tetherPath.startX}
+                        y1={tetherPath.startY}
+                        x2={tetherPath.endX}
+                        y2={tetherPath.endY}
+                        stroke="#10b981"
+                        strokeWidth={1.6 / safeScale}
+                        strokeDasharray={`${6 / safeScale},${4 / safeScale}`}
+                        strokeLinecap="round"
+                      />
+                      {/* Rim anchor node */}
+                      <circle
+                        cx={tetherPath.startX}
+                        cy={tetherPath.startY}
+                        r={3 / safeScale}
+                        fill="#10b981"
+                        stroke="#ffffff"
+                        strokeWidth={1 / safeScale}
+                      />
+                    </g>
+                  )}
+
+                  {/* Interactive Draggable Anchor Reticle */}
+                  <g
+                    id="magnifier-anchor-layer"
+                    className="cursor-move select-none"
+                    onPointerDown={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      isDraggingAnchorRef.current = true;
+                      try {
+                        (e.currentTarget as Element).setPointerCapture(e.pointerId);
+                      } catch {}
+                      setIsDraggingAnchor(true);
+                    }}
+                    onPointerMove={(e) => {
+                      if (!isDraggingAnchorRef.current) return;
+                      e.stopPropagation();
+                      e.preventDefault();
+                      const raw = getPointerPosition(e);
+                      const cPos = getTransformedPointerPosition(raw);
+                      let fx = Math.round(cPos.x);
+                      let fy = Math.round(cPos.y);
+                      if (showGrid && gridSize > 0) {
+                        const step = snapStep || 1;
+                        fx = Math.round(fx / step) * step;
+                        fy = Math.round(fy / step) * step;
+                      }
+                      setAnchorTarget({ x: fx, y: fy });
+                    }}
+                    onPointerUp={(e) => {
+                      if (!isDraggingAnchorRef.current) return;
+                      e.stopPropagation();
+                      e.preventDefault();
+                      try {
+                        (e.currentTarget as Element).releasePointerCapture(e.pointerId);
+                      } catch {}
+                      isDraggingAnchorRef.current = false;
+                      setIsDraggingAnchor(false);
+                    }}
+                    onPointerCancel={(e) => {
+                      if (!isDraggingAnchorRef.current) return;
+                      try {
+                        (e.currentTarget as Element).releasePointerCapture(e.pointerId);
+                      } catch {}
+                      isDraggingAnchorRef.current = false;
+                      setIsDraggingAnchor(false);
+                    }}
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                    }}
+                    onTouchStart={(e) => {
+                      e.stopPropagation();
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                  >
+                    {/* Thin unobtrusive Crosshair Lines with open center */}
+                    <line
+                      x1={ax - 20 / safeScale}
+                      y1={ay}
+                      x2={ax - 5 / safeScale}
+                      y2={ay}
+                      stroke="#10b981"
+                      strokeWidth={1.5 / safeScale}
+                    />
+                    <line
+                      x1={ax + 5 / safeScale}
+                      y1={ay}
+                      x2={ax + 20 / safeScale}
+                      y2={ay}
+                      stroke="#10b981"
+                      strokeWidth={1.5 / safeScale}
+                    />
+                    <line
+                      x1={ax}
+                      y1={ay - 20 / safeScale}
+                      x2={ax}
+                      y2={ay - 5 / safeScale}
+                      stroke="#10b981"
+                      strokeWidth={1.5 / safeScale}
+                    />
+                    <line
+                      x1={ax}
+                      y1={ay + 5 / safeScale}
+                      x2={ax}
+                      y2={ay + 20 / safeScale}
+                      stroke="#10b981"
+                      strokeWidth={1.5 / safeScale}
+                    />
+
+                    {/* Single subtle thin outer ring with clear transparent interior */}
+                    <circle
+                      cx={ax}
+                      cy={ay}
+                      r={12 / safeScale}
+                      fill="none"
+                      stroke="#10b981"
+                      strokeWidth={1.2 / safeScale}
+                      strokeDasharray={`${3 / safeScale},${2 / safeScale}`}
+                      opacity={0.85}
+                    />
+
+                    {/* Generous touch / mouse drag hit area */}
+                    <circle
+                      cx={ax}
+                      cy={ay}
+                      r={30 / safeScale}
+                      fill="transparent"
+                    />
+                  </g>
+                </g>
+              );
+            })()}
             </g>
         </svg>
       );
     })()}
+    {/* Precision Magnifier (Лупа) */}
+    {(() => {
+        const magProp = props.showMagnifier;
+        const magMode: MagnifierMode = typeof magProp === 'string' ? magProp : (magProp === false ? 'off' : 'auto');
+        
+        if (magMode === 'off') return null;
+
+        const isJoystickMode = props.touchDrawingMode === 'virtual-joystick';
+        const isInteracting = isTouchDown || Boolean(action && action.type !== 'panning') || isDrawingPolyline || isDrawingBezier || isJoystickMode;
+        const isPinned = magMode === 'pinned';
+        const isAnchored = Boolean(anchorTarget);
+
+        // Position calculation
+        const fallbackPos = previewMousePos || lastKnownCanvasPos || { x: Math.round(width / 2), y: Math.round(height / 2) };
+        const activeCanvasPos = isAnchored 
+            ? anchorTarget 
+            : (isJoystickMode ? aimPos : (previewMousePos || (isPinned ? fallbackPos : lastKnownCanvasPos)));
+            
+        const activePointerPos = isAnchored && anchorTarget ? {
+            x: anchorTarget.x * viewTransform.scale + viewTransform.x,
+            y: anchorTarget.y * viewTransform.scale + viewTransform.y
+        } : (isJoystickMode && aimPos ? {
+            x: aimPos.x * viewTransform.scale + viewTransform.x,
+            y: aimPos.y * viewTransform.scale + viewTransform.y
+        } : (rawMousePos || (activeCanvasPos ? {
+            x: activeCanvasPos.x * viewTransform.scale + viewTransform.x,
+            y: activeCanvasPos.y * viewTransform.scale + viewTransform.y
+        } : null)));
+        
+        const showMag = isPinned || isAnchored || (isInteracting && activeCanvasPos);
+        
+        if (!showMag || !activeCanvasPos) return null;
+
+        return (
+            <Magnifier
+                visible={Boolean(showMag)}
+                canvasPos={activeCanvasPos}
+                rawPointerPos={activePointerPos}
+                viewTransform={viewTransform}
+                containerRef={containerRef}
+                canvasWidth={width}
+                canvasHeight={height}
+                canvasBgColor={backgroundColor}
+                showGrid={showGrid}
+                gridSize={gridSize}
+                zoomLevel={3.0}
+                isPinned={isPinned}
+                onTogglePin={() => {
+                    props.setShowMagnifier?.(isPinned ? 'auto' : 'pinned');
+                }}
+                isAnchored={isAnchored}
+                anchorPos={anchorTarget}
+                onToggleAnchor={() => {
+                    setAnchorTarget(prev => {
+                        if (prev) return null;
+                        const target = activeCanvasPos || previewMousePos || lastKnownCanvasPos || aimPos || { x: Math.round(width / 2), y: Math.round(height / 2) };
+                        return { x: Math.round(target.x), y: Math.round(target.y) };
+                    });
+                }}
+                onMagnifierCenterChange={handleMagnifierCenterChange}
+                onClose={() => {
+                    setAnchorTarget(null);
+                    props.setShowMagnifier?.('off');
+                }}
+            />
+        );
+    })()}
+    {/* Virtual Joystick Controller */}
+    {props.touchDrawingMode === 'virtual-joystick' && (
+      <VirtualJoystick
+        aimPos={aimPos}
+        setAimPos={setAimPos}
+        canvasWidth={width}
+        canvasHeight={height}
+        snapStep={snapStep}
+        enableSnapping={enableSnapping}
+        isDrawing={isDrawingPolyline || isDrawingBezier || Boolean(action && action.type === 'drawing')}
+        pointsCount={isDrawingPolyline ? polylinePoints.length : isDrawingBezier ? bezierPoints.length : 0}
+        isDrawingPolyline={isDrawingPolyline}
+        isDrawingBezier={isDrawingBezier}
+        onAddPoint={() => {
+          if (isDrawingBezier) {
+            setBezierPoints(prev => [...prev, aimPos]);
+          } else if (isDrawingPolyline) {
+            setPolylinePoints(prev => [...prev, aimPos]);
+          } else if (action && action.type === 'drawing') {
+            const screenX = aimPos.x * viewTransform.scale + viewTransform.x;
+            const screenY = aimPos.y * viewTransform.scale + viewTransform.y;
+            handleMouseUp({ clientX: screenX, clientY: screenY, button: 0, target: svgRef.current } as any);
+          } else if (activeTool !== 'select' && activeTool !== 'pan') {
+            const screenX = aimPos.x * viewTransform.scale + viewTransform.x;
+            const screenY = aimPos.y * viewTransform.scale + viewTransform.y;
+            handleMouseDown({ clientX: screenX, clientY: screenY, button: 0, target: svgRef.current } as any);
+          }
+        }}
+        onUndoPoint={() => {
+          if (isDrawingBezier) {
+            if (props.onUndoBezierPoint) {
+              props.onUndoBezierPoint();
+            } else {
+              setBezierPoints(prev => prev.slice(0, -1));
+            }
+          } else if (isDrawingPolyline) {
+            if (props.onUndoPolylinePoint) {
+              props.onUndoPolylinePoint();
+            } else {
+              setPolylinePoints(prev => prev.slice(0, -1));
+            }
+          }
+        }}
+        onComplete={(isClosed) => {
+          if (isDrawingBezier) {
+            onCompleteBezier(isClosed);
+          } else if (isDrawingPolyline) {
+            onCompletePolyline(isClosed);
+          }
+        }}
+        onCancel={() => {
+          if (isDrawingBezier) {
+            onCancelBezier();
+          } else if (isDrawingPolyline) {
+            onCancelPolyline();
+          } else if (action) {
+            setAction(null);
+          }
+        }}
+        showMagnifier={props.showMagnifier ?? 'auto'}
+        setShowMagnifier={(mode) => props.setShowMagnifier?.(mode)}
+        onAimMove={(pos) => {
+          setPreviewMousePos(pos);
+          props.setCursorPos(pos);
+        }}
+        activeToolName={activeTool}
+      />
+    )}
     </div>
   );
 };

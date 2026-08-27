@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, forwardRef, useCallback, useMemo } 
 import { DASH_STYLES } from '../lib/constants';
 import { CheckIcon, XIcon, RefreshIcon, ChevronDownIcon } from './icons';
 import ConfirmationModal from './ConfirmationModal';
-
+import { useIsMobile } from '../hooks/useIsMobile';
 import { useLanguage } from './LanguageContext';
 
 export const InputWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -2078,15 +2078,20 @@ export const ColorInput: React.FC<{
     showNotification?: (message: string, type?: 'info' | 'error', duration?: number) => void;
 }> = ({ id, value, onChange, onPreview, onCancel, disabled, title, placeholder, showNotification }) => {
     const { t } = useLanguage();
+    const isMobile = useIsMobile();
     const [inputValue, setInputValue] = useState(value);
     const [isEditing, setIsEditing] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isAllColorsModalOpen, setIsAllColorsModalOpen] = useState(false);
+    const [isTypingMode, setIsTypingMode] = useState(false);
     const [originalValue, setOriginalValue] = useState(value);
     const [conversionChoice, setConversionChoice] = useState<{ name: string; hex: string } | null>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({ left: '40px' });
+
+    // Touch device detection (mobile or touch screens)
+    const isTouchDevice = isMobile || (typeof window !== 'undefined' && ('ontouchstart' in window || (navigator && navigator.maxTouchPoints > 0)));
 
     useEffect(() => {
         if (isDropdownOpen && wrapperRef.current) {
@@ -2099,10 +2104,12 @@ export const ColorInput: React.FC<{
 
             if (dropdownRightX > screenWidth - 16) { // Check for overflow with a 1rem margin
                 // The dropdown overflows, so align its right edge with the parent's right edge
-                setDropdownStyle({ right: '0px' });
+                setDropdownStyle({ right: '0px', left: 'auto' });
+            } else if (rect.left < 8) {
+                setDropdownStyle({ left: '0px', right: 'auto' });
             } else {
                 // The dropdown fits, use the default left alignment
-                setDropdownStyle({ left: '40px' });
+                setDropdownStyle({ left: '40px', right: 'auto' });
             }
         }
     }, [isDropdownOpen]);
@@ -2114,11 +2121,13 @@ export const ColorInput: React.FC<{
     }, [value, isEditing]);
 
     const filteredColors = useMemo(() => {
+        // On touch/mobile when not in active typing mode, show only the main/primary colors list
+        if (isTouchDevice && !isTypingMode) return PRIMARY_WEB_COLORS;
         if (!inputValue) return PRIMARY_WEB_COLORS;
         const searchTerm = inputValue.toLowerCase().trim();
         if (searchTerm.startsWith('#') || searchTerm === '') return PRIMARY_WEB_COLORS;
         return TKINTER_NAMED_COLORS.filter(color => color.name.toLowerCase().includes(searchTerm) || color.hex.toLowerCase().includes(searchTerm));
-    }, [inputValue]);
+    }, [inputValue, isTypingMode, isTouchDevice]);
 
     const hexValue = useMemo(() => toHex(inputValue) || '#000000', [inputValue]);
     
@@ -2167,13 +2176,46 @@ export const ColorInput: React.FC<{
         }
     }, [isEditing, value]);
 
+    const handleInputClick = (e: React.MouseEvent<HTMLInputElement>) => {
+        if (disabled) return;
+
+        if (isTouchDevice) {
+            if (!isDropdownOpen) {
+                // First click on mobile/touch: Open only the list of basic colors, do not open keyboard/cursor
+                setIsDropdownOpen(true);
+                startEditing();
+            } else if (!isTypingMode) {
+                // Second click (dropdown is already open): Activate cursor and on-screen keyboard
+                setIsTypingMode(true);
+                setTimeout(() => {
+                    inputRef.current?.focus();
+                }, 50);
+            }
+        } else {
+            // Desktop: standard behavior
+            startEditing();
+            if (!isDropdownOpen) {
+                setIsDropdownOpen(true);
+            }
+        }
+    };
+
     const handleFocus = () => {
-        startEditing();
-        setIsDropdownOpen(true);
+        if (!isTouchDevice) {
+            startEditing();
+            setIsDropdownOpen(true);
+        }
+    };
+
+    const handleBlur = () => {
+        if (isTouchDevice) {
+            setIsTypingMode(false);
+        }
     };
     
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         startEditing();
+        setIsTypingMode(true);
         const rawValue = e.target.value;
         let sanitizedValue = '';
 
@@ -2203,6 +2245,7 @@ export const ColorInput: React.FC<{
     const handlePickerClick = () => {
         startEditing();
         setIsDropdownOpen(false);
+        setIsTypingMode(false);
     };
 
     const handleItemClick = (colorName: string) => {
@@ -2210,7 +2253,10 @@ export const ColorInput: React.FC<{
         setInputValue(colorName);
         onPreview?.(toHex(colorName));
         setIsDropdownOpen(false);
-        inputRef.current?.focus();
+        setIsTypingMode(false);
+        if (!isTouchDevice) {
+            inputRef.current?.focus();
+        }
     };
     
     const handleConversion = () => {
@@ -2228,6 +2274,7 @@ export const ColorInput: React.FC<{
         onCancel?.();
         setIsEditing(false);
         setIsDropdownOpen(false);
+        setIsTypingMode(false);
         inputRef.current?.blur();
     }, [originalValue, onCancel, isEditing]);
 
@@ -2264,6 +2311,7 @@ export const ColorInput: React.FC<{
 
         setIsEditing(false);
         setIsDropdownOpen(false);
+        setIsTypingMode(false);
     }, [inputValue, onChange, onCancel, isEditing, originalValue, conversionChoice, handleCancelClick]);
 
     const handleConversionConfirm = () => {
@@ -2272,6 +2320,7 @@ export const ColorInput: React.FC<{
         setConversionChoice(null);
         setIsEditing(false);
         setIsDropdownOpen(false);
+        setIsTypingMode(false);
     };
 
     const handleConversionCancel = () => {
@@ -2280,6 +2329,7 @@ export const ColorInput: React.FC<{
         setConversionChoice(null);
         setIsEditing(false);
         setIsDropdownOpen(false);
+        setIsTypingMode(false);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -2295,6 +2345,8 @@ export const ColorInput: React.FC<{
         if (isEditing) {
             handleCommit();
         }
+        setIsDropdownOpen(false);
+        setIsTypingMode(false);
     });
 
   return (
@@ -2316,11 +2368,15 @@ export const ColorInput: React.FC<{
                     type="text"
                     value={inputValue}
                     onChange={handleInputChange}
+                    onClick={handleInputClick}
                     onFocus={handleFocus}
+                    onBlur={handleBlur}
                     onKeyDown={handleKeyDown}
                     disabled={disabled}
+                    readOnly={isTouchDevice && !isTypingMode}
+                    inputMode={isTouchDevice && !isTypingMode ? "none" : undefined}
                     placeholder={placeholder || "#rrggbb or name"}
-                    className={`bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2 py-1 w-full border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none text-sm disabled:opacity-50 ${convertibleTo ? 'pr-8' : ''}`}
+                    className={`bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded px-2 py-1 w-full border border-[var(--border-secondary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none text-sm disabled:opacity-50 ${isTouchDevice && !isTypingMode ? 'cursor-pointer select-none' : ''} ${convertibleTo ? 'pr-8' : ''}`}
                     title={inputTitle}
                     autoComplete="off"
                 />
@@ -2359,7 +2415,7 @@ export const ColorInput: React.FC<{
 
             {isDropdownOpen && !disabled && (
                     <div 
-                        className="absolute z-20 top-full mt-1 w-[224px] bg-[var(--bg-secondary)] rounded-md shadow-lg border border-[var(--border-secondary)] animate-fade-in-down flex flex-col" 
+                        className="absolute z-50 top-full mt-1 w-[224px] bg-[var(--bg-secondary)] rounded-md shadow-xl border border-[var(--border-secondary)] animate-fade-in-down flex flex-col" 
                         style={{ ...dropdownStyle, animationDuration: '150ms' }}
                     >
                         <div className="max-h-52 overflow-y-auto">

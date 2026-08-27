@@ -8,6 +8,8 @@ import {
 } from '../icons';
 import { useLanguage } from '../LanguageContext';
 import { useIsLandscape } from '../../hooks/useIsMobile';
+import { BetaBadge } from '../BetaBadge';
+import { useLongPress } from '../../hooks/useLongPress';
 
 interface MobileTopHeaderProps {
     projectName: string;
@@ -17,6 +19,7 @@ interface MobileTopHeaderProps {
     onRedo: () => void;
     canUndo: boolean;
     canRedo: boolean;
+    onOpenHistory?: (mode: 'undo' | 'redo' | 'all') => void;
     onOpenPreview: () => void;
     onOpenCloudGallery: () => void;
     onFitToView?: () => void;
@@ -31,6 +34,7 @@ export const MobileTopHeader: React.FC<MobileTopHeaderProps> = ({
     onRedo,
     canUndo,
     canRedo,
+    onOpenHistory,
     onOpenPreview,
     onOpenCloudGallery,
     isLandscape: isLandscapeProp
@@ -38,6 +42,20 @@ export const MobileTopHeader: React.FC<MobileTopHeaderProps> = ({
     const { t } = useLanguage();
     const isLandscapeDetected = useIsLandscape();
     const isLandscape = isLandscapeProp !== undefined ? isLandscapeProp : isLandscapeDetected;
+
+    const undoPress = useLongPress({
+        threshold: 400,
+        onLongPress: () => onOpenHistory?.('undo'),
+        onClick: () => onUndo(),
+        disabled: !canUndo
+    });
+
+    const redoPress = useLongPress({
+        threshold: 400,
+        onLongPress: () => onOpenHistory?.('redo'),
+        onClick: () => onRedo(),
+        disabled: !canRedo
+    });
 
     return (
         <header 
@@ -62,10 +80,11 @@ export const MobileTopHeader: React.FC<MobileTopHeaderProps> = ({
                     <span className="font-extrabold text-xs tracking-tight text-[var(--brand-header-text)] shrink-0">
                         ВереTkа
                     </span>
+                    <BetaBadge size="sm" className="shrink-0" />
                     {isProjectActive && (
                         <>
                             <span className="text-[var(--text-tertiary)] text-xs shrink-0 select-none">/</span>
-                            <span className="text-xs text-[var(--text-secondary)] font-medium truncate max-w-[140px] sm:max-w-[200px]" title={projectName}>
+                            <span className="text-xs text-[var(--text-secondary)] font-medium truncate max-w-[110px] sm:max-w-[180px]" title={projectName}>
                                 {projectName}
                             </span>
                         </>
@@ -78,7 +97,7 @@ export const MobileTopHeader: React.FC<MobileTopHeaderProps> = ({
                 {isProjectActive && (
                     <>
                         <button
-                            onClick={onUndo}
+                            {...undoPress}
                             disabled={!canUndo}
                             title={`${t('menu.edit.undo')} (Ctrl+Z)`}
                             className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] active:scale-95 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
@@ -87,7 +106,7 @@ export const MobileTopHeader: React.FC<MobileTopHeaderProps> = ({
                             <UndoIcon size={17} />
                         </button>
                         <button
-                            onClick={onRedo}
+                            {...redoPress}
                             disabled={!canRedo}
                             title={`${t('menu.edit.redo')} (Ctrl+Y)`}
                             className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] active:scale-95 disabled:opacity-30 disabled:hover:bg-transparent transition-all"

@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { type Shape, type Tool, type DrawMode, PolylineShape, BezierCurveShape, ViewTransform, RectangleShape, ImageShape, IsoscelesTriangleShape, TrapezoidShape, ParallelogramShape, PathShape, CanvasAction, LineShape, PolygonShape, ArcShape, RightTriangleShape, TextShape, BitmapShape, RotatableShape, EllipseShape, type ProjectTemplate, type NewProjectSettings, FillableShape, DistributePathState, DistributeEntity, Layer, GroupShape } from './types';
+import { type Shape, type Tool, type DrawMode, PolylineShape, BezierCurveShape, ViewTransform, RectangleShape, ImageShape, IsoscelesTriangleShape, TrapezoidShape, ParallelogramShape, PathShape, CanvasAction, LineShape, PolygonShape, ArcShape, RightTriangleShape, TextShape, BitmapShape, RotatableShape, EllipseShape, type ProjectTemplate, type NewProjectSettings, FillableShape, DistributePathState, DistributeEntity, Layer, GroupShape, MagnifierMode } from './types';
 import Canvas from './components/Canvas';
 import CodeDisplay, { type CodeLine } from './components/CodeDisplay';
 import PropertyEditor from './components/PropertyEditor';
@@ -22,8 +22,10 @@ import ApiKeyModal from './components/ApiKeyModal';
 import FeedbackModal from './components/FeedbackModal';
 import CheatCodeModal from './components/CheatCodeModal';
 import LoaderShowcaseModal from './components/LoaderShowcaseModal';
+import HistoryPopover from './components/HistoryPopover';
+import { useLongPress } from './hooks/useLongPress';
 import { saveFile, generateSvg, exportToRaster, openProjectFile, saveToHandle } from './lib/exportUtils';
-import { SquareIcon, CodeIcon, XIcon, AxesIcon, FitToScreenIcon, SelectIcon, EditPointsIcon, RectangleIcon, EllipseIcon, CircleIcon, LineIcon, PolylineIcon, BezierIcon, PolygonIcon, PencilIcon, TriangleIcon, RightTriangleIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, PiesliceIcon, ChordIcon, ArcIcon, StarIcon, TextIcon, ImageIcon, BitmapIcon, UndoIcon, RedoIcon, DuplicateIcon, GroupIcon, UngroupIcon, ToolsIcon, TrashIcon, GridIcon, SettingsIcon, DrawFromCornerIcon, DrawFromCenterIcon, CheckIcon, MenuIcon, SunIcon, MoonIcon, HomeIcon, BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, SadMonitorIcon, FullscreenIcon, ExitFullscreenIcon, AlignShapesLeftIcon, AlignShapesCenterHIcon, AlignShapesRightIcon, AlignShapesTopIcon, AlignShapesCenterVIcon, AlignShapesBottomIcon, DistributeHorizontalIcon, DistributeVerticalIcon, ChevronDownIcon, ChevronRightIcon, DistributePathIcon, FlipHorizontalIcon, FlipVerticalIcon, EraserIcon, CloudGalleryIcon } from './components/icons';
+import { SquareIcon, CodeIcon, XIcon, AxesIcon, FitToScreenIcon, SelectIcon, EditPointsIcon, RectangleIcon, EllipseIcon, CircleIcon, LineIcon, PolylineIcon, BezierIcon, PolygonIcon, PencilIcon, TriangleIcon, RightTriangleIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, PiesliceIcon, ChordIcon, ArcIcon, StarIcon, TextIcon, ImageIcon, BitmapIcon, UndoIcon, RedoIcon, DuplicateIcon, GroupIcon, UngroupIcon, ToolsIcon, TrashIcon, GridIcon, SettingsIcon, DrawFromCornerIcon, DrawFromCenterIcon, CheckIcon, MenuIcon, SunIcon, MoonIcon, HomeIcon, BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, SadMonitorIcon, FullscreenIcon, ExitFullscreenIcon, AlignShapesLeftIcon, AlignShapesCenterHIcon, AlignShapesRightIcon, AlignShapesTopIcon, AlignShapesCenterVIcon, AlignShapesBottomIcon, DistributeHorizontalIcon, DistributeVerticalIcon, ChevronDownIcon, ChevronRightIcon, DistributePathIcon, FlipHorizontalIcon, FlipVerticalIcon, EraserIcon, CloudGalleryIcon, HistoryIcon } from './components/icons';
 import { getFinalPoints, getVisualBoundingBox, getBoundingBox, getEditablePoints, getShapeCenter, rotatePoint, isShapeClosed, isPathClosed, evaluateShapeContourPointAndTangent } from './lib/geometry';
 import { getDefaultNameForShape, isDefaultName } from './lib/constants';
 import Ruler from './components/Ruler';
@@ -38,6 +40,7 @@ import ShareModal from './components/ShareModal';
 import { compressProjectToUrl, decompressProjectFromUrl } from './lib/shareUtils';
 import { useLanguage } from './components/LanguageContext';
 import { CloudGalleryModal } from './components/CloudGalleryModal';
+import { CloudProjectOpenModal, MergeProjectOptions } from './components/CloudProjectOpenModal';
 import { getCloudProjectById } from './lib/firebase';
 import { MobileBottomBar } from './components/mobile/MobileBottomBar';
 import { MobileBottomSheet, SheetPinMode } from './components/mobile/MobileBottomSheet';
@@ -48,6 +51,7 @@ import { MobileStyleSheet } from './components/mobile/MobileStyleSheet';
 import { MobileLayersSheet } from './components/mobile/MobileLayersSheet';
 import { MobileAlignSheet } from './components/mobile/MobileAlignSheet';
 import { FloatingModeControls } from './components/FloatingModeControls';
+import { MultiSelectHUD } from './components/MultiSelectHUD';
 import { useIsMobile, useIsLandscape } from './hooks/useIsMobile';
 
 type Theme = 'dark' | 'light';
@@ -130,6 +134,7 @@ const MenuBar: React.FC<{
     onRedo: () => void;
     canUndo: boolean;
     canRedo: boolean;
+    onOpenHistory?: (mode: 'undo' | 'redo' | 'all') => void;
     onDuplicate: () => void;
     isShapeSelected: boolean;
     onDelete: () => void;
@@ -230,6 +235,9 @@ const MenuBar: React.FC<{
                         <div className="absolute top-full left-0 mt-0 w-56 bg-[var(--bg-secondary)] rounded-md shadow-lg py-1 z-50 border border-[var(--border-secondary)]">
                             <MenuItem onClick={() => handleMenuClick(props.onUndo, closeEdit)} disabled={!props.canUndo} shortcut="Ctrl+Z">{t('menu.edit.undo')}</MenuItem>
                             <MenuItem onClick={() => handleMenuClick(props.onRedo, closeEdit)} disabled={!props.canRedo} shortcut="Ctrl+Y">{t('menu.edit.redo')}</MenuItem>
+                            <MenuItem onClick={() => handleMenuClick(() => props.onOpenHistory?.('all'), closeEdit)}>
+                                <div className="flex items-center gap-1.5"><HistoryIcon size={16} /> {t('history.title') || 'Історія змін...'}</div>
+                            </MenuItem>
                             <hr className="border-[var(--border-secondary)] my-1"/>
                             <MenuItem onClick={() => handleMenuClick(props.onDuplicate, closeEdit)} disabled={!props.isShapeSelected || props.isDistributingPath} shortcut="Ctrl+D">{t('menu.edit.duplicate')}</MenuItem>
                             <MenuItem onClick={() => handleMenuClick(props.onDelete, closeEdit)} disabled={!props.isShapeSelected || props.isDistributingPath} shortcut="Del">{t('menu.edit.delete')}</MenuItem>
@@ -801,6 +809,7 @@ const TopToolbar: React.FC<{
     onGenerate: () => void; showGenerateButton: boolean;
     onClear: () => void; isGenerating: boolean; hasShapes: boolean;
     onUndo: () => void; onRedo: () => void; canUndo: boolean; canRedo: boolean;
+    onOpenHistory?: (mode: 'undo' | 'redo' | 'all') => void;
     onDuplicate: () => void; isShapeSelected: boolean;
     onGroup: () => void; canGroup?: boolean;
     onUngroup: () => void; canUngroup?: boolean;
@@ -825,7 +834,7 @@ const TopToolbar: React.FC<{
     onToggleSelectPathShape?: () => void;
 }> = React.memo((props) => {
     const { 
-        isGenerating, hasShapes, onUndo, onRedo, canUndo, canRedo, onDuplicate, onGroup, canGroup, onUngroup, canUngroup, onExtractFromGroup, canExtractFromGroup, onFlipH, onFlipV, canFlip, onAlignShapes, isShapeSelected, onOpenMobileLeft, onOpenMobileRight,
+        isGenerating, hasShapes, onUndo, onRedo, canUndo, canRedo, onOpenHistory, onDuplicate, onGroup, canGroup, onUngroup, canUngroup, onExtractFromGroup, canExtractFromGroup, onFlipH, onFlipV, canFlip, onAlignShapes, isShapeSelected, onOpenMobileLeft, onOpenMobileRight,
         selectedShapes, activeTool, setActiveTool, onGenerate, showGenerateButton, onClear, isDistributingPath, distributePathState, onDistributePathChange,
         isSelectingPathShape, onToggleSelectPathShape
     } = props;
@@ -833,6 +842,20 @@ const TopToolbar: React.FC<{
     const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
     const [isAlignMenuOpen, setIsAlignMenuOpen] = useState(false);
     const [alignRelativeTo, setAlignRelativeTo] = useState<'selection' | 'canvas'>('selection');
+
+    const undoPressHandlers = useLongPress({
+        threshold: 400,
+        onLongPress: () => onOpenHistory?.('undo'),
+        onClick: () => onUndo(),
+        disabled: !canUndo && !onOpenHistory
+    });
+
+    const redoPressHandlers = useLongPress({
+        threshold: 400,
+        onLongPress: () => onOpenHistory?.('redo'),
+        onClick: () => onRedo(),
+        disabled: !canRedo && !onOpenHistory
+    });
 
     useEffect(() => {
         if (isDistributingPath) {
@@ -865,8 +888,22 @@ const TopToolbar: React.FC<{
     <div className="bg-[var(--bg-primary)] p-2 flex-shrink-0 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 select-none">
         {/* Left side actions */}
         <div className="flex items-center gap-1">
-            <button title={`${t('menu.edit.undo')} (Ctrl+Z)`} onClick={onUndo} disabled={!canUndo} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent"><UndoIcon/></button>
-            <button title={`${t('menu.edit.redo')} (Ctrl+Y)`} onClick={onRedo} disabled={!canRedo} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent"><RedoIcon/></button>
+            <button 
+                title={`${t('menu.edit.undo')} (Ctrl+Z) • ${t('history.tipLongPress') || 'Утримуйте для історії'}`} 
+                {...undoPressHandlers} 
+                disabled={!canUndo} 
+                className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent transition-colors"
+            >
+                <UndoIcon/>
+            </button>
+            <button 
+                title={`${t('menu.edit.redo')} (Ctrl+Y) • ${t('history.tipLongPress') || 'Утримуйте для історії'}`} 
+                {...redoPressHandlers} 
+                disabled={!canRedo} 
+                className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent transition-colors"
+            >
+                <RedoIcon/>
+            </button>
             <div className="w-px h-6 bg-[var(--border-secondary)] mx-1"></div>
             <button title={`${t('tool.select')} (V)`} onClick={() => setActiveTool('select')} className={`p-2 rounded-md ${activeTool === 'select' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}><SelectIcon /></button>
             <button title={`${t('tool.editPoints')} (A)`} onClick={() => setActiveTool('edit-points')} disabled={selectedShapes.length > 1} className={`p-2 rounded-md ${activeTool === 'edit-points' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent'}`}><EditPointsIcon /></button>
@@ -1232,12 +1269,32 @@ const applyDistributePathToShapes = (currentShapes: Shape[], pathState: Distribu
 
 export default function App(): React.ReactNode {
   const { t } = useLanguage();
-  const { state: historyState, setState: _setHistoryState, updateCurrentState: _updateCurrentState, undo, redo, canUndo, canRedo, reset: resetHistoryState } = useHistoryState<{shapes: Shape[], distributePathState: DistributePathState | null, layers: Layer[], activeLayerId: string | null}>({ 
+  const { 
+      state: historyState, 
+      historyEntries, 
+      currentIndex: historyCurrentIndex, 
+      setState: _setHistoryState, 
+      updateCurrentState: _updateCurrentState, 
+      undo, 
+      redo, 
+      jumpToIndex: jumpToHistoryIndex, 
+      canUndo, 
+      canRedo, 
+      reset: resetHistoryState 
+  } = useHistoryState<{shapes: Shape[], distributePathState: DistributePathState | null, layers: Layer[], activeLayerId: string | null}>({ 
       shapes: [], 
       distributePathState: null,
       layers: [{ id: 'layer-1', name: t('layer.defaultName') || 'Шар 1', visible: true, locked: false, shapeIds: [] }],
       activeLayerId: 'layer-1'
   });
+  const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
+  const [historyMode, setHistoryMode] = useState<'undo' | 'redo' | 'all'>('all');
+
+  const handleOpenHistory = useCallback((mode: 'undo' | 'redo' | 'all' = 'all') => {
+      setHistoryMode(mode);
+      setIsHistoryOpen(true);
+  }, []);
+
   const [transientDistributePathState, setTransientDistributePathState] = useState<DistributePathState | null>(null);
   const shapes = historyState.shapes;
   const distributePathState = transientDistributePathState || historyState.distributePathState;
@@ -1249,6 +1306,7 @@ export default function App(): React.ReactNode {
   const [rightPanelTab, setRightPanelTab] = useState<'layers' | 'shapes'>('shapes');
   const [activeTool, setActiveTool] = useState<Tool>('select');
   const [selectedShapeIds, setSelectedShapeIds] = useState<string[]>([]);
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState<boolean>(false);
   const [reorderConfirmInfo, setReorderConfirmInfo] = useState<{
       draggedId: string,
       targetId: string,
@@ -1302,6 +1360,7 @@ export default function App(): React.ReactNode {
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [isCloudGalleryOpen, setIsCloudGalleryOpen] = useState(false);
   const [cloudGalleryInitialTab, setCloudGalleryInitialTab] = useState<'public' | 'personal' | 'group' | 'publish'>('public');
+  const [pendingCloudProjectOpen, setPendingCloudProjectOpen] = useState<{ data: any; name: string } | null>(null);
   const [apiKey, setApiKey] = useState<string | null>(null);
   
   const [canvasWidth, setCanvasWidth] = useState<number>(800);
@@ -1309,6 +1368,10 @@ export default function App(): React.ReactNode {
   const [canvasBgColor, setCanvasBgColor] = useState<string>('#ffffff');
   const [canvasVarName, setCanvasVarName] = useState<string>('c');
   const [showGrid, setShowGrid] = useState<boolean>(true);
+  const [touchDrawingMode, setTouchDrawingMode] = useState<'tap-drag' | 'virtual-joystick'>(() => {
+    const saved = localStorage.getItem('veretka-touch-mode');
+    return (saved === 'virtual-joystick' || saved === 'tap-drag') ? saved : 'tap-drag';
+  });
   const [gridSize, setGridSize] = useState<number>(10);
   const [snapToGrid, setSnapToGrid] = useState<boolean>(true);
   const [gridSnapStep, setGridSnapStep] = useState<number>(1);
@@ -1320,6 +1383,15 @@ export default function App(): React.ReactNode {
   const [showCenterGuides, setShowCenterGuides] = useState<boolean>(false);
   const [enableSnapping, setEnableSnapping] = useState<boolean>(true);
   const [showCursorCoords, setShowCursorCoords] = useState<boolean>(true);
+  const [showMagnifier, setShowMagnifier] = useState<MagnifierMode>(() => {
+    const saved = localStorage.getItem('veretka-show-magnifier');
+    if (saved === 'pinned' || saved === 'auto' || saved === 'off') {
+      return saved;
+    }
+    if (saved === 'true') return 'auto';
+    if (saved === 'false') return 'off';
+    return 'auto';
+  });
   const [showRotationAngle, setShowRotationAngle] = useState<boolean>(true);
   const [showLineNumbers, setShowLineNumbers] = useState<boolean>(true);
   const [showComments, setShowComments] = useState<boolean>(true);
@@ -1752,9 +1824,15 @@ export default function App(): React.ReactNode {
         }
     };
 
+    const handleCustomCheatTrigger = () => {
+        setIsCheatCodeModalOpen(true);
+    };
+
     window.addEventListener('keydown', handleCheatCodeHotKey);
+    window.addEventListener('veretka:openCheatCodes', handleCustomCheatTrigger);
     return () => {
         window.removeEventListener('keydown', handleCheatCodeHotKey);
+        window.removeEventListener('veretka:openCheatCodes', handleCustomCheatTrigger);
     };
   }, []);
 
@@ -1804,9 +1882,25 @@ export default function App(): React.ReactNode {
         projectName: pName,
         shapes: s,
         canvasSettings: { width: canvasWidth, height: canvasHeight, bgColor: canvasBgColor, varName: canvasVarName },
-        uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags, showSystemTags }
+        uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showMagnifier, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags, showSystemTags, touchCurveMode: touchDrawingMode }
     });
-  }, [canvasWidth, canvasHeight, canvasBgColor, canvasVarName, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags, showSystemTags]);
+  }, [canvasWidth, canvasHeight, canvasBgColor, canvasVarName, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showMagnifier, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags, showSystemTags, touchDrawingMode]);
+
+  useEffect(() => {
+    try {
+        localStorage.setItem('veretka-show-magnifier', String(showMagnifier));
+    } catch {
+        // ignore
+    }
+  }, [showMagnifier]);
+
+  useEffect(() => {
+    try {
+        localStorage.setItem('veretka-touch-mode', touchDrawingMode);
+    } catch {
+        // ignore
+    }
+  }, [touchDrawingMode]);
 
   const lastSavedSignatureRef = useRef('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -1817,7 +1911,8 @@ export default function App(): React.ReactNode {
     if (lastSavedSignatureRef.current === '') {
         lastSavedSignatureRef.current = currentSignature;
     }
-    setHasUnsavedChanges(currentSignature !== lastSavedSignatureRef.current);
+    const unsaved = currentSignature !== lastSavedSignatureRef.current;
+    setHasUnsavedChanges(prev => (prev !== unsaved ? unsaved : prev));
   }, [projectName, shapes, getProjectSignature, isProjectActive]);
 
     useEffect(() => {
@@ -1902,7 +1997,7 @@ export default function App(): React.ReactNode {
   }, [layers]);
 
   const cancelShapePreview = useCallback(() => {
-      setPreviewOverrides({});
+      setPreviewOverrides(prev => (Object.keys(prev).length === 0 ? prev : {}));
   }, []);
 
   useEffect(() => {
@@ -1920,17 +2015,20 @@ export default function App(): React.ReactNode {
         const canvasContainerWidth = viewportSize.width - rulerOffset;
         const canvasContainerHeight = viewportSize.height - rulerOffset;
         if (canvasContainerWidth <= 0 || canvasContainerHeight <= 0) return;
-        const availableWidth = canvasContainerWidth - padding * 2;
-        const availableHeight = canvasContainerHeight - padding * 2;
-        const scaleX = availableWidth / targetWidth;
-        const scaleY = availableHeight / targetHeight;
+        const scaleX = (canvasContainerWidth - padding * 2) / targetWidth;
+        const scaleY = (canvasContainerHeight - padding * 2) / targetHeight;
         const newScale = Math.min(scaleX, scaleY, MAX_SCALE);
         const scaledCanvasWidth = targetWidth * newScale;
         const scaledCanvasHeight = targetHeight * newScale;
         const newX = (canvasContainerWidth - scaledCanvasWidth) / 2;
         const newY = (canvasContainerHeight - scaledCanvasHeight) / 2;
-        setViewTransform({ scale: newScale, x: newX, y: newY });
-    }, [canvasWidth, canvasHeight, viewportSize, showAxes]);
+        setViewTransform(prev => {
+            if (Math.abs(prev.scale - newScale) < 0.0001 && Math.abs(prev.x - newX) < 0.01 && Math.abs(prev.y - newY) < 0.01) {
+                return prev;
+            }
+            return { scale: newScale, x: newX, y: newY };
+        });
+    }, [canvasWidth, canvasHeight, viewportSize.width, viewportSize.height, showAxes]);
 
     const initialFitDone = useRef(false);
 
@@ -1939,7 +2037,7 @@ export default function App(): React.ReactNode {
             fitCanvasToView();
             initialFitDone.current = true;
         }
-    }, [viewportSize, fitCanvasToView]);
+    }, [viewportSize.width, viewportSize.height, fitCanvasToView]);
 
 
   useEffect(() => {
@@ -1948,10 +2046,9 @@ export default function App(): React.ReactNode {
 
     const resizeObserver = new ResizeObserver(entries => {
       for (let entry of entries) {
-        setViewportSize({
-          width: entry.contentRect.width,
-          height: entry.contentRect.height,
-        });
+        const w = Math.round(entry.contentRect.width);
+        const h = Math.round(entry.contentRect.height);
+        setViewportSize(prev => (prev.width === w && prev.height === h ? prev : { width: w, height: h }));
       }
     });
     resizeObserver.observe(viewportElement);
@@ -1965,7 +2062,7 @@ export default function App(): React.ReactNode {
       }, 50);
       return () => clearTimeout(timer);
     }
-  }, [isMobile, isLandscape, isProjectActive, mobileSheet, mobileSheetPinMode, mobileSheetHeightVh, mobileSheetWidthVw, fitCanvasToView]);
+  }, [isMobile, isLandscape, isProjectActive, mobileSheet, mobileSheetPinMode, fitCanvasToView]);
 
 
   const showNotification = useCallback((message: string, type: 'info' | 'error' = 'info', duration: number = 3000) => {
@@ -2813,7 +2910,7 @@ export default function App(): React.ReactNode {
         ? [targetGroupId]
         : [id];
 
-      if (isShiftPressed && lastSelectedShapeIdRef.current) {
+      if ((isShiftPressed || (isMultiSelectMode && isShiftPressed)) && lastSelectedShapeIdRef.current) {
           const startIndex = shapes.findIndex((s: any) => s.id === lastSelectedShapeIdRef.current);
           const endIndex = shapes.findIndex((s: any) => s.id === id);
           
@@ -2831,7 +2928,7 @@ export default function App(): React.ReactNode {
                   }
               }
               
-              if (isCtrlPressed) {
+              if (isCtrlPressed || isMultiSelectMode) {
                   return Array.from(new Set([...prev, ...rangeIds]));
               } else {
                   return Array.from(rangeIds);
@@ -2841,7 +2938,7 @@ export default function App(): React.ReactNode {
 
       lastSelectedShapeIdRef.current = id;
 
-      if (isCtrlPressed) {
+      if (isCtrlPressed || isMultiSelectMode) {
         const isAlreadySelected = idsToToggle.some(toggleId => prev.includes(toggleId)) || prev.includes(id);
         if (isAlreadySelected) {
             return prev.filter((p: any) => !idsToToggle.includes(p) && p !== id);
@@ -2962,6 +3059,22 @@ export default function App(): React.ReactNode {
         if (tool === 'image') fileInputRef.current?.click();
         else { setPendingImage(null); setActiveTool(tool); }
     }, [isDrawingPolyline, isDrawingBezier, handleCompletePolyline, handleCancelBezier, shapes, selectedShapeIds, showNotification]);
+
+  useEffect(() => {
+    if (selectedShapeIds.length === 0 && isMultiSelectMode) {
+      setIsMultiSelectMode(false);
+    }
+  }, [selectedShapeIds.length, isMultiSelectMode]);
+
+  const handleSelectAll = useCallback(() => {
+    const allIds = shapes
+      .filter((s: any) => s.state !== 'disabled' && s.state !== 'hidden' && !lockedShapeIds.has(s.id) && !s.groupId)
+      .map((s: any) => s.id);
+    setSelectedShapeIds(allIds);
+    if (allIds.length > 1) {
+      setIsMultiSelectMode(true);
+    }
+  }, [shapes, lockedShapeIds]);
 
   const selectedShapes = useMemo(() => {
     return shapes.filter((s: any) => selectedShapeIds.includes(s.id));
@@ -3157,9 +3270,9 @@ export default function App(): React.ReactNode {
         thumbnail: generateProjectThumbnail(displayedShapes, canvasWidth, canvasHeight, canvasBgColor),
         canvasSettings: { width: canvasWidth, height: canvasHeight, bgColor: canvasBgColor, varName: canvasVarName },
         viewTransform,
-        uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags, showSystemTags }
+        uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags, showSystemTags, touchCurveMode: touchDrawingMode }
     };
-  }, [shapes, displayedShapes, layers, activeLayerId, canvasWidth, canvasHeight, canvasBgColor, canvasVarName, viewTransform, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags, generateProjectThumbnail]);
+  }, [shapes, displayedShapes, layers, activeLayerId, canvasWidth, canvasHeight, canvasBgColor, canvasVarName, viewTransform, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags, generateProjectThumbnail, touchDrawingMode]);
 
     const handleSaveProject = useCallback(async () => {
         if (!hasUnsavedChanges && fileHandle) {
@@ -3335,7 +3448,7 @@ export default function App(): React.ReactNode {
 
         if (savedData && (Array.isArray(savedData.shapes) || savedData.canvasSettings)) {
             const shapesToLoad = Array.isArray(savedData.shapes) ? savedData.shapes : [];
-            const newProjectName = savedData.projectName || (fileName ? fileName.replace(/\.vec\.json$/, '') : t('app.1014'));
+            const newProjectName = (fileName ? fileName.replace(/\.vec\.json$/, '') : savedData.projectName) || t('app.1014');
             
             performClear();
             resetHistory(shapesToLoad, savedData.layers, savedData.activeLayerId);
@@ -3361,9 +3474,17 @@ export default function App(): React.ReactNode {
             setSnapToGrid(ui.snapToGrid ?? true);
             setGridSnapStep(ui.gridSnapStep || 1);
             setShowAxes(ui.showAxes ?? true);
+            setTouchDrawingMode(ui.touchCurveMode ?? 'tap-drag');
             setShowCenterGuides(ui.showCenterGuides ?? false);
             setEnableSnapping(ui.enableSnapping ?? true);
             setShowCursorCoords(ui.showCursorCoords ?? true);
+            if (ui.showMagnifier !== undefined) {
+                if (typeof ui.showMagnifier === 'string' && (ui.showMagnifier === 'pinned' || ui.showMagnifier === 'auto' || ui.showMagnifier === 'off')) {
+                    setShowMagnifier(ui.showMagnifier as MagnifierMode);
+                } else {
+                    setShowMagnifier(ui.showMagnifier ? 'auto' : 'off');
+                }
+            }
             setShowRotationAngle(ui.showRotationAngle ?? true);
             setShowLineNumbers(ui.showLineNumbers ?? true);
             setShowComments(ui.showComments ?? true);
@@ -3396,6 +3517,245 @@ export default function App(): React.ReactNode {
         showNotification(t('app.1018'), 'error');
     }
   }, [resetHistory, getProjectSignature, addRecentProject, fitCanvasToView, activeTool, showNotification, t]);
+
+  const performMergeProject = useCallback((options: MergeProjectOptions) => {
+    const { cloudData, cloudProjectTitle, resolvedProjectName, groupImportedShapes, preserveLayers, autoExpandCanvas } = options;
+    
+    const importedRawShapes: Shape[] = Array.isArray(cloudData?.shapes) ? cloudData.shapes : [];
+    if (importedRawShapes.length === 0) {
+      showNotification(t('cloud.merge.empty') || 'У вибраному проєкті немає фігур для імпорту', 'error');
+      return;
+    }
+
+    const currentShapes = shapes || [];
+    const currentLayers = layers && layers.length > 0 ? [...layers] : [{ id: 'layer-1', name: t('layer.defaultName') || 'Шар 1', visible: true, locked: false, shapeIds: [] }];
+    const currentActiveLayer = activeLayerId || currentLayers[0]?.id || 'layer-1';
+
+    // Effective title for group and layer naming
+    const effectiveCloudTitle = cloudProjectTitle || cloudData?.projectName || t('cloud.project.untitled') || 'Хмарний проєкт';
+
+    // 1. Check if current project is empty or only has 1 empty layer
+    const isCurrentProjectEmpty = currentShapes.length === 0;
+    const hasOnlyOneEmptyLayer = currentLayers.length === 1 && (currentShapes.length === 0 || (currentLayers[0].shapeIds || []).length === 0);
+
+    // 2. Prepare Layer mapping
+    const importedRawLayers: Layer[] = Array.isArray(cloudData?.layers) && cloudData.layers.length > 0
+      ? cloudData.layers
+      : [{ id: 'imported-layer-default', name: effectiveCloudTitle, visible: true, locked: false, shapeIds: [] }];
+
+    const layerIdMap = new Map<string, string>();
+    const newLayersToAdd: Layer[] = [];
+
+    const generateUniqueId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+
+    if (isCurrentProjectEmpty || (hasOnlyOneEmptyLayer && preserveLayers)) {
+      // If current project was empty or only has 1 empty layer, replace existing layer directly with imported ones
+      importedRawLayers.forEach(l => {
+        const newLId = generateUniqueId('layer');
+        layerIdMap.set(l.id, newLId);
+        newLayersToAdd.push({
+          ...l,
+          id: newLId,
+          shapeIds: []
+        });
+      });
+    } else {
+      // Current project has multiple layers or existing shapes
+      if (preserveLayers) {
+        importedRawLayers.forEach(l => {
+          const newLId = generateUniqueId('layer-cloud');
+          layerIdMap.set(l.id, newLId);
+          
+          let finalName = l.name;
+          if (currentLayers.some(existing => existing.name.toLowerCase() === l.name.toLowerCase())) {
+            finalName = `${l.name} (${effectiveCloudTitle})`;
+          }
+          
+          newLayersToAdd.push({
+            id: newLId,
+            name: finalName,
+            visible: true,
+            locked: false,
+            shapeIds: []
+          });
+        });
+      } else {
+        importedRawLayers.forEach(l => {
+          layerIdMap.set(l.id, currentActiveLayer);
+        });
+      }
+    }
+
+    // 3. Shape ID remapping & cloning
+    const shapeIdMap = new Map<string, string>();
+    const clonedShapes: Shape[] = JSON.parse(JSON.stringify(importedRawShapes));
+
+    clonedShapes.forEach(shape => {
+      const newShapeId = generateUniqueId(`shape-${shape.type}`);
+      shapeIdMap.set(shape.id, newShapeId);
+      shape.id = newShapeId;
+    });
+
+    const processedShapes: Shape[] = [];
+    const rootImportedShapeIds: string[] = [];
+
+    clonedShapes.forEach(shape => {
+      if (preserveLayers && shape.layerId && layerIdMap.has(shape.layerId)) {
+        shape.layerId = layerIdMap.get(shape.layerId);
+      } else if (newLayersToAdd.length > 0) {
+        shape.layerId = newLayersToAdd[0].id;
+      } else {
+        shape.layerId = currentActiveLayer;
+      }
+
+      if (shape.groupId && shapeIdMap.has(shape.groupId)) {
+        shape.groupId = shapeIdMap.get(shape.groupId);
+      } else if (shape.groupId) {
+        delete shape.groupId;
+      }
+
+      if (shape.type === 'group' && Array.isArray((shape as any).shapeIds)) {
+        (shape as any).shapeIds = (shape as any).shapeIds
+          .map((childId: string) => shapeIdMap.get(childId))
+          .filter(Boolean);
+      }
+
+      if (!shape.groupId) {
+        rootImportedShapeIds.push(shape.id);
+      }
+
+      processedShapes.push(shape);
+    });
+
+    let masterGroupId: string | null = null;
+
+    // 4. Group all imported shapes if requested and there are shapes
+    if (groupImportedShapes && rootImportedShapeIds.length > 0) {
+      masterGroupId = generateUniqueId('group-import');
+      
+      processedShapes.forEach(s => {
+        if (rootImportedShapeIds.includes(s.id)) {
+          s.groupId = masterGroupId!;
+        }
+      });
+
+      const masterGroupShape: Shape = {
+        type: 'group',
+        id: masterGroupId,
+        name: `${effectiveCloudTitle} (${t('prop.tags.group') || 'група'})`,
+        tags: `cloud_import_${Date.now()}`,
+        state: 'normal',
+        stroke: 'none',
+        strokeWidth: 0,
+        shapeIds: [...rootImportedShapeIds],
+        rotation: 0,
+      };
+
+      if (newLayersToAdd.length > 0) {
+        masterGroupShape.layerId = newLayersToAdd[0].id;
+      } else {
+        masterGroupShape.layerId = currentActiveLayer;
+      }
+
+      processedShapes.push(masterGroupShape);
+    }
+
+    // 5. Update Layers shapeIds
+    let finalLayers: Layer[];
+    if (isCurrentProjectEmpty || (hasOnlyOneEmptyLayer && preserveLayers)) {
+      finalLayers = newLayersToAdd.map(nl => ({
+        ...nl,
+        shapeIds: processedShapes.filter(s => s.layerId === nl.id).map(s => s.id)
+      }));
+    } else if (preserveLayers && newLayersToAdd.length > 0) {
+      const updatedNewLayers = newLayersToAdd.map(nl => ({
+        ...nl,
+        shapeIds: processedShapes.filter(s => s.layerId === nl.id).map(s => s.id)
+      }));
+      finalLayers = [...updatedNewLayers, ...currentLayers];
+    } else {
+      finalLayers = currentLayers.map(l => {
+        if (l.id === currentActiveLayer) {
+          return {
+            ...l,
+            shapeIds: [...(l.shapeIds || []), ...processedShapes.map(s => s.id)]
+          };
+        }
+        return l;
+      });
+    }
+
+    // 6. Combine all shapes
+    const finalShapes = isCurrentProjectEmpty
+      ? processedShapes
+      : [...currentShapes, ...processedShapes];
+
+    const finalActiveLayerId = newLayersToAdd.length > 0 ? newLayersToAdd[0].id : currentActiveLayer;
+
+    // 7. Update history state (single undo point!)
+    setHistoryState({
+      shapes: finalShapes,
+      layers: finalLayers,
+      activeLayerId: finalActiveLayerId,
+      distributePathState: null
+    });
+
+    // 8. Auto expand canvas if needed
+    if (autoExpandCanvas && cloudData.canvasSettings) {
+      const cloudW = cloudData.canvasSettings.width || 800;
+      const cloudH = cloudData.canvasSettings.height || 600;
+      setCanvasWidth(prev => Math.max(prev, cloudW));
+      setCanvasHeight(prev => Math.max(prev, cloudH));
+    }
+
+    // 9. Update Project Name
+    if (resolvedProjectName) {
+      setProjectName(resolvedProjectName);
+    }
+
+    // 10. Auto select the imported objects
+    if (masterGroupId) {
+      setSelectedShapeIds([masterGroupId]);
+    } else if (rootImportedShapeIds.length > 0) {
+      setSelectedShapeIds(rootImportedShapeIds);
+    }
+
+    setIsProjectActive(true);
+    setProjectWasEverActive(true);
+    showNotification(t('cloud.merge.success') || 'Проєкт успішно об\'єднано з поточним!', 'info');
+  }, [shapes, layers, activeLayerId, setHistoryState, setCanvasWidth, setCanvasHeight, setProjectName, setSelectedShapeIds, setIsProjectActive, setProjectWasEverActive, showNotification, t]);
+
+  const handleOpenCloudProject = useCallback((dataStrOrObj: string | object, projName?: string) => {
+    try {
+      let savedData: any = null;
+      if (typeof dataStrOrObj === 'string') {
+        savedData = JSON.parse(dataStrOrObj);
+      } else {
+        savedData = dataStrOrObj;
+      }
+
+      if (!savedData || (!Array.isArray(savedData.shapes) && !savedData.canvasSettings)) {
+        showNotification(t('app.1016') || 'Помилка читання файлу проєкту', 'error');
+        return;
+      }
+
+      const targetTitle = projName || savedData.projectName || t('cloud.project.untitled') || 'Хмарний проєкт';
+      const hasShapesInEditor = (shapes && shapes.length > 0) || (isProjectActive && displayedShapes && displayedShapes.length > 0);
+
+      if (!hasShapesInEditor) {
+        processLoadedData(savedData, targetTitle);
+        showNotification(t('cloud.open.success') || 'Проєкт успішно відкрито з хмари!', 'info');
+      } else {
+        setPendingCloudProjectOpen({
+          data: savedData,
+          name: targetTitle
+        });
+      }
+    } catch (err) {
+      console.error("Failed to parse cloud project data:", err);
+      showNotification('Помилка читання даних проєкту', 'error');
+    }
+  }, [shapes, isProjectActive, displayedShapes, processLoadedData, showNotification, t]);
 
   const loadProject = useCallback(async () => {
     let result: { handle: FileSystemFileHandle; content: string } | null = null;
@@ -3661,6 +4021,7 @@ export default function App(): React.ReactNode {
     if (selectedShapeIds.length > 0) {
         const newSelectedIds = duplicateShape(selectedShapeIds) as string[];
         setSelectedShapeIds(newSelectedIds);
+        setIsMultiSelectMode(false);
     }
   }, [selectedShapeIds, duplicateShape]);
 
@@ -3673,6 +4034,7 @@ export default function App(): React.ReactNode {
             onConfirm: () => {
                 const idsToDelete = [...selectedShapeIds];
                 setSelectedShapeIds([]);
+                setIsMultiSelectMode(false);
                 deleteShape(idsToDelete);
                 setConfirmationAction(null);
             },
@@ -3694,6 +4056,7 @@ export default function App(): React.ReactNode {
             } else {
                 deleteShape(id);
             }
+            setIsMultiSelectMode(false);
             setConfirmationAction(null);
         },
         confirmText: t('action.confirm') || 'Підтвердити',
@@ -4117,6 +4480,7 @@ export default function App(): React.ReactNode {
         });
         
         setSelectedShapeIds([newGroupId]);
+        setIsMultiSelectMode(false);
         showNotification(t('menu.edit.group') || 'Об\'єкти згруповано');
     };
 
@@ -4945,6 +5309,11 @@ export default function App(): React.ReactNode {
       setPreviewTextColor(null);
   }, []);
 
+    const processLoadedDataRef = useRef(processLoadedData);
+    useEffect(() => {
+        processLoadedDataRef.current = processLoadedData;
+    }, [processLoadedData]);
+
     // On initial load, check for an autosaved project or URL shared project (cloud ID or hash)
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -4953,7 +5322,7 @@ export default function App(): React.ReactNode {
         if (cloudProjectId) {
             getCloudProjectById(cloudProjectId).then((proj) => {
                 if (proj && proj.projectData) {
-                    processLoadedData(proj.projectData, proj.title);
+                    processLoadedDataRef.current(proj.projectData, proj.title);
                     showNotification(`Проєкт "${proj.title}" успішно завантажено з хмари!`, 'info');
                     window.history.replaceState(null, '', window.location.pathname);
                 } else {
@@ -4971,7 +5340,7 @@ export default function App(): React.ReactNode {
             const decompressed = decompressProjectFromUrl(fullUrl);
             if (decompressed && decompressed.rawJson) {
                 try {
-                    processLoadedData(decompressed.rawJson, decompressed.data?.projectName);
+                    processLoadedDataRef.current(decompressed.rawJson, decompressed.data?.projectName);
                     showNotification(t('share.loaded') || 'Проєкт успішно завантажено за посиланням!', 'info');
                     window.history.replaceState(null, '', window.location.pathname);
                     return;
@@ -4990,7 +5359,8 @@ export default function App(): React.ReactNode {
         } catch (e) {
             console.error("Failed to read autosave from localStorage", e);
         }
-    }, [processLoadedData, showNotification, t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Autosave interval
     useEffect(() => {
@@ -5049,6 +5419,7 @@ export default function App(): React.ReactNode {
               onRedo={redo}
               canUndo={canUndo}
               canRedo={canRedo}
+              onOpenHistory={handleOpenHistory}
               onOpenPreview={() => {
                 if (shapes.length > 0) {
                   setShapesAtGenerationTime(shapes);
@@ -5086,6 +5457,7 @@ export default function App(): React.ReactNode {
               onRedo={redo}
               canUndo={canUndo}
               canRedo={canRedo}
+              onOpenHistory={handleOpenHistory}
               onDuplicate={handleDuplicate}
               isShapeSelected={!(selectedShapeIds.length === 0)}
               onDelete={handleDelete}
@@ -5161,6 +5533,7 @@ export default function App(): React.ReactNode {
               onRedo={redo}
               canUndo={canUndo}
               canRedo={canRedo}
+              onOpenHistory={handleOpenHistory}
               onDuplicate={handleDuplicate}
               onGroup={handleGroup}
               canGroup={canGroup}
@@ -5334,9 +5707,13 @@ export default function App(): React.ReactNode {
                                     textFont={textFont}
                                     textFontSize={textFontSize}
                                     numberOfSides={numberOfSides} selectedShapeIds={selectedShapeIds} onSelectShape={handleSelectShape} isDrawingPolyline={isDrawingPolyline} polylinePoints={polylinePoints} setPolylinePoints={setPolylinePoints}
-                                    onCompletePolyline={handleCompletePolyline} onCancelPolyline={handleCancelPolyline} isDrawingBezier={isDrawingBezier} bezierPoints={bezierPoints} setBezierPoints={setBezierPoints}
-                                    onCompleteBezier={handleCompleteBezier} onCancelBezier={handleCancelBezier} showGrid={showGrid} gridSize={gridSize} snapStep={snapToGrid ? gridSnapStep : 1} viewTransform={viewTransform}
+                                    touchDrawingMode={touchDrawingMode}
+                                    setTouchDrawingMode={setTouchDrawingMode}
+                                    onCompletePolyline={handleCompletePolyline} onCancelPolyline={handleCancelPolyline} onUndoPolylinePoint={() => setPolylinePoints(prev => prev.slice(0, -1))} isDrawingBezier={isDrawingBezier} bezierPoints={bezierPoints} setBezierPoints={setBezierPoints}
+                                    onCompleteBezier={handleCompleteBezier} onCancelBezier={handleCancelBezier} onUndoBezierPoint={() => setBezierPoints(prev => prev.slice(0, -1))} showGrid={showGrid} gridSize={gridSize} snapStep={snapToGrid ? gridSnapStep : 1} viewTransform={viewTransform}
                                     setViewTransform={setViewTransform} activePointIndex={activePointIndex} setActivePointIndex={setActivePointIndex} showCursorCoords={showCursorCoords} showRotationAngle={showRotationAngle}
+                                    showMagnifier={showMagnifier}
+                                    setShowMagnifier={setShowMagnifier}
                                     pendingImage={pendingImage} setPendingImage={setPendingImage} setCursorPos={setCursorPos}
                                     isImportingImage={isImportingImage}
                                     showNotification={showNotification}
@@ -5345,8 +5722,29 @@ export default function App(): React.ReactNode {
                                     keyboardSnapLines={keyboardSnapLines}
                                     showCenterGuides={showCenterGuides}
                                     enableSnapping={enableSnapping}
+                                    isMultiSelectMode={isMultiSelectMode}
+                                    setIsMultiSelectMode={setIsMultiSelectMode}
                                 />
                             </div>
+                            {isMultiSelectMode && selectedShapeIds.length > 0 && (
+                                <MultiSelectHUD
+                                    selectedCount={selectedShapeIds.length}
+                                    totalSelectableCount={shapes.length}
+                                    onGroup={handleGroup}
+                                    onUngroup={handleUngroup}
+                                    onDelete={handleDelete}
+                                    onDuplicate={handleDuplicate}
+                                    onSelectAll={handleSelectAll}
+                                    onOpenAlign={isMobile ? () => setMobileSheet('align') : undefined}
+                                    onDeselectAll={() => {
+                                        handleSelectShape(null);
+                                        setIsMultiSelectMode(false);
+                                    }}
+                                    canGroup={selectedShapeIds.length >= 2}
+                                    canUngroup={selectedShapeIds.some((id: string) => shapes.find((s: any) => s.id === id)?.type === 'group' || shapes.find((s: any) => s.id === id)?.groupId !== undefined)}
+                                    isMobile={isMobile}
+                                />
+                            )}
                             <button onClick={() => fitCanvasToView()} title={t('menu.view.fit')} className="absolute bottom-4 right-4 z-10 p-2 bg-[var(--bg-primary)] text-[var(--text-secondary)] rounded-full shadow-lg hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
                                 <FitToScreenIcon />
                             </button>
@@ -5360,6 +5758,10 @@ export default function App(): React.ReactNode {
                             selectedShapeIds={selectedShapeIds}
                             showCursorCoords={showCursorCoords}
                             setShowCursorCoords={setShowCursorCoords}
+                            showMagnifier={showMagnifier}
+                            setShowMagnifier={setShowMagnifier}
+                            touchDrawingMode={touchDrawingMode}
+                            setTouchDrawingMode={setTouchDrawingMode}
                         />
                     </>
                 ) : (
@@ -5440,6 +5842,8 @@ export default function App(): React.ReactNode {
                                 onSetActiveLayer={setActiveLayer}
                                 onLayerWarning={(reason, layerId, action) => setDrawingWarningModal({ show: true, reason, layerId, action })}
                                 ignoreHiddenWarningForLayer={ignoreHiddenWarningForLayer}
+                                isMultiSelectMode={isMultiSelectMode}
+                                setIsMultiSelectMode={setIsMultiSelectMode}
                             />
                         </div>
                     </div>
@@ -5514,7 +5918,6 @@ export default function App(): React.ReactNode {
               onOpenHelp={() => setIsHelpModalOpen(true)}
               onOpenShortcuts={() => setIsShortcutsModalOpen(true)}
               onOpenFeedback={() => setIsFeedbackModalOpen(true)}
-              onOpenCheatCodes={() => setIsCheatCodeModalOpen(true)}
             />
           )}
 
@@ -5707,6 +6110,8 @@ export default function App(): React.ReactNode {
                           canvasWidth={canvasWidth}
                           canvasHeight={canvasHeight}
                           canvasBgColor={canvasBgColor}
+                          isMultiSelectMode={isMultiSelectMode}
+                          setIsMultiSelectMode={setIsMultiSelectMode}
                       />
                   </MobileBottomSheet>
 
@@ -5792,6 +6197,8 @@ export default function App(): React.ReactNode {
               showCenterGuides={showCenterGuides} setShowCenterGuides={setShowCenterGuides}
               enableSnapping={enableSnapping} setEnableSnapping={setEnableSnapping}
               showCursorCoords={showCursorCoords} setShowCursorCoords={setShowCursorCoords}
+              showMagnifier={showMagnifier} setShowMagnifier={setShowMagnifier}
+              touchDrawingMode={touchDrawingMode} setTouchDrawingMode={setTouchDrawingMode}
               showRotationAngle={showRotationAngle} setShowRotationAngle={setShowRotationAngle}
               openAsWebApp={openAsWebApp} setOpenAsWebApp={setOpenAsWebApp}
               showLineNumbers={showLineNumbers} setShowLineNumbers={setShowLineNumbers}
@@ -5822,6 +6229,19 @@ export default function App(): React.ReactNode {
                 height={canvasHeight} 
                 backgroundColor={canvasBgColor} 
                 onClose={() => setIsPreviewOpen(false)} 
+            />
+          )}
+          {isHistoryOpen && (
+            <HistoryPopover
+                isOpen={isHistoryOpen}
+                onClose={() => setIsHistoryOpen(false)}
+                historyEntries={historyEntries}
+                currentIndex={historyCurrentIndex}
+                onJumpToIndex={(index) => {
+                    jumpToHistoryIndex(index);
+                    setSelectedShapeIds([]);
+                }}
+                initialMode={historyMode}
             />
           )}
            {isExportModalOpen && (
@@ -5947,13 +6367,7 @@ export default function App(): React.ReactNode {
             initialTab={cloudGalleryInitialTab}
             onClose={() => setIsCloudGalleryOpen(false)}
             onLoadProject={(dataStr, projName) => {
-              try {
-                processLoadedData(dataStr, projName);
-                showNotification('Проєкт успішно завантажено з хмари!', 'info');
-              } catch (e) {
-                console.error(e);
-                showNotification('Помилка читання даного проєкту', 'error');
-              }
+              handleOpenCloudProject(dataStr, projName);
             }}
             currentProjectShapesCount={displayedShapes ? displayedShapes.length : shapes.length}
             getCurrentProjectDataStr={() => {
@@ -5962,6 +6376,26 @@ export default function App(): React.ReactNode {
             }}
             currentProjectName={projectName}
           />
+          {pendingCloudProjectOpen && (
+            <CloudProjectOpenModal
+              isOpen={!!pendingCloudProjectOpen}
+              onClose={() => setPendingCloudProjectOpen(null)}
+              cloudProjectTitle={pendingCloudProjectOpen.name}
+              cloudProjectData={pendingCloudProjectOpen.data}
+              currentProjectName={projectName}
+              currentShapesCount={displayedShapes ? displayedShapes.length : shapes.length}
+              currentLayersCount={layers ? layers.length : 1}
+              onReplace={(cloudData, name) => {
+                processLoadedData(cloudData, name);
+                setPendingCloudProjectOpen(null);
+                showNotification(t('cloud.open.success') || 'Проєкт успішно відкрито з хмари!', 'info');
+              }}
+              onMerge={(mergeOpts) => {
+                performMergeProject(mergeOpts);
+                setPendingCloudProjectOpen(null);
+              }}
+            />
+          )}
           {drawingWarningModal && drawingWarningModal.show && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]">
                 <div className="bg-[var(--bg-app)] border border-[var(--border-color)] p-6 rounded-lg shadow-xl w-[400px] relative">

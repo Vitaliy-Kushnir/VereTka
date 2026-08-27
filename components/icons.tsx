@@ -838,6 +838,69 @@ export const PauseIcon: React.FC<IconProps> = ({ size = 20, className }) => (
     </svg>
 );
 
+export const MagnifierIcon: React.FC<IconProps> = ({ size = 20, className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        <line x1="11" y1="8" x2="11" y2="14"/>
+        <line x1="8" y1="11" x2="14" y2="11"/>
+    </svg>
+);
+
+export const PinIcon: React.FC<IconProps> = ({ size = 20, className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <line x1="12" y1="17" x2="12" y2="22" />
+        <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z" />
+    </svg>
+);
+
+export const PinOffIcon: React.FC<IconProps> = ({ size = 20, className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <line x1="2" y1="2" x2="22" y2="22" />
+        <line x1="12" y1="17" x2="12" y2="22" />
+        <path d="M9 9v1.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h12" />
+        <path d="M15 9.34V6h1a2 2 0 0 0 0-4H7.89" />
+    </svg>
+);
+
+export const CrosshairIcon: React.FC<IconProps> = ({ size = 20, className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <circle cx="12" cy="12" r="9"/>
+        <line x1="12" y1="3" x2="12" y2="7"/>
+        <line x1="12" y1="17" x2="12" y2="21"/>
+        <line x1="3" y1="12" x2="7" y2="12"/>
+        <line x1="17" y1="12" x2="21" y2="12"/>
+        <circle cx="12" cy="12" r="2" fill="currentColor"/>
+    </svg>
+);
+
+export const TargetIcon: React.FC<IconProps> = ({ size = 20, className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <circle cx="12" cy="12" r="10"/>
+        <circle cx="12" cy="12" r="6"/>
+        <circle cx="12" cy="12" r="2"/>
+    </svg>
+);
+
+export const AnchorIcon: React.FC<IconProps> = ({ size = 20, className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <circle cx="12" cy="5" r="3"/>
+        <line x1="12" y1="8" x2="12" y2="21"/>
+        <path d="M5 12H2a10 10 0 0 0 20 0h-3"/>
+    </svg>
+);
+
+export const JoystickIcon: React.FC<IconProps> = ({ size = 20, className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <circle cx="12" cy="12" r="10"/>
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2v3"/>
+        <path d="M12 19v3"/>
+        <path d="M2 12h3"/>
+        <path d="M19 12h3"/>
+    </svg>
+);
+
 export const RefreshCwIcon: React.FC<IconProps> = ({ size = 20, className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
         <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>

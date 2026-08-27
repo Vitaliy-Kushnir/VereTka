@@ -1,8 +1,9 @@
 import React, {useContext} from 'react';
 import { useLanguage } from './LanguageContext';
 import { useState, useEffect } from 'react';
-import { LocateIcon } from './icons';
+import { LocateIcon, MagnifierIcon, JoystickIcon, CrosshairIcon, PinIcon } from './icons';
 import { NumberInput } from './FormControls';
+import { MagnifierMode } from '../types';
 
 interface StatusBarProps {
   zoomLevel: number;
@@ -13,6 +14,10 @@ interface StatusBarProps {
   selectedShapeIds: string[];
   showCursorCoords: boolean;
   setShowCursorCoords: (show: boolean) => void;
+  showMagnifier?: MagnifierMode | boolean;
+  setShowMagnifier?: (mode: MagnifierMode) => void;
+  touchDrawingMode?: 'tap-drag' | 'virtual-joystick';
+  setTouchDrawingMode?: (mode: 'tap-drag' | 'virtual-joystick') => void;
 }
 
 const MIN_SCALE = 0.05;
@@ -26,7 +31,11 @@ const StatusBar: React.FC<StatusBarProps> = ({
   onLocateSelectedShape, 
   selectedShapeIds,
   showCursorCoords,
-  setShowCursorCoords
+  setShowCursorCoords,
+  showMagnifier,
+  setShowMagnifier,
+  touchDrawingMode,
+  setTouchDrawingMode
 }) => {
   const { t } = useLanguage();
   const [isEditingZoom, setIsEditingZoom] = useState(false);
@@ -108,6 +117,66 @@ const StatusBar: React.FC<StatusBarProps> = ({
                 title={t('status.zoomClick')}
             >
                 {formattedZoom}
+            </button>
+        )}
+        {setShowMagnifier && (() => {
+            const magMode: MagnifierMode = typeof showMagnifier === 'string'
+                ? showMagnifier
+                : (showMagnifier === true ? 'auto' : 'off');
+
+            const handleToggle = () => {
+                if (magMode === 'off') {
+                    setShowMagnifier('auto');
+                } else if (magMode === 'auto') {
+                    setShowMagnifier('pinned');
+                } else {
+                    setShowMagnifier('off');
+                }
+            };
+
+            return (
+                <button
+                    onClick={handleToggle}
+                    className={`px-1.5 py-0.5 rounded-md transition-all flex items-center gap-1 border ${
+                        magMode === 'pinned'
+                            ? 'text-amber-300 bg-amber-500/20 border-amber-500/50 font-semibold shadow-[0_0_8px_rgba(245,158,11,0.3)]'
+                            : magMode === 'auto'
+                                ? 'text-cyan-400 bg-cyan-500/15 border-cyan-500/30 font-medium shadow-[0_0_6px_rgba(6,182,212,0.2)]'
+                                : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] border-transparent'
+                    }`}
+                    title={
+                        magMode === 'pinned'
+                            ? 'Лупа: Зафіксовано 📌 (завжди на екрані). Натисніть для вимкнення'
+                            : magMode === 'auto'
+                                ? 'Лупа: Авто (при контакті). Натисніть для фіксації'
+                                : 'Лупа: Вимкнено. Натисніть для увімкнення'
+                    }
+                >
+                    {magMode === 'pinned' ? (
+                        <PinIcon size={12} className="text-amber-400" />
+                    ) : (
+                        <MagnifierIcon size={12} className={magMode === 'auto' ? 'text-cyan-400' : 'opacity-60'} />
+                    )}
+                    <span className="text-[10px] hidden md:inline">
+                        {magMode === 'pinned' ? 'Лупа 📌' : magMode === 'auto' ? 'Лупа (Авто)' : 'Лупа (Вимк)'}
+                    </span>
+                </button>
+            );
+        })()}
+        {setTouchDrawingMode && typeof window !== 'undefined' && (('ontouchstart' in window) || navigator.maxTouchPoints > 0) && (
+            <button
+                onClick={() => setTouchDrawingMode(touchDrawingMode === 'virtual-joystick' ? 'tap-drag' : 'virtual-joystick')}
+                className={`px-1.5 py-0.5 rounded-md transition-all flex items-center gap-1 ${
+                    touchDrawingMode === 'virtual-joystick'
+                        ? 'text-cyan-400 bg-cyan-950/40 border border-cyan-500/30 font-medium'
+                        : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]'
+                }`}
+                title={touchDrawingMode === 'virtual-joystick' ? 'Режим: Джойстик / Приціл (натисніть для перемикання)' : 'Режим: Прямий дотик (натисніть для джойстика)'}
+            >
+                <JoystickIcon size={12} />
+                <span className="text-[10px] hidden md:inline">
+                    {touchDrawingMode === 'virtual-joystick' ? 'Джойстик' : 'Дотик'}
+                </span>
             </button>
         )}
         <button

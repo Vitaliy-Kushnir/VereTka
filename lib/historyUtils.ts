@@ -1,0 +1,239 @@
+import { Shape, Layer, DistributePathState } from '../types';
+import { HistoryEntry } from '../hooks/useHistoryState';
+
+export interface AppHistoryState {
+    shapes: Shape[];
+    distributePathState: DistributePathState | null;
+    layers: Layer[];
+    activeLayerId: string | null;
+}
+
+export interface FormattedHistoryStep {
+    index: number;
+    id: string;
+    timestamp: number;
+    formattedTime: string;
+    title: string;
+    subtitle?: string;
+    actionType: 'init' | 'add' | 'delete' | 'move' | 'style' | 'transform' | 'group' | 'ungroup' | 'layer' | 'distribute' | 'edit';
+    shapeType?: string;
+    shapesCount: number;
+    layersCount: number;
+    isCurrent: boolean;
+    stepOffset: number;
+}
+
+function getShapeTypeName(type: string, t?: (key: string) => string): string {
+    const map: Record<string, string> = {
+        'rectangle': 'Прямокутник',
+        'square': 'Квадрат',
+        'circle': 'Коло',
+        'ellipse': 'Еліпс',
+        'line': 'Лінія',
+        'polyline': 'Ламана',
+        'bezier': 'Крива Безьє',
+        'polygon': 'Багатокутник',
+        'pencil': 'Олівець',
+        'triangle': 'Трикутник',
+        'right-triangle': 'Прямокутний трикутник',
+        'star': 'Зірка',
+        'rhombus': 'Ромб',
+        'trapezoid': 'Трапеція',
+        'parallelogram': 'Паралелограм',
+        'arc': 'Дуга',
+        'pieslice': 'Сектор',
+        'chord': 'Сегмент',
+        'text': 'Текст',
+        'image': 'Зображення',
+        'bitmap': 'Бітмап',
+        'group': 'Група'
+    };
+    return map[type] || type;
+}
+
+function getShapeDisplayName(shape: Shape, t?: (key: string) => string): string {
+    if (shape.type === 'text' && (shape as any).text) {
+        const txt = (shape as any).text.trim();
+        return txt.length > 15 ? `"${txt.slice(0, 15)}..."` : `"${txt}"`;
+    }
+    return getShapeTypeName(shape.type, t);
+}
+
+export function describeHistoryStep(
+    prevState: AppHistoryState | null,
+    currentState: AppHistoryState,
+    descriptionOverride?: string,
+    t?: (key: string) => string
+): { title: string; actionType: FormattedHistoryStep['actionType']; shapeType?: string } {
+    if (descriptionOverride) {
+        return {
+            title: descriptionOverride,
+            actionType: 'edit'
+        };
+    }
+
+    if (!prevState) {
+        return {
+            title: (t && t('history.initialState')) || 'Початковий стан проєкту',
+            actionType: 'init'
+        };
+    }
+
+    const prevShapes = prevState.shapes || [];
+    const currShapes = currentState.shapes || [];
+
+    // Added shapes
+    if (currShapes.length > prevShapes.length) {
+        const added = currShapes.filter(s => !prevShapes.some(p => p.id === s.id));
+        if (added.length === 1) {
+            return {
+                title: `Додано: ${getShapeDisplayName(added[0], t)}`,
+                actionType: 'add',
+                shapeType: added[0].type
+            };
+        }
+        return {
+            title: `Додано ${added.length} фігур`,
+            actionType: 'add'
+        };
+    }
+
+    // Deleted shapes
+    if (currShapes.length < prevShapes.length) {
+        const removed = prevShapes.filter(p => !currShapes.some(s => s.id === p.id));
+        if (removed.length === 1) {
+            return {
+                title: `Видалено: ${getShapeDisplayName(removed[0], t)}`,
+                actionType: 'delete',
+                shapeType: removed[0].type
+            };
+        }
+        return {
+            title: `Видалено ${removed.length} фігур`,
+            actionType: 'delete'
+        };
+    }
+
+    // Check grouping
+    const prevGroups = new Set(prevShapes.map(s => s.groupId).filter(Boolean));
+    const currGroups = new Set(currShapes.map(s => s.groupId).filter(Boolean));
+    if (currGroups.size > prevGroups.size) {
+        return { title: 'Згруповано фігури', actionType: 'group' };
+    }
+    if (currGroups.size < prevGroups.size) {
+        return { title: 'Розгруповано фігури', actionType: 'ungroup' };
+    }
+
+    // Check layer changes
+    const prevLayers = prevState.layers || [];
+    const currLayers = currentState.layers || [];
+    if (currLayers.length > prevLayers.length) {
+        const addedLayer = currLayers.find(l => !prevLayers.some(p => p.id === l.id));
+        return {
+            title: `Створено шар: ${addedLayer?.name || 'Новий шар'}`,
+            actionType: 'layer'
+        };
+    }
+    if (currLayers.length < prevLayers.length) {
+        return { title: 'Видалено шар', actionType: 'layer' };
+    }
+
+    // Check layer visibility or lock
+    for (let i = 0; i < currLayers.length; i++) {
+        const prevL = prevLayers[i];
+        const currL = currLayers[i];
+        if (prevL && currL && prevL.id === currL.id) {
+            if (prevL.locked !== currL.locked) {
+                return {
+                    title: currL.locked ? `Заблоковано шар: ${currL.name}` : `Розблоковано шар: ${currL.name}`,
+                    actionType: 'layer'
+                };
+            }
+            if (prevL.visible !== currL.visible) {
+                return {
+                    title: currL.visible ? `Показано шар: ${currL.name}` : `Приховано шар: ${currL.name}`,
+                    actionType: 'layer'
+                };
+            }
+        }
+    }
+
+    // Check distribute along path
+    if (currentState.distributePathState && !prevState.distributePathState) {
+        return { title: 'Розподіл по контуру', actionType: 'distribute' };
+    }
+
+    // Check modified shape
+    const changedShapes: { prev: Shape; curr: Shape }[] = [];
+    for (let i = 0; i < currShapes.length; i++) {
+        const cs = currShapes[i];
+        const ps = prevShapes.find(p => p.id === cs.id);
+        if (ps && JSON.stringify(ps) !== JSON.stringify(cs)) {
+            changedShapes.push({ prev: ps, curr: cs });
+        }
+    }
+
+    if (changedShapes.length === 1) {
+        const { prev: ps, curr: cs } = changedShapes[0];
+        const name = getShapeDisplayName(cs, t);
+
+        if (cs.type === 'text' && (cs as any).text !== (ps as any).text) {
+            return { title: `Зміна тексту: "${(cs as any).text?.slice(0, 15) || ''}"`, actionType: 'edit', shapeType: cs.type };
+        }
+        if (cs.fill !== ps.fill || cs.stroke !== ps.stroke || cs.strokeWidth !== ps.strokeWidth || cs.stipple !== ps.stipple) {
+            return { title: `Зміна стилю: ${name}`, actionType: 'style', shapeType: cs.type };
+        }
+        if (cs.rotation !== ps.rotation) {
+            return { title: `Обертання: ${name}`, actionType: 'transform', shapeType: cs.type };
+        }
+        if (
+            (cs as any).x !== (ps as any).x ||
+            (cs as any).y !== (ps as any).y ||
+            (cs as any).cx !== (ps as any).cx ||
+            (cs as any).cy !== (ps as any).cy
+        ) {
+            return { title: `Переміщення: ${name}`, actionType: 'move', shapeType: cs.type };
+        }
+        return { title: `Редагування: ${name}`, actionType: 'transform', shapeType: cs.type };
+    }
+
+    if (changedShapes.length > 1) {
+        return { title: `Зміна ${changedShapes.length} об'єктів`, actionType: 'transform' };
+    }
+
+    return {
+        title: 'Зміна проєкту',
+        actionType: 'edit'
+    };
+}
+
+export function formatHistoryEntries(
+    entries: HistoryEntry<AppHistoryState>[],
+    currentIndex: number,
+    t?: (key: string) => string
+): FormattedHistoryStep[] {
+    return entries.map((entry, index) => {
+        const prevState = index > 0 ? entries[index - 1].state : null;
+        const { title, actionType, shapeType } = describeHistoryStep(prevState, entry.state, entry.description, t);
+
+        const date = new Date(entry.timestamp);
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        const formattedTime = `${hours}:${minutes}:${seconds}`;
+
+        return {
+            index,
+            id: entry.id,
+            timestamp: entry.timestamp,
+            formattedTime,
+            title,
+            actionType,
+            shapeType,
+            shapesCount: (entry.state.shapes || []).length,
+            layersCount: (entry.state.layers || []).length,
+            isCurrent: index === currentIndex,
+            stepOffset: index - currentIndex,
+        };
+    });
+}

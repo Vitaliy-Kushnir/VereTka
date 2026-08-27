@@ -104,7 +104,8 @@ Here are the specifications:
     *   Draw all the shapes provided below.
     *   For each shape, you MUST add a comment with its unique ID right before the drawing command, in the format: \`# ID:shape-id-123\`. This is critical for mapping code back to the editor.
     *   ${generateTkinterTags ? 'Add a tags= parameter for each shape using ONLY the tags provided in the shape object. ' + (showSystemTags ? 'Include the shape id and group id.' : 'Do NOT include shape id or group id as tags.') : 'Do not add tags= parameter.'}\n    *   ${autoGenerateComments ? 'Add a short, descriptive comment for each shape based on its properties (e.g., `# A blue square`).' : 'Do not add any descriptive comments unless one is provided in the shape object\'s "comment" property.'}
-    ${outlineWithFill ? `*   **Important Rule for Outlines:** For any closed shape that has a fill color but no stroke (stroke is "none" or strokeWidth is 0), you MUST add \`outline=""\` to its drawing command. This prevents Tkinter from adding a default 1px black border. This rule applies to rectangles, ovals, polygons, pieslices, and chords.` : ''}
+    *   **Important Rule for Outlines:** If a shape's \`strokeWidth\` is 0 or \`stroke\` is "none", it MUST NOT render any border or line. For closed shapes (rectangle, oval, polygon, closed arc), you MUST add \`outline=""\`. For unclosed paths and lines (line, pencil, unclosed polyline, unclosed bezier, open arc), you MUST add \`fill=""\`.
+    ${outlineWithFill ? `*   (Also, per user settings, ensure closed shapes with a fill but no stroke strictly follow the \`outline=""\` rule).` : ''}
     *   End the script with \`root.mainloop()\`.
 
 3.  **Shapes to Draw (JSON format):**

@@ -293,61 +293,6 @@ export const FloatingModeControls: React.FC<FloatingModeControlsProps> = ({
                     </>
                 )}
 
-                {/* 4. ACTIVE DRAWING MODE (Polyline or Bezier) */}
-                {isDrawing && !isDistributing && (
-                    <>
-                        <div className="flex items-center gap-2 pr-2 border-r border-[var(--border-primary)]">
-                            <span className="flex h-2 w-2 relative">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                            </span>
-                            <span className="font-bold text-emerald-400">
-                                {isDrawingPolyline ? 'Побудова ламаної' : 'Побудова кривої Безьє'}
-                            </span>
-                            <span className="bg-emerald-500/15 text-emerald-400 font-semibold px-2 py-0.5 rounded-full text-[11px]">
-                                {isDrawingPolyline ? `${polylinePoints.length} точок` : `${bezierPoints.length} сегментів`}
-                            </span>
-                        </div>
-
-                        {/* Undo Last Point */}
-                        {(onUndoPolylinePoint || onUndoBezierPoint) && (
-                            <button
-                                type="button"
-                                onClick={isDrawingPolyline ? onUndoPolylinePoint : onUndoBezierPoint}
-                                className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--border-secondary)] font-semibold transition-all"
-                                title="Скасувати останню точку (Backspace)"
-                            >
-                                <UndoIcon size={14} />
-                                <span className="hidden sm:inline">Крок назад</span>
-                            </button>
-                        )}
-
-                        {/* Finish Shape */}
-                        <button
-                            type="button"
-                            onClick={() => {
-                                if (isDrawingPolyline) onCompletePolyline(false);
-                                else onCompleteBezier();
-                            }}
-                            className="flex items-center gap-1 px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-sm transition-all"
-                            title="Завершити побудову (Enter)"
-                        >
-                            <CheckIcon size={14} />
-                            <span>Завершити</span>
-                        </button>
-
-                        {/* Cancel Shape */}
-                        <button
-                            type="button"
-                            onClick={isDrawingPolyline ? onCancelPolyline : onCancelBezier}
-                            className="flex items-center gap-1 p-1 rounded-xl hover:bg-red-500/15 text-red-400 transition-colors"
-                            title="Скасувати (Esc)"
-                        >
-                            <XIcon size={16} />
-                        </button>
-                    </>
-                )}
-
                 {/* 5. MULTI-SELECTION MODE (when not distributing) */}
                 {isMultiSelecting && !isDistributing && !isEditingPoints && !isDrawing && (
                     <>

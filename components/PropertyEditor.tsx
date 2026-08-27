@@ -1071,6 +1071,22 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                     </div>
                 </div>
                 <InputWrapper><Label htmlFor={`${path.id}-stroke-width`} title={t('prop.title.width')}>{t('prop.width')}:</Label><NumberInput id={`${path.id}-stroke-width`} value={isNaN(path.strokeWidth) ? 1 : roundToHundredths(path.strokeWidth)} onChange={(v, isFinal) => updateShape({ ...path, strokeWidth: v }, isFinal === false)} min={0} max={50} unit="px" presets={[0, 1, 2, 3, 5, 8, 12, 16, 24]} smartRound={false} /></InputWrapper>
+                <InputWrapper>
+                    <Checkbox id={`${path.id}-smooth`} checked={!!path.smooth} onChange={c => updateShape({ ...path, smooth: c })} label={t('props.smooth')} title={t('prop.title.smooth')}/>
+                </InputWrapper>
+                {path.smooth && (
+                    <InputWrapper>
+                        <Label htmlFor={`${path.id}-splinesteps`} title={t('prop.title.splinesteps')}>{t('prop.splinesteps')}:</Label>
+                        <NumberInput 
+                            id={`${path.id}-splinesteps`} 
+                            value={path.splinesteps ?? 12} 
+                            onChange={(v, isFinal) => updateShape({ ...path, splinesteps: v }, isFinal === false)} 
+                            min={1} 
+                            max={100} 
+                            presets={[4, 8, 12, 16, 24, 32, 48]} 
+                        />
+                    </InputWrapper>
+                )}
                 <DashControls shape={path} updateShape={updateShape} roundFn={roundToHundredths} />
                 {joinStyleControls(path)}
                 {lineLikeControls(path)}

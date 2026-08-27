@@ -9,7 +9,7 @@ interface MobileLayersSheetProps {
     shapes: Shape[];
     lockedShapeIds: Set<string>;
     selectedShapeIds: string[];
-    onSelectShape: (id: string, isShift: boolean) => void;
+    onSelectShape: (id: string | string[] | null, isCtrlPressed?: boolean, isShiftPressed?: boolean, ignoreGroup?: boolean) => void;
     onDeleteShape: (id: string) => void;
     onMoveShape: (id: string, direction: 'up' | 'down') => void;
     onUpdateShape: (shape: Shape) => void;
@@ -22,6 +22,8 @@ interface MobileLayersSheetProps {
     onLayerWarning?: (reason: 'hidden' | 'locked', layerId?: string, action?: () => void) => void;
     ignoreHiddenWarningForLayer?: string | null;
     distributePathState?: DistributePathState | null;
+    isMultiSelectMode?: boolean;
+    setIsMultiSelectMode?: (val: boolean) => void;
 
     onAddLayer: () => void;
     onDeleteLayer: (id: string) => void;
@@ -52,6 +54,8 @@ export const MobileLayersSheet: React.FC<MobileLayersSheetProps> = ({
     onLayerWarning,
     ignoreHiddenWarningForLayer,
     distributePathState,
+    isMultiSelectMode,
+    setIsMultiSelectMode,
     onAddLayer,
     onDeleteLayer,
     onClearLayer,
@@ -121,6 +125,8 @@ export const MobileLayersSheet: React.FC<MobileLayersSheetProps> = ({
                             onSetActiveLayer={onSetActiveLayer}
                             onLayerWarning={onLayerWarning}
                             ignoreHiddenWarningForLayer={ignoreHiddenWarningForLayer}
+                            isMultiSelectMode={isMultiSelectMode}
+                            setIsMultiSelectMode={setIsMultiSelectMode}
                         />
                     </div>
                 ) : (

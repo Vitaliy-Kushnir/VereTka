@@ -102,6 +102,8 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
         const markerRadius = scaledHandleSize / 1.5;
         const crossOffset = markerRadius * 0.6;
 
+        if (isNaN(textShape.x) || isNaN(textShape.y)) return null;
+
         return (
             <g 
                 
@@ -254,6 +256,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
                     if (!isShapeClosed && index === displayPoints.length - 1) return null;
                     const nextIndex = (index + 1) % displayPoints.length;
                     const nextPoint = displayPoints[nextIndex];
+                    if (!p || !nextPoint || isNaN(p.x) || isNaN(p.y) || isNaN(nextPoint.x) || isNaN(nextPoint.y)) return null;
 
                     return (
                         <line
@@ -269,6 +272,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
                 })}
 
                 {displayPoints.map((p, index) => {
+                    if (!p || isNaN(p.x) || isNaN(p.y)) return null;
                     const isActive = index === activePointIndex;
                     return (
                         <g key={`point-${index}`} onMouseDown={(e) => handleNodeDown(e, index)} onTouchStart={(e) => handleNodeDown(e as any, index)} data-handle="true" style={{ cursor: "grab" }}>
@@ -302,6 +306,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
         if (!start || !end || isNaN(start.x) || isNaN(start.y) || isNaN(end.x) || isNaN(end.y)) return null;
         const rotatedStart = rotatePoint(start, center, rotation);
         const rotatedEnd = rotatePoint(end, center, rotation);
+        if (!rotatedStart || !rotatedEnd || isNaN(rotatedStart.x) || isNaN(rotatedStart.y) || isNaN(rotatedEnd.x) || isNaN(rotatedEnd.y) || isNaN(center.x) || isNaN(center.y)) return null;
 
         const lineBbox = bbox;
     

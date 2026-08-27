@@ -1,18 +1,51 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useLanguage } from './LanguageContext';
 
 interface BetaBadgeProps {
     size?: 'sm' | 'md' | 'lg';
     className?: string;
     showGlow?: boolean;
+    onClick?: (e: React.MouseEvent) => void;
+    onCheatCodeTrigger?: () => void;
 }
 
 export const BetaBadge: React.FC<BetaBadgeProps> = ({ 
     size = 'lg', 
     className = '',
-    showGlow = true 
+    showGlow = true,
+    onClick,
+    onCheatCodeTrigger
 }) => {
     const { language } = useLanguage();
+    const clickCountRef = useRef<number>(0);
+    const resetTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    const handleBadgeClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+
+        if (resetTimeoutRef.current) {
+            clearTimeout(resetTimeoutRef.current);
+        }
+
+        clickCountRef.current += 1;
+
+        if (clickCountRef.current >= 12) {
+            clickCountRef.current = 0;
+            window.dispatchEvent(new CustomEvent('veretka:openCheatCodes'));
+            if (onCheatCodeTrigger) {
+                onCheatCodeTrigger();
+            }
+        } else {
+            // Reset counter after 4 seconds of inactivity
+            resetTimeoutRef.current = setTimeout(() => {
+                clickCountRef.current = 0;
+            }, 4000);
+        }
+
+        if (onClick) {
+            onClick(e);
+        }
+    };
 
     const versionTextMap: Record<string, string> = {
         uk: 'версія',
@@ -36,8 +69,10 @@ export const BetaBadge: React.FC<BetaBadgeProps> = ({
 
     if (size === 'sm') {
         return (
-            <span 
-                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[var(--brand-badge-bg)] border border-[var(--brand-badge-border)] shadow-xs select-none ${className}`}
+            <button
+                type="button"
+                onClick={handleBadgeClick}
+                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[var(--brand-badge-bg)] border border-[var(--brand-badge-border)] shadow-xs select-none cursor-pointer active:scale-90 transition-transform ${className}`}
                 title={tooltipText}
             >
                 <span 
@@ -55,14 +90,17 @@ export const BetaBadge: React.FC<BetaBadgeProps> = ({
                 >
                     {versionText}
                 </span>
-            </span>
+            </button>
         );
     }
 
     if (size === 'lg') {
         return (
             <div 
-                className={`inline-flex flex-col items-center select-none group cursor-default transition-all duration-300 hover:scale-105 ${className}`}
+                role="button"
+                tabIndex={0}
+                onClick={handleBadgeClick}
+                className={`inline-flex flex-col items-center select-none group cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95 ${className}`}
                 title={tooltipText}
             >
                 <div 
@@ -126,8 +164,10 @@ export const BetaBadge: React.FC<BetaBadgeProps> = ({
 
     // Default medium badge
     return (
-        <div 
-            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-xl transform -rotate-2 bg-[var(--brand-badge-bg)] backdrop-blur-xs border border-[var(--brand-badge-border)] shadow-[0_0_10px_var(--brand-badge-shadow)] select-none ${className}`}
+        <button
+            type="button"
+            onClick={handleBadgeClick}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-xl transform -rotate-2 bg-[var(--brand-badge-bg)] backdrop-blur-xs border border-[var(--brand-badge-border)] shadow-[0_0_10px_var(--brand-badge-shadow)] select-none cursor-pointer active:scale-90 transition-transform ${className}`}
             title={tooltipText}
         >
             <span 
@@ -143,7 +183,7 @@ export const BetaBadge: React.FC<BetaBadgeProps> = ({
             >
                 {versionText}
             </span>
-        </div>
+        </button>
     );
 };
 

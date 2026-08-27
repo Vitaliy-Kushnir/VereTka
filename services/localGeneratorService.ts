@@ -58,7 +58,9 @@ function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, ca
             options.outline = shape.stroke;
         }
     } else { // No stroke
-        if (hasFill && outlineWithFill && !isUnclosedLine) {
+        if (isUnclosedLine) {
+            options.fill = "";
+        } else {
             options.outline = "";
         }
     }
@@ -126,8 +128,8 @@ function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, ca
         }
     };
     
-    // Generate concise code for smooth bezier/polyline using their raw control points.
-    if ((shape.type === 'bezier' || shape.type === 'polyline') && shape.smooth) {
+    // Generate concise code for smooth bezier/polyline/pencil using their raw control points.
+    if ((shape.type === 'bezier' || shape.type === 'polyline' || shape.type === 'pencil') && shape.smooth) {
         options.smooth = 'True';
         if ('splinesteps' in shape && shape.splinesteps) {
             options.splinesteps = shape.splinesteps;
@@ -145,7 +147,7 @@ function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, ca
 
         const flattenedPoints = controlPoints.flatMap(p => [round(p.x), round(p.y)]).join(', ');
 
-        if (shape.isClosed) {
+        if ('isClosed' in shape && (shape as any).isClosed) {
             return `${canvasVarName}.create_polygon(${flattenedPoints}${formatOptions(options)})`;
         }
         return `${canvasVarName}.create_line(${flattenedPoints}${formatOptions(options)})`;
@@ -156,6 +158,8 @@ function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, ca
     }
 
     if (shape.type === 'text') {
+        delete options.outline;
+        delete options.width;
         const fontParts = [shape.font, Math.round(shape.fontSize)];
         if (shape.weight === 'bold') fontParts.push('bold');
         if (shape.slant === 'italic') fontParts.push('italic');
@@ -176,6 +180,8 @@ function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, ca
     }
     
     if (shape.type === 'image') {
+        delete options.outline;
+        delete options.width;
         options.image = imageVarMap.get(shape.id);
         const coords = [round(shape.x + shape.width / 2), round(shape.y + shape.height / 2)].join(', ');
         let command = `${canvasVarName}.create_image(${coords}${formatOptions(options)})`;
@@ -186,6 +192,8 @@ function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, ca
     }
 
     if (shape.type === 'bitmap') {
+        delete options.outline;
+        delete options.width;
         options.bitmap = shape.bitmapType;
         options.foreground = shape.foreground;
         options.background = shape.background;

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { XIcon } from './icons';
+import { XIcon, MagnifierIcon, PinIcon } from './icons';
 import { InputWrapper, Label, NumberInput, ColorInput } from './FormControls';
-import { type ProjectTemplate } from '../types';
+import { type ProjectTemplate, type MagnifierMode } from '../types';
 import { useLanguage } from './LanguageContext';
 
 interface SettingsModalProps {
@@ -33,6 +33,10 @@ interface SettingsModalProps {
   setEnableSnapping: (show: boolean) => void;
   showCursorCoords: boolean;
   setShowCursorCoords: (show: boolean) => void;
+  showMagnifier?: MagnifierMode | boolean;
+  setShowMagnifier?: (mode: MagnifierMode) => void;
+  touchDrawingMode?: 'tap-drag' | 'virtual-joystick';
+  setTouchDrawingMode?: (mode: 'tap-drag' | 'virtual-joystick') => void;
   showRotationAngle: boolean;
   setShowRotationAngle: (show: boolean) => void;
   openAsWebApp: boolean;
@@ -288,6 +292,135 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                             <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.appearance.showCursorCoordsDesc')}</p>
                                         </label>
                                     </div>
+                                    {props.setShowMagnifier && (() => {
+                                        const currentMode: MagnifierMode = typeof props.showMagnifier === 'string'
+                                            ? props.showMagnifier
+                                            : (props.showMagnifier === true ? 'auto' : 'off');
+
+                                        return (
+                                            <div className="pt-2 border-t border-[var(--border-secondary)]">
+                                                <label className="text-sm font-medium text-[var(--text-secondary)] block mb-2">
+                                                    {t('settings.appearance.showMagnifier') || 'Режим Лупи (Magnifier)'}
+                                                </label>
+                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                                    <label className={`flex items-start p-2.5 rounded-lg border cursor-pointer transition-all ${
+                                                        currentMode === 'off'
+                                                            ? 'bg-[var(--accent-primary)]/10 border-[var(--accent-primary)] text-[var(--text-primary)]'
+                                                            : 'bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                                                    }`}>
+                                                        <input
+                                                            type="radio"
+                                                            name="magnifierMode"
+                                                            value="off"
+                                                            checked={currentMode === 'off'}
+                                                            onChange={() => props.setShowMagnifier!('off')}
+                                                            className="w-4 h-4 text-[var(--accent-primary)] bg-[var(--bg-secondary)] border-[var(--border-primary)] mt-0.5"
+                                                        />
+                                                        <div className="ml-2.5">
+                                                            <span className="text-xs font-semibold block">Вимкнено</span>
+                                                            <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">Не показувати лупу</p>
+                                                        </div>
+                                                    </label>
+
+                                                    <label className={`flex items-start p-2.5 rounded-lg border cursor-pointer transition-all ${
+                                                        currentMode === 'auto'
+                                                            ? 'bg-cyan-500/15 border-cyan-400 text-cyan-200'
+                                                            : 'bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                                                    }`}>
+                                                        <input
+                                                            type="radio"
+                                                            name="magnifierMode"
+                                                            value="auto"
+                                                            checked={currentMode === 'auto'}
+                                                            onChange={() => props.setShowMagnifier!('auto')}
+                                                            className="w-4 h-4 text-cyan-400 bg-[var(--bg-secondary)] border-[var(--border-primary)] mt-0.5"
+                                                        />
+                                                        <div className="ml-2.5">
+                                                            <span className="text-xs font-semibold block flex items-center gap-1">
+                                                                <MagnifierIcon size={12} className="text-cyan-400" />
+                                                                Автоматично
+                                                            </span>
+                                                            <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">При контакті з екраном</p>
+                                                        </div>
+                                                    </label>
+
+                                                    <label className={`flex items-start p-2.5 rounded-lg border cursor-pointer transition-all ${
+                                                        currentMode === 'pinned'
+                                                            ? 'bg-amber-500/15 border-amber-400 text-amber-200'
+                                                            : 'bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                                                    }`}>
+                                                        <input
+                                                            type="radio"
+                                                            name="magnifierMode"
+                                                            value="pinned"
+                                                            checked={currentMode === 'pinned'}
+                                                            onChange={() => props.setShowMagnifier!('pinned')}
+                                                            className="w-4 h-4 text-amber-400 bg-[var(--bg-secondary)] border-[var(--border-primary)] mt-0.5"
+                                                        />
+                                                        <div className="ml-2.5">
+                                                            <span className="text-xs font-semibold block flex items-center gap-1">
+                                                                <PinIcon size={12} className="text-amber-400" />
+                                                                Зафіксовано 📌
+                                                            </span>
+                                                            <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">Завжди на екрані</p>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+                                    {props.setTouchDrawingMode && (
+                                        <div className="pt-2 border-t border-[var(--border-secondary)]">
+                                            <label className="text-sm font-medium text-[var(--text-secondary)] block mb-2">
+                                                {t('settings.appearance.touchDrawingMode') || 'Режим сенсорного введення та кривих'}
+                                            </label>
+                                            {typeof window !== 'undefined' && (('ontouchstart' in window) || navigator.maxTouchPoints > 0) ? (
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                    <label className={`flex items-start p-2.5 rounded-lg border cursor-pointer transition-all ${
+                                                        (props.touchDrawingMode ?? 'tap-drag') === 'tap-drag'
+                                                            ? 'bg-[var(--accent-primary)]/10 border-[var(--accent-primary)] text-[var(--text-primary)]'
+                                                            : 'bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                                                    }`}>
+                                                        <input
+                                                            type="radio"
+                                                            name="touchDrawingMode"
+                                                            value="tap-drag"
+                                                            checked={(props.touchDrawingMode ?? 'tap-drag') === 'tap-drag'}
+                                                            onChange={() => props.setTouchDrawingMode!('tap-drag')}
+                                                            className="mt-0.5 mr-2.5 text-[var(--accent-primary)]"
+                                                        />
+                                                        <div>
+                                                            <div className="text-xs font-semibold">{t('settings.appearance.touchModeTapDrag') || '📱 Прямий дотик з лупою'}</div>
+                                                            <div className="text-[11px] text-[var(--text-tertiary)] mt-0.5">{t('settings.appearance.touchModeTapDragDesc') || 'Малювання пальцем напряму по полотну зі збільшувальною лупою'}</div>
+                                                        </div>
+                                                    </label>
+
+                                                    <label className={`flex items-start p-2.5 rounded-lg border cursor-pointer transition-all ${
+                                                        props.touchDrawingMode === 'virtual-joystick'
+                                                            ? 'bg-cyan-500/10 border-cyan-500 text-[var(--text-primary)] shadow-sm'
+                                                            : 'bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                                                    }`}>
+                                                        <input
+                                                            type="radio"
+                                                            name="touchDrawingMode"
+                                                            value="virtual-joystick"
+                                                            checked={props.touchDrawingMode === 'virtual-joystick'}
+                                                            onChange={() => props.setTouchDrawingMode!('virtual-joystick')}
+                                                            className="mt-0.5 mr-2.5 text-cyan-500"
+                                                        />
+                                                        <div>
+                                                            <div className="text-xs font-semibold text-cyan-400">{t('settings.appearance.touchModeJoystick') || '🕹️ Віртуальний джойстик і приціл'}</div>
+                                                            <div className="text-[11px] text-[var(--text-tertiary)] mt-0.5">{t('settings.appearance.touchModeJoystickDesc') || 'Наведення лазерного прицілу джойстиком з кнопками встановлення точок'}</div>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            ) : (
+                                                <div className="text-xs text-[var(--text-tertiary)] bg-[var(--bg-secondary)] p-2.5 rounded-lg border border-[var(--border-secondary)]">
+                                                    Ці налаштування відображаються та доступні лише на пристроях із сенсорним екраном (наприклад, планшетах або смартфонах).
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                     <div className="flex items-start pt-1">
                                         <input id="showRotationAngle" type="checkbox" checked={props.showRotationAngle} onChange={e => props.setShowRotationAngle(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] bg-[var(--bg-secondary)] border-[var(--border-primary)] mt-0.5" />
                                         <label htmlFor="showRotationAngle" className="ml-3 text-sm font-medium text-[var(--text-secondary)] cursor-pointer">

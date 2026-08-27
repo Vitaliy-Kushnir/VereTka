@@ -24,6 +24,8 @@ interface ShapeListProps {
   showTkinterNames: boolean;
   onLayerWarning?: (reason: 'hidden' | 'locked', layerId: string, action?: () => void) => void;
   ignoreHiddenWarningForLayer?: string | null;
+  isMultiSelectMode?: boolean;
+  setIsMultiSelectMode?: (val: boolean) => void;
 }
 
 const toolToIcon: Record<Tool | 'group', React.ReactNode> = {
@@ -101,7 +103,26 @@ const ShapeNameDisplay = ({ isSelected, shapeName, showTkinterNames, tkinterName
     );
 };
 
-const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, layers, activeLayerId, lockedShapeIds, selectedShapeIds, onSelectShape, onDeleteShape, onMoveShape, onUpdateShape, onReorderShape, onMoveToLayer, onSetActiveLayer, showTkinterNames, onLayerWarning, ignoreHiddenWarningForLayer }) => {
+const ShapeList: React.FC<ShapeListProps> = ({ 
+    distributePathState, 
+    shapes, 
+    layers, 
+    activeLayerId, 
+    lockedShapeIds, 
+    selectedShapeIds, 
+    onSelectShape, 
+    onDeleteShape, 
+    onMoveShape, 
+    onUpdateShape, 
+    onReorderShape, 
+    onMoveToLayer, 
+    onSetActiveLayer, 
+    showTkinterNames, 
+    onLayerWarning, 
+    ignoreHiddenWarningForLayer,
+    isMultiSelectMode = false,
+    setIsMultiSelectMode
+}) => {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingValue, setEditingValue] = useState('');
     const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -116,6 +137,50 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
     const [isSelectedItemVisible, setIsSelectedItemVisible] = useState(true);
     const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(false);
     const [scrollFix, setScrollFix] = useState<{ id: string, clientY: number } | null>(null);
+
+    // Long press detection for list items
+    const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const longPressPosRef = useRef<{ x: number, y: number, id: string } | null>(null);
+    const isLongPressTriggeredRef = useRef<boolean>(false);
+
+    const handleItemPointerDown = (e: React.TouchEvent | React.MouseEvent, shapeId: string) => {
+        const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+        longPressPosRef.current = { x: clientX, y: clientY, id: shapeId };
+        isLongPressTriggeredRef.current = false;
+        
+        if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = setTimeout(() => {
+            isLongPressTriggeredRef.current = true;
+            if (typeof navigator !== 'undefined' && navigator?.vibrate) {
+                try { navigator.vibrate(40); } catch (_) {}
+            }
+            setIsMultiSelectMode?.(true);
+            // If already in multi-select mode and a different shape was previously selected: Range selection (Shift)!
+            if ((isMultiSelectMode || selectedShapeIds.length > 0) && selectedShapeIds.length > 0 && !selectedShapeIds.includes(shapeId)) {
+                onSelectShape(shapeId, true, true, true);
+            } else {
+                onSelectShape(shapeId, true, false, true);
+            }
+        }, 400);
+    };
+
+    const handleItemPointerMove = (e: React.TouchEvent | React.MouseEvent) => {
+        if (!longPressPosRef.current || !longPressTimerRef.current) return;
+        const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+        if (Math.hypot(clientX - longPressPosRef.current.x, clientY - longPressPosRef.current.y) > 8) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = null;
+        }
+    };
+
+    const handleItemPointerUp = () => {
+        if (longPressTimerRef.current) {
+            clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = null;
+        }
+    };
 
     useLayoutEffect(() => {
         if (scrollFix && listContainerRef.current) {
@@ -382,14 +447,27 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
                 transition={{ duration: 0.2 }}
                 ref={(el: any) => { itemRefs.current[shape.id] = el; }}
                 key={shape.id}
+                onTouchStart={(e) => handleItemPointerDown(e, shape.id)}
+                onTouchMove={handleItemPointerMove}
+                onTouchEnd={handleItemPointerUp}
+                onTouchCancel={handleItemPointerUp}
+                onMouseDown={(e) => handleItemPointerDown(e, shape.id)}
+                onMouseMove={handleItemPointerMove}
+                onMouseUp={handleItemPointerUp}
                 onClick={(e: React.MouseEvent) => {
                     e.stopPropagation();
                     if (isLocked) return;
+                    if (isLongPressTriggeredRef.current) {
+                        isLongPressTriggeredRef.current = false;
+                        return;
+                    }
                     
-
-                    
-                    // In list view, always select the exact item clicked to allow selecting inner shapes
-                    onSelectShape(shape.id, e.ctrlKey || e.metaKey, e.shiftKey, true);
+                    // In multi-select mode or with Ctrl/Shift, toggle / range select
+                    if (isMultiSelectMode || selectedShapeIds.length > 1) {
+                        onSelectShape(shape.id, true, e.shiftKey, true);
+                    } else {
+                        onSelectShape(shape.id, e.ctrlKey || e.metaKey, e.shiftKey, true);
+                    }
                 }}
                 onDoubleClick={(e) => {
                     e.stopPropagation();
@@ -439,6 +517,28 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
                     )}
 
                     <div className={`flex items-center gap-2 overflow-hidden flex-1 relative z-10 ${isLocked ? 'pointer-events-none' : ''}`}>
+                        {(isMultiSelectMode || selectedShapeIds.length > 1) && (
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (isLocked) return;
+                                    onSelectShape(shape.id, true, false, true);
+                                }}
+                                className={`flex-shrink-0 w-3.5 h-3.5 rounded flex items-center justify-center transition-all ${
+                                    isSelected 
+                                        ? 'bg-white text-[var(--accent-primary)] shadow-sm' 
+                                        : 'border border-[var(--border-secondary)] hover:border-[var(--accent-primary)] bg-[var(--bg-secondary)]'
+                                }`}
+                                title={isSelected ? (t('button.deselect') || 'Зняти вибір') : (t('button.select') || 'Виділити')}
+                            >
+                                {isSelected && (
+                                    <svg className="w-2.5 h-2.5 stroke-current" viewBox="0 0 24 24" fill="none" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                )}
+                            </button>
+                        )}
                         {shape.type === 'group' && (
                             <button
                                 onClick={(e) => {
@@ -542,6 +642,36 @@ const ShapeList: React.FC<ShapeListProps> = ({ distributePathState, shapes, laye
                 </label>
             </div>
         </div>
+        {(isMultiSelectMode || selectedShapeIds.length > 1) && (
+            <div className="flex items-center justify-between px-3 py-1.5 bg-[var(--accent-primary)]/10 border-b border-[var(--accent-primary)]/20 flex-shrink-0 animate-in fade-in">
+                <span className="text-xs font-bold text-[var(--accent-primary)] flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[var(--accent-primary)] animate-pulse"></span>
+                    {t('status.selected') || 'Виділено'}: {selectedShapeIds.length}
+                </span>
+                <div className="flex items-center gap-1.5">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            const selectable = shapes.filter(s => !lockedShapeIds.has(s.id)).map(s => s.id);
+                            onSelectShape(selectable, false, false, true);
+                        }}
+                        className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--border-secondary)] transition-colors"
+                    >
+                        {t('button.selectAll') || 'Всі'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            onSelectShape(null);
+                            setIsMultiSelectMode?.(false);
+                        }}
+                        className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-secondary)] transition-colors"
+                    >
+                        {t('button.cancel') || 'Скинути'}
+                    </button>
+                </div>
+            </div>
+        )}
         <div className="flex-grow overflow-hidden relative">
             <div ref={listContainerRef} className="h-full overflow-y-auto">
                 {shapes.length > 0 ? (

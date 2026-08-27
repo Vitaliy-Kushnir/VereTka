@@ -29,6 +29,7 @@ export type DrawMode = 'corner' | 'center';
 export type JoinStyle = 'miter' | 'round' | 'bevel';
 export type BuiltInBitmap = 'error' | 'gray75' | 'gray50' | 'gray25' | 'gray12' | 'hourglass' | 'info' | 'questhead' | 'question' | 'warning';
 export type TransformHandle = 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-right' | 'bottom-left' | 'bottom-center' | 'bottom-right' | 'line-start' | 'line-end';
+export type MagnifierMode = 'off' | 'auto' | 'pinned';
 
 
 export interface ViewTransform {
@@ -128,6 +129,8 @@ export interface BezierCurveShape extends BaseShape, RotatableShape, FillableSha
 export interface PathShape extends BaseShape, RotatableShape, DashableShape, JoinableShape {
     type: 'pencil';
     points: { x: number; y: number }[];
+    smooth?: boolean;
+    splinesteps?: number;
     capstyle?: 'butt' | 'round' | 'projecting';
     arrow?: 'none' | 'first' | 'last' | 'both';
     arrowshape?: [number, number, number];

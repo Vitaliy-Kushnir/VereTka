@@ -612,6 +612,25 @@ export const translations = {
     "menu.edit": "–†–µ–¥–∞–≥—É–≤–∞—Ç–∏",
     "menu.edit.undo": "–°–∫–∞—Å—É–≤–∞—Ç–∏",
     "menu.edit.redo": "–ü–æ–≤–µ—Ä–Ω—É—Ç–∏",
+    "history.title": "–Ü—Å—Ç–æ—Ä—ñ—è –∑–º—ñ–Ω",
+    "history.selectUndo": "–û–±–µ—Ä—ñ—Ç—å –¥—ñ—é, –¥–æ —è–∫–æ—ó —Å–∫–∞—Å—É–≤–∞—Ç–∏ —Å—Ç–∞–Ω",
+    "history.selectRedo": "–û–±–µ—Ä—ñ—Ç—å –¥—ñ—é, –¥–æ —è–∫–æ—ó –≤—ñ–¥–Ω–æ–≤–∏—Ç–∏ —Å—Ç–∞–Ω",
+    "history.fullTimeline": "–®–≤–∏–¥–∫–∏–π –ø–µ—Ä–µ—Ö—ñ–¥ –ø–æ –≤—Å—ñ—Ö –¥—ñ—è—Ö",
+    "history.filterAll": "–í—Å—ñ",
+    "history.filterUndo": "–ù–∞–∑–∞–¥",
+    "history.filterRedo": "–í–ø–µ—Ä–µ–¥",
+    "history.jumpToStart": "–ü–æ–≤–µ—Ä–Ω—É—Ç–∏—Å—è –Ω–∞ —Å–∞–º–∏–π –ø–æ—á–∞—Ç–æ–∫",
+    "history.jumpToLatest": "–ü–µ—Ä–µ–π—Ç–∏ –¥–æ –Ω–∞–π–Ω–æ–≤—ñ—à–æ–≥–æ —Å—Ç–∞–Ω—É",
+    "history.start": "–ü–æ—á–∞—Ç–æ–∫",
+    "history.latest": "–û—Å—Ç–∞–Ω–Ω—ñ–π",
+    "history.current": "–ü–æ—Ç–æ—á–Ω–∏–π",
+    "history.empty": "–ù–µ–º–∞—î –∑–∞–ø–∏—Å—ñ–≤ —É –≤–∏–±—Ä–∞–Ω–æ–º—É —Ñ—ñ–ª—å—Ç—Ä—ñ",
+    "history.initialState": "–ü–æ—á–∞—Ç–∫–æ–≤–∏–π —Å—Ç–∞–Ω –ø—Ä–æ—î–∫—Ç—É",
+    "history.step": "–ö—Ä–æ–∫",
+    "history.of": "–∑",
+    "history.shapesCount": "—Ñ—ñ–≥—É—Ä",
+    "history.tipLongPress": "–£—Ç—Ä–∏–º—É–π—Ç–µ –¥–ª—è –ø–µ—Ä–µ–≥–ª—è–¥—É —ñ—Å—Ç–æ—Ä—ñ—ó",
+    "history.longPressTip": "–î–æ–≤–≥–∏–π –∫–ª—ñ–∫ –ø–æ —Å—Ç—Ä—ñ–ª–∫–∞—Ö –¥–ª—è –≤–∏–∫–ª–∏–∫—É —ñ—Å—Ç–æ—Ä—ñ—ó",
     "menu.edit.duplicate": "–î—É–±–ª—é–≤–∞—Ç–∏",
     "menu.edit.group": "–ó–≥—Ä—É–ø—É–≤–∞—Ç–∏",
     "menu.edit.ungroup": "–†–æ–∑–≥—Ä—É–ø—É–≤–∞—Ç–∏",
@@ -823,14 +842,15 @@ export const translations = {
     "about.support": "<strong className=\"text-[var(--text-primary)]\">–ü—ñ–¥—Ç—Ä–∏–º–∫–∞:</strong> AI-–∞—Å–∏—Å—Ç–µ–Ω—Ç –Ω–∞ –±–∞–∑—ñ Google Gemini.",
     "about.tech": "–°—Ç–≤–æ—Ä–µ–Ω–æ –∑–∞ –¥–æ–ø–æ–º–æ–≥–æ—é <a href=\"https://aistudio.google.com/\" target=\"_blank\" rel=\"noopener noreferrer\" className=\"underline text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)]\">AI Studio Google</a>, Visual Studio Code.",
     "about.version": "–í–µ—Ä—Å—ñ—è",
+    "help.touchMobile": "6. –°–µ–Ω—Å–æ—Ä–Ω—ñ –µ–∫—Ä–∞–Ω–∏, –ª—É–ø–∞ —Ç–∞ –¥–∂–æ–π—Å—Ç–∏–∫",
     "help.intro": "1. –í—Å—Ç—É–ø",
     "help.interface": "2. –û–≥–ª—è–¥ —ñ–Ω—Ç–µ—Ä—Ñ–µ–π—Å—É",
     "help.projects": "3. –†–æ–±–æ—Ç–∞ –∑ –ø—Ä–æ—î–∫—Ç–∞–º–∏",
     "help.templates": "4. –†–æ–±–æ—Ç–∞ –∑ —à–∞–±–ª–æ–Ω–∞–º–∏",
     "help.shapes": "5. –†–æ–±–æ—Ç–∞ –∑ –æ–±‚Äô—î–∫—Ç–∞–º–∏",
-    "help.codeExport": "6. –ö–æ–¥ —Ç–∞ –µ–∫—Å–ø–æ—Ä—Ç",
-    "help.feedback": "7. –ó–≤–æ—Ä–æ—Ç–Ω–∏–π –∑–≤‚Äô—è–∑–æ–∫",
-    "help.hotkeys": "9. –ì–∞—Ä—è—á—ñ –∫–ª–∞–≤—ñ—à—ñ",
+    "help.codeExport": "7. –ö–æ–¥ —Ç–∞ –µ–∫—Å–ø–æ—Ä—Ç",
+    "help.feedback": "9. –ó–≤–æ—Ä–æ—Ç–Ω–∏–π –∑–≤‚Äô—è–∑–æ–∫",
+    "help.hotkeys": "10. –ì–∞—Ä—è—á—ñ –∫–ª–∞–≤—ñ—à—ñ",
     "menu.help.shortcuts": "–ì–∞—Ä—è—á—ñ –∫–ª–∞–≤—ñ—à—ñ",
     "shortcuts.title": "–ì–∞—Ä—è—á—ñ –∫–ª–∞–≤—ñ—à—ñ",
     "shortcuts.searchPlaceholder": "–ü–æ—à—É–∫ –∫–ª–∞–≤—ñ—à –∞–±–æ –¥—ñ–π...",
@@ -922,6 +942,12 @@ export const translations = {
     "help.zoomIn": "–ó–±—ñ–ª—å—à–∏—Ç–∏ —à—Ä–∏—Ñ—Ç –Ω–∞ 5%",
     "help.resetZoom": "–°–∫–∏–Ω—É—Ç–∏ –º–∞—Å—à—Ç–∞–± –¥–æ 100%",
     "help.close": "–ó–∞–∫—Ä–∏—Ç–∏",
+    "help.prevSection": "–ü–æ–ø–µ—Ä–µ–¥–Ω—ñ–π —Ä–æ–∑–¥—ñ–ª",
+    "help.nextSection": "–ù–∞—Å—Ç—É–ø–Ω–∏–π —Ä–æ–∑–¥—ñ–ª",
+    "help.toc": "–ó–º—ñ—Å—Ç",
+    "help.sections": "–†–æ–∑–¥—ñ–ª–∏ –¥–æ–≤—ñ–¥–∫–∏",
+    "help.fontSize": "–†–æ–∑–º—ñ—Ä —à—Ä–∏—Ñ—Ç—É",
+    "help.scrollToTop": "–í–≥–æ—Ä—É",
     "menu.home": "–ù–∞ –≥–æ–ª–æ–≤–Ω—É",
     "menu.settings": "–ù–∞–ª–∞—à—Ç—É–≤–∞–Ω–Ω—è",
     "tool.select": "–í–∏–±—Ä–∞—Ç–∏",
@@ -1034,6 +1060,14 @@ export const translations = {
     "settings.appearance.enableSnappingDesc": "–í—ñ–¥–æ–±—Ä–∞–∂–∞—Ç–∏ –Ω–∞–ø—Ä—è–º–Ω—ñ –ø—Ä–∏ –≤–∏—Ä—ñ–≤–Ω—é–≤–∞–Ω–Ω—ñ —Ñ—ñ–≥—É—Ä –æ–¥–Ω–∞ –≤—ñ–¥–Ω–æ—Å–Ω–æ –æ–¥–Ω–æ—ó.",
     "settings.appearance.showCursorCoords": "–ü–æ–∫–∞–∑—É–≤–∞—Ç–∏ –∫–æ–æ—Ä–¥–∏–Ω–∞—Ç–∏ –±—ñ–ª—è –∫—É—Ä—Å–æ—Ä–∞",
     "settings.appearance.showCursorCoordsDesc": "–î–∏–Ω–∞–º—ñ—á–Ω–æ –≤—ñ–¥–æ–±—Ä–∞–∂–∞—î –∫–æ–æ—Ä–¥–∏–Ω–∞—Ç–∏ X/Y –ø–æ—Ä—É—á –∑ –∫—É—Ä—Å–æ—Ä–æ–º.",
+    "settings.appearance.showMagnifier": "–õ—É–ø–∞ –ø—Ä–∏ –º–∞–ª—é–≤–∞–Ω–Ω—ñ —Ç–∞ —Ä–µ–¥–∞–≥—É–≤–∞–Ω–Ω—ñ",
+    "settings.appearance.showMagnifierDesc": "–ó–±—ñ–ª—å—à—É—î –æ–±–ª–∞—Å—Ç—å –ø—ñ–¥ –ø–∞–ª—å—Ü–µ–º –∞–±–æ –∫—É—Ä—Å–æ—Ä–æ–º –¥–ª—è –Ω–∞–¥—Ç–æ—á–Ω–æ–≥–æ –ø–æ–∑–∏—Ü—ñ–æ–Ω—É–≤–∞–Ω–Ω—è.",
+    "settings.appearance.touchDrawingMode": "–†–µ–∂–∏–º —Å–µ–Ω—Å–æ—Ä–Ω–æ–≥–æ –≤–≤–µ–¥–µ–Ω–Ω—è —Ç–∞ –º–∞–ª—é–≤–∞–Ω–Ω—è",
+    "settings.appearance.touchDrawingModeDesc": "–í–∏–±–µ—Ä—ñ—Ç—å –∑—Ä—É—á–Ω–∏–π —Å–ø–æ—Å—ñ–± –∫–µ—Ä—É–≤–∞–Ω–Ω—è –Ω–∞ —Å–µ–Ω—Å–æ—Ä–Ω–∏—Ö –µ–∫—Ä–∞–Ω–∞—Ö.",
+    "settings.appearance.touchModeTapDrag": "üì± –ü—Ä—è–º–∏–π –¥–æ—Ç–∏–∫ –∑ –ª—É–ø–æ—é (Tap & Drag)",
+    "settings.appearance.touchModeTapDragDesc": "–®–≤–∏–¥–∫–µ —Ç–∞ —ñ–Ω—Ç—É—ó—Ç–∏–≤–Ω–µ –º–∞–ª—é–≤–∞–Ω–Ω—è –ø–∞–ª—å—Ü–µ–º –Ω–∞–ø—Ä—è–º—É –ø–æ –ø–æ–ª–æ—Ç–Ω—É.",
+    "settings.appearance.touchModeJoystick": "üïπÔ∏è –í—ñ—Ä—Ç—É–∞–ª—å–Ω–∏–π –¥–∂–æ–π—Å—Ç–∏–∫ —ñ –ø—Ä–∏—Ü—ñ–ª (Joystick / Reticle)",
+    "settings.appearance.touchModeJoystickDesc": "–ù–∞–≤–µ–¥–µ–Ω–Ω—è –ª–∞–∑–µ—Ä–Ω–æ–≥–æ –ø—Ä–∏—Ü—ñ–ª—É –¥–∂–æ–π—Å—Ç–∏–∫–æ–º –∑ –æ–∫—Ä–µ–º–∏–º–∏ –∫–Ω–æ–ø–∫–∞–º–∏ –¥–æ–¥–∞–≤–∞–Ω–Ω—è —Ç–æ—á–æ–∫ —Ç–∞ –º—ñ–∫—Ä–æ–∑–º—ñ—â–µ–Ω–Ω—è.",
     "settings.appearance.showRotationAngle": "–ü–æ–∫–∞–∑—É–≤–∞—Ç–∏ –∫—É—Ç –ø—Ä–∏ –æ–±–µ—Ä—Ç–∞–Ω–Ω—ñ",
     "settings.appearance.showRotationAngleDesc": "–î–∏–Ω–∞–º—ñ—á–Ω–æ –≤—ñ–¥–æ–±—Ä–∞–∂–∞—î –∫—É—Ç —É –ø—ñ–¥–∫–∞–∑—Ü—ñ –±—ñ–ª—è –∫—É—Ä—Å–æ—Ä–∞.",
     "settings.appearance.openAsWebApp": "–í—ñ–¥–∫—Ä–∏–≤–∞—Ç–∏ —è–∫ –≤–µ–±-–¥–æ–¥–∞—Ç–æ–∫",
@@ -1417,7 +1451,34 @@ export const translations = {
     "share.testUrlLabel": "–¢–µ—Å—Ç–æ–≤–µ –ø–æ—Å–∏–ª–∞–Ω–Ω—è (–ø–æ—Ç–æ—á–Ω–∏–π –ø—Ä–µ–≤ º—é)",
     "share.ghPagesWhyTitle": "üí° –ß–æ–º—É —Å–∞–π—Ç –Ω–∞ GitHub Pages –≤—ñ–¥–∫—Ä–∏–≤ —Å—Ç–∞—Ä—Ç–æ–≤—É —Å—Ç–æ—Ä—ñ–Ω–∫—É?",
     "share.ghPagesWhyDesc": "–ù–∞ GitHub Pages –∑–∞—Ä–∞–∑ –∑–∞–≤–∞–Ω—Ç–∞–∂–µ–Ω–∞ —Ä–∞–Ω—ñ—à–∞ –≤–µ—Ä—Å—ñ—è —Ä–µ–¥–∞–∫—Ç–æ—Ä–∞. –í–æ–Ω–∞ —â–µ –Ω–µ –º—ñ—Å—Ç–∏—Ç—å –æ–Ω–æ–≤–ª–µ–Ω–æ–≥–æ –∫–æ–¥—É –∑—á–∏—Ç—É–≤–∞–Ω–Ω—è –ø–æ—Å–∏–ª–∞–Ω—å.",
-    "share.ghPagesWhyHint": "–û–ø—É–±–ª—ñ–∫—É–π—Ç–µ/–æ–Ω–æ–≤—ñ—Ç—å –∑–±—ñ—Ä–∫—É –ø—Ä–æ–µ–∫—Ç—É –Ω–∞ GitHub Pages, —ñ –ø–æ—Å–∏–ª–∞–Ω–Ω—è –≤—ñ–¥–∫—Ä–∏–≤–∞—Ç–∏–º–µ –ø—Ä–æ—î–∫—Ç —Ç–∞–º –±–µ–∑–¥–æ–≥–∞–Ω–Ω–æ."
+    "share.ghPagesWhyHint": "–û–ø—É–±–ª—ñ–∫—É–π—Ç–µ/–æ–Ω–æ–≤—ñ—Ç—å –∑–±—ñ—Ä–∫—É –ø—Ä–æ–µ–∫—Ç—É –Ω–∞ GitHub Pages, —ñ –ø–æ—Å–∏–ª–∞–Ω–Ω—è –≤—ñ–¥–∫—Ä–∏–≤–∞—Ç–∏–º–µ –ø—Ä–æ—î–∫—Ç —Ç–∞–º –±–µ–∑–¥–æ–≥–∞–Ω–Ω–æ.",
+    "cloud.open.dialogTitle": "–í—ñ–¥–∫—Ä–∏—Ç—Ç—è –ø—Ä–æ—î–∫—Ç—É –∑ —Ö–º–∞—Ä–∏",
+    "cloud.open.dialogSubtitle": "–£ —Ä–µ–¥–∞–∫—Ç–æ—Ä—ñ –≤–∂–µ —î —Å—Ç–≤–æ—Ä–µ–Ω–∏–π –ø—Ä–æ—î–∫—Ç. –û–±–µ—Ä—ñ—Ç—å –¥—ñ—é:",
+    "cloud.open.currentWorkspace": "–ü–æ—Ç–æ—á–Ω–∏–π —É —Ä–µ–¥–∞–∫—Ç–æ—Ä—ñ",
+    "cloud.open.incomingProject": "–ü—Ä–æ—î–∫—Ç —ñ–∑ —Ö–º–∞—Ä–∏",
+    "cloud.open.shapesCountLabel": "—Ñ—ñ–≥—É—Ä",
+    "cloud.open.layersCountLabel": "—à–∞—Ä—ñ–≤",
+    "cloud.open.chooseAction": "–í–∞—Ä—ñ–∞–Ω—Ç –∑–∞–≤–∞–Ω—Ç–∞–∂–µ–Ω–Ω—è:",
+    "cloud.open.modeMerge": "–í—Å—Ç–∞–≤–∏—Ç–∏ –≤ –ø–æ—Ç–æ—á–Ω–∏–π –ø—Ä–æ—î–∫—Ç",
+    "cloud.open.modeMergeDesc": "–î–æ–¥–∞—î —Ñ—ñ–≥—É—Ä–∏ —Ç–∞ —à–∞—Ä–∏ –∑ —Ö–º–∞—Ä–∏ –¥–æ –≤–∞—à–æ–≥–æ –º–∞–ª—é–Ω–∫–∞.",
+    "cloud.open.modeReplace": "–ó–∞–º—ñ–Ω–∏—Ç–∏ –ø–æ—Ç–æ—á–Ω–∏–π –ø—Ä–æ—î–∫—Ç",
+    "cloud.open.modeReplaceDesc": "–ü–æ–≤–Ω—ñ—Å—Ç—é –∑–∞–º—ñ–Ω—é—î –ø–æ—Ç–æ—á–Ω–∏–π –ø—Ä–æ—î–∫—Ç –Ω–∞ –ø—Ä–æ—î–∫—Ç —ñ–∑ —Ö–º–∞—Ä–∏.",
+    "cloud.open.namePreference": "–ù–∞–∑–≤–∞ –ø—Ä–æ—î–∫—Ç—É –ø—ñ—Å–ª—è –≤—Å—Ç–∞–≤–∫–∏:",
+    "cloud.open.nameKeep": "–ó–∞–ª–∏—à–∏—Ç–∏ –ø–æ—Ç–æ—á–Ω—É:",
+    "cloud.open.nameCloud": "–í–∑—è—Ç–∏ –∑ —Ö–º–∞—Ä–∏:",
+    "cloud.open.nameCombine": "–û–±‚Äô—î–¥–Ω–∞—Ç–∏ –Ω–∞–∑–≤–∏:",
+    "cloud.open.groupImported": "–ó–≥—Ä—É–ø—É–≤–∞—Ç–∏ –≤—Å—ñ —ñ–º–ø–æ—Ä—Ç–æ–≤–∞–Ω—ñ —Ñ—ñ–≥—É—Ä–∏",
+    "cloud.open.groupImportedDesc": "–°—Ç–≤–æ—Ä—é—î —Å–ø—ñ–ª—å–Ω—É –≥—Ä—É–ø—É –¥–ª—è –∑—Ä—É—á–Ω–æ–≥–æ –ø–µ—Ä–µ–º—ñ—â–µ–Ω–Ω—è —Ç–∞ –º–∞—Å—à—Ç–∞–±—É–≤–∞–Ω–Ω—è.",
+    "cloud.open.preserveLayers": "–ó–±–µ—Ä–µ–≥—Ç–∏ —à–∞—Ä–∏ –∑ —Ö–º–∞—Ä–Ω–æ–≥–æ –ø—Ä–æ—î–∫—Ç—É",
+    "cloud.open.preserveLayersDesc": "–î–æ–¥–∞—î —à–∞—Ä–∏ –∑ —Ö–º–∞—Ä–∏ –¥–æ —Å–ø–∏—Å–∫—É —à–∞—Ä—ñ–≤ (—è–∫—â–æ –≤ –ø–æ—Ç–æ—á–Ω–æ–º—É —î 1 –ø–æ—Ä–æ–∂–Ω—ñ–π —à–∞—Ä ‚Äî –≤—ñ–Ω –∑–∞–º—ñ–Ω—é—î—Ç—å—Å—è).",
+    "cloud.open.autoExpandCanvas": "–†–æ–∑—à–∏—Ä–∏—Ç–∏ –ø–æ–ª–æ—Ç–Ω–æ, —è–∫—â–æ —Ö–º–∞—Ä–Ω–∏–π –ø—Ä–æ—î–∫—Ç –±—ñ–ª—å—à–∏–π",
+    "cloud.open.autoExpandCanvasDesc": "–ê–≤—Ç–æ–º–∞—Ç–∏—á–Ω–æ –∑–±—ñ–ª—å—à—É—î —Ä–æ–∑–º—ñ—Ä –ø–æ–ª–æ—Ç–Ω–∞, —â–æ–± —É—Å—ñ –µ–ª–µ–º–µ–Ω—Ç–∏ –ø–æ–º—ñ—Å—Ç–∏–ª–∏—Å—è.",
+    "cloud.open.replaceWarning": "–£—Å—ñ –ø–æ—Ç–æ—á–Ω—ñ —Ñ—ñ–≥—É—Ä–∏ —Ç–∞ —à–∞—Ä–∏ –±—É–¥—É—Ç—å –∑–∞–º—ñ–Ω–µ–Ω—ñ. –ù–µ–∑–±–µ—Ä–µ–∂–µ–Ω—ñ –∑–º—ñ–Ω–∏ –±—É–¥–µ –≤—Ç—Ä–∞—á–µ–Ω–æ.",
+    "cloud.open.confirmReplace": "–ó–∞–º—ñ–Ω–∏—Ç–∏ –ø—Ä–æ—î–∫—Ç",
+    "cloud.open.confirmMerge": "–í—Å—Ç–∞–≤–∏—Ç–∏ –ø—Ä–æ—î–∫—Ç",
+    "cloud.open.success": "–ü—Ä–æ—î–∫—Ç —É—Å–ø—ñ—à–Ω–æ –≤—ñ–¥–∫—Ä–∏—Ç–æ –∑ —Ö–º–∞—Ä–∏!",
+    "cloud.merge.success": "–ü—Ä–æ—î–∫—Ç —É—Å–ø—ñ—à–Ω–æ –æ–±'—î–¥–Ω–∞–Ω–æ –∑ –ø–æ—Ç–æ—á–Ω–∏–º!",
+    "cloud.project.untitled": "–•–º–∞—Ä–Ω–∏–π –ø—Ä–æ—î–∫—Ç"
   },
   "en": {
     "toolbar.drawMode.corner": "From corner",
@@ -2032,6 +2093,25 @@ export const translations = {
     "menu.edit": "Edit",
     "menu.edit.undo": "Undo",
     "menu.edit.redo": "Redo",
+    "history.title": "Change History",
+    "history.selectUndo": "Select an action to undo to",
+    "history.selectRedo": "Select an action to restore to",
+    "history.fullTimeline": "Quick jump across all actions",
+    "history.filterAll": "All",
+    "history.filterUndo": "Undo",
+    "history.filterRedo": "Redo",
+    "history.jumpToStart": "Jump to start",
+    "history.jumpToLatest": "Jump to latest state",
+    "history.start": "Start",
+    "history.latest": "Latest",
+    "history.current": "Current",
+    "history.empty": "No records in the selected filter",
+    "history.initialState": "Initial project state",
+    "history.step": "Step",
+    "history.of": "of",
+    "history.shapesCount": "shapes",
+    "history.tipLongPress": "Hold to view history",
+    "history.longPressTip": "Long press arrow buttons to open history",
     "menu.edit.duplicate": "Duplicate",
     "menu.edit.group": "Group",
     "menu.edit.ungroup": "Ungroup",
@@ -2243,14 +2323,15 @@ export const translations = {
     "about.support": "<strong className=\"text-[var(--text-primary)]\">Support:</strong> AI assistant powered by Google Gemini.",
     "about.tech": "Created with <a href=\"https://aistudio.google.com/\" target=\"_blank\" rel=\"noopener noreferrer\" className=\"underline text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)]\">AI Studio Google</a>, Visual Studio Code.",
     "about.version": "Version",
+    "help.touchMobile": "6. Touch screens, Loupe & Joystick",
     "help.intro": "1. Introduction",
     "help.interface": "2. Interface Overview",
     "help.projects": "3. Working with projects",
     "help.templates": "4. Working with templates",
     "help.shapes": "5. Working with shapes",
-    "help.codeExport": "6. Code and export",
-    "help.feedback": "7. Feedback",
-    "help.hotkeys": "9. Hotkeys",
+    "help.codeExport": "7. Code and export",
+    "help.feedback": "9. Feedback",
+    "help.hotkeys": "10. Hotkeys",
     "menu.help.shortcuts": "Keyboard Shortcuts",
     "shortcuts.title": "Keyboard Shortcuts",
     "shortcuts.searchPlaceholder": "Search keys or actions...",
@@ -2342,6 +2423,12 @@ export const translations = {
     "help.zoomIn": "Increase font by 5%",
     "help.resetZoom": "Reset zoom to 100%",
     "help.close": "Close",
+    "help.prevSection": "Previous section",
+    "help.nextSection": "Next section",
+    "help.toc": "Table of Contents",
+    "help.sections": "Help Sections",
+    "help.fontSize": "Font size",
+    "help.scrollToTop": "Scroll to top",
     "menu.home": "Home",
     "menu.settings": "Settings",
     "tool.select": "Select",
@@ -2454,6 +2541,8 @@ export const translations = {
     "settings.appearance.enableSnappingDesc": "Displays guides when aligning shapes to each other.",
     "settings.appearance.showCursorCoords": "Show coordinates near cursor",
     "settings.appearance.showCursorCoordsDesc": "Dynamically displays X/Y coordinates next to the cursor.",
+    "settings.appearance.showMagnifier": "Magnifier loupe when drawing & editing",
+    "settings.appearance.showMagnifierDesc": "Zooms in on the area under your finger or cursor for pixel-precision positioning.",
     "settings.appearance.showRotationAngle": "Show rotation angle",
     "settings.appearance.showRotationAngleDesc": "Dynamically displays angle tooltip when rotating.",
     "settings.appearance.openAsWebApp": "Open as web app",
@@ -2837,7 +2926,34 @@ export const translations = {
     "share.testUrlLabel": "Test link (current preview)",
     "share.ghPagesWhyTitle": "üí° Why did GitHub Pages open the home page?",
     "share.ghPagesWhyDesc": "GitHub Pages currently hosts an earlier version of the editor that does not yet include updated link parsing code.",
-    "share.ghPagesWhyHint": "Publish/update your build on GitHub Pages and the link will open seamlessly there."
+    "share.ghPagesWhyHint": "Publish/update your build on GitHub Pages and the link will open seamlessly there.",
+    "cloud.open.dialogTitle": "Open Project from Cloud",
+    "cloud.open.dialogSubtitle": "There is already an active project in the editor. Choose an action:",
+    "cloud.open.currentWorkspace": "Current in Editor",
+    "cloud.open.incomingProject": "Cloud Project",
+    "cloud.open.shapesCountLabel": "shapes",
+    "cloud.open.layersCountLabel": "layers",
+    "cloud.open.chooseAction": "Loading Mode:",
+    "cloud.open.modeMerge": "Insert into Current Project",
+    "cloud.open.modeMergeDesc": "Appends shapes and layers from cloud to your current canvas.",
+    "cloud.open.modeReplace": "Replace Current Project",
+    "cloud.open.modeReplaceDesc": "Completely replaces the current project with the cloud project.",
+    "cloud.open.namePreference": "Project Name after insertion:",
+    "cloud.open.nameKeep": "Keep current:",
+    "cloud.open.nameCloud": "Use cloud name:",
+    "cloud.open.nameCombine": "Combine names:",
+    "cloud.open.groupImported": "Group all imported shapes",
+    "cloud.open.groupImportedDesc": "Creates a unified group for easy moving and resizing.",
+    "cloud.open.preserveLayers": "Preserve layers from cloud project",
+    "cloud.open.preserveLayersDesc": "Adds layers from cloud to the layer list (replaces empty single layer).",
+    "cloud.open.autoExpandCanvas": "Expand canvas if cloud project is larger",
+    "cloud.open.autoExpandCanvasDesc": "Automatically expands canvas dimensions so everything fits.",
+    "cloud.open.replaceWarning": "All current shapes and layers will be replaced. Unsaved changes will be lost.",
+    "cloud.open.confirmReplace": "Replace Project",
+    "cloud.open.confirmMerge": "Insert Project",
+    "cloud.open.success": "Project opened successfully from cloud!",
+    "cloud.merge.success": "Project successfully merged with current!",
+    "cloud.project.untitled": "Cloud Project"
   },
   "it": {
     "toolbar.drawMode.corner": "Dall'angolo",
@@ -3654,14 +3770,15 @@ export const translations = {
     "about.support": "<strong className=\"text-[var(--text-primary)]\">Supporto:</strong> assistente AI basato su Google Gemini.",
     "about.tech": "Creato con <a href=\"https://aistudio.google.com/\" target=\"_blank\" rel=\"noopener noreferrer\" className=\"underline text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)]\">AI Studio Google</a>, Visual Studio Code.",
     "about.version": "Versione",
+    "help.touchMobile": "6. Schermi touch, Lente e Joystick",
     "help.intro": "1. Introduzione",
     "help.interface": "2. Panoramica dell‚Äôinterfaccia",
     "help.projects": "3. Lavorare con i progetti",
     "help.templates": "4. Lavorare con i modelli",
     "help.shapes": "5. Lavorare con le forme",
-    "help.codeExport": "6. Codifica ed esportazione",
-    "help.feedback": "7. Feedback",
-    "help.hotkeys": "9. Tasti di scelta rapida",
+    "help.codeExport": "7. Codifica ed esportazione",
+    "help.feedback": "9. Feedback",
+    "help.hotkeys": "10. Tasti di scelta rapida",
     "menu.help.shortcuts": "Scorciatoie da tastiera",
     "shortcuts.title": "Scorciatoie da tastiera",
     "shortcuts.searchPlaceholder": "Cerca tasti o azioni...",
@@ -3732,6 +3849,12 @@ export const translations = {
     "help.zoomIn": "Aumenta il carattere del 5%",
     "help.resetZoom": "Ripristina lo zoom al 100%",
     "help.close": "Vicino",
+    "help.prevSection": "Sezione precedente",
+    "help.nextSection": "Sezione successiva",
+    "help.toc": "Indice",
+    "help.sections": "Sezioni della guida",
+    "help.fontSize": "Dimensione del carattere",
+    "help.scrollToTop": "Torna su",
     "menu.home": "Casa",
     "menu.settings": "Impostazioni",
     "tool.select": "Selezionare",
@@ -4257,7 +4380,34 @@ export const translations = {
     "share.testUrlLabel": "Link di test (anteprima corrente)",
     "share.ghPagesWhyTitle": "üí° Perch√© il sito su GitHub Pages ha aperto la pagina iniziale?",
     "share.ghPagesWhyDesc": "Su GitHub Pages √® attualmente caricata una versione precedente dell‚Äôeditor che non include ancora il codice aggiornato per la lettura dei link.",
-    "share.ghPagesWhyHint": "Aggiorna la build su GitHub Pages e il collegamento aprir√† il progetto perfettamente."
+    "share.ghPagesWhyHint": "Aggiorna la build su GitHub Pages e il collegamento aprir√† il progetto perfettamente.",
+    "cloud.open.dialogTitle": "Apertura progetto dal Cloud",
+    "cloud.open.dialogSubtitle": "√à gi√† presente un progetto attivo nell'editor. Scegli un'azione:",
+    "cloud.open.currentWorkspace": "Attuale nell'editor",
+    "cloud.open.incomingProject": "Progetto dal cloud",
+    "cloud.open.shapesCountLabel": "forme",
+    "cloud.open.layersCountLabel": "livelli",
+    "cloud.open.chooseAction": "Modalit√† di caricamento:",
+    "cloud.open.modeMerge": "Inserisci nel progetto corrente",
+    "cloud.open.modeMergeDesc": "Aggiunge forme e livelli dal cloud alla tela corrente.",
+    "cloud.open.modeReplace": "Sostituisci il progetto corrente",
+    "cloud.open.modeReplaceDesc": "Sostituisce completamente il progetto corrente con quello dal cloud.",
+    "cloud.open.namePreference": "Nome del progetto dopo l'inserimento:",
+    "cloud.open.nameKeep": "Mantieni attuale:",
+    "cloud.open.nameCloud": "Prendi dal cloud:",
+    "cloud.open.nameCombine": "Combina nomi:",
+    "cloud.open.groupImported": "Raggruppa tutte le forme importate",
+    "cloud.open.groupImportedDesc": "Crea un gruppo unificato per spostare e ridimensionare facilmente.",
+    "cloud.open.preserveLayers": "Conserva i livelli del progetto cloud",
+    "cloud.open.preserveLayersDesc": "Aggiunge i livelli dal cloud alla lista (sostituisce il singolo livello vuoto).",
+    "cloud.open.autoExpandCanvas": "Espandi la tela se il progetto cloud √® pi√π grande",
+    "cloud.open.autoExpandCanvasDesc": "Aumenta automaticamente le dimensioni della tela per contenere tutto.",
+    "cloud.open.replaceWarning": "Tutte le forme e i livelli correnti verranno sostituiti. Le modifiche non salvate andranno perse.",
+    "cloud.open.confirmReplace": "Sostituisci progetto",
+    "cloud.open.confirmMerge": "Inserisci progetto",
+    "cloud.open.success": "Progetto aperto con successo dal cloud!",
+    "cloud.merge.success": "Progetto unito con successo a quello corrente!",
+    "cloud.project.untitled": "Progetto Cloud"
   },
   "es": {
     "toolbar.drawMode.corner": "Desde la esquina",
@@ -5074,14 +5224,15 @@ export const translations = {
     "about.support": "<strong className=\"text-[var(--text-primary)]\">Soporte:</strong> IA Gemini de Google.",
     "about.tech": "Creado con <a href=\"https://aistudio.google.com/\" target=\"_blank\">AI Studio Google</a>, VS Code.",
     "about.version": "Versi√≥n",
+    "help.touchMobile": "6. Pantallas t√°ctiles, Lupa y Joystick",
     "help.intro": "1. Introducci√≥n",
     "help.interface": "2. Descripci√≥n de la interfaz",
     "help.projects": "3. Trabajar con proyectos",
     "help.templates": "4. Trabajar con plantillas",
     "help.shapes": "5. Trabajar con figuras",
-    "help.codeExport": "6. C√≥digo y exportaci√≥n",
-    "help.feedback": "7. Comentarios",
-    "help.hotkeys": "9. Atajos de teclado",
+    "help.codeExport": "7. C√≥digo y exportaci√≥n",
+    "help.feedback": "9. Comentarios",
+    "help.hotkeys": "10. Atajos de teclado",
     "menu.help.shortcuts": "Atajos de teclado",
     "shortcuts.title": "Atajos de teclado",
     "shortcuts.searchPlaceholder": "Buscar teclas o acciones...",
@@ -5152,6 +5303,12 @@ export const translations = {
     "help.zoomIn": "Acercar (zoom +)",
     "help.resetZoom": "Resetear zoom",
     "help.close": "Cerrar",
+    "help.prevSection": "Secci√≥n anterior",
+    "help.nextSection": "Secci√≥n siguiente",
+    "help.toc": "√çndice",
+    "help.sections": "Secciones de ayuda",
+    "help.fontSize": "Tama√±o de fuente",
+    "help.scrollToTop": "Volver arriba",
     "menu.home": "Inicio",
     "menu.settings": "Ajustes",
     "tool.select": "Seleccionar",
@@ -5677,7 +5834,34 @@ export const translations = {
     "share.testUrlLabel": "Enlace de prueba (vista previa actual)",
     "share.ghPagesWhyTitle": "üí° ¬øPor qu√© el sitio en GitHub Pages abri√≥ la p√°gina de inicio?",
     "share.ghPagesWhyDesc": "En GitHub Pages actualmente hay una versi√≥n anterior del editor que a√∫n no incluye el c√≥digo actualizado para leer enlaces.",
-    "share.ghPagesWhyHint": "Publica la versi√≥n actualizada en GitHub Pages y el enlace abrir√° el proyecto directamente."
+    "share.ghPagesWhyHint": "Publica la versi√≥n actualizada en GitHub Pages y el enlace abrir√° el proyecto directamente.",
+    "cloud.open.dialogTitle": "Abrir Proyecto desde la Nube",
+    "cloud.open.dialogSubtitle": "Ya hay un proyecto activo en el editor. Elija una acci√≥n:",
+    "cloud.open.currentWorkspace": "Actual en el editor",
+    "cloud.open.incomingProject": "Proyecto desde la nube",
+    "cloud.open.shapesCountLabel": "figuras",
+    "cloud.open.layersCountLabel": "capas",
+    "cloud.open.chooseAction": "Modo de carga:",
+    "cloud.open.modeMerge": "Insertar en el proyecto actual",
+    "cloud.open.modeMergeDesc": "Agrega figuras y capas de la nube a su lienzo actual.",
+    "cloud.open.modeReplace": "Reemplazar proyecto actual",
+    "cloud.open.modeReplaceDesc": "Reemplaza completamente el proyecto actual con el de la nube.",
+    "cloud.open.namePreference": "Nombre del proyecto tras la inserci√≥n:",
+    "cloud.open.nameKeep": "Mantener actual:",
+    "cloud.open.nameCloud": "Tomar de la nube:",
+    "cloud.open.nameCombine": "Combinar nombres:",
+    "cloud.open.groupImported": "Agrupar todas las figuras importadas",
+    "cloud.open.groupImportedDesc": "Crea un grupo unificado para mover y escalar c√≥modamente.",
+    "cloud.open.preserveLayers": "Conservar capas del proyecto en la nube",
+    "cloud.open.preserveLayersDesc": "Agrega capas de la nube a la lista (reemplaza capa √∫nica vac√≠a).",
+    "cloud.open.autoExpandCanvas": "Expandir lienzo si el proyecto de la nube es mayor",
+    "cloud.open.autoExpandCanvasDesc": "Aumenta autom√°ticamente las dimensiones del lienzo para que todo quepa.",
+    "cloud.open.replaceWarning": "Todas las figuras y capas actuales ser√°n reemplazadas. Se perder√°n los cambios sin guardar.",
+    "cloud.open.confirmReplace": "Reemplazar proyecto",
+    "cloud.open.confirmMerge": "Insertar proyecto",
+    "cloud.open.success": "¬°Proyecto abierto con √©xito desde la nube!",
+    "cloud.merge.success": "¬°Proyecto unido con √©xito al actual!",
+    "cloud.project.untitled": "Proyecto en la Nube"
   },
   "de": {
     "toolbar.drawMode.corner": "Ecke bis Ecke",
@@ -6479,6 +6663,7 @@ export const translations = {
     "feedback.goto": "Gehen Sie zum Feedback-Formular",
     "project.bgColor": "Hintergrundfarbe:",
     "about.version": "Version",
+    "help.touchMobile": "6. Touchscreens, Lupe und Joystick",
     "help.intro": "1. Einf√ºhrung",
     "about.p2": "Es verwendet einen lokalen Codegenerator f√ºr sofortige und zuverl√§ssige Ergebnisse und kann auch die Google Gemini API f√ºr experimentelle Funktionen nutzen.",
     "about.author": "<strong className=\"text-[var(--text-primary)]\">Idee & Entwicklung:</strong> Vitaliy Kushnir",
@@ -6491,12 +6676,12 @@ export const translations = {
     "menu.help.shortcuts": "Tastaturk√ºrzel",
     "shortcuts.all": "Alle",
     "shortcuts.title": "Tastaturk√ºrzel",
-    "help.codeExport": "6. Code und Export",
+    "help.codeExport": "7. Code und Export",
     "help.shapes": "5. Mit Formen arbeiten",
     "shortcuts.cat.tools": "Werkzeuge & Auswahl",
-    "help.feedback": "7. R√ºckmeldung",
+    "help.feedback": "9. R√ºckmeldung",
     "shortcuts.cat.file": "Datei und Verlauf",
-    "help.hotkeys": "9. Hotkeys",
+    "help.hotkeys": "10. Hotkeys",
     "shortcuts.searchPlaceholder": "Suchschl√ºssel oder Aktionen...",
     "shortcuts.item.undo": "Aktion r√ºckg√§ngig machen",
     "shortcuts.cat.extra": "Extra",
@@ -6559,6 +6744,12 @@ export const translations = {
     "help.prevResult": "Vorheriges Ergebnis",
     "status.showSelected": "Ausgew√§hltes Objekt anzeigen",
     "help.close": "Schlie√üen",
+    "help.prevSection": "Vorheriger Abschnitt",
+    "help.nextSection": "N√§chster Abschnitt",
+    "help.toc": "Inhaltsverzeichnis",
+    "help.sections": "Hilfeabschnitte",
+    "help.fontSize": "Schriftgr√∂√üe",
+    "help.scrollToTop": "Nach oben",
     "tool.align.left": "Links ausrichten",
     "menu.home": "Heim",
     "tool.select": "W√§hlen",
@@ -7097,7 +7288,34 @@ export const translations = {
     "share.testUrlLabel": "Testlink (aktuelle Vorschau)",
     "share.ghPagesWhyTitle": "üí° Warum hat die GitHub Pages-Website die Startseite ge√∂ffnet?",
     "share.ghPagesWhyDesc": "Auf GitHub Pages ist derzeit eine fr√ºhere Version des Editors geladen, die den aktualisierten Link-Parsing-Code noch nicht enth√§lt.",
-    "share.ghPagesWhyHint": "Aktualisieren Sie den Build auf GitHub Pages, um den Projektlink direkt zu √∂ffnen."
+    "share.ghPagesWhyHint": "Aktualisieren Sie den Build auf GitHub Pages, um den Projektlink direkt zu √∂ffnen.",
+    "cloud.open.dialogTitle": "Projekt aus der Cloud √∂ffnen",
+    "cloud.open.dialogSubtitle": "Im Editor befindet sich bereits ein aktives Projekt. W√§hlen Sie eine Aktion:",
+    "cloud.open.currentWorkspace": "Aktuell im Editor",
+    "cloud.open.incomingProject": "Cloud-Projekt",
+    "cloud.open.shapesCountLabel": "Formen",
+    "cloud.open.layersCountLabel": "Ebenen",
+    "cloud.open.chooseAction": "Lademodus:",
+    "cloud.open.modeMerge": "In aktuelles Projekt einf√ºgen",
+    "cloud.open.modeMergeDesc": "F√ºgt Formen und Ebenen aus der Cloud zu Ihrer aktuellen Leinwand hinzu.",
+    "cloud.open.modeReplace": "Aktuelles Projekt ersetzen",
+    "cloud.open.modeReplaceDesc": "Ersetzt das aktuelle Projekt vollst√§ndig durch das Cloud-Projekt.",
+    "cloud.open.namePreference": "Projektname nach dem Einf√ºgen:",
+    "cloud.open.nameKeep": "Aktuellen behalten:",
+    "cloud.open.nameCloud": "Aus der Cloud nehmen:",
+    "cloud.open.nameCombine": "Namen kombinieren:",
+    "cloud.open.groupImported": "Alle importierten Formen gruppieren",
+    "cloud.open.groupImportedDesc": "Erstellt eine gemeinsame Gruppe zum einfachen Verschieben und Skalieren.",
+    "cloud.open.preserveLayers": "Ebenen aus dem Cloud-Projekt beibehalten",
+    "cloud.open.preserveLayersDesc": "F√ºgt Ebenen aus der Cloud zur Liste hinzu (ersetzt leere Einzelebene).",
+    "cloud.open.autoExpandCanvas": "Leinwand vergr√∂√üern, falls Cloud-Projekt gr√∂√üer ist",
+    "cloud.open.autoExpandCanvasDesc": "Passt die Leinwandabmessungen automatisch an, damit alles Platz hat.",
+    "cloud.open.replaceWarning": "Alle aktuellen Formen und Ebenen werden ersetzt. Nicht gespeicherte √Ñnderungen gehen verloren.",
+    "cloud.open.confirmReplace": "Projekt ersetzen",
+    "cloud.open.confirmMerge": "Projekt einf√ºgen",
+    "cloud.open.success": "Projekt erfolgreich aus der Cloud ge√∂ffnet!",
+    "cloud.merge.success": "Projekt erfolgreich mit dem aktuellen zusammengef√ºhrt!",
+    "cloud.project.untitled": "Cloud-Projekt"
   },
   "fr": {
     "toolbar.drawMode.corner": "Depuis le coin",
@@ -7899,6 +8117,7 @@ export const translations = {
     "project.bgColor": "Couleur de fond¬†:",
     "feedback.goto": "Acc√©der au formulaire de commentaires",
     "about.version": "Version",
+    "help.touchMobile": "6. √âcrans tactiles, Loupe et Joystick",
     "help.intro": "1. Introduction",
     "about.author": "<strong className=\"text-[var(--text-primary)]\">Id√©e et d√©veloppement¬†:</strong> Vitaliy Kushnir",
     "about.p2": "Il utilise un g√©n√©rateur de code local pour des r√©sultats instantan√©s et fiables, et peut √©galement utiliser l'API Google Gemini pour des capacit√©s exp√©rimentales.",
@@ -7914,9 +8133,9 @@ export const translations = {
     "help.shapes": "5. Travailler avec des formes",
     "shortcuts.cat.tools": "Outils et s√©lection",
     "shortcuts.cat.file": "Fichier et historique",
-    "help.codeExport": "6. Coder et exporter",
-    "help.hotkeys": "9. Raccourcis clavier",
-    "help.feedback": "7. Commentaires",
+    "help.codeExport": "7. Coder et exporter",
+    "help.hotkeys": "10. Raccourcis clavier",
+    "help.feedback": "9. Commentaires",
     "shortcuts.searchPlaceholder": "Rechercher des cl√©s ou des actions...",
     "shortcuts.cat.extra": "Suppl√©mentaire",
     "shortcuts.item.undo": "Annuler l'action",
@@ -7979,6 +8198,12 @@ export const translations = {
     "help.prevResult": "R√©sultat pr√©c√©dent",
     "status.zoomClick": "Cliquez pour changer le zoom",
     "help.close": "Fermer",
+    "help.prevSection": "Section pr√©c√©dente",
+    "help.nextSection": "Section suivante",
+    "help.toc": "Sommaire",
+    "help.sections": "Sections d'aide",
+    "help.fontSize": "Taille de police",
+    "help.scrollToTop": "Haut de page",
     "menu.home": "Maison",
     "tool.select": "S√©lectionner",
     "menu.settings": "Param√®tres",
@@ -8281,245 +8506,24 @@ export const translations = {
     "prop.title.innerRadius": "Rayon des sommets int√©rieurs de l'√©toile.",
     "prop.title.symmetric": "Rendre le d√©calage des coins sup√©rieurs √©gal.",
     "prop.title.sideLength": "Longueur d'un c√¥t√© du polygone.",
-    "fonts.decorative": "D√©coratif",
-    "fonts.sans": "Sans-Serif populaire",
-    "props.offsetR": "D√©calage droit (%)¬†:",
-    "props.angle": "Angle (¬∫):",
-    "fonts.mono": "Monospace populaire",
-    "fonts.serif": "Serif populaire",
-    "fonts.error.notSupported": "Votre navigateur ou environnement ne prend pas en charge le chargement des polices locales.",
-    "prop.title.offsetR": "D√©calage du coin sup√©rieur droit vers l'int√©rieur en pourcentage de la largeur.",
-    "prop.title.angle": "Angle d'inclinaison des bords lat√©raux (90 degr√©s = rectangle).",
-    "fonts.error.notFound": "Polices locales introuvables ou autorisation non accord√©e.",
-    "props.anchor.nw": "En haut √† gauche",
-    "props.anchor.n": "En haut au centre",
-    "props.anchor.ne": "En haut √† droite",
-    "props.anchor": "Ancre:",
-    "fonts.error.blocked": "L'acc√®s aux polices est bloqu√© par la politique de s√©curit√© de l'environnement.",
-    "fonts.success.loaded": "Chargement de {count}¬†nouvelles polices syst√®me.",
-    "fonts.success.noNew": "Aucune nouvelle police syst√®me unique trouv√©e.",
-    "fonts.error.denied": "Vous avez refus√© l'autorisation d'acc√©der aux polices.",
-    "fonts.error.loading": "Erreur lors du chargement des polices syst√®me¬†:",
-    "fonts.error.details": "√âchec du chargement des polices. V√©rifiez la console pour plus de d√©tails.",
-    "props.anchor.center": "Centre",
-    "props.anchor.se": "En bas √† droite",
-    "props.style": "Style:",
-    "props.anchor.sw": "En bas √† gauche",
-    "props.anchor.s": "En bas au centre",
-    "props.anchor.e": "Centre droit",
-    "props.anchor.w": "Centre gauche",
-    "props.extent": "√âtendue (¬∫):",
-    "props.endAngle": "Fin (¬∫):",
-    "props.startAngle": "D√©but (¬∫):",
-    "props.fonts.loading": "Chargement...",
-    "props.justify": "Justifier:",
-    "props.actions": "Actes",
-    "props.anchorY": "Ancre Y¬†:",
-    "props.blockWidth": "Largeur du bloc¬†:",
-    "props.anchorX": "Ancre X¬†:",
-    "props.lockExtent": "√âtendue du verrouillage",
-    "props.fonts.tk": "Polices logiques Tk",
-    "props.fonts.system": "Polices syst√®me",
-    "props.fonts.load": "Charger les polices syst√®me",
-    "props.bitmapType": "Taper:",
-    "prop.title.closed": "Connectez les points de d√©but et de fin.",
-    "props.bgColor": "Arri√®re-plan:",
-    "props.fgColor": "Premier plan:",
-    "prop.title.splinesteps": "Nombre de segments pour approximer la courbe.",
-    "prop.title.smooth": "Coins lisses pour former une courbe.",
-    "prop.title.arcStyle": "Style d'arc¬†: secteur (pieslice), accord ou arc.",
-    "prop.title.startAngle": "Angle de d√©part de l'arc en degr√©s (0 - 3 heures).",
-    "prop.title.color": "Couleur de la ligne.",
-    "prop.title.width": "Largeur de ligne en pixels.",
-    "prop.title.textColor": "Couleur du texte.",
-    "prop.title.textStyle": "Styles de texte.",
-    "prop.title.extent": "Longueur de l'arc en degr√©s.",
-    "prop.title.endAngle": "Angle final de l'arc en degr√©s.",
-    "prop.title.lockExtent": "Pr√©servez la longueur de l‚Äôarc lors du changement de ses extr√©mit√©s.",
-    "prop.title.anchorX": "Ancrer la coordonn√©e X.",
-    "prop.title.fontSize": "Taille de la police.",
-    "prop.title.text": "Texte √† afficher.",
-    "prop.title.font": "Police pour le texte.",
-    "prop.title.anchor": "Le point sur le texte qui sera plac√© aux coordonn√©es sp√©cifi√©es.",
-    "prop.title.fgColor": "Couleur de premier plan bitmap.",
-    "prop.title.anchorY": "Coordonn√©e Y d‚Äôancrage.",
-    "prop.title.bgColor": "Couleur d‚Äôarri√®re-plan bitmap.",
-    "prop.title.blockWidth": "Largeur du bloc de texte. 0 signifie pas de bouclage.",
-    "prop.title.heightGeom": "Hauteur g√©om√©trique de l'objet (sans rotation).",
-    "prop.dash.strokeLen": "Longueur du trait {i} en pixels.",
-    "prop.title.justify": "Alignement du texte √† l‚Äôint√©rieur de son cadre de d√©limitation.",
-    "prop.title.posY": "Coordonn√©e Y du coin sup√©rieur gauche du cadre de d√©limitation.",
-    "prop.title.bitmapType": "Type de bitmap Tkinter standard.",
-    "prop.title.widthGeom": "Largeur g√©om√©trique de l'objet (sans rotation).",
-    "prop.dash.custom": "Coutume",
-    "action.apply": "Appliquer",
-    "prop.dash.gapLenTitle": "Longueur de l'espace en pixels",
-    "prop.dash.removeSegment": "Supprimer le dernier segment (trait et espace)",
-    "prop.dash.gapLen": "Longueur de l'espace {i} en pixels.",
-    "prop.dash.addSegment": "Ajouter un segment (contour et espace)",
-    "prop.dash.stroke": "Coup {i} (px)¬†:",
-    "prop.dash.strokeLenTitle": "Longueur du trait en pixels",
-    "color.allColorsShort": "Toutes les couleurs Tkinter...",
-    "prop.dash.gap": "√âcart {i} (px)¬†:",
-    "color.selected": "Choisi:",
-    "color.sortBy": "Trier par:",
-    "color.sortAlphaTitle": "Trier par nom par ordre alphab√©tique",
-    "color.sortGroupTitle": "Trier par groupes de couleurs logiques",
-    "color.sortAlpha": "Alphab√©tique (A-Z)",
-    "color.searchPlaceholder": "Rechercher par nom ou HEX...",
-    "color.sortHexTitle": "Trier par code hexad√©cimal",
-    "color.allColorsTitle": "Toutes les couleurs Tkinter",
-    "color.sortGroup": "Par groupe",
-    "color.sortHex": "Par code (#)",
-    "color.notFound": "Pas trouv√©",
-    "color.none": "Aucun",
-    "layer.show": "Afficher le calque",
-    "layer.add": "Ajouter un calque",
-    "layer.delete": "Supprimer le calque",
-    "layer.duplicateName": "Un calque portant ce nom existe d√©j√†. Veuillez choisir un autre nom.",
-    "layer.clear": "Effacer le calque",
-    "layer.hide": "Masquer le calque",
-    "layer.unlock": "D√©verrouiller la couche",
-    "layer.lock": "Verrouiller le calque",
-    "menu.edit.language": "Langue de l'interface",
-    "layer.clearConfirmTitle": "Effacer le calque",
-    "layer.lockedCannotClear": "Le calque verrouill√© ne peut pas √™tre effac√©",
-    "props.hiddenWarning": "L'objet est masqu√© (sur le calque cach√©)",
-    "prop.title.dashOffset": "D√©calage du tiret",
-    "prop.title.dashArray": "Tableau de bord",
-    "layer.clearConfirmText": "√ätes-vous s√ªr de vouloir supprimer tous les objets du calque ¬´¬†{name}¬†¬ª¬†? Le calque lui-m√™me restera.",
-    "share.title": "–ü–æ—Å–∏–ª–∞–Ω–Ω—è –Ω–∞ –ø—Ä–æ—î–∫—Ç (GitHub Pages)",
-    "share.desc": "–°–∫–æ–ø—ñ—é–π—Ç–µ —Ü–µ –ø–æ—Å–∏–ª–∞–Ω–Ω—è, —â–æ–± –ø–µ—Ä–µ–¥–∞—Ç–∏ –ø—Ä–æ—î–∫—Ç. –ü—Ä–∏ –ø–µ—Ä–µ—Ö–æ–¥—ñ —Ä–µ–¥–∞–∫—Ç–æ—Ä –í–µ—Ä–µ—Ç–∫–∞ –Ω–∞ GitHub Pages (https://Vitaliy-Kushnir.github.io/VereTka/) –≤—ñ–¥–∫—Ä–∏—î—Ç—å—Å—è —ñ–∑ —Ü–∏–º –ø—Ä–æ—î–∫—Ç–æ–º.",
-    "share.urlLabel": "–ü–æ—Å–∏–ª–∞–Ω–Ω—è –ø—Ä–æ—î–∫—Ç—É –Ω–∞ GitHub Pages",
-    "share.copy": "–°–∫–æ–ø—ñ—é–≤–∞—Ç–∏ –ø–æ—Å–∏–ª–∞–Ω–Ω—è",
-    "share.copied": "–°–∫–æ–ø—ñ–π–æ–≤–∞–Ω–æ!",
-    "share.size": "–†–æ–∑–º—ñ—Ä –ø–æ—Å–∏–ª–∞–Ω–Ω—è",
-    "share.chars": "—Å–∏–º–≤.",
-    "share.testOpen": "–ü–µ—Ä–µ–≤—ñ—Ä–∏—Ç–∏ —É –Ω–æ–≤—ñ–π –≤–∫–ª–∞–¥—Ü—ñ",
-    "share.tooLongWarning": "–£–≤–∞–≥–∞: –ü–æ—Å–∏–ª–∞–Ω–Ω—è –¥–æ—Å–∏—Ç—å –≤–µ–ª–∏–∫–µ —á–µ—Ä–µ–∑ —Ä–∞—Å—Ç—Ä–æ–≤—ñ –∑–æ–±—Ä–∞–∂–µ–Ω–Ω—è –≤ –ø—Ä–æ—î–∫—Ç—ñ. –ü–µ—Ä–µ–∫–æ–Ω–∞–π—Ç–µ—Å—è, —â–æ –º–µ—Å–µ–Ω–¥–∂–µ—Ä –Ω–µ –æ–±—Ä—ñ–∂–µ –π–æ–≥–æ.",
-    "share.loaded": "–ü—Ä–æ—î–∫—Ç —É—Å–ø—ñ—à–Ω–æ –∑–∞–≤–∞–Ω—Ç–∞–∂–µ–Ω–æ –∑–∞ –ø–æ—Å–∏–ª–∞–Ω–Ω—è–º!",
-    "share.error": "–ù–µ –≤–¥–∞–ª–æ—Å—è —Ä–æ–∑–ø–∞–∫—É–≤–∞—Ç–∏ –∞–±–æ –∑–∞–≤–∞–Ω—Ç–∞–∂–∏—Ç–∏ –ø—Ä–æ—î–∫—Ç –∑–∞ –ø–æ—Å–∏–ª–∞–Ω–Ω—è–º.",
-    "cheat.showList": "–ü–µ—Ä–µ–≥–ª—è–Ω—É—Ç–∏ —Å–ø–∏—Å–æ–∫ —É—Å—ñ—Ö —á–∏—Ç-–∫–æ–¥—ñ–≤",
-    "cheat.hideList": "–ü—Ä–∏—Ö–æ–≤–∞—Ç–∏ —Å–ø–∏—Å–æ–∫ —á–∏—Ç-–∫–æ–¥—ñ–≤",
-    "cheat.code.000": "–°–∫–∏–¥–∞–Ω–Ω—è –≤—Å—ñ—Ö –∞–∫—Ç–∏–≤–Ω–∏—Ö —á–∏—Ç-–∫–æ–¥—ñ–≤",
-    "cheat.code.001": "–£–≤—ñ–º–∫–Ω—É—Ç–∏ —ñ–Ω—Å—Ç—Ä—É–º–µ–Ω—Ç ¬´–ó–æ–±—Ä–∞–∂–µ–Ω–Ω—è¬ª",
-    "cheat.code.002": "–£–≤—ñ–º–∫–Ω—É—Ç–∏ ¬´–ó–æ–±—Ä–∞–∂–µ–Ω–Ω—è¬ª —Ç–∞ AI-–≥–µ–Ω–µ—Ä–∞—Ç–æ—Ä",
-    "cheat.code.003": "–£–≤—ñ–º–∫–Ω—É—Ç–∏ –º–µ–Ω—é ¬´–ü–æ–¥—ñ–ª–∏—Ç–∏—Å—è –ø–æ—Å–∏–ª–∞–Ω–Ω—è–º...¬ª",
-    "cheat.code.004": "Galerie de d√©monstration des formes de morphing du chargeur",
-    "cheat.active": "–ê–∫—Ç–∏–≤–Ω–∏–π",
-    "loaderShowcase.title": "Galerie des formes de morphing",
-    "loaderShowcase.subtitle": "Toutes les 34 formes g√©om√©triques avec animation de morphing SVG continue",
-    "loaderShowcase.viewFeatured": "Inspecteur de morphing",
-    "loaderShowcase.viewGrid": "Grille de 34 formes",
-    "loaderShowcase.viewMatrix": "Matrice de morphing",
-    "loaderShowcase.speed": "Vitesse",
-    "loaderShowcase.color": "Couleur",
-    "loaderShowcase.prev": "Pr√©c√©dente",
-    "loaderShowcase.next": "Suivante",
-    "loaderShowcase.random": "Al√©atoire",
-    "loaderShowcase.pause": "Pause",
-    "loaderShowcase.play": "Lecture",
-    "loaderShowcase.strokeWidth": "√âpaisseur du trait",
-    "settings.code.showComments": "–í—ñ–¥–æ–±—Ä–∞–∂–∞—Ç–∏ –∫–æ–º–µ–Ω—Ç–∞—Ä—ñ",
-    "settings.code.showCommentsDesc": "–ü–æ–∫–∞–∑—É–≤–∞—Ç–∏ –∞–±–æ –ø—Ä–∏—Ö–æ–≤—É–≤–∞—Ç–∏ –∫–æ–º–µ–Ω—Ç–∞—Ä—ñ (–∞–≤—Ç–æ–º–∞—Ç–∏—á–Ω—ñ —Ç–∞ —Ä—É—á–Ω—ñ) —É –≤—ñ–∫–Ω—ñ –∫–æ–¥—É.",
-    "help.cloudStorage": "8. Stockage Cloud et Galerie",
-    "cloud.gallery.preview.fit": "Ajuster √† l‚Äô√©cran",
-    "cloud.gallery.preview.actual": "100% (Taille r√©elle)",
-    "cloud.gallery.preview.zoomIn": "Agrandir",
-    "cloud.gallery.preview.zoomOut": "R√©duire",
-    "cloud.gallery.preview.reset": "R√©initialiser le zoom",
-    "cloud.gallery.preview.downloadSvg": "T√©l√©charger le SVG",
-    "cloud.gallery.preview.canvas": "Taille du canevas :",
-    "cloud.gallery.preview.scrollHint": "Faites glisser ou d√©filez pour explorer",
-    "tool.align.centerBothCanvas": "Au centre du canevas",
-    "menu.object.centerCanvas": "Au centre du canevas",
-    "sheet.pin": "√âpingler le volet (maintenir ouvert pendant le dessin)",
-    "sheet.unpin": "D√©s√©pingler le volet (mode modal standard)",
-    "sheet.pinnedBadge": "√âpingl√©",
-    "sheet.mode.modal": "Superposition modale (se ferme au clic ext√©rieur)",
-    "sheet.mode.float": "√âpinglage flottant (canevas interactif sous le volet)",
-    "sheet.mode.docked": "√âcran partag√© (canevas ajust√© c√¥te √† c√¥te sans chevauchement)",
-    "sheet.badge.float": "üìå Flottant",
-    "sheet.badge.docked": "üìë √âcran partag√©",
-    "sheet.swipeHint": "Balayez vers la gauche/droite pour changer d‚Äôonglet",
-    "settings.appearance.launchAsPwa": "Lancer en tant qu‚Äôapplication Web (PWA)",
-    "settings.appearance.launchAsPwaDesc": "Ouvrir l‚Äô√©diteur sous forme de fen√™tre autonome sans interface de navigateur.",
-    "settings.appearance.showSystemTags": "Afficher les tags syst√®me",
-    "settings.appearance.showSystemTagsDesc": "Ajouter des identifiants automatiques de formes et de groupes aux tags.",
-    "mobile.header.openMenu": "Ouvrir le menu",
-    "mobile.header.test": "Test",
-    "mobile.header.runSimulation": "Lancer la simulation Tkinter",
-    "mobile.bottomBar.label": "Barre de contr√¥le",
-    "mobile.nav.nodes": "N≈ìuds",
-    "mobile.nav.select": "S√©lectionner",
-    "mobile.nav.shapes": "Formes",
-    "mobile.nav.shapesTitle": "Formes et outils",
-    "mobile.nav.style": "Style",
-    "mobile.nav.styleTitle": "Style et couleurs",
-    "mobile.nav.objects": "Objets",
-    "mobile.nav.objectsTitle": "Objets et calques",
-    "mobile.nav.code": "Code",
-    "mobile.nav.codeTitle": "Code Tkinter",
-    "mobile.selected.count": "S√©lectionn√©s : {count}",
-    "mobile.selected.title": "Formes s√©lectionn√©es : {count}",
-    "mobile.action.align": "Aligner",
-    "mobile.action.alignTitle": "Alignement et distribution",
-    "mobile.moreActions": "Plus d‚Äôactions de s√©lection",
-    "mobile.align.active": "Actif",
-    "mobile.align.noShapes": "Aucune forme disponible (dessinez d‚Äôabord sur le canevas)",
-    "mobile.align.selectShapeContour": "-- Choisissez une forme comme contour --",
-    "mobile.align.orientationType": "Type d‚Äôorientation :",
-    "mobile.align.orientationAngle": "Angle d‚Äôorientation :",
-    "mobile.align.base": "Aligner par rapport √† :",
-    "mobile.align.need2Plus": "(n√©cessite 2+ formes)",
-    "mobile.align.selectedCount": "({count} s√©lectionn√©s)",
-    "mobile.align.canvasDesc": "‚ÑπÔ∏è Canevas : Les objets s‚Äôalignent sur les bords ou le centre du canevas ({w}√ó{h}px). Fonctionne pour 1 ou plusieurs formes.",
-    "mobile.align.selectionDesc": "‚ÑπÔ∏è S√©lection : Les formes s‚Äôalignent les unes par rapport aux autres √† l‚Äôint√©rieur du cadre de s√©lection.",
-    "mobile.align.sideAlign": "Alignement des c√¥t√©s :",
-    "mobile.align.left": "√Ä gauche",
-    "mobile.align.centerX": "Centre X",
-    "mobile.align.right": "√Ä droite",
-    "mobile.align.top": "En haut",
-    "mobile.align.centerY": "Centre Y",
-    "mobile.align.bottom": "En bas",
-    "mobile.align.distributeSection": "Distribution uniforme des espacements :",
-    "mobile.align.min2Objects": "Min. 2 objets",
-    "mobile.align.min3Objects": "Min. 3 objets",
-    "mobile.align.distributeH": "Horizontal",
-    "mobile.align.distributeV": "Vertical",
-    "mobile.align.distributePathHint": "Distribue les objets s√©lectionn√©s le long d‚Äôun trac√© circulaire, lin√©aire ou personnalis√©",
-    "mobile.menu.cloudSubtitle": "Projets publics, groupes et classes",
-    "mobile.menu.viewPythonCode": "Afficher le code Python",
-    "mobile.menu.runSimulator": "Ex√©cuter dans le simulateur (Tkinter)",
-    "mobile.menu.savePyFile": "Enregistrer sous fichier .py",
-    "mobile.menu.runOnline": "Ex√©cuter dans l‚Äôenvironnement en ligne",
-    "mobile.shapes.linesAndArcs": "Lignes et Arcs",
-    "mobile.shapes.textAndMedia": "Texte & M√©dias",
-    "mobile.drawMode.title": "Mode de dessin :",
-    "mobile.drawMode.corner": "Depuis l‚Äôangle",
-    "mobile.drawMode.center": "Depuis le centre",
-    "mobile.tabs.properties": "Propri√©t√©s",
-    "mobile.tabs.colors": "Couleurs",
-    "mobile.tabs.position": "Position",
-    "mobile.sheet.dragResize": "Glissez vers la gauche/droite pour redimensionner ou balayez pour changer d‚Äôonglet",
-    "mobile.sheet.expandWidth": "Agrandir le volet",
-    "mobile.sheet.collapseWidth": "R√©duire le volet",
-    "mobile.sheet.expandHeight": "D√©plier le volet",
-    "mobile.sheet.collapseHeight": "Replier le volet",
-    "control.quickSettings": "R√©glages rapides : curseur, pr√©r√©glages et r√©initialisation",
-    "control.reset": "R√©initialiser",
-    "control.resetToInitial": "R√©initialiser √† la valeur initiale",
-    "control.quickValues": "Valeurs rapides :",
-    "control.rotateCcw90": "Pivoter de -90¬∞",
-    "control.rotateCw90": "Pivoter de +90¬∞",
-    "share.ghPagesLabel": "GitHub Pages (pour le partage)",
-    "share.localUrlLabel": "Site actuel (pour tester)",
-    "share.testUrlLabel": "Lien de test (aper√ßu actuel)",
-    "share.ghPagesWhyTitle": "üí° Pourquoi le site sur GitHub Pages a-t-il ouvert la page d‚Äôaccueil ?",
-    "share.ghPagesWhyDesc": "GitHub Pages h√©berge actuellement une version ant√©rieure de l‚Äô√©diteur qui n‚Äôinclut pas encore le code mis √† jour de lecture des liens.",
-    "share.ghPagesWhyHint": "Publiez la version mise √† jour sur GitHub Pages et le lien ouvrira directement votre projet."
-  }
-} as const;
-
-export type Language = keyof typeof translations;
-export type TranslationKey = keyof typeof translations.uk;
+    "foxú§;]è«qÔ¸m˜`ﬁà"˝Q0å„I¸àé‚Åw"≈ºıŒÙÓ∂8;=ÏûŸª£@Äí"'
+;ëyD#—Ÿ/4EY?$‡~ﬂ˚˛ÒOHUu˜|mœí@I∑ªSU]]]ﬂ]ì&JD¨4/‰LºvéΩˆˆ¸–~ΩvÍÉ^©†œ>ﬂÅøÎ;BÀÀU^¶\j·!s≠r©—»à‚ö'∆S>,—Jl„µ£Á⁄‡<ß¥Ú~`É£ßkÁ⁄KOU¶‡
+¸59è≈Ú éGdãòÛg°Ñ÷JGô*v <W∫	¢\WÖ,„39ÊÖ(5S%ŸLjïeb*≤Çe∞ÆY¬rn‡ã'\√ŒÄg˚âÄa`›T∆7U∞ya¢Ê~£B©ËëQ…b%3f |~®%2a≈6®ùîY·áÂsUÍñ$L`É√ø¿E©CÎuÑú ≠8ïóFeƒÛPÈ÷‡∏/˜Ÿ‡Õ”˚Xœ˚”".àƒZ‘#À™ÃHé€ÌÕ3`Z´r∆á¯d ÀBii@¡`Â˛„1Ë[2?QW/‚	“ﬁC™Ôdlòl˛ÄçyOD∂	 Aö ûÆvzP—!Kí¬Z±≈ZúÌ}ΩeUhÎ$Ïe˛ïa(@Ø¬`nóÛCPçÁÑè
+yª§s3p¸•ñ w:≈ì-ùÎH€î1ê4Q™xbó‹lj˚(ÜS(Ó=»@‚"M∫hL1ˇj*z(fÍ=AÇﬁ(„›p¯:+3búŒ¥yfMë$"ìﬁ®Jê∆L‹ï∞Uÿ`KŸa"tShA™∏iôçÈÿ¥F#HòMÿ¸<œè”Ê≤‡2%ü6ˇ4*Ó'±Îhx#	ÅÛãUf…ò»Sÿ"»4òËÖµ5Qê&mˆÎ§Ò:9”£í¶8∞ÜºÉñ\©•≥◊¶≥¬bLrµ¡àöyÀXjØZVÏ– >%e«·;®,ŸÎ8ƒ à)∏.* °C0„ ú=ÒÜÓ‘Eù≥˙∞4ˆÍÈ£∫+·’ñ§∂¬ÑÑp≥rÏÊR¥#wqC&≈Ñ<Üıÿ®y¯ ë‡5¡ñ@êﬁ;ÀRä3‘ÛR¶[BB)nµ˝ı-€∞›[!`4&1m"xÛÍìw-l∞‘ÄYv‰"ã)œwr:œ]ûwDÔ‚Xú*„<˙H8Ç;é8ƒoá®
+Ç‚Hfù3é7UÍ|∫÷r˛ïÎy ≥Æ⁄‘`€ZLAÿîc…‰H¡Àãú‘‚=5jÎŸ≈’ÃX?¡s¿ŸóS°≠)ıPÑ"µô*eïcˆÁ"çé∆HiƒG›OÄÎxßÂ$–…j‘-‡(¶‘fêKa4÷NπKëY«AÜZñÊÚí3Ñ≥¬-@≈îƒ'É”lùùeXKòµ—ÿKwSï)YÄÕ`‰8njo…bÑ¶LHÓã4òf‡o6óñ*˛\¥•GJ’_˚≥-ïçKœYG AÃÜè≥BeÂÈ´¢∑Õ~¡ÑûŸ¯î6Y˘ÎΩˇDjçXô’	jl∞ßòÅWÍ˙ ßø†4`Åê∞BXËv‰gÕ2M}íj›@üÏ	ÖäqãèF"H0°E˙µ7≤ÊëÆ8®:ï€÷[@ö]£∞€•ihéf		e#çMÇ€Çú<ÜêÄ_Ççóç
+Ü y0Î„˙πªiëk…ﬁd	H\xoXîº·ŸV,ª2’zœN3∂ÜÒêjx0Teúˆ05r<).
+E·‚‰{Hu<?TS»ë¥O|”ìj¯!∏ÈVñL´Ç2¬é∑H∏ôÄ“ÍñÿY€Œ¿å5áÍË#ywµhƒırV˝ù@MC+iTWhêú∆<—ﬁ◊•,Ñ8≠ê+:ºÂzŒÊDÙ‰ïâwB#¸•†_!ZKÃ,xÈ,·:Èuû˛<¸)ˇ?Œ#yZb†tEYárõEÍR+m¯Ä‰ı2ç1œ·@wëøeÔ)lï_Í2:òïöâa…WC-Ømt≈›Ë≠ŒE`6∞äõ≥î◊˙¯ÈeeÖé:Oí3Ç\(P◊,@—P†ìZ≈ÑUt'ÿú‰˚›ñI«(2Ùñ±$@
+ªOSrfúéuπ»Ø°L*∂~ƒxÕÍd…ï¥\›Ñ)@ÄOªê)f.T“». ¨ûTeWìõ‰: ±ëÊ^m≥ÇÑ"uJ¡Ê¿î8BA£Q„ñâ\Ñ\8„Ô6 W[˜πp+÷ë4VcÉçıZÎÓ¬Ód¢âò®4±≈ﬂ5ÅÒˇ´6 â◊•w>hHπ^Ïíÿ0+`u"ˆyÇi ”û√≠Q˚∑GLX+ŸÛ ƒÕ‡Ô:õo5Ñ b∏vA»6a®Â‡•¸ tŒLîÌF∏Äöl<m¨Ö≥Îÿ[*5,ƒíóÇñ‡±b^à˜¯î0ﬁ˜$∂
+9Xr,Ë‹ƒæÑúΩ˜áÛª.∞“Ç¸+&='^ Úié⁄ãƒ)Ëﬁ£®G/3ôW∏A'⁄Vf∆]\}Uù—®¡-ºáæﬁÌíßUF"ëE)ƒ∏ƒíÇ∫ÎIÅêˇ¿Ê†8I=≠T%µ-¥MûÅﬁlz·lyÿ∫êÖºõ∞Í;ÃCÊ@˘
+§]Îñ≠ﬂ@tâ»npà∂Ïﬂr—€qSî'–∏–-Ûx2?lªe@—Á]•éÌR√∂êZ=(P`rÎ‹∞˚…Kõ8ÈdÖ¿\
+<ˇ7∞ÿıvœÃ¸Ö"¯í*–+S©pÅè©´ä;≥ŸΩ›…—è|îÅﬂ=zpÙÏË¡œY-Ã¥îÎ”˘¶Çi,Z5Øî”@±.,˚»√‚À≈˜«/û,û-.^,^ˇö¡üálÒ√Ò=xÚ€≈”„Oÿ‡¢,.ïC∂‚0kmJâ01˙˝‚È‚{@ª¸´≈w«ü,æa«øÄˇ-~Ë.päê¬Gﬂ¿*ﬂ,/¬ì÷¢[|	ﬂûTP«ü“„„˚Ã£ @ﬂcã/ƒ'¿¬CÀìc6òEnŒΩ˛˙uH¿Ry∞˛ni&ô‘—XìrIı:òâÿΩ≈__cãG«˜Å¸S\¸¯∑«üˇÚ¯cê
+¸¯-ÓË…‚yãO`ÍyG∏•N∑¯P§}Úm`∫ÃnõX¨ÚÉ%˘>™÷•æÑÏz¥5˙‚;¯˚à‡øˇQ‹∏RnÒ @æ]<áµÓΩ|¯?ıDË˘‚QW’@ØÊ6ÎiÿÑ§Aæ∏	+ÉÔIÓﬂÅ¯ÅQ\ÍÒÒ/éÔwH)ÖÈO√‡ˇM[˘zÒâ˙±˝	O)œû }–Õqú|ã˙Ùé¯<dÇ¡÷A=ÒÁ≈ü¬ëz‘>∏˚®†éJN—™=jãUq“ÄØD‚1íBiæ@õ Ú∞›?„<èØﬂwƒVwˇ…º)
+Q	˛eÜ¨>¥á	K{vÌœÅÉ[<Ô8ı»içˇBNëY=C4‘¯{§?ê•}ZÎ‹√≈üB+?Y2·~6Í4h"xAâ¿⁄ñä|Ωx†/`√§$∞kX‚c`È)	Dû",ªN ÆaÒ®MCkMóÓ3´¸ö´Iaù>}∫≤•'$+ØéÁîû¿/p±W§˙ÜWeÄx∞’¶Ô√G“Lêˇs<[Í—ø[÷œ£gA gz(˜axòl„Ú:à¸ÜåÉ‹lê˛Ÿ˙é€_·B_∫Ω?≥*B∫Tä(ÍŸ≈OqïãRÈãÈ© †6r◊K‡‚©iJ˘˝TÈ|Ó°æË)uõ*∞ˆ|ÒÔÕÛZ|W≈l4>Ö”^ÃM#Z÷<ÑVÏ¡6Â∞dÈgÍI¥ät∫Iãœ Èwª´∑¥s˝"ﬁK2k$WÌ’fRÏ]Ä]ñ⁄zèÀô…]C¯Â¨"ÚE-	˛∫~^≈È
+¨+ÿﬂ∑y,|ä≈´&ÓQÇPLﬂé∫]‰∞\ãôÔí“ecVÙQÃ\∂S Ô”<KldíR^®∆êAwq^⁄{Ωm˙–î⁄DqŒ£Ï%eK˛™_7ˇ<Áx9–®¯+.
+–Ñ±±fÇNtSMÈ2Çt˚ cj#wÓ]ëÛ%”ΩFåÌ%˜∂œÒ–î!≈Z|à?‘˛µ˘ti96¿¿a'NÚÊuËz–’ŸÔkî†cyJèù˝¥äëÊxUT&;Ö“Æv˘áà¡∑¯&Óõ¯[1Œl+/ÄøGcé5—È(p4íÆ´Sb¬Ï˚Ö†K†´1¡üîú≤Ω7Nü˛1∏N8Ë!^ÆØ≠Fæ£‘Ù2%GcT8©_µ$VØÅñóù#@ <∏Ãd!!6∂JCZ´ëµó°~ÓÃ(›⁄ùÇ%ƒ’}:§’bûÕ∏iﬁ`˝í	¯ëù[çjb≠“Ùí¥›∂ù”MÕÌ@I,∆ÈZ@ÏÁ‡&Íf‰äiƒ±ÏÆÂœ´b≤Yq≥·Ø¡µ™b,∑‚¬·æûôQDπÃú›Jº!1ÕTä=◊)«r
+ÜÉÍ[ë%ÿm ?kåÃ÷⁄¥ ÃQÉj‘ÃπŸÑßUoxmâùL$ÁybÌ√±UW“
+ÈDD«5PÑŒïëÄËgu¥`#aÄFR„ùíÎxØ®ç@oä∆íhë[AÌïÅ◊Í/`@1c+]ªµ≈§ö¡ôéVâç≤Çè±∆˜‰8Z/¸œ€ûø˝@Õn˛3jÃ£OÎ–¢|jñˇˆÂo~….8fCê5+ ˙¨√O√Ï…\x5>œ±p«{qwU∫±öl/ÔÏè¬_v¯<œác®xô≈ì≥Ω«]Ô[0"c$Á€%^Â∂›ÖáyCŸ`˚∆∆⁄+“ÙÆˇj9”†∑÷%&íÚ	:0 Ë^d∂UÉ£?ôö:©W$Ñ©Ô¢UÎcÏŸ°QÑ]>6ù°Åùçó^N«o≈˜1âìò&»ë‰xÉèåc“EYÓ»¶gv»¿wêÒ ®60UCI˜a≈#&}¸GSf`°¯K´c{jä0Ñ.≥9-S:ø∆ÉÚòÍ˜n´◊ëÇ´ÈyÆ·H]Cæÿ)Ã#ı¸q*:8pFQÊfÁ˛Úõ21€Ù'g1A–ïP∂¥>ANxnâ]h%ëK UÒB%w8(ô1Z∑˜} E;!}k<Äa>1zïZm˝0]HÑ©Ô¬¡l fØIàQ|\—Còû£Ù∑,Mˇuè„Á¸``b—ëØi‚ã~˛æci}ª⁄ÂØ	UÌßqãV•∏ñ√íπçïÇÿ®ßÆ∂i‹]ó˝ÕçP:vª+SêØã:§3
+¬djßRF7È‹ó4π ‰√úƒ‡¢i}Ï‰≤™ÉLAf-H€äôËo⁄K@\e}ùŸ+1HZÓ∞z¡3kÊo◊◊É$ƒ÷Ã^–∂ÔÖ10‘œÍ<™ª;◊ÛJ¯Cngho•4ßYj¨a§*∫3xzà9 Ω¬πSålg~‚‹È*Èâd”+˜¿Èb[K{∞míÈ˝˚_ˇ˘ªˇ}Úk∂È≥L∂Uwœû)m®ÒS—êQ‚wì;6¯hÔÓ¸wMÓÊ˚kª†2ÁÎl∞~Òp:T“çõ›c764˜∏Fk;vº∫∏”‚˘ı1≠c¿XD◊O&4ﬁ–ò>®Öÿ√ƒ¡ç∂}W”±òAë	b¶bdìº{ùI–ˆQM”EnlÙÉ ú∆ôGÆ=€+]^∫πÓ+ﬁl¨x3¨Â!µ!Ô:pT9.±„<¶‰oÜ”>2ÓÊﬂNÜ•6ïŸô´uºπ"≥àùq:⁄áp∂ãpvBÕÚ%D∏ˆ~ºM}è‹}››ê0ævõü◊ziàÊ]U€v—ºphç¸Oôa/g∞b©c˚«)ñJ ƒèdUê"&ñ´uJÌ„ñh∂ˆot◊∂µ¢uÛr	Ø9U%m†Sé#ñ!:Xmnïm∫X›∫ë∆òláêÎÙÃ6©ﬁŸ«Q /1˝.K£ëL€ªnå(>€§ªLÕ¥£PÖO¥Å#úàÚÉ>Æf8£bﬁ~ÀÍ≤ÚnÆ@·1¢Q◊ç,Ÿ–1©€ÇíÈó NY ëHnZú∫˙{vÀÖ%ªJ4ﬂªÇ5]uv¯çzª~óÏ¶BàïŒÏò≈€"/•›ú}Ò•£ö ˜¢3Ô0
+>4ﬁÓ¢˙€,4*◊r~à0MΩI”hN°|)M˝ÁÆ±Tû«◊ÑøÜªò⁄¥aE≠®A‹p†∆fﬂh5CW`æ§îl-+ˆsû%UÀ—7¢™b<à[OynÍN•oG≠F≥k]ﬁ”ø=?ÑÍTº‚b5ﬁ5F£≤F•—ÌR∆∑v\QËÿ£&Ñ¡)Jxc808¥S,◊6+ Pt›hñÒÊyy˙=mµ ÿÆ∫l!m8‹úÕ8çu∫"∏ôÎ<-≠V^Ávæß⁄»“™8◊'6„Ω7È¬j[Œî≠xŸ˙õßèˆÄ/Cˇ§	mØ«∫§Æ.∏€Ì~B◊vBDgVÄﬁ{øq;æÉäåÌSë:‹Ç∆:x¯cmK“ÿ4≥æE0ˇü“—Y≤{crP%˚Úãﬂ≥mXÏv©§u–ÿ"Ç≈[{·Î≈∫L}ßgöiÑäí∏ËÁ}K˘ØEo2?
+|ï–ÚôZGå%⁄7&ºJﬁÑÍÆz-8πúQÇßn0Fd‡E¢¶í≤¿ïj¥óîêÄ°d&Í„÷ámåöv∂‹s4EEtIBÇóH•§•ÊPH·KÑvk3z◊2ßò\_¯R´ª$êHTçÎZ∫ÍñX‡‹{kj‰˜Rhf ÔgU√ém1€^¥ë§óh‘-Ãx‹.ÜÎÄõ–∞£Jﬂ¢‘ŒUô®µ™d81È€òíì∏®Ûî∆„û⁄ÿJEQ•¸Ì´∏0uÄ;mâÊû&JWs7„o„›∏ê(∞{’ÿ›-Ç¬6R'{´·´∞€Ω8 Înõcö*∫¬Å3¥ TµyiÅêR·
+‹)]S˙¨_ï;áÎ˘Û¯€Ñ8l?µ≈Xõñùÿ)ÿ®Á9ƒŒjmk1†LñΩ˜‘1<1àB_ŸWÄ¶ =⁄àdﬁ"∑YGFoÑhœIÇ5!“=ë%Æ¬%·ˆb®È–•ìÓ£≠ñ35]∫∫!$J∂/OÎó≠i ‘é∞˘Kow»í†∞ÎÙ2:˛ 6Ò6«-mJOóƒóm…›aAßåëªùçx,”ˆk∂çµråœ ø-≤ù∂Diî∂VEwH}¶⁄¶–ÔêV”ÀP8`:–^—ÍIE˜ÓB¸ZàwlWøCŸT„z™ë∫yc1≤°∞vitéÙJ+ÅøÌj?ñ~—ÏïO}¢íªiˆOËÑËmb”îxá∂£≠Â5ÜªvóÙ¶·¨æ|ù≤Ê‰áo7Qlƒ^zz]¯Ç æËc—@=ì≤—∞i:H;¨π⁄ôÙ„-;…UHÓÌFppyÉ‡SÙùÄ¡~‘¶4≈%§F•±%xõ}IO:«—°ï€hA0¡ÿö4»YW¿wO‹e‹–ã“≈['N@fèM©[î[núò˝å›jDø‚PcØ,Ã[-å›˙…ª‚`^TﬁzÎƒˇ  ˇˇ Ûiî 

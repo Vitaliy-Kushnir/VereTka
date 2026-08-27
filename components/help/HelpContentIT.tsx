@@ -4,284 +4,335 @@ import { HelpComponents } from './HelpContentUK';
 export const HelpContentIT: React.FC<HelpComponents> = ({ SectionTitle, SubTitle, Para, Key, ListItem }) => {
     return (
         <>
+            {/* 1. INTRODUZIONE */}
             <section>
                 <SectionTitle id="intro">1. Introduzione</SectionTitle>
                 <Para>
-                    <strong className="text-[var(--text-primary)]">VereTka</strong> è uno strumento web semplice progettato per la creazione visiva di elementi grafici e la generazione automatica di codice per la libreria Tkinter in Python. L'editor funge da ponte tra design e sviluppo, consentendo di prototipare rapidamente, creare scene complesse e ottenere codice pulito e pronto all'uso.
+                    <strong className="text-[var(--text-primary)]">Veretka</strong> è un editor di grafica vettoriale web avanzato e intuitivo, sviluppato appositamente per la progettazione visiva di interfacce, illustrazioni vettoriali e la generazione automatica di codice Python pulito e ottimizzato per la libreria <Key>Tkinter</Key>.
                 </Para>
                 <Para>
-                    Questa guida ti aiuterà a padroneggiare tutte le funzionalità dell'editor, dalle operazioni di base alle tecniche avanzate.
+                    L'editor funge da ponte perfetto tra il design grafico e la programmazione: mentre disegni forme sull'area di lavoro interattiva, l'applicazione genera istantaneamente uno script Python pronto all'uso, sia sul tuo computer sia in ambienti web Python.
+                </Para>
+                <Para>
+                    Questo manuale illustra tutte le potenzialità di Veretka: dalle forme geometriche di base ai gesti touch su tablet e smartphone, dalla lente di precisione al joystick virtuale fino alla collaborazione nel cloud.
                 </Para>
             </section>
 
-                        <section>
-                <SectionTitle id="interface">2. Panoramica dell'interfaccia</SectionTitle>
-                <Para>L'interfaccia dell'editor è suddivisa logicamente in zone funzionali per la massima comodità:</Para>
+            {/* 2. PANORAMICA DELL'INTERFACCIA */}
+            <section>
+                <SectionTitle id="interface">2. Panoramica dell’interfaccia</SectionTitle>
+                <Para>L'interfaccia dell'editor è strutturata con cura per postazioni desktop e dispositivi touch portatili:</Para>
                 <ul className="list-decimal list-inside space-y-3 pl-2">
                     <ListItem>
-                        <strong className="text-[var(--text-primary)]">Menu principale:</strong> Situato in alto, fornisce accesso alle operazioni globali: gestione dei file (<Key>File</Key>), cronologia modifiche e appunti (<Key>Modifica</Key>), operazioni sugli oggetti (<Key>Oggetto</Key>), impostazioni di visibilità (<Key>Visualizza</Key>) e informazioni di aiuto (<Key>Aiuto</Key>). Sul lato destro del menu ci sono pulsanti per il cambio rapido del tema, la modalità schermo intero e l'apertura delle impostazioni.
-                    </ListItem>
-                    <ListItem>
-                        <strong className="text-[var(--text-primary)]">Barre degli strumenti:</strong>
+                        <strong className="text-[var(--text-primary)]">Menu Principale (Barra Superiore):</strong> Accesso a tutti i comandi globali:
                         <ul className="list-disc list-inside space-y-1 pl-6 mt-1">
-                            <li><strong>Pannello superiore:</strong> Un pannello dinamico che mostra le impostazioni per lo strumento attivo (es. colore di riempimento) o le proprietà dell'oggetto selezionato.</li>
-                            <li><strong>Pannello sinistro:</strong> Il set principale di strumenti per creare forme. Raggruppati per tipo: primitive, linee, poligoni, ecc.</li>
-                        </ul>
-                    </ListItem>
-                     <ListItem>
-                        <strong className="text-[var(--text-primary)]">Area di lavoro (Canvas):</strong> L'area centrale per disegnare e modificare. Il canvas ha dimensioni e colore di sfondo personalizzabili. I righelli possono essere visualizzati. A uno zoom superiore al 1000%, appare una griglia per l'allineamento ultra-preciso.
-                    </ListItem>
-                    <ListItem>
-                        <strong className="text-[var(--text-primary)]">Pannello Codice Tkinter:</strong> Situato a sinistra. Mostra in tempo reale il codice Python (quando si usa il generatore locale). Contiene pulsanti per copiare, visualizzare in anteprima o aggiornare il codice.
-                    </ListItem>
-                     <ListItem>
-                        <strong className="text-[var(--text-primary)]">Pannelli di destra (Oggetti e Proprietà):</strong>
-                        <ul className="list-disc list-inside space-y-1 pl-6 mt-1">
-                            <li><strong>Lista Oggetti:</strong> Un elenco gerarchico di tutte le forme. Qui puoi cambiarne l'ordine (livelli), rinominarle, nasconderle e bloccarle.</li>
-                            <li><strong>Editor di Proprietà:</strong> Un pannello dettagliato per configurare i parametri dell'oggetto selezionato: coordinate, dimensioni, colori, spessore del tratto, attributi e nodi.</li>
+                            <li><Key>File</Key> — Crea nuovi progetti, apri, salva, esporta immagini (PNG, JPEG, SVG), pubblica nel cloud e importa immagini di riferimento.</li>
+                            <li><Key>Modifica</Key> — Annulla (<Key>Ctrl+Z</Key>) e Ripeti (<Key>Ctrl+Y</Key>), taglia, copia, incolla, seleziona tutto e cronologia modifiche.</li>
+                            <li><Key>Oggetto</Key> — Raggruppa, separa, ordine dei livelli, riflessione, allineamento e distribuzione lungo un tracciato.</li>
+                            <li><Key>Visualizza</Key> — Righelli, griglia, guide magnetiche (Snapping), allineatore laser e modalità a schermo intero.</li>
+                            <li><Key>Aiuto</Key> — Apri questo manuale, elenco tasti rapidi e modulo di feedback.</li>
                         </ul>
                     </ListItem>
                     <ListItem>
-                        <strong className="text-[var(--text-primary)]">Barra di stato:</strong> Il pannello inferiore che mostra il livello di zoom e le coordinate del cursore. A sinistra c'è una casella di controllo per attivare le coordinate visibili accanto al mouse. Clicca sulla percentuale di zoom per inserire un valore esatto.
+                        <strong className="text-[var(--text-primary)]">Barra degli Strumenti (Sinistra / In basso su mobile):</strong> Strumento Selezione (<Key>V</Key>), Modifica Nodi (<Key>A</Key>), forme geometriche (rettangolo, cerchio/ellisse, triangolo, stella, poligono), linee, curve di Bézier, testo e contagocce.
                     </ListItem>
                     <ListItem>
-                        <strong className="text-[var(--text-primary)]">Finestra di Aiuto:</strong> Ha propri controlli: un campo di ricerca o uno slider di zoom per la dimensione dei caratteri. Cliccando sulla percentuale ripristini rapidamente lo zoom.
+                        <strong className="text-[var(--text-primary)]">Barra delle Proprietà Dinamica (In alto):</strong> Mostra automaticamente le impostazioni dello strumento o dell'oggetto attivo: colore di riempimento, colore del tratto, spessore, stile tratteggio, raggio degli angoli e modalità di disegno (da angolo o dal centro).
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Area di Lavoro (Canvas):</strong> La superficie centrale di disegno con zoom fluido, panoramica e allineamento intelligente. Superando il 1000% di zoom si attiva automaticamente una microgriglia di 1 pixel per la massima precisione.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Pannello del Codice Tkinter:</strong> Situato sotto la barra strumenti di sinistra (o in un cassetto a scomparsa sui tablet). Mostra il codice Python in tempo reale con evidenziazione della sintassi, copia con un clic, download ed esecuzione diretta negli interpreti online.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Albero dei Livelli e degli Oggetti (Destra):</strong> Struttura ad albero per riordinare i livelli tramite trascinamento (Drag-and-Drop), rinominare, bloccare le modifiche e nascondere la visibilità.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Barra di Stato (In basso):</strong> Mostra il livello di zoom attuale, le coordinate del cursore, l'interruttore HUD per le coordinate fluttuanti e il pulsante di messa a fuoco rapida.
                     </ListItem>
                 </ul>
-                <SubTitle>Modalità a Schermo Intero</SubTitle>
+
+                <SubTitle>Modalità Schermo Intero</SubTitle>
                 <Para>
-                    Per la massima immersione, puoi attivare la modalità a schermo intero tramite <Key>Visualizza</Key> → <Key>Schermo intero</Key> o premendo <Key>F11</Key>. 
+                    Per eliminare qualsiasi distrazione dal browser, attiva la visualizzazione a schermo intero tramite <Key>Visualizza</Key> → <Key>Schermo intero</Key> o premendo <Key>F11</Key>. Premi nuovamente <Key>F11</Key> per uscire.
                 </Para>
             </section>
 
-                        <section>
-                <SectionTitle id="projects">3. Progetti</SectionTitle>
-                <SubTitle>Creare un Nuovo Progetto</SubTitle>
+            {/* 3. LAVORARE CON I PROGETTI */}
+            <section>
+                <SectionTitle id="projects">3. Lavorare con i progetti</SectionTitle>
+                <SubTitle>Creare un nuovo progetto</SubTitle>
                 <Para>
-                    Crea un nuovo progetto tramite <Key>File</Key> → <Key>Nuovo Progetto...</Key>. Imposta nome, dimensioni, sfondo e nome della variabile Canvas.
+                    Inizia un nuovo progetto tramite <Key>File</Key> → <Key>Nuovo progetto...</Key> o dalla schermata iniziale. Imposta titolo, dimensioni in pixel, colore di sfondo e nome della variabile Canvas di Python.
                 </Para>
-                <SubTitle>Salvataggio e Caricamento</SubTitle>
+                <SubTitle>Salvare e Aprire (.vec.json)</SubTitle>
                 <Para>
-                    I progetti vengono salvati in formato <Key>.vec.json</Key>.
+                    Il formato proprietario <Key>.vec.json</Key> è un file JSON strutturato e compatto che contiene tutte le forme, i livelli, le impostazioni della griglia e le immagini di riferimento incorporate.
                 </Para>
-                 <ul className="list-disc list-inside space-y-2 pl-2">
-                    <ListItem><Key>Salva</Key> (<Key>Ctrl+S</Key>): Salva le modifiche al file aperto.</ListItem>
-                    <ListItem><Key>Salva come...</Key>: Salva il progetto in un nuovo file.</ListItem>
-                     <ListItem><Key>Carica Progetto...</Key>: Apre un file <Key>.vec.json</Key> esistente.</ListItem>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem><Key>Salva</Key> (<Key>Ctrl+S</Key>) — Salva le modifiche attuali nel file del progetto.</ListItem>
+                    <ListItem><Key>Salva con nome...</Key> — Crea una copia con un nuovo nome.</ListItem>
+                    <ListItem><Key>Apri progetto...</Key> — Carica qualsiasi file <Key>.vec.json</Key> salvato in precedenza.</ListItem>
                 </ul>
-                <SubTitle>Ritorno al Progetto Attivo</SubTitle>
+                <SubTitle>Salvataggio Automatico e Ripristino Sessione</SubTitle>
                 <Para>
-                    Se torni alla schermata iniziale senza salvare, puoi usare il pulsante <strong className="text-[var(--text-primary)]">Ritorna</strong> per riprendere dal tuo lavoro.
+                    Veretka garantisce una protezione multilivello contro la chiusura accidentale della scheda:
                 </Para>
-                <SubTitle>Salvataggio Automatico (Autosave)</SubTitle>
-                <Para>
-                    L'editor salva automaticamente ogni 2 minuti, conservando un backup locale, per evitare la perdita di dati.
-                </Para>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Autosalvataggio in background:</strong> Lo stato del disegno viene registrato ogni 2 minuti nel <Key>localStorage</Key> del browser. In caso di interruzione, un banner all'avvio consentirà il ripristino istantaneo in un clic.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">«Torna al progetto» nella Home:</strong> Se torni alla schermata iniziale o alla galleria, la tua sessione di lavoro rimane attiva e pronta all'uso.
+                    </ListItem>
+                </ul>
             </section>
 
-                        <section>
-                <SectionTitle id="templates">4. Modelli (Templates)</SectionTitle>
-                <SubTitle>Scopo e Vantaggi</SubTitle>
+            {/* 4. LAVORARE CON I MODELLI */}
+            <section>
+                <SectionTitle id="templates">4. Lavorare con i modelli</SectionTitle>
+                <SubTitle>Scopo dei modelli</SubTitle>
                 <Para>
-                    I modelli salvano lo stato completo di un progetto: dimensioni, sfondo, griglia e forme. Utili per partire da basi preconfigurate.
+                    I modelli memorizzano dimensioni dell'area di lavoro, palette di colori, griglie guida e forme di partenza (cornici di layout, assi cartesiani o loghi).
                 </Para>
-                <SubTitle>Creazione e Utilizzo</SubTitle>
+                <SubTitle>Creare e utilizzare modelli</SubTitle>
                 <ol className="list-decimal list-inside space-y-2 pl-2">
-                    <ListItem><strong className="text-[var(--text-primary)]">Creazione:</strong> Modifica dal <Key>File</Key> → <Key>Salva come Modello...</Key>.</ListItem>
-                    <ListItem><strong className="text-[var(--text-primary)]">Utilizzo:</strong> Durante la creazione di un progetto, selezionalo dal menu "Crea da:".</ListItem>
+                    <ListItem>
+                        Componi il tuo layout di base sulla tela e scegli <Key>File</Key> → <Key>Salva come modello...</Key>.
+                    </ListItem>
+                    <ListItem>
+                        Inserisci un nome descrittivo (es. «Campo di gioco 800x600» o «Scheda prodotto»).
+                    </ListItem>
+                    <ListItem>
+                        Nei progetti successivi, seleziona il tuo modello dall'elenco «Crea da modello».
+                    </ListItem>
                 </ol>
-                <SubTitle>Gestione dei Modelli</SubTitle>
                 <Para>
-                    Gestiscili nelle <Key>Impostazioni</Key> nella scheda <Key>Modelli</Key>. Sono salvati nel tuo browser (localStorage). <strong className="text-[var(--destructive-text)]">Attenzione:</strong> La pulizia della cache del browser eliminerà i modelli.
+                    Gestisci i tuoi modelli (rinomina o elimina) in <Key>Impostazioni</Key> nella scheda <Key>Modelli</Key>.
                 </Para>
             </section>
 
-                        <section>
-                <SectionTitle id="shapes">5. Oggetti</SectionTitle>
-                <SubTitle>Creare Oggetti</SubTitle>
+            {/* 5. LAVORARE CON LE FORME */}
+            <section>
+                <SectionTitle id="shapes">5. Lavorare con le forme</SectionTitle>
+                <SubTitle>Disegno e Selezione</SubTitle>
                 <Para>
-                    Seleziona uno strumento e clicca sul canvas. Trascina per ridimensionare. Tieni premuto <Key>Shift</Key> per disegnare in modo proporzionale.
-                </Para>
-                <SubTitle>Selezione e Trasformazione</SubTitle>
-                <Para>
-                    Usa <Key>Seleziona</Key>. Comparirà un riquadro con le maniglie.
+                    Scegli uno strumento dalla barra, quindi fai clic e trascina sull'area di lavoro per impostare le dimensioni della forma.
                 </Para>
                 <ul className="list-disc list-inside space-y-2 pl-2">
-                    <ListItem>Trascina i bordi per ridimensionare. Tieni <Key>Shift</Key> per mantenere la proporzione.</ListItem>
-                    <ListItem>Passa con il mouse vicino agli angoli per ruotare.</ListItem>
-                    <ListItem><Key>Shift + Clic</Key> seleziona elementi multipli.</ListItem>
+                    <ListItem>Tieni premuto <Key>Shift</Key> mentre disegni rettangoli o ellissi per bloccare la proporzione 1:1 (quadrato / cerchio).</ListItem>
+                    <ListItem>Tieni premuto <Key>Alt</Key> per costruire la forma a partire dal suo centro invece che dall'angolo.</ListItem>
+                    <ListItem>Lo strumento <Key>Seleziona</Key> (<Key>V</Key>) mostra le maniglie di trasformazione per scalare e ruotare gli elementi.</ListItem>
                 </ul>
-                <SubTitle>Modificare Nodi</SubTitle>
-                <Para>
-                    Usa lo strumento <Key>Modifica Punti</Key> per alterare i vertici individuali e visualizzare i punti di controllo Bezier. Usa la lista laterale per eliminare punti specifici o cambiarne le coordinate col mouse.
-                </Para>
-            
-                <SubTitle>Raggruppamento di Oggetti</SubTitle>
-                <Para>
-                    È possibile combinare più forme in un <strong>Gruppo</strong> per spostare, ridimensionare e ruotare più facilmente come una singola unità.
-                    Per raggruppare gli oggetti, selezionali, fai clic destro e scegli <Key>Raggruppa</Key> (o usa il pulsante della barra degli strumenti o <Key>Ctrl+G</Key>).
-                    Per separare, seleziona il gruppo e scegli <Key>Separa</Key> (<Key>Ctrl+Shift+G</Key>).
-                    Facendo doppio clic su un gruppo puoi inserirlo per modificare singoli elementi.
-                </Para>
-                <SubTitle>Allineamento e Distribuzione</SubTitle>
-                <Para>
-                    La barra degli strumenti superiore fornisce funzioni per allineare gli oggetti selezionati (bordo sinistro/destro, centro, ecc.). Puoi allineare gli oggetti <strong>rispetto alla selezione</strong> o <strong>rispetto alla tela</strong>.
-                    <br/><br/>
-                    <strong>Distribuzione:</strong> È possibile distribuire uniformemente gli oggetti selezionati orizzontalmente o verticalmente. È disponibile anche la <strong>Distribuzione su percorso</strong>: una funzione unica per posizionare gli oggetti lungo un altro contorno selezionato (linea, curva o qualsiasi forma).
-                    Durante la distribuzione del percorso, è possibile regolare l'orientamento (radiale, tangente, parallelo) e l'angolo di rotazione degli oggetti.
-                </Para>
-                <SubTitle>Elenco Oggetti e Livelli</SubTitle>
-                <Para>
-                    Il pannello di destra contiene un elenco di tutte le forme sulla tela. Puoi rinominare le forme (doppio clic sul nome), bloccarle (per evitare modifiche accidentali) o nasconderle.
-                    <br/><br/>
-                    L'ordine nell'elenco corrisponde all'<strong>ordine z (livelli)</strong>: un oggetto più in alto nell'elenco verrà disegnato sopra quelli sotto di esso. Cambie l'ordine trascinando le forme nell'elenco.
-                </Para>
-                <SubTitle>Specchiatura (Capovolgi)</SubTitle>
-                <Para>
-                    Gli oggetti selezionati possono essere capovolti orizzontalmente o verticalmente utilizzando i pulsanti nel pannello delle proprietà o nel menu contestuale. Ciò ti consente di creare facilmente disegni simmetrici.
-                </Para>
-</section>
 
-                        <section>
-                <SectionTitle id="code-export">6. Codice ed Esportazione</SectionTitle>
-                <SubTitle>Generazione del Codice</SubTitle>
+                <SubTitle>Modifica dei Nodi (Tracciati Vettoriali)</SubTitle>
                 <Para>
-                    Il codice Tkinter viene generato istantaneamente dal Generatore Locale per velocizzare lo sviluppo. L'API Gemini è opzionale per casi spinti dall'IA.
+                    Lo strumento <Key>Modifica Nodi</Key> (<Key>A</Key>) offre il pieno controllo sulle curve di Bézier, linee e poligoni: spostamento dei punti di ancoraggio, gestione delle maniglie tangenti, aggiunta di nodi con un clic sulla linea ed eliminazione con <Key>Canc</Key>.
                 </Para>
-                <SubTitle>Opzioni di Esportazione</SubTitle>
+
+                <SubTitle>Distribuisci lungo un tracciato (Distribute along Path)</SubTitle>
                 <Para>
-                    Tramite <Key>File</Key> → <Key>Esporta come...</Key>:
+                    Disponi una serie di oggetti in modo uniforme lungo il perimetro di un'altra forma o curva guida:
+                </Para>
+                <ol className="list-decimal list-inside space-y-2 pl-2">
+                    <ListItem>Seleziona gli oggetti da distribuire insieme alla curva di riferimento.</ListItem>
+                    <ListItem>Nel menu <Key>Oggetto</Key>, scegli <Key>Distribuisci lungo il tracciato</Key>.</ListItem>
+                    <ListItem>Scegli l'orientamento: <strong>Radiale</strong> (verso l'esterno dal centro), <strong>Tangenziale</strong> (seguendo la pendenza della curva) o <strong>Parallelo</strong> (angolo fisso).</ListItem>
+                </ol>
+
+                <SubTitle>Raggruppamento, Allineamento e Riflessione</SubTitle>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem><Key>Ctrl+G</Key> — Raggruppa gli oggetti selezionati (doppio clic per modificare gli elementi all'interno del gruppo).</ListItem>
+                    <ListItem><Key>Ctrl+Shift+G</Key> — Separa gli oggetti.</ListItem>
+                    <ListItem><Key>Ctrl+H</Key> / <Key>Ctrl+V</Key> — Rifletti orizzontalmente o verticalmente.</ListItem>
+                    <ListItem>I pulsanti di allineamento nella barra superiore allineano lungo i bordi, al centro o distribuiscono uniformemente.</ListItem>
+                </ul>
+
+                <SubTitle>Palette e Libreria Colori Tkinter</SubTitle>
+                <Para>
+                    Supporta codici HEX, RGB e un catalogo di oltre 700 colori con nome ufficiali Tkinter. I nomi di sistema vengono convertiti automaticamente per una corrispondenza visiva esatta tra il web e la finestra Tkinter.
+                </Para>
+
+                <SubTitle>Importazione Immagini per Ricalco</SubTitle>
+                <Para>
+                    Tramite <Key>File</Key> → <Key>Importa immagine...</Key>, carica bozze o immagini PNG/JPEG come sfondo per il ricalco vettoriale manuale.
+                </Para>
+            </section>
+
+            {/* 6. SCHERMI TOUCH, LENTE E JOYSTICK */}
+            <section>
+                <SectionTitle id="touch-mobile">6. Schermi touch, Lente e Joystick</SectionTitle>
+                <Para>
+                    Veretka è pienamente ottimizzato per dispositivi mobili, tablet con pennino (iPad Apple Pencil, tablet Android) e touchscreen. Modalità touch dedicate e assistenti di precisione rendono il disegno fluido su qualsiasi schermo.
+                </Para>
+
+                <SubTitle>Gesti Multi-Touch sull'Area di Lavoro</SubTitle>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Pinch-to-Zoom (Pizzico a due dita):</strong> Allontana o avvicina due dita per variare lo zoom dal 10% fino al 3000%.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Panoramica a due dita (Two-Finger Pan):</strong> Trascina con due dita per scorrere la tela in qualunque direzione senza disegnare o spostare forme per errore.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Un solo dito (Tocca e Trascina):</strong> Seleziona forme, disegna nuovi elementi o sposta oggetti.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Pressione prolungata (Long-Press):</strong> Tieni premuto su un oggetto per aprire il menu contestuale (Copia, Elimina, Porta in primo piano, Rifletti).
+                    </ListItem>
+                </ul>
+
+                <SubTitle>Barra Mobile e Cassetti a Scomparsa</SubTitle>
+                <Para>
+                    Sullo smartphone, l'interfaccia si adatta all'uso comodo con il pollice:
                 </Para>
                 <ul className="list-disc list-inside space-y-2 pl-2">
-                    <ListItem><Key>Immagine PNG</Key> ad alta risoluzione con sfondo trasparente.</ListItem>
-                    <ListItem><Key>Vettore SVG</Key> per ridimensionare al massimo livello.</ListItem>
-                    <ListItem><Key>Codice Python (.py)</Key> contenente la programmazione Tkinter.</ListItem>
+                    <ListItem><strong className="text-[var(--text-primary)]">Barra inferiore mobile:</strong> Accesso rapido agli strumenti di disegno, selettore colori, annulla/ripeti e widget di precisione.</ListItem>
+                    <ListItem><strong className="text-[var(--text-primary)]">Cassetti scorrevoli (Drawers):</strong> L'albero dei livelli, le proprietà degli oggetti e il codice Tkinter si aprono in pratici cassetti senza ostacolare la visuale.</ListItem>
                 </ul>
-            </section>
 
-                        <section>
-                <SectionTitle id="feedback">7. Feedback</SectionTitle>
+                <SubTitle>Lente d'Ingrandimento di Precisione (Precision Loupe)</SubTitle>
                 <Para>
-                    Aiuta a migliorare VereTka! Se trovi un bug, usa <Key>Aiuto</Key> → <Key>Invia feedback</Key>.
+                    Quando si disegna con le dita, il dito stesso copre il punto esatto di contatto. La lente di precisione Veretka risolve brillantemente questo problema:
+                </Para>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Offset tattile (Touch Offset):</strong> La lente proietta l'immagine ingrandita 60–90 pixel sopra il punto di contatto del dito.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Mirino & HUD Coordinate:</strong> Mostra un mirino ad alto contrasto con le coordinate pixel X/Y in tempo reale.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Blocca lente (Pin):</strong> Fissa la lente in un angolo dello schermo per monitorare i dettagli in modo continuativo.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Blocca fotogramma (Freeze):</strong> Metti in pausa l'ingrandimento per esaminare con calma nodi e curvature complesse.
+                    </ListItem>
+                </ul>
+
+                <SubTitle>Joystick Virtuale di Precisione (Controllo Nudge)</SubTitle>
+                <Para>
+                    Per regolazioni al millimetro di forme o singoli nodi su schermi touch:
+                </Para>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Stick analogico touch:</strong> Muovi gli oggetti selezionati inclinando lo stick. La velocità si adatta all'inclinazione.
+                    </ListItem>
+                    <ListItem>
+                        <strong className="text-[var(--text-primary)]">Pulsanti a passi (1px e 10px):</strong> Tasti freccia per spostare di esattamente 1 pixel (micro-passo) o 10 pixel (passo grande).
+                    </ListItem>
+                </ul>
+
+                <SubTitle>Cronologia delle Modifiche (History Popover)</SubTitle>
+                <Para>
+                    Tenendo premuto a lungo sui pulsanti <Key>Annulla</Key> o <Key>Ripeti</Key> si apre una cronologia visiva completa. Puoi visualizzare l'elenco degli stati precedenti con orario e saltare a qualunque fase con un solo tocco.
                 </Para>
             </section>
 
-                        <section>
+            {/* 7. CODIFICA ED ESPORTAZIONE */}
+            <section>
+                <SectionTitle id="code-export">7. Codifica ed esportazione</SectionTitle>
+                <SubTitle>Generazione Codice Python Tkinter</SubTitle>
+                <Para>
+                    L'editor converte automaticamente ogni elemento grafico nelle corrispondenti chiamate del Canvas Tkinter (<Key>create_rectangle</Key>, <Key>create_oval</Key>, <Key>create_polygon</Key>, <Key>create_line</Key>, <Key>create_text</Key>, ecc.).
+                </Para>
+                <Para>
+                    Il codice finale è un programma Python autosufficiente completo di inizializzazione della finestra (<Key>tk.Tk()</Key>), layout e ciclo degli eventi (<Key>mainloop()</Key>).
+                </Para>
+                <SubTitle>Esecuzione Immediata Online</SubTitle>
+                <Para>
+                    Fai clic su <Key>Esegui in ЄPython</Key> nel pannello del codice per testare subito il tuo disegno nel browser senza installare Python in locale.
+                </Para>
+                <Para>
+                    Se il progetto contiene moltissime forme che superano il limite dell'URL, il codice completo viene copiato automaticamente negli appunti e si apre l'ambiente per incollarlo (<Key>Ctrl+V</Key>).
+                </Para>
+                <SubTitle>Salvataggio File ed Esportazione Immagini</SubTitle>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem><strong className="text-[var(--text-primary)]">Salva script:</strong> Scarica come file eseguibile <Key>.py</Key> o <Key>.txt</Key> con numeri di riga opzionali.</ListItem>
+                    <ListItem><strong className="text-[var(--text-primary)]">Vettoriale SVG:</strong> Esportazione SVG pulita per flussi di grafica professionale.</ListItem>
+                    <ListItem><strong className="text-[var(--text-primary)]">Raster PNG / JPEG:</strong> Esportazione ad alta risoluzione con moltiplicatori di scala (1x, 2x, 4x Retina) e controllo di qualità.</ListItem>
+                </ul>
+            </section>
+
+            {/* 8. ARCHIVIAZIONE CLOUD E GALLERIA */}
+            <section>
                 <SectionTitle id="cloud-storage">8. Archiviazione Cloud e Galleria</SectionTitle>
-                <SubTitle>Panoramica delle Funzionalità</SubTitle>
+                <SubTitle>Panoramica della Piattaforma Cloud</SubTitle>
                 <Para>
-                    <strong className="text-[var(--text-primary)]">Archiviazione Cloud e Galleria</strong> è un ecosistema online integrato che ti consente di salvare i tuoi progetti online, accedervi da qualsiasi dispositivo, condividerli nella galleria pubblica e collaborare in spazi di gruppo (Gruppi/Celle).
+                    Salva i tuoi progetti al sicuro nel cloud, aprili da qualsiasi computer o tablet, condividi le tue opere nella Galleria Pubblica e collabora all'interno delle Celle di gruppo.
                 </Para>
-                <Para>
-                    Puoi aprire l'Archiviazione Cloud in diversi modi:
-                </Para>
-                <ul className="list-disc list-inside space-y-1 pl-2">
-                    <ListItem>Dal menu principale: <Key>File</Key> → <Key>Pubblica sul cloud...</Key></ListItem>
-                    <ListItem>Fai clic sul pulsante <Key>Galleria & Archiviazione</Key> nella barra degli strumenti superiore.</ListItem>
-                    <ListItem>Fai clic sul pulsante <Key>Galleria cloud</Key> nella schermata di benvenuto.</ListItem>
+                <SubTitle>Scrigno Personale (Spazio Privato)</SubTitle>
+                <ul className="list-disc list-inside space-y-2 pl-2">
+                    <ListItem><strong>Accesso:</strong> Accesso con nome utente e password oppure con 1 clic tramite account Google.</ListItem>
+                    <ListItem><strong>Riservatezza:</strong> Il tuo scrigno è accessibile solo a te. Le schede progetto mostrano data, numero di elementi e anteprima.</ListItem>
+                    <ListItem><strong>Versionamento:</strong> Possibilità di aggiornare il progetto esistente o salvare una nuova versione separata.</ListItem>
                 </ul>
 
-                <SubTitle>Baule Personale (Area Riservata)</SubTitle>
+                <SubTitle>Galleria Pubblica della Community</SubTitle>
                 <Para>
-                    Il tuo <strong className="text-[var(--text-primary)]">Baule</strong> è il tuo spazio personale privato. I progetti salvati nel tuo Baule sono visibili solo a te.
+                    Esplora i progetti condivisi dalla community, cerca per titolo o autore, apri i disegni nell'editor per studio e pubblica le tue creazioni.
+                </Para>
+
+                <SubTitle>Celle e Gruppi (Scuole e Team)</SubTitle>
+                <Para>
+                    Pensato per lezioni di informatica, laboratori di grafica e team di progettazione:
                 </Para>
                 <ul className="list-disc list-inside space-y-2 pl-2">
-                    <ListItem>
-                        <strong className="text-[var(--text-primary)]">Accesso e Protezione:</strong> Accedi con il tuo Username e Password o tramite il tuo account Google.
-                    </ListItem>
-                    <ListItem>
-                        <strong className="text-[var(--text-primary)]">Salvataggio e Apertura:</strong> Salva disegni vettoriali con qualsiasi nome. Le schede di anteprima mostrano la data di creazione e il numero di elementi. Clicca su una scheda per caricare istantaneamente il progetto nell'editor.
-                    </ListItem>
-                    <ListItem>
-                        <strong className="text-[var(--text-primary)]">Gestione delle Versioni:</strong> Quando risalvi, puoi aggiornare il progetto esistente o salvarlo come nuova versione distinta.
-                    </ListItem>
+                    <ListItem><strong>Crea cella:</strong> Il docente crea una cella specificando nome del gruppo e password.</ListItem>
+                    <ListItem><strong>Revisione semplice:</strong> Gli studenti inviano i loro elaborati nella cella comune, dove il docente può aprirli e verificare il codice Tkinter generato.</ListItem>
                 </ul>
+            </section>
 
-                <SubTitle>Galleria Pubblica</SubTitle>
+            {/* 9. FEEDBACK */}
+            <section>
+                <SectionTitle id="feedback">9. Feedback</SectionTitle>
                 <Para>
-                    La <strong className="text-[var(--text-primary)]">Galleria Pubblica</strong> è una vetrina condivisa accessibile a tutti gli utenti di Veretka.
+                    Miglioriamo costantemente Veretka e accogliamo con piacere i vostri suggerimenti! Invia proposte di funzioni o segnala problemi tramite <Key>Aiuto</Key> → <Key>Invia feedback</Key>.
                 </Para>
-                <ul className="list-disc list-inside space-y-2 pl-2">
-                    <ListItem>
-                        <strong className="text-[var(--text-primary)]">Esplora e Apri:</strong> Sfoglia le creazioni pubbliche, cerca per titolo o autore e apri i progetti nel tuo editor per studiarli o personalizzarli.
-                    </ListItem>
-                    <ListItem>
-                        <strong className="text-[var(--text-primary)]">Pubblicazione:</strong> Condividi le tue opere con la community per ispirare altri utenti!
-                    </ListItem>
-                </ul>
-
-                <SubTitle>Celle e Gruppi (Didattica e Lavoro di Squadra)</SubTitle>
                 <Para>
-                    Le <strong className="text-[var(--text-primary)]">Celle / Gruppi</strong> sono spazi dedicati a classi, corsi, team di progettazione o laboratori.
-                </Para>
-                <ul className="list-disc list-inside space-y-2 pl-2">
-                    <ListItem>
-                        <strong className="text-[var(--text-primary)]">Creazione di un Gruppo:</strong> Un insegnante o capogruppo può creare un nuovo spazio di lavoro impostando nome, regole e password di accesso.
-                    </ListItem>
-                    <ListItem>
-                        <strong className="text-[var(--text-primary)]">Partecipazione:</strong> I membri devono solo inserire il nome del gruppo e la password per accedere allo spazio condiviso.
-                    </ListItem>
-                    <ListItem>
-                        <strong className="text-[var(--text-primary)]">Galleria di Gruppo:</strong> Tutti i progetti inviati al gruppo compaiono in una bacheca condivisa, rendendo facilissimo per gli insegnanti verificare e revisionare i compiti.
-                    </ListItem>
-                    <ListItem>
-                        <strong className="text-[var(--text-primary)]">Regole del Gruppo:</strong> Chi crea la cella può impostare regole di versione per garantire il rispetto dei diritti d'autore e dell'ordine dei progetti.
-                    </ListItem>
-                </ul>
-
-                <SubTitle>Pubblicazione e Aggiornamento dei Progetti</SubTitle>
-                <Para>
-                    Quando invii un disegno al cloud, scegli la destinazione (Galleria Pubblica, Baule Personale o Gruppo). Se viene rilevato un nome duplicato, il sistema ti permetterà di scegliere se aggiornare il progetto esistente o pubblicare una copia separata.
+                    Per facilitare la diagnosi, il modulo include automaticamente dati tecnici dell'ambiente (versione dell'editor, sistema operativo e browser). Nessun file personale o riservato viene trasmesso.
                 </Para>
             </section>
 
-                        <section>
-                <SectionTitle id="hotkeys">9. Scorciatoie da Tastiera</SectionTitle>
-                <Para>Usa queste combinazioni per velocizzare il tuo flusso di lavoro.</Para>
-                
+            {/* 10. TASTI DI SCELTA RAPIDA */}
+            <section>
+                <SectionTitle id="hotkeys">10. Tasti di scelta rapida</SectionTitle>
+                <Para>Utilizza queste combinazioni su computer desktop per la massima produttività:</Para>
+
                 <SubTitle>File e Cronologia</SubTitle>
                 <ul className="list-disc list-inside space-y-2 pl-2">
                     <ListItem><Key>Ctrl+S</Key> — Salva progetto.</ListItem>
-                    <ListItem><Key>Ctrl+Z</Key> — Annulla l'ultima azione.</ListItem>
-                    <ListItem><Key>Ctrl+Y</Key> (o <Key>Ctrl+Shift+Z</Key>) — Ripristina azione.</ListItem>
+                    <ListItem><Key>Ctrl+Z</Key> — Annulla ultima azione.</ListItem>
+                    <ListItem><Key>Ctrl+Y</Key> o <Key>Ctrl+Shift+Z</Key> — Ripeti azione.</ListItem>
                 </ul>
 
-                <SubTitle>Strumenti e Selezione</SubTitle> 
+                <SubTitle>Strumenti e Manipolazione</SubTitle>
                 <ul className="list-disc list-inside space-y-2 pl-2">
-                    <ListItem><Key>V</Key> — Attiva strumento "Seleziona".</ListItem>
-                    <ListItem><Key>A</Key> — Attiva strumento "Modifica Nodi".</ListItem>
+                    <ListItem><Key>V</Key> — Strumento Selezione.</ListItem>
+                    <ListItem><Key>A</Key> — Strumento Modifica Nodi.</ListItem>
                     <ListItem><Key>Ctrl+G</Key> — Raggruppa oggetti selezionati.</ListItem>
                     <ListItem><Key>Ctrl+Shift+G</Key> — Separa.</ListItem>
                     <ListItem><Key>Ctrl+D</Key> — Duplica oggetto selezionato.</ListItem>
-                    <ListItem><Key>Ctrl+H</Key> — Capovolgi Orizzontalmente.</ListItem>
-                    <ListItem><Key>Ctrl+V</Key> — Capovolgi Verticalmente.</ListItem>
-                    <ListItem><Key>Delete</Key> / <Key>Backspace</Key> — Elimina oggetto o nodo selezionato.</ListItem>
+                    <ListItem><Key>Ctrl+H</Key> — Rifletti orizzontalmente.</ListItem>
+                    <ListItem><Key>Ctrl+V</Key> — Rifletti verticalmente.</ListItem>
+                    <ListItem><Key>Canc</Key> / <Key>Backspace</Key> — Elimina oggetto o nodo selezionato.</ListItem>
                 </ul>
-                
-                <SubTitle>Movimento</SubTitle>
+
+                <SubTitle>Spostamento Preciso da Tastiera (Nudging)</SubTitle>
                 <ul className="list-disc list-inside space-y-2 pl-2">
-                     <ListItem><Key>Frecce</Key> — Muovi oggetto selezionato di 1 pixel.</ListItem>
-                     <ListItem><Key>Shift + Frecce</Key> — Muovi oggetto selezionato di 10 pixel.</ListItem>
-                     <ListItem><Key>Alt + Frecce</Key> — Muovi senza ancoraggio (snapping).</ListItem>
+                    <ListItem><Key>Tasti freccia</Key> — Sposta l'oggetto selezionato esattamente di 1 pixel.</ListItem>
+                    <ListItem><Key>Shift + Tasti freccia</Key> — Sposta l'oggetto di 10 pixel.</ListItem>
+                    <ListItem><Key>Alt + Tasti freccia</Key> — Sposta senza allineamento magnetico (Snapping).</ListItem>
                 </ul>
-                
-                <SubTitle>Navigazione e Generale</SubTitle>
+
+                <SubTitle>Navigazione e Controllo Canvas</SubTitle>
                 <ul className="list-disc list-inside space-y-2 pl-2">
-                    <ListItem>
-                        <Key>?</Key> — Mostra tutte le scorciatoie.
-                    </ListItem>
-                    <ListItem>
-                        <Key>Rotellina del Mouse</Key> — Zoom della tela.
-                    </ListItem>
-                    <ListItem>
-                        <Key>Tasto Centrale del Mouse</Key> — Panoramica della tela.
-                    </ListItem>
-                     <ListItem>
-                        <Key>F11</Key> — Entra / esci da schermo intero.
-                    </ListItem>
-                    <ListItem>
-                        <Key>Escape (Esc)</Key> — Annulla l'azione corrente, deseleziona o chiudi modali.
-                    </ListItem>
+                    <ListItem><Key>Rotellina del mouse</Key> — Zoom centrato sulla posizione del cursore.</ListItem>
+                    <ListItem><Key>Pulsante centrale (o Spazio + Clic sinistro)</Key> — Sposta la tela (Pan).</ListItem>
+                    <ListItem><Key>F11</Key> — Attiva / disattiva schermo intero.</ListItem>
+                    <ListItem><Key>Escape (Esc)</Key> — Annulla il disegno in corso, deseleziona o chiudi finestre modali.</ListItem>
+                    <ListItem><Key>?</Key> — Apri panoramica di tutte le scorciatoie.</ListItem>
                 </ul>
             </section>
         </>

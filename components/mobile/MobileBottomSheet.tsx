@@ -84,11 +84,17 @@ export function MobileBottomSheet({
     const gestureDecidedRef = useRef<boolean>(false);
     const dragScrollProps = useDragScroll();
 
+    const prevDimsRef = useRef({ heightVh, widthVw, isOpen });
     // Notify parent of dimension changes
     useEffect(() => {
         if (isOpen) {
-            onHeightVhChange?.(heightVh);
-            onWidthVwChange?.(widthVw);
+            if (prevDimsRef.current.heightVh !== heightVh || prevDimsRef.current.widthVw !== widthVw || !prevDimsRef.current.isOpen) {
+                prevDimsRef.current = { heightVh, widthVw, isOpen };
+                onHeightVhChange?.(heightVh);
+                onWidthVwChange?.(widthVw);
+            }
+        } else {
+            prevDimsRef.current.isOpen = false;
         }
     }, [heightVh, widthVw, isOpen, onHeightVhChange, onWidthVwChange]);
 
