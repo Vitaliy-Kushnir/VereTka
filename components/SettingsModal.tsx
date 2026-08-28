@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { XIcon, MagnifierIcon, PinIcon } from './icons';
 import { InputWrapper, Label, NumberInput, ColorInput } from './FormControls';
-import { type ProjectTemplate, type MagnifierMode } from '../types';
+import { type ProjectTemplate, type MagnifierMode, type Shape } from '../types';
 import { useLanguage } from './LanguageContext';
+import { resolveTkinterVariableName } from '../lib/constants';
 
 interface SettingsModalProps {
   onClose: () => void;
@@ -19,6 +20,8 @@ interface SettingsModalProps {
   setPreviewCanvasBgColor: (c: string | null) => void;
   canvasVarName: string;
   setCanvasVarName: (name: string) => void;
+  variableNamingTemplate?: string;
+  setVariableNamingTemplate?: (template: string) => void;
   gridSize: number;
   setGridSize: (s: number) => void;
   gridSnapStep: number;
@@ -569,6 +572,148 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                         </label>
                                     </div>
                                 </div>
+
+                                {props.setVariableNamingTemplate && (
+                                    <>
+                                        <hr className="border-[var(--border-secondary)] my-4" />
+                                        <div className="space-y-3">
+                                            <div>
+                                                <h3 className="text-lg font-semibold text-[var(--text-secondary)]">{t('settings.code.variableNaming')}</h3>
+                                                <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{t('settings.code.variableNamingDesc')}</p>
+                                            </div>
+
+                                            {/* Quick Presets */}
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                                {[
+                                                    { id: 'none', label: t('settings.code.varPresetNone'), val: '' },
+                                                    { id: 'shape', label: 'shape_', val: 'shape_' },
+                                                    { id: 'item', label: 'item_', val: 'item_' },
+                                                    { id: 'obj', label: 'obj_', val: 'obj_' },
+                                                    { id: 'type', label: '{type}_', val: '{type}_' },
+                                                    { id: 'name', label: '{name}', val: '{name}' },
+                                                ].map((preset) => {
+                                                    const isSelected = (props.variableNamingTemplate || '') === preset.val;
+                                                    return (
+                                                        <button
+                                                            key={preset.id}
+                                                            type="button"
+                                                            onClick={() => props.setVariableNamingTemplate!(preset.val)}
+                                                            className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium border transition-all text-left cursor-pointer ${
+                                                                isSelected
+                                                                    ? 'bg-[var(--accent-primary)]/15 border-[var(--accent-primary)] text-[var(--text-primary)] font-semibold shadow-sm'
+                                                                    : 'bg-[var(--bg-secondary)] border-[var(--border-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
+                                                            }`}
+                                                        >
+                                                            <span className="truncate font-mono">{preset.label}</span>
+                                                            {isSelected && <span className="text-[var(--accent-primary)] ml-1.5 font-bold">✓</span>}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+
+                                            {/* Custom Template Input */}
+                                            <div className="space-y-1.5 pt-1">
+                                                <div className="flex items-center justify-between">
+                                                    <label htmlFor="variableNamingTemplateInput" className="text-xs font-semibold text-[var(--text-secondary)]">
+                                                        {t('settings.code.varPresetCustom')}
+                                                    </label>
+                                                    {props.variableNamingTemplate && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => props.setVariableNamingTemplate!('')}
+                                                            className="text-[11px] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+                                                        >
+                                                            {t('button.reset')}
+                                                        </button>
+                                                    )}
+                                                </div>
+
+                                                <input
+                                                    id="variableNamingTemplateInput"
+                                                    type="text"
+                                                    value={props.variableNamingTemplate || ''}
+                                                    onChange={(e) => props.setVariableNamingTemplate!(e.target.value)}
+                                                    placeholder={t('settings.code.varTemplatePlaceholder')}
+                                                    className="w-full bg-[var(--bg-app)] border border-[var(--border-secondary)] text-[var(--text-primary)] text-sm rounded-md px-3 py-1.5 font-mono focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] transition-shadow"
+                                                />
+
+                                                {/* Placeholder Tag Buttons */}
+                                                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                                                    <span className="text-[11px] text-[var(--text-tertiary)] mr-1">{t('settings.code.varTagsHint')}</span>
+                                                    {['{index}', '{index0}', '{type}', '{name}', '{id}'].map((tag) => (
+                                                        <button
+                                                            key={tag}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const current = props.variableNamingTemplate || '';
+                                                                props.setVariableNamingTemplate!(current ? `${current}${tag}` : tag);
+                                                            }}
+                                                            className="text-[11px] px-2 py-0.5 rounded bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] border border-[var(--border-secondary)] font-mono text-[var(--accent-primary)] transition-colors cursor-pointer"
+                                                            title={`Додати ${tag} до шаблону`}
+                                                        >
+                                                            +{tag}
+                                                        </button>
+                                                    ))}
+                                                </div>
+
+                                                {/* Live Code Preview */}
+                                                <div className="mt-2.5 p-3 bg-[var(--bg-app)] border border-[var(--border-secondary)] rounded-lg font-mono text-xs overflow-x-auto">
+                                                    <div className="text-[10px] uppercase font-bold text-[var(--text-tertiary)] tracking-wider mb-1.5">
+                                                        {t('settings.code.varPreviewTitle')}
+                                                    </div>
+                                                    <div className="text-emerald-400 select-all space-y-1">
+                                                        <div>
+                                                            {(() => {
+                                                                const canvas = props.canvasVarName || 'c';
+                                                                const sampleShape1: Shape = {
+                                                                    id: 's_1',
+                                                                    name: 'Blue Box',
+                                                                    type: 'rectangle',
+                                                                    x: 10,
+                                                                    y: 10,
+                                                                    width: 100,
+                                                                    height: 60,
+                                                                    fill: '#3b82f6',
+                                                                    stroke: '#1d4ed8',
+                                                                    strokeWidth: 2,
+                                                                    state: 'normal',
+                                                                    rotation: 0
+                                                                };
+                                                                const var1 = resolveTkinterVariableName(sampleShape1, 0, props.variableNamingTemplate);
+                                                                return var1
+                                                                    ? <span><span className="text-amber-300 font-semibold">{var1}</span> = <span className="text-cyan-300">{canvas}</span>.create_rectangle(10, 10, 110, 70, fill="#3b82f6")</span>
+                                                                    : <span><span className="text-cyan-300">{canvas}</span>.create_rectangle(10, 10, 110, 70, fill="#3b82f6")</span>;
+                                                            })()}
+                                                        </div>
+                                                        <div>
+                                                            {(() => {
+                                                                const canvas = props.canvasVarName || 'c';
+                                                                const sampleShape2: Shape = {
+                                                                    id: 's_2',
+                                                                    name: 'Red Oval',
+                                                                    type: 'ellipse',
+                                                                    cx: 200,
+                                                                    cy: 80,
+                                                                    rx: 40,
+                                                                    ry: 40,
+                                                                    fill: '#ef4444',
+                                                                    stroke: '#b91c1c',
+                                                                    strokeWidth: 2,
+                                                                    state: 'normal',
+                                                                    rotation: 0
+                                                                };
+                                                                const var2 = resolveTkinterVariableName(sampleShape2, 1, props.variableNamingTemplate);
+                                                                return var2
+                                                                    ? <span><span className="text-amber-300 font-semibold">{var2}</span> = <span className="text-cyan-300">{canvas}</span>.create_oval(160, 40, 240, 120, fill="#ef4444")</span>
+                                                                    : <span><span className="text-cyan-300">{canvas}</span>.create_oval(160, 40, 240, 120, fill="#ef4444")</span>;
+                                                            })()}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         )}
 

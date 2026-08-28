@@ -328,6 +328,7 @@ export interface NewProjectSettings {
   height: number;
   bgColor: string;
   canvasVarName: string;
+  variableNamingTemplate?: string;
 }
 
 export interface ProjectTemplate {

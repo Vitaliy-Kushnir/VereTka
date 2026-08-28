@@ -25,7 +25,7 @@ import LoaderShowcaseModal from './components/LoaderShowcaseModal';
 import HistoryPopover from './components/HistoryPopover';
 import { useLongPress } from './hooks/useLongPress';
 import { saveFile, generateSvg, exportToRaster, openProjectFile, saveToHandle } from './lib/exportUtils';
-import { SquareIcon, CodeIcon, XIcon, AxesIcon, FitToScreenIcon, SelectIcon, EditPointsIcon, RectangleIcon, EllipseIcon, CircleIcon, LineIcon, PolylineIcon, BezierIcon, PolygonIcon, PencilIcon, TriangleIcon, RightTriangleIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, PiesliceIcon, ChordIcon, ArcIcon, StarIcon, TextIcon, ImageIcon, BitmapIcon, UndoIcon, RedoIcon, DuplicateIcon, GroupIcon, UngroupIcon, ToolsIcon, TrashIcon, GridIcon, SettingsIcon, DrawFromCornerIcon, DrawFromCenterIcon, CheckIcon, MenuIcon, SunIcon, MoonIcon, HomeIcon, BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, SadMonitorIcon, FullscreenIcon, ExitFullscreenIcon, AlignShapesLeftIcon, AlignShapesCenterHIcon, AlignShapesRightIcon, AlignShapesTopIcon, AlignShapesCenterVIcon, AlignShapesBottomIcon, DistributeHorizontalIcon, DistributeVerticalIcon, ChevronDownIcon, ChevronRightIcon, DistributePathIcon, FlipHorizontalIcon, FlipVerticalIcon, EraserIcon, CloudGalleryIcon, HistoryIcon } from './components/icons';
+import { SquareIcon, CodeIcon, XIcon, AxesIcon, FitToScreenIcon, SelectIcon, EditPointsIcon, RectangleIcon, EllipseIcon, CircleIcon, LineIcon, PolylineIcon, BezierIcon, PolygonIcon, PencilIcon, TriangleIcon, RightTriangleIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, PiesliceIcon, ChordIcon, ArcIcon, StarIcon, TextIcon, ImageIcon, BitmapIcon, UndoIcon, RedoIcon, DuplicateIcon, GroupIcon, UngroupIcon, ToolsIcon, TrashIcon, GridIcon, SettingsIcon, DrawFromCornerIcon, DrawFromCenterIcon, CheckIcon, MenuIcon, SunIcon, MoonIcon, HomeIcon, BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, SadMonitorIcon, FullscreenIcon, ExitFullscreenIcon, AlignShapesLeftIcon, AlignShapesCenterHIcon, AlignShapesRightIcon, AlignShapesTopIcon, AlignShapesCenterVIcon, AlignShapesBottomIcon, DistributeHorizontalIcon, DistributeVerticalIcon, ChevronDownIcon, ChevronUpIcon, ChevronRightIcon, DistributePathIcon, FlipHorizontalIcon, FlipVerticalIcon, EraserIcon, CloudGalleryIcon, HistoryIcon } from './components/icons';
 import { getFinalPoints, getVisualBoundingBox, getBoundingBox, getEditablePoints, getShapeCenter, rotatePoint, isShapeClosed, isPathClosed, evaluateShapeContourPointAndTangent } from './lib/geometry';
 import { getDefaultNameForShape, isDefaultName } from './lib/constants';
 import Ruler from './components/Ruler';
@@ -58,7 +58,7 @@ type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
 type SettingsTab = 'canvas' | 'grid' | 'appearance' | 'code' | 'templates';
 
-const APP_VERSION = '1.3.17';
+const APP_VERSION = '1.4.1';
 const RULER_THICKNESS = 24;
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 30;
@@ -1367,6 +1367,13 @@ export default function App(): React.ReactNode {
   const [canvasHeight, setCanvasHeight] = useState<number>(600);
   const [canvasBgColor, setCanvasBgColor] = useState<string>('#ffffff');
   const [canvasVarName, setCanvasVarName] = useState<string>('c');
+  const [variableNamingTemplate, setVariableNamingTemplate] = useState<string>(() => {
+    try {
+      return localStorage.getItem('veretka-variable-template') || '';
+    } catch {
+      return '';
+    }
+  });
   const [showGrid, setShowGrid] = useState<boolean>(true);
   const [touchDrawingMode, setTouchDrawingMode] = useState<'tap-drag' | 'virtual-joystick'>(() => {
     const saved = localStorage.getItem('veretka-touch-mode');
@@ -1412,6 +1419,12 @@ export default function App(): React.ReactNode {
   const [previewCanvasBgColor, setPreviewCanvasBgColor] = useState<string | null>(null);
 
   const [viewTransform, setViewTransform] = useState<ViewTransform>({ scale: 1, x: 50, y: 50 });
+  const [isFitToScreenMode, setIsFitToScreenMode] = useState<boolean>(true);
+
+  const handleUserSetViewTransform = useCallback((action: React.SetStateAction<ViewTransform>) => {
+      setIsFitToScreenMode(false);
+      setViewTransform(action);
+  }, []);
   const [cursorPos, setCursorPos] = useState<{x:number, y:number} | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
@@ -1881,10 +1894,18 @@ export default function App(): React.ReactNode {
     return JSON.stringify({
         projectName: pName,
         shapes: s,
-        canvasSettings: { width: canvasWidth, height: canvasHeight, bgColor: canvasBgColor, varName: canvasVarName },
+        canvasSettings: { width: canvasWidth, height: canvasHeight, bgColor: canvasBgColor, varName: canvasVarName, variableNamingTemplate },
         uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showMagnifier, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags, showSystemTags, touchCurveMode: touchDrawingMode }
     });
-  }, [canvasWidth, canvasHeight, canvasBgColor, canvasVarName, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showMagnifier, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags, showSystemTags, touchDrawingMode]);
+  }, [canvasWidth, canvasHeight, canvasBgColor, canvasVarName, variableNamingTemplate, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showMagnifier, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags, showSystemTags, touchDrawingMode]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('veretka-variable-template', variableNamingTemplate);
+    } catch {
+      // ignore
+    }
+  }, [variableNamingTemplate]);
 
   useEffect(() => {
     try {
@@ -2006,6 +2027,7 @@ export default function App(): React.ReactNode {
 
 
     const fitCanvasToView = useCallback((widthOverride?: number, heightOverride?: number) => {
+        setIsFitToScreenMode(true);
         if (viewportSize.width === 0 || viewportSize.height === 0) return;
         const targetWidth = widthOverride ?? canvasWidth;
         const targetHeight = heightOverride ?? canvasHeight;
@@ -2036,8 +2058,10 @@ export default function App(): React.ReactNode {
         if (!initialFitDone.current && viewportSize.width > 0 && viewportSize.height > 0) {
             fitCanvasToView();
             initialFitDone.current = true;
+        } else if (isFitToScreenMode && isProjectActive && viewportSize.width > 0 && viewportSize.height > 0) {
+            fitCanvasToView();
         }
-    }, [viewportSize.width, viewportSize.height, fitCanvasToView]);
+    }, [isFitToScreenMode, isProjectActive, viewportSize.width, viewportSize.height, fitCanvasToView]);
 
 
   useEffect(() => {
@@ -2055,15 +2079,6 @@ export default function App(): React.ReactNode {
     return () => resizeObserver.disconnect();
   }, [isProjectActive]);
 
-  useEffect(() => {
-    if (isMobile && isProjectActive) {
-      const timer = setTimeout(() => {
-        fitCanvasToView();
-      }, 50);
-      return () => clearTimeout(timer);
-    }
-  }, [isMobile, isLandscape, isProjectActive, mobileSheet, mobileSheetPinMode, fitCanvasToView]);
-
 
   const showNotification = useCallback((message: string, type: 'info' | 'error' = 'info', duration: number = 3000) => {
     setNotification({ message, type });
@@ -2071,6 +2086,7 @@ export default function App(): React.ReactNode {
   }, []);
 
   const [isSelectingPathShape, setIsSelectingPathShape] = useState<boolean>(false);
+  const [isSelectionHUDCollapsed, setIsSelectionHUDCollapsed] = useState<boolean>(false);
 
   const handleSelectPathShape = useCallback((clickedShape: Shape) => {
       if (!distributePathState) return;
@@ -3060,12 +3076,6 @@ export default function App(): React.ReactNode {
         else { setPendingImage(null); setActiveTool(tool); }
     }, [isDrawingPolyline, isDrawingBezier, handleCompletePolyline, handleCancelBezier, shapes, selectedShapeIds, showNotification]);
 
-  useEffect(() => {
-    if (selectedShapeIds.length === 0 && isMultiSelectMode) {
-      setIsMultiSelectMode(false);
-    }
-  }, [selectedShapeIds.length, isMultiSelectMode]);
-
   const handleSelectAll = useCallback(() => {
     const allIds = shapes
       .filter((s: any) => s.state !== 'disabled' && s.state !== 'hidden' && !lockedShapeIds.has(s.id) && !s.groupId)
@@ -3111,10 +3121,10 @@ export default function App(): React.ReactNode {
 
     try {
       if (generatorType === 'local') {
-        const { codeLines } = await generateTkinterCodeLocally(finalShapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill, generateTkinterTags, showSystemTags, t);
+        const { codeLines } = await generateTkinterCodeLocally(finalShapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill, generateTkinterTags, showSystemTags, t, variableNamingTemplate);
         setGeneratedCodeLines(codeLines);
       } else {
-        const code = await generateTkinterCode(apiKey!, finalShapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill, generateTkinterTags, showSystemTags);
+        const code = await generateTkinterCode(apiKey!, finalShapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill, generateTkinterTags, showSystemTags, variableNamingTemplate);
         const lines = code.split('\n');
         const codeLines = lines.map(line => {
             const match = line.match(/(.*?) # ID:([a-zA-Z0-9.-]+)/);
@@ -3135,7 +3145,7 @@ export default function App(): React.ReactNode {
     } finally {
       setIsLoading(false);
     }
-  }, [displayedShapes, canvasWidth, canvasHeight, canvasBgColor, projectName, generatorType, canvasVarName, autoGenerateComments, generateTkinterTags, showSystemTags, apiKey, activeCheats, outlineWithFill, showNotification, t]);
+  }, [displayedShapes, canvasWidth, canvasHeight, canvasBgColor, projectName, generatorType, canvasVarName, variableNamingTemplate, autoGenerateComments, generateTkinterTags, showSystemTags, apiKey, activeCheats, outlineWithFill, showNotification, t]);
 
   const displayedShapesString = useMemo(() => JSON.stringify(displayedShapes), [displayedShapes]);
   const shapesString = useMemo(() => JSON.stringify(shapes), [shapes]);
@@ -3147,13 +3157,13 @@ export default function App(): React.ReactNode {
             if (activeCheats.has('002')) {
                 shapesForGeneration = shapesForGeneration.filter((s: any) => s.type !== 'image');
             }
-            const { codeLines } = await generateTkinterCodeLocally(shapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill, generateTkinterTags, showSystemTags, t);
+            const { codeLines } = await generateTkinterCodeLocally(shapesForGeneration, canvasWidth, canvasHeight, canvasBgColor, projectName, canvasVarName, autoGenerateComments, outlineWithFill, generateTkinterTags, showSystemTags, t, variableNamingTemplate);
             setGeneratedCodeLines(codeLines);
             setShapesAtGenerationTime(JSON.parse(displayedShapesString));
         };
         generate();
     }
-  }, [displayedShapesString, shapesString, canvasWidth, canvasHeight, canvasBgColor, generatorType, projectName, isProjectActive, canvasVarName, autoGenerateComments, generateTkinterTags, showSystemTags, activeCheats, outlineWithFill, t]);
+  }, [displayedShapesString, shapesString, canvasWidth, canvasHeight, canvasBgColor, generatorType, projectName, isProjectActive, canvasVarName, variableNamingTemplate, autoGenerateComments, generateTkinterTags, showSystemTags, activeCheats, outlineWithFill, t]);
   
   const hasUnsyncedChangesWithCode = useMemo(() => {
     if (!shapesAtGenerationTime) return false;
@@ -3217,6 +3227,9 @@ export default function App(): React.ReactNode {
     setCanvasHeight(settings.height);
     setCanvasBgColor(settings.bgColor);
     setCanvasVarName(settings.canvasVarName);
+    if (settings.variableNamingTemplate !== undefined) {
+      setVariableNamingTemplate(settings.variableNamingTemplate);
+    }
 
     if (templateId) {
         const template = projectTemplates.find((t: any) => t.id === templateId);
@@ -3268,11 +3281,11 @@ export default function App(): React.ReactNode {
         layers: layers,
         activeLayerId: activeLayerId,
         thumbnail: generateProjectThumbnail(displayedShapes, canvasWidth, canvasHeight, canvasBgColor),
-        canvasSettings: { width: canvasWidth, height: canvasHeight, bgColor: canvasBgColor, varName: canvasVarName },
+        canvasSettings: { width: canvasWidth, height: canvasHeight, bgColor: canvasBgColor, varName: canvasVarName, variableNamingTemplate },
         viewTransform,
         uiSettings: { theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags, showSystemTags, touchCurveMode: touchDrawingMode }
     };
-  }, [shapes, displayedShapes, layers, activeLayerId, canvasWidth, canvasHeight, canvasBgColor, canvasVarName, viewTransform, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags, generateProjectThumbnail, touchDrawingMode]);
+  }, [shapes, displayedShapes, layers, activeLayerId, canvasWidth, canvasHeight, canvasBgColor, canvasVarName, variableNamingTemplate, viewTransform, theme, showGrid, gridSize, snapToGrid, gridSnapStep, showAxes, showCenterGuides, enableSnapping, showCursorCoords, showRotationAngle, showLineNumbers, showTkinterNames, generatorType, highlightCodeOnSelection, autoGenerateComments, showComments, outlineWithFill, generateTkinterTags, generateProjectThumbnail, touchDrawingMode]);
 
     const handleSaveProject = useCallback(async () => {
         if (!hasUnsavedChanges && fileHandle) {
@@ -3433,13 +3446,13 @@ export default function App(): React.ReactNode {
         if (typeof fileContent === 'string') {
             const trimmed = (fileContent || '').trim();
             if (trimmed.startsWith('from tkinter') || trimmed.startsWith('import tkinter') || fileName?.endsWith('.py')) {
-                showNotification('Вибраний файл є Python-скриптом (.py), а не JSON-проєктом Веретки (.vec.json)', 'error');
+                showNotification(t('file.import.isPythonScript'), 'error');
                 return;
             }
             try {
                 savedData = JSON.parse(fileContent);
             } catch (jsonErr) {
-                showNotification('Помилка парсингу файлу проєкту: вибраний файл не містить дійсного JSON-формату (.vec.json)', 'error');
+                showNotification(t('file.import.invalidJson'), 'error');
                 return;
             }
         } else {
@@ -3461,6 +3474,9 @@ export default function App(): React.ReactNode {
             setCanvasHeight(loadedHeight);
             setCanvasBgColor(cs.bgColor || '#ffffff');
             setCanvasVarName(cs.varName || 'c');
+            if (cs.variableNamingTemplate !== undefined) {
+                setVariableNamingTemplate(cs.variableNamingTemplate);
+            }
             
             // Automatically fit canvas scale to full visible area on project open
             setTimeout(() => fitCanvasToView(loadedWidth, loadedHeight), 0);
@@ -3753,7 +3769,7 @@ export default function App(): React.ReactNode {
       }
     } catch (err) {
       console.error("Failed to parse cloud project data:", err);
-      showNotification('Помилка читання даних проєкту', 'error');
+      showNotification(t('file.import.readError'), 'error');
     }
   }, [shapes, isProjectActive, displayedShapes, processLoadedData, showNotification, t]);
 
@@ -4734,6 +4750,7 @@ export default function App(): React.ReactNode {
         const newX = viewportCenterX - (shapeCenterX * newScale);
         const newY = viewportCenterY - (shapeCenterY * newScale);
 
+        setIsFitToScreenMode(false);
         setViewTransform({ scale: newScale, x: newX, y: newY });
     }, [selectedShapeIds, displayedShapes, distributePathState, showAxes, viewportSize, setViewTransform]);
 
@@ -5190,6 +5207,7 @@ export default function App(): React.ReactNode {
   }, [selectedShapeIds, activeTool, activePointIndex, deletePoint, deleteShape, duplicateShape, undo, redo, canUndo, canRedo, handleSaveProject, handleSetActiveTool, shapes, updateShape, inlineEditingShapeId, handleToggleFullscreen, isFullscreen, handleGroup, handleUngroup]);
 
     const handleZoomChange = useCallback((newScale: number) => {
+        setIsFitToScreenMode(false);
         if (!viewportRef.current) return;
         const { width: viewportWidth, height: viewportHeight } = viewportRef.current.getBoundingClientRect();
         
@@ -5208,6 +5226,7 @@ export default function App(): React.ReactNode {
     }, [viewTransform]);
 
     const handleResetZoom = useCallback(() => {
+        setIsFitToScreenMode(false);
         handleZoomChange(1);
     }, [handleZoomChange]);
 
@@ -5323,14 +5342,14 @@ export default function App(): React.ReactNode {
             getCloudProjectById(cloudProjectId).then((proj) => {
                 if (proj && proj.projectData) {
                     processLoadedDataRef.current(proj.projectData, proj.title);
-                    showNotification(`Проєкт "${proj.title}" успішно завантажено з хмари!`, 'info');
+                    showNotification(t('cloud.open.successWithName', { name: proj.title }), 'info');
                     window.history.replaceState(null, '', window.location.pathname);
                 } else {
-                    showNotification('Проєкт не знайдено у хмарі або ID є недійсним', 'error');
+                    showNotification(t('cloud.open.notFound'), 'error');
                 }
             }).catch((err) => {
                 console.error("Error loading cloud project from URL:", err);
-                showNotification('Помилка завантаження хмарного проєкту', 'error');
+                showNotification(t('cloud.open.error'), 'error');
             });
             return;
         }
@@ -5425,7 +5444,7 @@ export default function App(): React.ReactNode {
                   setShapesAtGenerationTime(shapes);
                   setIsPreviewOpen(true);
                 } else {
-                  showNotification('Спочатку створіть фігури для симуляції', 'info');
+                  showNotification(t('simulation.noShapes'), 'info');
                 }
               }}
               onOpenCloudGallery={() => {
@@ -5710,8 +5729,8 @@ export default function App(): React.ReactNode {
                                     touchDrawingMode={touchDrawingMode}
                                     setTouchDrawingMode={setTouchDrawingMode}
                                     onCompletePolyline={handleCompletePolyline} onCancelPolyline={handleCancelPolyline} onUndoPolylinePoint={() => setPolylinePoints(prev => prev.slice(0, -1))} isDrawingBezier={isDrawingBezier} bezierPoints={bezierPoints} setBezierPoints={setBezierPoints}
-                                    onCompleteBezier={handleCompleteBezier} onCancelBezier={handleCancelBezier} onUndoBezierPoint={() => setBezierPoints(prev => prev.slice(0, -1))} showGrid={showGrid} gridSize={gridSize} snapStep={snapToGrid ? gridSnapStep : 1} viewTransform={viewTransform}
-                                    setViewTransform={setViewTransform} activePointIndex={activePointIndex} setActivePointIndex={setActivePointIndex} showCursorCoords={showCursorCoords} showRotationAngle={showRotationAngle}
+                                    onCompleteBezier={handleCompleteBezier} onCancelBezier={handleCancelBezier} onUndoBezierPoint={() => setBezierPoints(prev => prev.slice(0, -1))} showGrid={showGrid} gridSize={gridSize} snapStep={snapToGrid ? gridSnapStep : 1}
+                                    activePointIndex={activePointIndex} setActivePointIndex={setActivePointIndex} showCursorCoords={showCursorCoords} showRotationAngle={showRotationAngle}
                                     showMagnifier={showMagnifier}
                                     setShowMagnifier={setShowMagnifier}
                                     pendingImage={pendingImage} setPendingImage={setPendingImage} setCursorPos={setCursorPos}
@@ -5724,18 +5743,54 @@ export default function App(): React.ReactNode {
                                     enableSnapping={enableSnapping}
                                     isMultiSelectMode={isMultiSelectMode}
                                     setIsMultiSelectMode={setIsMultiSelectMode}
+                                    viewTransform={viewTransform}
+                                    setViewTransform={handleUserSetViewTransform}
                                 />
                             </div>
-                            {isMultiSelectMode && selectedShapeIds.length > 0 && (
+
+                            {selectedShapeIds.length > 0 && !distributePathState && isSelectionHUDCollapsed && (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsSelectionHUDCollapsed(false)}
+                                    title={t('button.expand') || 'Розгорнути панель дій'}
+                                    className="absolute bottom-4 left-4 z-10 flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2 rounded-full bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] active:scale-95 text-[var(--text-primary)] font-extrabold text-xs border border-[var(--border-secondary)] hover:border-[var(--accent-primary)] shadow-lg transition-all group cursor-pointer animate-in fade-in zoom-in-95 pointer-events-auto"
+                                >
+                                    <span className="flex h-2 w-2 relative shrink-0">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                                    </span>
+                                    <span className="text-[var(--text-primary)] font-black tracking-wider text-xs">
+                                        {selectedShapeIds.length}/{shapes.length}
+                                    </span>
+                                    <ChevronUpIcon size={14} className="text-[var(--accent-primary)] group-hover:-translate-y-0.5 transition-transform" />
+                                </button>
+                            )}
+
+                            <button 
+                                onClick={() => fitCanvasToView()} 
+                                title={t('menu.view.fit')} 
+                                className={`absolute bottom-4 right-4 z-10 p-2 rounded-full shadow-lg transition-colors ${
+                                    isFitToScreenMode 
+                                        ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' 
+                                        : 'bg-[var(--bg-primary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
+                                }`}
+                            >
+                                <FitToScreenIcon />
+                            </button>
+                        </div>
+                            {selectedShapeIds.length > 0 && !distributePathState && !isSelectionHUDCollapsed && (
                                 <MultiSelectHUD
                                     selectedCount={selectedShapeIds.length}
                                     totalSelectableCount={shapes.length}
+                                    onCollapse={() => setIsSelectionHUDCollapsed(true)}
                                     onGroup={handleGroup}
                                     onUngroup={handleUngroup}
                                     onDelete={handleDelete}
                                     onDuplicate={handleDuplicate}
                                     onSelectAll={handleSelectAll}
-                                    onOpenAlign={isMobile ? () => setMobileSheet('align') : undefined}
+                                    onOpenAlign={() => setMobileSheet('align')}
+                                    onFlipH={() => handleFlip('horizontal')}
+                                    onFlipV={() => handleFlip('vertical')}
                                     onDeselectAll={() => {
                                         handleSelectShape(null);
                                         setIsMultiSelectMode(false);
@@ -5745,10 +5800,6 @@ export default function App(): React.ReactNode {
                                     isMobile={isMobile}
                                 />
                             )}
-                            <button onClick={() => fitCanvasToView()} title={t('menu.view.fit')} className="absolute bottom-4 right-4 z-10 p-2 bg-[var(--bg-primary)] text-[var(--text-secondary)] rounded-full shadow-lg hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors">
-                                <FitToScreenIcon />
-                            </button>
-                        </div>
                         <StatusBar 
                             zoomLevel={viewTransform.scale} 
                             cursorPos={cursorPos}
@@ -5908,7 +5959,7 @@ export default function App(): React.ReactNode {
                   setShapesAtGenerationTime(shapes);
                   setIsPreviewOpen(true);
                 } else {
-                  showNotification('Спочатку додайте фігури для тесту', 'info');
+                  showNotification(t('test.noShapes'), 'info');
                 }
               }}
               onOpenAlign={() => setMobileSheet('align')}
@@ -6136,7 +6187,7 @@ export default function App(): React.ReactNode {
                                       setShapesAtGenerationTime(shapes);
                                       setIsPreviewOpen(true);
                                   } else {
-                                      showNotification('Спочатку додайте фігури для тесту', 'info');
+                                      showNotification(t('test.noShapes'), 'info');
                                   }
                               }} 
                               hasUnsyncedChanges={hasUnsyncedChangesWithCode}
@@ -6192,6 +6243,8 @@ export default function App(): React.ReactNode {
               setPreviewCanvasBgColor={setPreviewCanvasBgColor}
               canvasVarName={canvasVarName}
               setCanvasVarName={setCanvasVarName}
+              variableNamingTemplate={variableNamingTemplate}
+              setVariableNamingTemplate={setVariableNamingTemplate}
               gridSize={gridSize} setGridSize={setGridSize} gridSnapStep={gridSnapStep} setGridSnapStep={setGridSnapStep} showTkinterNames={showTkinterNames} setShowTkinterNames={setShowTkinterNames}
               showAxes={showAxes} setShowAxes={setShowAxes} 
               showCenterGuides={showCenterGuides} setShowCenterGuides={setShowCenterGuides}

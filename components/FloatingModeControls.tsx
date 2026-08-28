@@ -130,7 +130,7 @@ export const FloatingModeControls: React.FC<FloatingModeControlsProps> = ({
     const isDistributing = !!distributePathState;
     const isEditingPoints = activeTool === 'edit-points' && selectedShapes.length > 0;
     const isDrawing = isDrawingPolyline || isDrawingBezier;
-    const isMultiSelecting = selectedShapeIds.length >= 2 && !isDistributing;
+    const isMultiSelecting = false; // Disabled since HUD is unified at the bottom
     const isPlacingImage = !!(isImportingImage || pendingImage);
 
     // If no special active mode, do not render anything to keep canvas clear
@@ -290,71 +290,6 @@ export const FloatingModeControls: React.FC<FloatingModeControlsProps> = ({
                             <CheckIcon size={13} />
                             <span>Готово</span>
                         </button>
-                    </>
-                )}
-
-                {/* 5. MULTI-SELECTION MODE (when not distributing) */}
-                {isMultiSelecting && !isDistributing && !isEditingPoints && !isDrawing && (
-                    <>
-                        <div className="flex items-center gap-2 pr-2 border-r border-[var(--border-primary)]">
-                            <span className="font-bold text-[var(--accent-primary)]">
-                                🔲 {t('status.selected') || 'Виділено'}:
-                            </span>
-                            <span className="bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] font-bold px-2 py-0.5 rounded-full text-[11px]">
-                                {selectedShapeIds.length}
-                            </span>
-                        </div>
-
-                        {/* Group Button */}
-                        {onGroup && (
-                            <button
-                                type="button"
-                                onClick={onGroup}
-                                className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--border-secondary)] font-semibold transition-all"
-                                title="Згрупувати виділені об'єкти (Ctrl+G)"
-                            >
-                                <GroupIcon size={14} />
-                                <span className="hidden sm:inline">Згрупувати</span>
-                            </button>
-                        )}
-
-                        {/* Align Button */}
-                        {onOpenAlign && (
-                            <button
-                                type="button"
-                                onClick={onOpenAlign}
-                                className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--border-secondary)] font-semibold transition-all"
-                                title="Відкрити панель вирівнювання"
-                            >
-                                <AlignShapesCenterHIcon size={14} className="text-[var(--accent-primary)]" />
-                                <span>Вирівняти</span>
-                            </button>
-                        )}
-
-                        {/* Distribute along path button */}
-                        {onStartDistributePath && (
-                            <button
-                                type="button"
-                                onClick={onStartDistributePath}
-                                className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 border border-amber-500/30 font-semibold transition-all"
-                                title="Розподілити фігури за колом, прямою або контуром"
-                            >
-                                <DistributePathIcon size={14} />
-                                <span className="hidden sm:inline">За шляхом</span>
-                            </button>
-                        )}
-
-                        {/* Delete Button */}
-                        {onDeleteSelected && (
-                            <button
-                                type="button"
-                                onClick={onDeleteSelected}
-                                className="flex items-center gap-1 p-1 rounded-xl hover:bg-red-500/15 text-red-400 transition-colors"
-                                title="Видалити виділені фігури (Del)"
-                            >
-                                <TrashIcon size={16} />
-                            </button>
-                        )}
                     </>
                 )}
 

@@ -50,7 +50,8 @@ const NewProjectModal: React.FC<NewProjectModalProps> = ({ onClose, onCreate, in
                 width, 
                 height, 
                 bgColor, 
-                canvasVarName: ((canvasVarName) || "").trim() || 'c' 
+                canvasVarName: ((canvasVarName) || "").trim() || 'c',
+                variableNamingTemplate: initialSettings.variableNamingTemplate
             },
             selectedTemplateId === 'blank' ? null : selectedTemplateId
         );

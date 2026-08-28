@@ -1,7 +1,7 @@
 import { type Shape, EllipseShape, LineShape, BezierCurveShape, RectangleShape, PolylineShape, PolygonShape, ArcShape, ImageShape, TextShape, BitmapShape, PathShape } from '../types';
 import { getFinalPoints, isPolylineAxisAlignedRectangle, getTextBoundingBox, getShapeCenter, rotatePoint } from '../lib/geometry';
 import { type CodeLine } from '../components/CodeDisplay';
-import { getDefaultNameForShape } from '../lib/constants';
+import { getDefaultNameForShape, resolveTkinterVariableName } from '../lib/constants';
 
 const round = (num: number): number => {
     return Math.round(num * 100) / 100;
@@ -303,7 +303,8 @@ export async function generateTkinterCodeLocally(
     outlineWithFill: boolean,
     generateTkinterTags: boolean,
     showSystemTags: boolean,
-    t: (key: string) => string
+    t: (key: string) => string,
+    variableNamingTemplate?: string
 ): Promise<{ codeLines: CodeLine[] }> {
     
     const finalCanvasVarName = ((canvasVarName) || "").trim() || 'c';
@@ -347,7 +348,8 @@ export async function generateTkinterCodeLocally(
     if (shapes.length === 0) {
         codeLines.push({ content: t('code.comment.noShapes'), shapeId: null });
     } else {
-        shapes.forEach(shape => {
+        const usedVarNames = new Set<string>();
+        shapes.forEach((shape, index) => {
             const lineContent = shapeToTkinterString(shape, imageVarMap, finalCanvasVarName, outlineWithFill, generateTkinterTags, showSystemTags, shapes);
             if (lineContent) {
                 let commentToUse = shape.comment;
@@ -360,7 +362,16 @@ export async function generateTkinterCodeLocally(
                         codeLines.push({ content: (line || '').trim() === '' ? '#' : `# ${line}`, shapeId: shape.id });
                     });
                 }
-                codeLines.push({ content: lineContent, shapeId: shape.id });
+
+                let finalContent = lineContent;
+                if (variableNamingTemplate && variableNamingTemplate.trim() !== '') {
+                    const varName = resolveTkinterVariableName(shape, index, variableNamingTemplate, usedVarNames);
+                    if (varName) {
+                        finalContent = `${varName} = ${lineContent}`;
+                    }
+                }
+
+                codeLines.push({ content: finalContent, shapeId: shape.id });
             }
         });
     }

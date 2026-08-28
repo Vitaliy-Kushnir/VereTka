@@ -167,3 +167,116 @@ const ALL_DEFAULT_NAMES = new Set([
 export const isDefaultName = (name: string): boolean => {
     return ALL_DEFAULT_NAMES.has(name);
 };
+
+const UA_LATIN_MAP: Record<string, string> = {
+    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'h', 'ґ': 'g', 'д': 'd', 'е': 'e', 'є': 'ie', 'ж': 'zh', 'з': 'z', 'и': 'y', 'і': 'i', 'ї': 'i',
+    'й': 'i', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'kh',
+    'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch', 'ь': '', 'ю': 'iu', 'я': 'ia',
+    'А': 'A', 'Б': 'B', 'В': 'V', 'Г': 'H', 'Ґ': 'G', 'Д': 'D', 'Е': 'E', 'Є': 'Ie', 'Ж': 'Zh', 'З': 'Z', 'И': 'Y', 'І': 'I', 'Ї': 'I',
+    'Й': 'I', 'К': 'K', 'Л': 'L', 'М': 'M', 'Н': 'N', 'О': 'O', 'П': 'P', 'Р': 'R', 'С': 'S', 'Т': 'T', 'У': 'U', 'Ф': 'F', 'Х': 'Kh',
+    'Ц': 'Ts', 'Ч': 'Ch', 'Ш': 'Sh', 'Щ': 'Shch', 'Ь': '', 'Ю': 'Iu', 'Я': 'Ia',
+    'ä': 'ae', 'ö': 'oe', 'ü': 'ue', 'ß': 'ss', 'é': 'e', 'è': 'e', 'à': 'a', 'ù': 'u', 'ç': 'c', 'ñ': 'n'
+};
+
+export const transliterateText = (text: string): string => {
+    if (!text) return '';
+    return text.split('').map(char => UA_LATIN_MAP[char] || char).join('');
+};
+
+const PYTHON_RESERVED_KEYWORDS = new Set([
+    'False', 'None', 'True', 'and', 'as', 'assert', 'async', 'await', 'break', 'class', 'continue',
+    'def', 'del', 'elif', 'else', 'except', 'finally', 'for', 'from', 'global', 'if', 'import',
+    'in', 'is', 'lambda', 'nonlocal', 'not', 'or', 'pass', 'raise', 'return', 'try', 'while', 'with', 'yield'
+]);
+
+export const sanitizeToPythonIdentifier = (str: string, fallback: string = 'shape'): string => {
+    if (!str) return fallback;
+    let s = transliterateText(str);
+    s = s.replace(/[^a-zA-Z0-9_]/g, '_');
+    s = s.replace(/_+/g, '_');
+    s = s.replace(/^_+|_+$/g, '');
+    if (/^[0-9]/.test(s)) {
+        s = `obj_${s}`;
+    }
+    if (!s) {
+        s = fallback;
+    }
+    if (PYTHON_RESERVED_KEYWORDS.has(s)) {
+        s = `${s}_obj`;
+    }
+    return s;
+};
+
+export const getShortShapeTypeName = (shape: Shape): string => {
+    const tkType = getTkinterType(shape);
+    switch (tkType) {
+        case 'rectangle': return (shape.type === 'rectangle' && shape.isAspectRatioLocked) ? 'square' : 'rect';
+        case 'oval': return (shape.type === 'ellipse' && shape.isAspectRatioLocked) ? 'circle' : 'oval';
+        case 'line': return 'line';
+        case 'polygon': return 'poly';
+        case 'arc': return (shape.type === 'arc' && shape.style === 'pieslice') ? 'pie' : (shape.type === 'arc' && shape.style === 'chord') ? 'chord' : 'arc';
+        case 'text': return 'text';
+        case 'image': return 'img';
+        case 'bitmap': return 'bmp';
+        default: return 'shape';
+    }
+};
+
+export const resolveTkinterVariableName = (
+    shape: Shape,
+    index: number,
+    template: string,
+    usedNames?: Set<string>
+): string => {
+    const rawTemplate = (template || '').trim();
+    if (!rawTemplate || rawTemplate === 'none') {
+        return '';
+    }
+
+    const typeStr = getShortShapeTypeName(shape);
+    const index1 = String(index + 1);
+    const index0 = String(index);
+    const idStr = sanitizeToPythonIdentifier(shape.id, 'id');
+    
+    let nameStr = '';
+    if (shape.name && !isDefaultName(shape.name)) {
+        nameStr = sanitizeToPythonIdentifier(shape.name, typeStr);
+    } else {
+        nameStr = typeStr;
+    }
+
+    let resolved = rawTemplate;
+    const hasPlaceholders = /\{(?:index|index0|i|i0|type|name|id)\}/i.test(rawTemplate);
+
+    if (hasPlaceholders) {
+        resolved = resolved
+            .replace(/\{index\}/gi, index1)
+            .replace(/\{i\}/gi, index1)
+            .replace(/\{index0\}/gi, index0)
+            .replace(/\{i0\}/gi, index0)
+            .replace(/\{type\}/gi, typeStr)
+            .replace(/\{name\}/gi, nameStr)
+            .replace(/\{id\}/gi, idStr);
+    } else {
+        let prefix = rawTemplate;
+        if (!prefix.endsWith('_') && !prefix.endsWith('-')) {
+            prefix = `${prefix}_`;
+        }
+        resolved = `${prefix}${index1}`;
+    }
+
+    let cleanVarName = sanitizeToPythonIdentifier(resolved, `shape_${index1}`);
+
+    if (usedNames) {
+        let uniqueName = cleanVarName;
+        let suffix = 2;
+        while (usedNames.has(uniqueName)) {
+            uniqueName = `${cleanVarName}_${suffix}`;
+            suffix++;
+        }
+        usedNames.add(uniqueName);
+        return uniqueName;
+    }
+
+    return cleanVarName;
+};

@@ -669,7 +669,7 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                         </span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                         {/* Distribute Horizontally */}
                         <button
                             type="button"
@@ -679,10 +679,10 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                                 (alignRelativeTo === 'selection' && !canDistributeHSelection) ||
                                 (alignRelativeTo === 'canvas' && !canDistributeHCanvas)
                             }
-                            className="flex items-center justify-center gap-2 p-3 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-secondary)] hover:bg-[var(--bg-hover)] active:scale-95 text-xs font-semibold text-[var(--text-primary)] disabled:opacity-40 transition-all"
+                            className="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 p-2.5 sm:p-3 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-secondary)] hover:bg-[var(--bg-hover)] active:scale-95 text-xs font-semibold text-[var(--text-primary)] disabled:opacity-40 transition-all text-center"
                         >
-                            <DistributeHorizontalIcon size={20} className="text-cyan-400" />
-                            <span>{t('mobile.align.distributeH') || 'Горизонтально'}</span>
+                            <DistributeHorizontalIcon size={20} className="text-cyan-400 shrink-0" />
+                            <span className="truncate">{t('mobile.align.distributeH') || 'Горизонтально'}</span>
                         </button>
 
                         {/* Distribute Vertically */}
@@ -694,27 +694,22 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                                 (alignRelativeTo === 'selection' && !canDistributeVSelection) ||
                                 (alignRelativeTo === 'canvas' && !canDistributeVCanvas)
                             }
-                            className="flex items-center justify-center gap-2 p-3 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-secondary)] hover:bg-[var(--bg-hover)] active:scale-95 text-xs font-semibold text-[var(--text-primary)] disabled:opacity-40 transition-all"
+                            className="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 p-2.5 sm:p-3 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-secondary)] hover:bg-[var(--bg-hover)] active:scale-95 text-xs font-semibold text-[var(--text-primary)] disabled:opacity-40 transition-all text-center"
                         >
-                            <DistributeVerticalIcon size={20} className="text-cyan-400" />
-                            <span>{t('mobile.align.distributeV') || 'Вертикально'}</span>
+                            <DistributeVerticalIcon size={20} className="text-cyan-400 shrink-0" />
+                            <span className="truncate">{t('mobile.align.distributeV') || 'Вертикально'}</span>
                         </button>
-                    </div>
 
-                    {/* Path Distribution / Circular Array */}
-                    <div className="pt-2 border-t border-[var(--border-secondary)]">
+                        {/* Distribute by Path */}
                         <button
                             type="button"
                             onClick={handleStartPathDistribute}
                             disabled={isDistributingPath || !canDistributePath}
-                            className="w-full flex items-center justify-center gap-2.5 p-3 rounded-xl bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/30 text-amber-400 hover:from-amber-500/25 hover:to-orange-500/25 font-bold text-xs active:scale-95 disabled:opacity-40 transition-all"
+                            className="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 p-2.5 sm:p-3 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-secondary)] hover:bg-[var(--bg-hover)] active:scale-95 text-xs font-semibold text-[var(--text-primary)] disabled:opacity-40 transition-all text-center"
                         >
-                            <DistributePathIcon size={20} />
-                            <span>{t('tool.distribute.path') || 'Розподілити за шляхом / контуром'}</span>
+                            <DistributePathIcon size={20} className="text-cyan-400 shrink-0" />
+                            <span className="truncate">{t('tool.distribute.path') || 'За шляхом'}</span>
                         </button>
-                        <p className="text-[10px] text-[var(--text-tertiary)] text-center mt-1.5">
-                            {t('mobile.align.distributePathHint') || 'Розміщує виділені об\'єкти вздовж кругового, лінійного або довільного контуру'}
-                        </p>
                     </div>
                 </div>
 

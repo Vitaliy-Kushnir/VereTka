@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { motion } from 'motion/react';
 import { Shape, Tool, PolylineShape, DistributePathState, Layer } from '../types';
-import { ArrowUpIcon, ArrowDownIcon, TrashIcon, SquareIcon, CircleIcon, LineIcon, EllipseIcon, PencilIcon, TriangleIcon, PolygonIcon, StarIcon, SelectIcon, SelectOffIcon, EditPointsIcon, PolylineIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, BezierIcon, RectangleIcon, ArcIcon, PiesliceIcon, ChordIcon, RightTriangleIcon, EyeIcon, EyeOffIcon, TextIcon, ImageIcon, BitmapIcon, LocateIcon, LockIcon, ChevronDownIcon, ChevronRightIcon } from './icons';
+import { ArrowUpIcon, ArrowDownIcon, TrashIcon, SquareIcon, CircleIcon, LineIcon, EllipseIcon, PencilIcon, TriangleIcon, PolygonIcon, StarIcon, SelectIcon, SelectOffIcon, EditPointsIcon, PolylineIcon, RhombusIcon, TrapezoidIcon, ParallelogramIcon, BezierIcon, RectangleIcon, ArcIcon, PiesliceIcon, ChordIcon, RightTriangleIcon, EyeIcon, EyeOffIcon, TextIcon, ImageIcon, BitmapIcon, LocateIcon, LockIcon, ChevronDownIcon, ChevronRightIcon, CheckIcon } from './icons';
 import { getDefaultNameForShape, getTkinterType, isDefaultName } from '../lib/constants';
 import { isPolylineAxisAlignedRectangle } from '../lib/geometry';
 import { useLanguage } from './LanguageContext';
@@ -53,7 +53,7 @@ const toolToIcon: Record<Tool | 'group', React.ReactNode> = {
     'image': <ImageIcon />,
     'bitmap': <BitmapIcon />,
     'group': <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>,
-}
+};
 
 // Helper moved outside the component for better performance
 const getIconForShape = (s: Shape): React.ReactNode => {
@@ -128,6 +128,7 @@ const ShapeList: React.FC<ShapeListProps> = ({
     const [draggedId, setDraggedId] = useState<string | null>(null);
     const [dragOverId, setDragOverId] = useState<string | null>(null);
     const [dropPosition, setDropPosition] = useState<'top' | 'bottom' | 'inside' | null>(null);
+    const [touchDraggedId, setTouchDraggedId] = useState<string | null>(null);
     const [collapsedLayers, setCollapsedLayers] = useState<Set<string>>(new Set());
     const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
     const { t } = useLanguage();
@@ -138,48 +139,149 @@ const ShapeList: React.FC<ShapeListProps> = ({
     const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(false);
     const [scrollFix, setScrollFix] = useState<{ id: string, clientY: number } | null>(null);
 
-    // Long press detection for list items
+    // Touch grab & drag-to-reorder state
+    const touchDragStateRef = useRef<{
+        shapeId: string;
+        startX: number;
+        startY: number;
+        isDragging: boolean;
+    } | null>(null);
     const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
-    const longPressPosRef = useRef<{ x: number, y: number, id: string } | null>(null);
     const isLongPressTriggeredRef = useRef<boolean>(false);
 
-    const handleItemPointerDown = (e: React.TouchEvent | React.MouseEvent, shapeId: string) => {
-        const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-        const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-        longPressPosRef.current = { x: clientX, y: clientY, id: shapeId };
+    const handleItemTouchStart = (e: React.TouchEvent, shapeId: string) => {
+        if (lockedShapeIds.has(shapeId) || editingId) return;
+        const touch = e.touches[0];
+        touchDragStateRef.current = {
+            shapeId,
+            startX: touch.clientX,
+            startY: touch.clientY,
+            isDragging: false
+        };
         isLongPressTriggeredRef.current = false;
-        
+
         if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
         longPressTimerRef.current = setTimeout(() => {
+            if (!touchDragStateRef.current) return;
+            touchDragStateRef.current.isDragging = true;
             isLongPressTriggeredRef.current = true;
+            setTouchDraggedId(shapeId);
+            setDraggedId(shapeId);
+
             if (typeof navigator !== 'undefined' && navigator?.vibrate) {
-                try { navigator.vibrate(40); } catch (_) {}
+                try { navigator.vibrate(50); } catch (_) {}
             }
-            setIsMultiSelectMode?.(true);
-            // If already in multi-select mode and a different shape was previously selected: Range selection (Shift)!
-            if ((isMultiSelectMode || selectedShapeIds.length > 0) && selectedShapeIds.length > 0 && !selectedShapeIds.includes(shapeId)) {
-                onSelectShape(shapeId, true, true, true);
-            } else {
-                onSelectShape(shapeId, true, false, true);
-            }
-        }, 400);
+        }, 320);
     };
 
-    const handleItemPointerMove = (e: React.TouchEvent | React.MouseEvent) => {
-        if (!longPressPosRef.current || !longPressTimerRef.current) return;
-        const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-        const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-        if (Math.hypot(clientX - longPressPosRef.current.x, clientY - longPressPosRef.current.y) > 8) {
-            clearTimeout(longPressTimerRef.current);
-            longPressTimerRef.current = null;
+    const handleItemTouchMove = (e: React.TouchEvent) => {
+        if (!touchDragStateRef.current) return;
+        const touch = e.touches[0];
+
+        // If not yet dragging, check distance to cancel long press if scrolling
+        if (!touchDragStateRef.current.isDragging) {
+            const dist = Math.hypot(touch.clientX - touchDragStateRef.current.startX, touch.clientY - touchDragStateRef.current.startY);
+            if (dist > 8) {
+                if (longPressTimerRef.current) {
+                    clearTimeout(longPressTimerRef.current);
+                    longPressTimerRef.current = null;
+                }
+            }
+            return;
+        }
+
+        // Active touch drag in progress
+        e.preventDefault();
+
+        // Auto-scroll list if dragging near edges
+        if (listContainerRef.current) {
+            const containerRect = listContainerRef.current.getBoundingClientRect();
+            if (touch.clientY < containerRect.top + 40) {
+                listContainerRef.current.scrollTop -= 6;
+            } else if (touch.clientY > containerRect.bottom - 40) {
+                listContainerRef.current.scrollTop += 6;
+            }
+        }
+
+        const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+        const targetLi = elem?.closest('[data-shape-id]') as HTMLElement;
+        const targetLayerElem = elem?.closest('[data-layer-id]') as HTMLElement;
+
+        if (targetLi) {
+            const targetId = targetLi.getAttribute('data-shape-id');
+            if (targetId && targetId !== touchDragStateRef.current.shapeId) {
+                setDragOverId(targetId);
+                const rect = targetLi.getBoundingClientRect();
+                const y = touch.clientY - rect.top;
+                const targetShape = shapes.find(s => s.id === targetId);
+
+                if (targetShape?.type === 'group') {
+                    if (y < rect.height * 0.25) {
+                        setDropPosition('top');
+                    } else if (y > rect.height * 0.75) {
+                        setDropPosition('bottom');
+                    } else {
+                        setDropPosition('inside');
+                    }
+                } else {
+                    setDropPosition(y < rect.height * 0.5 ? 'top' : 'bottom');
+                }
+            }
+        } else if (targetLayerElem) {
+            const targetLayerId = targetLayerElem.getAttribute('data-layer-id');
+            if (targetLayerId) {
+                setDragOverId(targetLayerId);
+                setDropPosition(null);
+            }
         }
     };
 
-    const handleItemPointerUp = () => {
+    const handleItemTouchEnd = (e: React.TouchEvent) => {
         if (longPressTimerRef.current) {
             clearTimeout(longPressTimerRef.current);
             longPressTimerRef.current = null;
         }
+
+        if (touchDragStateRef.current?.isDragging && touchDraggedId) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (dragOverId && dragOverId !== touchDraggedId) {
+                const targetLayer = layers.find(l => l.id === dragOverId || `layer-list-${l.id}` === dragOverId);
+                if (targetLayer) {
+                    if (targetLayer.locked) {
+                        if (onLayerWarning) onLayerWarning('locked', targetLayer.id);
+                    } else if (!targetLayer.visible && ignoreHiddenWarningForLayer !== targetLayer.id) {
+                        if (onLayerWarning) {
+                            onLayerWarning('hidden', targetLayer.id, () => {
+                                onMoveToLayer(touchDraggedId, targetLayer.id);
+                            });
+                        }
+                    } else {
+                        onMoveToLayer(touchDraggedId, targetLayer.id);
+                        if (typeof navigator !== 'undefined' && navigator?.vibrate) {
+                            try { navigator.vibrate(30); } catch (_) {}
+                        }
+                    }
+                } else if (dropPosition) {
+                    onReorderShape(touchDraggedId, dragOverId, dropPosition);
+                    if (typeof navigator !== 'undefined' && navigator?.vibrate) {
+                        try { navigator.vibrate(30); } catch (_) {}
+                    }
+                }
+            }
+
+            setTouchDraggedId(null);
+            setDraggedId(null);
+            setDragOverId(null);
+            setDropPosition(null);
+
+            setTimeout(() => {
+                isLongPressTriggeredRef.current = false;
+            }, 150);
+        }
+
+        touchDragStateRef.current = null;
     };
 
     useLayoutEffect(() => {
@@ -447,13 +549,11 @@ const ShapeList: React.FC<ShapeListProps> = ({
                 transition={{ duration: 0.2 }}
                 ref={(el: any) => { itemRefs.current[shape.id] = el; }}
                 key={shape.id}
-                onTouchStart={(e) => handleItemPointerDown(e, shape.id)}
-                onTouchMove={handleItemPointerMove}
-                onTouchEnd={handleItemPointerUp}
-                onTouchCancel={handleItemPointerUp}
-                onMouseDown={(e) => handleItemPointerDown(e, shape.id)}
-                onMouseMove={handleItemPointerMove}
-                onMouseUp={handleItemPointerUp}
+                data-shape-id={shape.id}
+                onTouchStart={(e) => handleItemTouchStart(e, shape.id)}
+                onTouchMove={handleItemTouchMove}
+                onTouchEnd={handleItemTouchEnd}
+                onTouchCancel={handleItemTouchEnd}
                 onClick={(e: React.MouseEvent) => {
                     e.stopPropagation();
                     if (isLocked) return;
@@ -479,10 +579,19 @@ const ShapeList: React.FC<ShapeListProps> = ({
                 onDragLeave={isEditing ? undefined : (e: any) => { e.stopPropagation(); handleDragLeave(e); }}
                 onDrop={isEditing ? undefined : (e: any) => { e.stopPropagation(); handleDrop(e, shape.id); }}
                 onDragEnd={isEditing ? undefined : (e: any) => { e.stopPropagation(); handleDragEnd(e); }}
-                className={`group flex flex-col p-0 rounded-md transition-all duration-150 relative
-                    ${draggedId === shape.id ? 'opacity-30' : ''}
+                className={`group flex flex-col p-0 rounded-md transition-all duration-150 relative select-none
+                    ${draggedId === shape.id && !touchDraggedId ? 'opacity-30' : ''}
+                    ${touchDraggedId === shape.id ? 'ring-2 ring-[var(--accent-primary)] shadow-xl scale-[1.02] bg-[var(--bg-secondary)] z-40' : ''}
                 `}
             >
+                {/* Touch Grab Floating Badge */}
+                {touchDraggedId === shape.id && (
+                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-[var(--accent-primary)] text-white text-[11px] font-bold shadow-lg z-50 whitespace-nowrap flex items-center gap-1.5 pointer-events-none animate-bounce">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                        <span>{t('list.reorder.grabbed') || 'Захоплено для переміщення'}</span>
+                    </div>
+                )}
+
                 <div className={`flex items-center justify-between py-0.5 px-1.5 rounded-md cursor-pointer ${isSelected ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : isDistributing ? 'bg-amber-500/80 text-white outline outline-1 outline-amber-600' : 'hover:bg-[var(--bg-hover)] text-[var(--text-secondary)]'}`}>
                     {/* Drop Insertion Indicators */}
                     {isDragOverTop && (
@@ -517,15 +626,19 @@ const ShapeList: React.FC<ShapeListProps> = ({
                     )}
 
                     <div className={`flex items-center gap-2 overflow-hidden flex-1 relative z-10 ${isLocked ? 'pointer-events-none' : ''}`}>
-                        {(isMultiSelectMode || selectedShapeIds.length > 1) && (
+                        {(isMultiSelectMode || selectedShapeIds.length > 1) ? (
+                            /* Checkbox toggle button in multi-select mode */
                             <button
                                 type="button"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     if (isLocked) return;
                                     onSelectShape(shape.id, true, false, true);
+                                    if (typeof navigator !== 'undefined' && navigator?.vibrate) {
+                                        try { navigator.vibrate(25); } catch (_) {}
+                                    }
                                 }}
-                                className={`flex-shrink-0 w-3.5 h-3.5 rounded flex items-center justify-center transition-all ${
+                                className={`flex-shrink-0 w-4 h-4 rounded flex items-center justify-center transition-all cursor-pointer ${
                                     isSelected 
                                         ? 'bg-white text-[var(--accent-primary)] shadow-sm' 
                                         : 'border border-[var(--border-secondary)] hover:border-[var(--accent-primary)] bg-[var(--bg-secondary)]'
@@ -533,12 +646,13 @@ const ShapeList: React.FC<ShapeListProps> = ({
                                 title={isSelected ? (t('button.deselect') || 'Зняти вибір') : (t('button.select') || 'Виділити')}
                             >
                                 {isSelected && (
-                                    <svg className="w-2.5 h-2.5 stroke-current" viewBox="0 0 24 24" fill="none" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg className="w-3 h-3 stroke-current" viewBox="0 0 24 24" fill="none" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
                                         <polyline points="20 6 9 17 4 12"/>
                                     </svg>
                                 )}
                             </button>
-                        )}
+                        ) : null}
+
                         {shape.type === 'group' && (
                             <button
                                 onClick={(e) => {
@@ -559,9 +673,26 @@ const ShapeList: React.FC<ShapeListProps> = ({
                         <button onClick={(e) => handleToggleVisibility(e, shape)} disabled={isLocked} title={shape.state === 'hidden' ? t('list.visibility.show') : t('list.visibility.hide')} className="flex-shrink-0 p-0.5 rounded hover:bg-[var(--bg-hover)] disabled:opacity-50">
                             {shape.state === 'hidden' ? <EyeOffIcon size={12} /> : <EyeIcon size={12} />}
                         </button>
-                        <div className="flex-shrink-0 w-3.5 h-3.5 flex items-center justify-center" style={{ opacity: (!isLayerVisible || shape.state === 'hidden') ? 0.5 : 1 }}>
+                        
+                        {/* Option 1: Shape Icon button - click/tap to toggle multi-selection */}
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (isLocked) return;
+                                setIsMultiSelectMode?.(true);
+                                onSelectShape(shape.id, true, false, true);
+                                if (typeof navigator !== 'undefined' && navigator?.vibrate) {
+                                    try { navigator.vibrate(25); } catch (_) {}
+                                }
+                            }}
+                            title={t('list.multiselect.tapIconHint') || 'Натисніть на іконку для вибору'}
+                            className="flex-shrink-0 w-4 h-4 flex items-center justify-center rounded hover:bg-[var(--bg-app)] hover:scale-110 active:scale-95 transition-all text-[var(--text-secondary)] hover:text-[var(--accent-primary)] cursor-pointer"
+                            style={{ opacity: (!isLayerVisible || shape.state === 'hidden') ? 0.5 : 1 }}
+                        >
                             {getIconForShape(shape)}
-                        </div>
+                        </button>
+
                         {isLocked && <div className="flex-shrink-0 text-[var(--text-secondary)]"><LockIcon size={12} /></div>}
                         <div className="overflow-hidden flex-1 text-sm flex items-center gap-1" style={{ opacity: (!isLayerVisible || shape.state === 'hidden') ? 0.5 : 1 }}>
                             {!isLayerVisible && <span className="text-[10px] text-amber-500 font-bold leading-none" title={t('list.layerHidden') || 'Шар прихований'}>[H]</span>}
@@ -611,7 +742,33 @@ const ShapeList: React.FC<ShapeListProps> = ({
     <div className="flex flex-col h-full bg-[var(--bg-primary)]">
         <div className="flex justify-between items-center p-2 px-3 bg-[var(--bg-app)]/50 border-b border-[var(--border-primary)] flex-shrink-0">
             <h2 className="font-semibold text-[var(--text-primary)] text-sm">{t('list.title')}</h2>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+                {/* Option 2: Select / Done toggle button in Header */}
+                <button
+                    type="button"
+                    onClick={() => {
+                        const newMode = !isMultiSelectMode;
+                        setIsMultiSelectMode?.(newMode);
+                    }}
+                    className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded transition-all cursor-pointer ${
+                        isMultiSelectMode
+                            ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] shadow-xs font-bold'
+                            : 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-secondary)] shadow-2xs'
+                    }`}
+                    title={isMultiSelectMode ? (t('list.multiselect.done') || 'Готово') : (t('list.multiselect.select') || 'Вибрати')}
+                >
+                    {isMultiSelectMode ? (
+                        <>
+                            <CheckIcon size={13} />
+                            <span>{t('list.multiselect.done') || 'Готово'}</span>
+                        </>
+                    ) : (
+                        <>
+                            <SelectIcon size={13} />
+                            <span>{t('list.multiselect.select') || 'Вибрати'}</span>
+                        </>
+                    )}
+                </button>
                 <button
                     onClick={scrollToSelected}
                     disabled={(selectedShapeIds.length === 0) || isSelectedItemVisible || isAutoScrollEnabled}
@@ -655,19 +812,18 @@ const ShapeList: React.FC<ShapeListProps> = ({
                             const selectable = shapes.filter(s => !lockedShapeIds.has(s.id)).map(s => s.id);
                             onSelectShape(selectable, false, false, true);
                         }}
-                        className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--border-secondary)] transition-colors"
+                        className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--border-secondary)] transition-colors cursor-pointer"
                     >
-                        {t('button.selectAll') || 'Всі'}
+                        {t('list.multiselect.selectAll') || 'Вибрати всі'}
                     </button>
                     <button
                         type="button"
                         onClick={() => {
                             onSelectShape(null);
-                            setIsMultiSelectMode?.(false);
                         }}
-                        className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-secondary)] transition-colors"
+                        className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-secondary)] transition-colors cursor-pointer"
                     >
-                        {t('button.cancel') || 'Скинути'}
+                        {t('list.multiselect.deselectAll') || 'Зняти вибір'}
                     </button>
                 </div>
             </div>

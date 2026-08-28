@@ -1893,12 +1893,102 @@ const toHex = (color: string): string | null => {
     return resolvedColorHex;
 };
 
+// Utility to check if a string is a valid CSS/web color name
+const isValidWebColorName = (name: string): boolean => {
+    if (!name || typeof name !== 'string') return false;
+    const trimmed = name.trim();
+    if (trimmed === '' || trimmed.startsWith('#')) return false;
+    if (typeof document === 'undefined') return false;
+    
+    const ctx = document.createElement('canvas').getContext('2d');
+    if (!ctx) return false;
+
+    ctx.fillStyle = '__invalid_color__';
+    const invalidColorResult = ctx.fillStyle;
+    
+    ctx.fillStyle = trimmed;
+    const resolvedColorHex = ctx.fillStyle;
+    
+    return resolvedColorHex !== invalidColorResult && resolvedColorHex !== 'rgba(0, 0, 0, 0)';
+};
+
 interface AllColorsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (hex: string) => void;
   allColors: { name: string; hex: string }[];
 }
+
+// ---------------- Recent Colors Store & Hook ----------------
+const MAX_RECENT_COLORS = 5;
+const RECENT_COLORS_STORAGE_KEY = 'veretka_recent_project_colors';
+
+export interface RecentColorItem {
+  name?: string;
+  hex: string;
+}
+
+let globalRecentColors: RecentColorItem[] = (() => {
+  try {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(RECENT_COLORS_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(item => item && typeof item.hex === 'string').slice(0, MAX_RECENT_COLORS);
+        }
+      }
+    }
+  } catch (e) {
+    // Ignore storage parse errors
+  }
+  return [];
+})();
+
+const recentColorListeners = new Set<() => void>();
+
+export const trackRecentColor = (colorInput: string) => {
+  if (!colorInput || typeof colorInput !== 'string') return;
+  const trimmed = colorInput.trim();
+  if (trimmed === '' || trimmed.toLowerCase() === 'none') return;
+
+  const hex = toHex(trimmed);
+  if (!hex) return;
+
+  const lowerHex = hex.toLowerCase();
+  const name = hexToNameMap.get(lowerHex) || (isValidWebColorName(trimmed) ? trimmed : undefined);
+  const newItem: RecentColorItem = { name, hex: lowerHex };
+
+  // Remove previous instance if existing to place at top
+  const remaining = globalRecentColors.filter(c => c.hex.toLowerCase() !== lowerHex);
+  globalRecentColors = [newItem, ...remaining].slice(0, MAX_RECENT_COLORS);
+
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(RECENT_COLORS_STORAGE_KEY, JSON.stringify(globalRecentColors));
+    }
+  } catch (e) {
+    // Ignore storage write errors
+  }
+
+  recentColorListeners.forEach(cb => cb());
+};
+
+export const useRecentColors = (): RecentColorItem[] => {
+  const [colors, setColors] = useState<RecentColorItem[]>(globalRecentColors);
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setColors([...globalRecentColors]);
+    };
+    recentColorListeners.add(handleUpdate);
+    return () => {
+      recentColorListeners.delete(handleUpdate);
+    };
+  }, []);
+
+  return colors;
+};
 
 const SortButton: React.FC<{
     label: string;
@@ -1921,6 +2011,7 @@ const SortButton: React.FC<{
 
 const AllColorsModal: React.FC<AllColorsModalProps> = ({ isOpen, onClose, onSelect, allColors }) => {
     const { t } = useLanguage();
+    const recentColors = useRecentColors();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedColor, setSelectedColor] = useState<string | null>(null);
     const [sortType, setSortType] = useState<'group' | 'alpha' | 'hex'>('group');
@@ -1952,6 +2043,7 @@ const AllColorsModal: React.FC<AllColorsModalProps> = ({ isOpen, onClose, onSele
 
     const handleConfirm = () => {
         if (selectedColor) {
+            trackRecentColor(selectedColor);
             onSelect(selectedColor);
         }
         onClose();
@@ -2019,6 +2111,40 @@ const AllColorsModal: React.FC<AllColorsModalProps> = ({ isOpen, onClose, onSele
                     </div>
                 </div>
                 <div className="flex-grow p-4 overflow-y-auto">
+                    {/* Recent Colors Section above the standard color grid */}
+                    {recentColors.length > 0 && !searchTerm && (
+                        <div className="mb-4 p-3 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-secondary)]">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                                    {t('color.recent') || 'Recent Colors'}
+                                </span>
+                                <span className="text-xs font-mono text-[var(--text-tertiary)] opacity-70">
+                                    {recentColors.length}/5
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                                {recentColors.slice(0, 5).map((color, idx) => (
+                                    <button
+                                        key={`modal-recent-${color.hex}-${idx}`}
+                                        type="button"
+                                        onClick={() => setSelectedColor(color.hex)}
+                                        className={`p-2 rounded-md transition-all duration-150 border-2 ${
+                                            selectedColor?.toLowerCase() === color.hex.toLowerCase()
+                                                ? 'border-[var(--accent-primary)] ring-2 ring-[var(--accent-primary)] bg-[var(--accent-primary)]/10'
+                                                : 'border-[var(--border-secondary)] hover:border-white/30 bg-[var(--bg-primary)]'
+                                        }`}
+                                        title={`${color.name ? color.name + ' (' + color.hex + ')' : color.hex}`}
+                                    >
+                                        <div className="w-full h-8 rounded-md border border-white/20" style={{ backgroundColor: color.hex }}></div>
+                                        <div className="text-center mt-1">
+                                            <div className="text-xs font-medium truncate text-[var(--text-secondary)]">{color.name || color.hex}</div>
+                                            <div className="text-[10px] font-mono text-[var(--text-tertiary)] opacity-75">{color.hex}</div>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
                         {filteredColors.map(color => (
                             <button
@@ -2079,6 +2205,7 @@ export const ColorInput: React.FC<{
 }> = ({ id, value, onChange, onPreview, onCancel, disabled, title, placeholder, showNotification }) => {
     const { t } = useLanguage();
     const isMobile = useIsMobile();
+    const recentColors = useRecentColors();
     const [inputValue, setInputValue] = useState(value);
     const [isEditing, setIsEditing] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -2097,7 +2224,7 @@ export const ColorInput: React.FC<{
         if (isDropdownOpen && wrapperRef.current) {
             const rect = wrapperRef.current.getBoundingClientRect();
             const screenWidth = window.innerWidth;
-            const dropdownWidth = 224; // Corresponds to w-[224px]
+            const dropdownWidth = 230; // Corresponds to w-[230px]
 
             // Default position starts 40px from the left of the wrapper component
             const dropdownRightX = rect.left + 40 + dropdownWidth;
@@ -2117,6 +2244,9 @@ export const ColorInput: React.FC<{
     useEffect(() => {
         if (!isEditing) {
             setInputValue(value);
+        }
+        if (value && value !== 'none') {
+            trackRecentColor(value);
         }
     }, [value, isEditing]);
 
@@ -2153,21 +2283,6 @@ export const ColorInput: React.FC<{
         }
         return "Enter color name (e.g. 'Red', 'LightBlue') or HEX code.";
     }, [inputValue]);
-
-    const isValidWebColorName = (name: string): boolean => {
-        if (!name || typeof name !== 'string' || ((name) || "").trim().startsWith('#')) return false;
-        
-        const ctx = document.createElement('canvas').getContext('2d');
-        if (!ctx) return false;
-
-        ctx.fillStyle = '__invalid_color__';
-        const invalidColorResult = ctx.fillStyle;
-        
-        ctx.fillStyle = ((name) || "").trim();
-        const resolvedColorHex = ctx.fillStyle;
-        
-        return resolvedColorHex !== invalidColorResult && resolvedColorHex !== 'rgba(0, 0, 0, 0)';
-    };
 
     const startEditing = useCallback(() => {
         if (!isEditing) {
@@ -2240,6 +2355,7 @@ export const ColorInput: React.FC<{
         startEditing();
         setInputValue(newColor);
         onPreview?.(newColor);
+        trackRecentColor(newColor);
     };
     
     const handlePickerClick = () => {
@@ -2252,6 +2368,7 @@ export const ColorInput: React.FC<{
         startEditing();
         setInputValue(colorName);
         onPreview?.(toHex(colorName));
+        trackRecentColor(colorName);
         setIsDropdownOpen(false);
         setIsTypingMode(false);
         if (!isTouchDevice) {
@@ -2264,6 +2381,7 @@ export const ColorInput: React.FC<{
             startEditing();
             setInputValue(conversionTarget);
             onPreview?.(toHex(conversionTarget));
+            trackRecentColor(conversionTarget);
         }
     };
 
@@ -2295,9 +2413,11 @@ export const ColorInput: React.FC<{
             onCancel?.();
         } else {
              if (trimmedInput.startsWith('#')) {
+                trackRecentColor(finalHex);
                 onChange(finalHex);
             } else {
                 if (isValidWebColorName(trimmedInput)) {
+                    trackRecentColor(trimmedInput);
                     onChange(trimmedInput);
                 } else if (nameToHexMap.has(trimmedInput.toLowerCase())) {
                     setConversionChoice({ name: trimmedInput, hex: finalHex });
@@ -2316,6 +2436,7 @@ export const ColorInput: React.FC<{
 
     const handleConversionConfirm = () => {
         if (!conversionChoice) return;
+        trackRecentColor(conversionChoice.hex);
         onChange(conversionChoice.hex);
         setConversionChoice(null);
         setIsEditing(false);
@@ -2325,6 +2446,7 @@ export const ColorInput: React.FC<{
 
     const handleConversionCancel = () => {
         if (!conversionChoice) return;
+        trackRecentColor(conversionChoice.name);
         onChange(conversionChoice.name);
         setConversionChoice(null);
         setIsEditing(false);
@@ -2415,9 +2537,49 @@ export const ColorInput: React.FC<{
 
             {isDropdownOpen && !disabled && (
                     <div 
-                        className="absolute z-50 top-full mt-1 w-[224px] bg-[var(--bg-secondary)] rounded-md shadow-xl border border-[var(--border-secondary)] animate-fade-in-down flex flex-col" 
+                        className="absolute z-50 top-full mt-1 w-[230px] bg-[var(--bg-secondary)] rounded-md shadow-xl border border-[var(--border-secondary)] animate-fade-in-down flex flex-col overflow-hidden" 
                         style={{ ...dropdownStyle, animationDuration: '150ms' }}
                     >
+                        {/* Last 5 colors used in current project - visible above standard color grid */}
+                        {recentColors.length > 0 && (
+                            <div className="p-2 border-b border-[var(--border-secondary)] bg-[var(--bg-primary)]/50">
+                                <div className="flex items-center justify-between text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider mb-1.5 px-0.5">
+                                    <span>{t('color.recent') || 'Recent'}</span>
+                                    <span className="font-mono opacity-70">{recentColors.length}/5</span>
+                                </div>
+                                <div className="grid grid-cols-5 gap-1">
+                                    {recentColors.slice(0, 5).map((rc, idx) => (
+                                        <button
+                                            key={`dropdown-recent-${rc.hex}-${idx}`}
+                                            type="button"
+                                            onClick={() => {
+                                                const selectedVal = rc.name || rc.hex;
+                                                setInputValue(selectedVal);
+                                                onPreview?.(rc.hex);
+                                                onChange(selectedVal);
+                                                trackRecentColor(selectedVal);
+                                                setIsDropdownOpen(false);
+                                                setIsTypingMode(false);
+                                                setIsEditing(false);
+                                            }}
+                                            onMouseEnter={() => onPreview?.(rc.hex)}
+                                            onMouseLeave={() => onPreview?.(toHex(inputValue) || null)}
+                                            title={rc.name ? `${rc.name} (${rc.hex})` : rc.hex}
+                                            className="group flex flex-col items-center justify-center p-1 rounded-md border border-[var(--border-secondary)] hover:border-[var(--accent-primary)] hover:bg-[var(--bg-secondary)] hover:scale-105 active:scale-95 transition-all focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+                                        >
+                                            <div 
+                                                className="w-5 h-5 rounded-sm border border-white/20 shadow-xs flex-shrink-0"
+                                                style={{ backgroundColor: rc.hex }}
+                                            />
+                                            <span className="text-[8px] font-mono text-[var(--text-secondary)] truncate w-full text-center mt-0.5 opacity-90 group-hover:text-[var(--text-primary)]">
+                                                {rc.name || rc.hex}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         <div className="max-h-52 overflow-y-auto">
                             {filteredColors.length > 0 ? (
                                 filteredColors.map(color => (
