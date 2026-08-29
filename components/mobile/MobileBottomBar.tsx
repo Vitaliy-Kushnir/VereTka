@@ -2,6 +2,25 @@ import React, { useState } from 'react';
 import { 
     SelectIcon, 
     RectangleIcon, 
+    SquareIcon,
+    CircleIcon,
+    EllipseIcon,
+    LineIcon,
+    PolylineIcon,
+    BezierIcon,
+    ArcIcon,
+    PiesliceIcon,
+    ChordIcon,
+    PencilIcon,
+    PolygonIcon,
+    StarIcon,
+    TriangleIcon,
+    RightTriangleIcon,
+    RhombusIcon,
+    TrapezoidIcon,
+    ParallelogramIcon,
+    TextIcon,
+    ImageIcon,
     LayersIcon, 
     PaletteIcon, 
     CodeIcon,
@@ -18,6 +37,32 @@ import { MoreHorizontal, ChevronRight, ChevronLeft } from 'lucide-react';
 import { Tool } from '../../types';
 import { useIsLandscape } from '../../hooks/useIsMobile';
 import { useLanguage } from '../LanguageContext';
+
+const renderShapeMiniIcon = (tool: Tool, size: number = 10) => {
+    switch (tool) {
+        case 'rectangle': return <RectangleIcon size={size} />;
+        case 'square': return <SquareIcon size={size} />;
+        case 'circle': return <CircleIcon size={size} />;
+        case 'ellipse': return <EllipseIcon size={size} />;
+        case 'line': return <LineIcon size={size} />;
+        case 'pencil': return <PencilIcon size={size} />;
+        case 'triangle': return <TriangleIcon size={size} />;
+        case 'right-triangle': return <RightTriangleIcon size={size} />;
+        case 'polygon': return <PolygonIcon size={size} />;
+        case 'star': return <StarIcon size={size} />;
+        case 'polyline': return <PolylineIcon size={size} />;
+        case 'rhombus': return <RhombusIcon size={size} />;
+        case 'trapezoid': return <TrapezoidIcon size={size} />;
+        case 'parallelogram': return <ParallelogramIcon size={size} />;
+        case 'bezier': return <BezierIcon size={size} />;
+        case 'arc': return <ArcIcon size={size} />;
+        case 'pieslice': return <PiesliceIcon size={size} />;
+        case 'chord': return <ChordIcon size={size} />;
+        case 'text': return <TextIcon size={size} />;
+        case 'image': return <ImageIcon size={size} />;
+        default: return null;
+    }
+};
 
 interface MobileBottomBarProps {
     activeTool: Tool;
@@ -80,6 +125,7 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
     const isCodeActive = activeSheet === 'code';
     const isAlignActive = activeSheet === 'align';
     const isSelectActive = !activeSheet && (activeTool === 'select' || activeTool === 'edit-points');
+    const isDrawingShape = activeTool !== 'select' && activeTool !== 'edit-points' && activeTool !== 'group' && activeTool !== 'bitmap';
 
     // -------------------------------------------------------------
     // LANDSCAPE MODE: Vertical Right-Side Bar (Top to Bottom)
@@ -128,6 +174,14 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                         }`}
                     >
                         <RectangleIcon size={18} />
+                        {isDrawingShape && (
+                            <span 
+                                className="absolute top-0.5 right-1 min-w-[20px] h-[20px] px-0.5 rounded-full bg-[var(--accent-primary)] text-[var(--accent-text)] flex items-center justify-center shadow-md border-2 border-[var(--bg-primary)] ring-1 ring-[var(--accent-primary)]/50 pointer-events-none animate-pulse"
+                                title={`${t('mobile.shapes.drawMode') || 'Режим побудови'}: ${activeTool}`}
+                            >
+                                {renderShapeMiniIcon(activeTool, 13)}
+                            </span>
+                        )}
                         <span className="text-[10px] mt-0.5 leading-none tracking-tight truncate max-w-full">
                             {t('mobile.nav.shapes') || 'Фігури'}
                         </span>
@@ -240,6 +294,14 @@ export const MobileBottomBar: React.FC<MobileBottomBarProps> = ({
                     }`}
                 >
                     <RectangleIcon size={19} />
+                    {isDrawingShape && (
+                        <span 
+                            className="absolute top-0.5 right-1.5 min-w-[21px] h-[21px] px-0.5 rounded-full bg-[var(--accent-primary)] text-[var(--accent-text)] flex items-center justify-center shadow-md border-2 border-[var(--bg-primary)] ring-1 ring-[var(--accent-primary)]/50 pointer-events-none animate-pulse"
+                            title={`${t('mobile.shapes.drawMode') || 'Режим побудови'}: ${activeTool}`}
+                        >
+                            {renderShapeMiniIcon(activeTool, 14)}
+                        </span>
+                    )}
                     <span className="text-[11px] mt-0.5 leading-tight tracking-tight truncate max-w-full">
                         {t('mobile.nav.shapes') || 'Фігури'}
                     </span>

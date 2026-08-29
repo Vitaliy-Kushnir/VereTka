@@ -42,8 +42,8 @@ export const translations = {
     "gallery.title": "Ğ¥Ğ¼Ğ°Ñ€Ğ½Ğ° Ğ“Ğ°Ğ»ĞµÑ€ĞµÑ",
     "mobile.menu.cloudGalleryDesc": "ĞŸÑƒĞ±Ğ»Ñ–Ñ‡Ğ½Ñ– Ğ¿Ñ€Ğ¾Ñ”ĞºÑ‚Ğ¸, Ğ³Ñ€ÑƒĞ¿Ğ¸ Ñ‚Ğ° ĞºĞ»Ğ°ÑĞ¸",
     "menu.export.viewPythonCode": "ĞŸĞµÑ€ĞµĞ³Ğ»ÑĞ´ ĞºĞ¾Ğ´Ñƒ Python",
-    "menu.export.runSimulator": "Ğ—Ğ°Ğ¿ÑƒÑĞº Ñƒ ÑĞ¸Ğ¼ÑƒĞ»ÑÑ‚Ğ¾Ñ€Ñ– (Tkinter)",
-    "menu.export.savePy": "Ğ—Ğ±ĞµÑ€ĞµĞ³Ñ‚Ğ¸ ÑĞº .py Ñ„Ğ°Ğ¹Ğ»",
+    "menu.export.runSimulator": "ĞŸĞµÑ€ĞµĞ³Ğ»ÑĞ½ÑƒÑ‚Ğ¸ Ñ€ĞµĞ·ÑƒĞ»ÑŒÑ‚Ğ°Ñ‚",
+    "menu.export.savePy": "Ğ—Ğ±ĞµÑ€ĞµĞ³Ñ‚Ğ¸ ÑĞº Ñ„Ğ°Ğ¹Ğ» (.py, .txt)",
     "menu.export.runOnline": "Ğ—Ğ°Ğ¿ÑƒÑÑ‚Ğ¸Ñ‚Ğ¸ Ğ² Ğ¾Ğ½Ğ»Ğ°Ğ¹Ğ½-ÑĞµÑ€ĞµĞ´Ğ¾Ğ²Ğ¸Ñ‰Ñ–",
     "theme.light": "Ğ¡Ğ²Ñ–Ñ‚Ğ»Ğ° Ñ‚ĞµĞ¼Ğ°",
     "theme.dark": "Ğ¢ĞµĞ¼Ğ½Ğ° Ñ‚ĞµĞ¼Ğ°",
@@ -655,6 +655,14 @@ export const translations = {
     "menu.help.about": "ĞŸÑ€Ğ¾ Ñ€ĞµĞ´Ğ°ĞºÑ‚Ğ¾Ñ€",
     "menu.help.manual": "Ğ”Ğ¾Ğ²Ñ–Ğ´ĞºĞ°",
     "menu.help.feedback": "Ğ—Ğ°Ğ»Ğ¸ÑˆĞ¸Ñ‚Ğ¸ Ğ²Ñ–Ğ´Ğ³ÑƒĞº",
+    "menu.exit.group": "Ğ—Ğ°Ğ²ĞµÑ€ÑˆĞµĞ½Ğ½Ñ Ñ€Ğ¾Ğ±Ğ¾Ñ‚Ğ¸",
+    "menu.exit": "Ğ—Ğ°Ğ²ĞµÑ€ÑˆĞ¸Ñ‚Ğ¸ Ñ€Ğ¾Ğ±Ğ¾Ñ‚Ñƒ",
+    "menu.exit.desc": "Ğ—Ğ°ĞºÑ€Ğ¸Ñ‚Ğ¸ Ğ¿Ñ€Ğ¾Ñ”ĞºÑ‚ Ñ‚Ğ° Ğ²Ğ¸Ğ¹Ñ‚Ğ¸ Ğ· Ñ€ĞµĞ´Ğ°ĞºÑ‚Ğ¾Ñ€Ğ°",
+    "app.exit.browserSuccess": "Ğ Ğ¾Ğ±Ğ¾Ñ‚Ñƒ Ğ·Ğ°Ğ²ĞµÑ€ÑˆĞµĞ½Ğ¾. Ğ’Ğ¸ Ğ¼Ğ¾Ğ¶ĞµÑ‚Ğµ Ğ±ĞµĞ·Ğ¿ĞµÑ‡Ğ½Ğ¾ Ğ·Ğ°ĞºÑ€Ğ¸Ñ‚Ğ¸ Ñ†Ñ Ğ²ĞºĞ»Ğ°Ğ´ĞºÑƒ Ğ±Ñ€Ğ°ÑƒĞ·ĞµÑ€Ğ°.",
+    "app.exit.pwaSuccess": "Ğ Ğ¾Ğ±Ğ¾Ñ‚Ñƒ Ğ·Ğ°Ğ²ĞµÑ€ÑˆĞµĞ½Ğ¾. Ğ’Ğ¸ Ğ¼Ğ¾Ğ¶ĞµÑ‚Ğµ Ğ·Ğ³Ğ¾Ñ€Ğ½ÑƒÑ‚Ğ¸ Ğ°Ğ±Ğ¾ Ğ·Ğ°ĞºÑ€Ğ¸Ñ‚Ğ¸ Ğ´Ğ¾Ğ´Ğ°Ñ‚Ğ¾Ğº.",
+    "app.exitConfirm.title": "Ğ—Ğ°Ğ²ĞµÑ€ÑˆĞ¸Ñ‚Ğ¸ Ñ€Ğ¾Ğ±Ğ¾Ñ‚Ñƒ?",
+    "app.exitConfirm.message": "Ğ£ Ğ²Ğ°Ñ Ñ” Ğ½ĞµĞ·Ğ±ĞµÑ€ĞµĞ¶ĞµĞ½Ñ– Ğ·Ğ¼Ñ–Ğ½Ğ¸. Ğ’Ğ°ÑˆĞ° Ñ€Ğ¾Ğ±Ğ¾Ñ‚Ğ° Ğ¿ĞµÑ€Ñ–Ğ¾Ğ´Ğ¸Ñ‡Ğ½Ğ¾ Ğ°Ğ²Ñ‚Ğ¾Ğ·Ğ±ĞµÑ€Ñ–Ğ³Ğ°Ñ”Ñ‚ÑŒÑÑ. Ğ¯ĞºÑ‰Ğ¾ Ğ²Ğ¸ Ğ²Ğ¸Ğ¹Ğ´ĞµÑ‚Ğµ, Ğ²Ğ¸ Ğ·Ğ¼Ğ¾Ğ¶ĞµÑ‚Ğµ Ğ²Ñ–Ğ´Ğ½Ğ¾Ğ²Ğ¸Ñ‚Ğ¸ Ñ—Ñ— Ğ¿Ñ–Ğ·Ğ½Ñ–ÑˆĞµ. Ğ—Ğ°Ğ²ĞµÑ€ÑˆĞ¸Ñ‚Ğ¸ Ñ€Ğ¾Ğ±Ğ¾Ñ‚Ñƒ Ñ‚Ğ° Ğ²Ğ¸Ğ¹Ñ‚Ğ¸?",
+    "app.exitConfirm.btn": "Ğ¢Ğ°Ğº, Ğ·Ğ°Ğ²ĞµÑ€ÑˆĞ¸Ñ‚Ğ¸",
     "export.title": "Ğ•ĞºÑĞ¿Ğ¾Ñ€Ñ‚ÑƒĞ²Ğ°Ñ‚Ğ¸ Ğ·Ğ¾Ğ±Ñ€Ğ°Ğ¶ĞµĞ½Ğ½Ñ",
     "export.format": "Ğ¤Ğ¾Ñ€Ğ¼Ğ°Ñ‚:",
     "export.formatDesc": "ĞĞ±ĞµÑ€Ñ–Ñ‚ÑŒ Ñ„Ğ¾Ñ€Ğ¼Ğ°Ñ‚ Ñ„Ğ°Ğ¹Ğ»Ñƒ Ğ´Ğ»Ñ ĞµĞºÑĞ¿Ğ¾Ñ€Ñ‚Ñƒ.",
@@ -1563,8 +1571,8 @@ export const translations = {
     "gallery.title": "Cloud Gallery",
     "mobile.menu.cloudGalleryDesc": "Public projects, groups, and classes",
     "menu.export.viewPythonCode": "View Python Code",
-    "menu.export.runSimulator": "Run in Simulator (Tkinter)",
-    "menu.export.savePy": "Save as .py file",
+    "menu.export.runSimulator": "View Result",
+    "menu.export.savePy": "Save as file (.py, .txt)",
     "menu.export.runOnline": "Run in Online Sandbox",
     "theme.light": "Light theme",
     "theme.dark": "Dark theme",
@@ -2176,6 +2184,14 @@ export const translations = {
     "menu.help.about": "About",
     "menu.help.manual": "Manual",
     "menu.help.feedback": "Send Feedback",
+    "menu.exit.group": "Exit & Session",
+    "menu.exit": "Exit Editor",
+    "menu.exit.desc": "Close project and exit editor",
+    "app.exit.browserSuccess": "Work finished. You can safely close this browser tab.",
+    "app.exit.pwaSuccess": "Work finished. You can now close or minimize the application.",
+    "app.exitConfirm.title": "Exit Editor?",
+    "app.exitConfirm.message": "You have unsaved changes. Your work is periodically autosaved. If you exit, you can restore it later. Exit and finish work?",
+    "app.exitConfirm.btn": "Yes, exit",
     "export.title": "Export Image",
     "export.format": "Format:",
     "export.formatDesc": "Choose the export file format.",
@@ -3084,8 +3100,8 @@ export const translations = {
     "gallery.title": "Galleria Cloud",
     "mobile.menu.cloudGalleryDesc": "Progetti pubblici, gruppi e classi",
     "menu.export.viewPythonCode": "Visualizza codice Python",
-    "menu.export.runSimulator": "Esegui nel simulatore (Tkinter)",
-    "menu.export.savePy": "Salva come file .py",
+    "menu.export.runSimulator": "Visualizza risultato",
+    "menu.export.savePy": "Salva come file (.py, .txt)",
     "menu.export.runOnline": "Esegui in ambiente online",
     "theme.light": "Tema chiaro",
     "theme.dark": "Tema scuro",
@@ -3669,6 +3685,14 @@ export const translations = {
     "menu.help.about": "Di",
     "menu.help.manual": "Manuale",
     "menu.help.feedback": "Invia feedback",
+    "menu.exit.group": "Sessione e uscita",
+    "menu.exit": "Chiudi sessione",
+    "menu.exit.desc": "Chiudi progetto ed esci dall'editor",
+    "app.exit.browserSuccess": "Sessione terminata. Puoi chiudere questa scheda del browser in sicurezza.",
+    "app.exit.pwaSuccess": "Sessione terminata. Ora puoi chiudere o ridurre a icona l'applicazione.",
+    "app.exitConfirm.title": "Terminare la sessione?",
+    "app.exitConfirm.message": "Ci sono modifiche non salvate. Il lavoro viene salvato automaticamente. Se esci, potrai ripristinarlo in seguito. Vuoi uscire?",
+    "app.exitConfirm.btn": "SÃ¬, esci",
     "export.title": "Esporta immagine",
     "export.format": "Formato:",
     "export.formatDesc": "Scegli il formato del file di esportazione.",
@@ -4605,8 +4629,8 @@ export const translations = {
     "gallery.title": "GalerÃ­a en la Nube",
     "mobile.menu.cloudGalleryDesc": "Proyectos pÃºblicos, grupos y clases",
     "menu.export.viewPythonCode": "Ver cÃ³digo Python",
-    "menu.export.runSimulator": "Ejecutar en simulador (Tkinter)",
-    "menu.export.savePy": "Guardar como archivo .py",
+    "menu.export.runSimulator": "Ver resultado",
+    "menu.export.savePy": "Guardar como archivo (.py, .txt)",
     "menu.export.runOnline": "Ejecutar en entorno en lÃ­nea",
     "theme.light": "Tema claro",
     "theme.dark": "Tema oscuro",
@@ -5190,6 +5214,14 @@ export const translations = {
     "menu.help.about": "Acerca de",
     "menu.help.manual": "Manual",
     "menu.help.feedback": "Enviar Comentarios",
+    "menu.exit.group": "SesiÃ³n y salida",
+    "menu.exit": "Finalizar trabajo",
+    "menu.exit.desc": "Cerrar proyecto y salir del editor",
+    "app.exit.browserSuccess": "Trabajo finalizado. Puede cerrar con seguridad esta pestaÃ±a del navegador.",
+    "app.exit.pwaSuccess": "Trabajo finalizado. Ahora puede cerrar o minimizar la aplicaciÃ³n.",
+    "app.exitConfirm.title": "Â¿Finalizar trabajo?",
+    "app.exitConfirm.message": "Tiene cambios sin guardar. Su trabajo se guarda automÃ¡ticamente de forma periÃ³dica. Si sale, podrÃ¡ restaurarlo mÃ¡s tarde. Â¿Finalizar trabajo y salir?",
+    "app.exitConfirm.btn": "SÃ­, finalizar",
     "export.title": "Exportar Imagen",
     "export.format": "Formato:",
     "export.formatDesc": "Elige el formato del archivo de exportaciÃ³n.",
@@ -6126,8 +6158,8 @@ export const translations = {
     "gallery.title": "Cloud-Galerie",
     "mobile.menu.cloudGalleryDesc": "Ã–ffentliche Projekte, Gruppen und Klassen",
     "menu.export.viewPythonCode": "Python-Code anzeigen",
-    "menu.export.runSimulator": "Im Simulator ausfÃ¼hren (Tkinter)",
-    "menu.export.savePy": "Als .py-Datei speichern",
+    "menu.export.runSimulator": "Ergebnis anzeigen",
+    "menu.export.savePy": "Als Datei speichern (.py, .txt)",
     "menu.export.runOnline": "In Online-Umgebung ausfÃ¼hren",
     "theme.light": "Helles Design",
     "theme.dark": "Dunkles Design",
@@ -6696,6 +6728,14 @@ export const translations = {
     "menu.help": "Helfen",
     "menu.view.rulers": "Herrscher",
     "menu.help.feedback": "Feedback senden",
+    "menu.exit.group": "Beenden & Sitzung",
+    "menu.exit": "Arbeit beenden",
+    "menu.exit.desc": "Projekt schlieÃŸen und Editor beenden",
+    "app.exit.browserSuccess": "Arbeit beendet. Sie kÃ¶nnen diesen Browser-Tab sicher schlieÃŸen.",
+    "app.exit.pwaSuccess": "Arbeit beendet. Sie kÃ¶nnen die App jetzt minimieren oder schlieÃŸen.",
+    "app.exitConfirm.title": "Arbeit beenden?",
+    "app.exitConfirm.message": "Sie haben ungespeicherte Ã„nderungen. Ihre Arbeit wird regelmÃ¤ÃŸig automatisch gespeichert. Beenden und schlieÃŸen?",
+    "app.exitConfirm.btn": "Ja, beenden",
     "menu.view.theme": "Thema",
     "menu.view.theme.light": "Licht",
     "menu.help.about": "Um",
@@ -7647,8 +7687,8 @@ export const translations = {
     "gallery.title": "Cloud Gallery",
     "mobile.menu.cloudGalleryDesc": "Public projects, groups, and classes",
     "menu.export.viewPythonCode": "View Python Code",
-    "menu.export.runSimulator": "Run in Simulator (Tkinter)",
-    "menu.export.savePy": "Save as .py file",
+    "menu.export.runSimulator": "Voir le rÃ©sultat",
+    "menu.export.savePy": "Enregistrer sous fichier (.py, .txt)",
     "menu.export.runOnline": "Run in Online Sandbox",
     "theme.light": "Light theme",
     "theme.dark": "Dark theme",
@@ -8260,6 +8300,14 @@ export const translations = {
     "menu.help.about": "Ã€ propos",
     "menu.help.manual": "Manuel",
     "menu.help.feedback": "Envoyer des commentaires",
+    "menu.exit.group": "Session et sortie",
+    "menu.exit": "Quitter l'Ã©diteur",
+    "menu.exit.desc": "Fermer le projet et quitter l'Ã©diteur",
+    "app.exit.browserSuccess": "Travail terminÃ©. Vous pouvez fermer cet onglet en toute sÃ©curitÃ©.",
+    "app.exit.pwaSuccess": "Travail terminÃ©. Vous pouvez maintenant fermer ou rÃ©duire l'application.",
+    "app.exitConfirm.title": "Quitter l'Ã©diteurÂ ?",
+    "app.exitConfirm.message": "Vous avez des modifications non enregistrÃ©es. Votre travail est enregistrÃ© automatiquement. Quitter et terminerÂ ?",
+    "app.exitConfirm.btn": "Oui, quitter",
     "export.title": "Exporter une image",
     "export.format": "Format:",
     "export.formatDesc": "Choisissez le format du fichier d\'exportation.",
@@ -8437,101 +8485,10 @@ export const translations = {
     "action.create": "CrÃ©er",
     "feedback.title": "Laisser les commentaires",
     "feedback.p1": "Vos commentaires sont extrÃªmement importants pour amÃ©liorer l\'Ã©diteur. Les rapports de bugs, les nouvelles idÃ©es et les impressions contribuent Ã  amÃ©liorer \"VereTka\".",
-    "feedback.p2": "Le moyen le plus pratique de partager vos rÃ©flexions est de remplir un formulaire Google spÃ©cial. Cela ne prendra que quelques minutes.",
-    "feedback.note": "<strong>RemarqueÂ :</strong> Les donnÃ©es sur la version de l\'Ã©diteur, votre systÃ¨me d\'exploitation et votre navigateur seront automatiquement ajoutÃ©es au formulaire.",
-    "feedback.goto": "AccÃ©der au formulaire de commentaires",
-    "about.title": "Ã€ propos de l\'Ã©diteur \"VereTka\"",
-    "about.p1": "<strong className=\"text-[var(--text-primary)]\">VereTkĞ°</strong> est un Ã©diteur vectoriel simple conÃ§u pour la crÃ©ation rapide de primitives graphiques et la gÃ©nÃ©ration du code Python correspondant pour la bibliothÃ¨que Tkinter.",
-    "about.p2": "Il utilise un gÃ©nÃ©rateur de code local pour des rÃ©sultats instantanÃ©s et fiables, et peut Ã©galement utiliser l\'API Google Gemini pour des capacitÃ©s expÃ©rimentales.",
-    "about.author": "<strong className=\"text-[var(--text-primary)]\">IdÃ©e et dÃ©veloppementÂ :</strong> Vitaliy Kushnir",
-    "about.support": "<strong className=\"text-[var(--text-primary)]\">SupportÂ :</strong> Assistant IA optimisÃ© par Google Gemini.",
-    "about.tech": "CrÃ©Ã© avec <a href=\"https://aistudio.google.com/\" target=\"_blank\" rel=\"noopener noreferrer\" className=\"underline text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)]\">AI Studio Google</a>, Visual Studio Code.",
-    "about.version": "Version",
-    "help.touchMobile": "6. Touch screens, Loupe & Joystick",
-    "help.intro": "1. PrÃ©sentation",
-    "help.interface": "2. PrÃ©sentation de l\'interface",
-    "help.projects": "3. Travailler avec des projets",
-    "help.templates": "4. Travailler avec des modÃ¨les",
-    "help.shapes": "5. Travailler avec des formes",
-    "help.codeExport": "6. Coder et exporter",
-    "help.feedback": "7. Commentaires",
-    "help.hotkeys": "8. Raccourcis clavier",
-    "menu.help.shortcuts": "Raccourcis clavier",
-    "shortcuts.title": "Raccourcis clavier",
-    "shortcuts.searchPlaceholder": "Rechercher des clÃ©s ou des actions...",
-    "shortcuts.all": "Tous",
-    "shortcuts.cat.file": "Fichier et historique",
-    "shortcuts.cat.tools": "Outils et sÃ©lection",
-    "shortcuts.cat.movement": "Coup de pouce et positionnement",
-    "shortcuts.cat.navigation": "Toile et vue",
-    "shortcuts.cat.extra": "SupplÃ©mentaire",
-    "shortcuts.notFound": "Aucun raccourci trouvÃ© correspondant Ã  votre requÃªte",
-    "shortcuts.footerHint": "Appuyez sur Echap ou ? fermer",
-    "shortcuts.item.save": "Enregistrer le projet",
-    "shortcuts.item.undo": "Annuler l\'action",
-    "shortcuts.item.redo": "Refaire l\'action",
-    "shortcuts.item.selectTool": "SÃ©lectionner un outil",
-    "shortcuts.item.editPointsTool": "Outil Modifier les points",
-    "shortcuts.item.duplicate": "Dupliquer les objets sÃ©lectionnÃ©s",
-    "shortcuts.item.delete": "Supprimer des objets ou un point",
-    "shortcuts.item.group": "Regrouper les objets sÃ©lectionnÃ©s",
-    "shortcuts.item.ungroup": "Dissocier les objets",
-    "shortcuts.item.flipH": "Retourner horizontalement",
-    "shortcuts.item.flipV": "Retourner verticalement",
-    "shortcuts.item.cancel": "Annuler l\'action / dÃ©sÃ©lectionner",
-    "shortcuts.item.move1px": "DÃ©placer l\'objet de 1px",
-    "shortcuts.item.move10px": "DÃ©placer l\'objet de 10Â px",
-    "shortcuts.item.moveNoSnap": "DÃ©placer en ignorant l\'accrochage",
-    "shortcuts.item.zoom": "Zoom avant/arriÃ¨re",
-    "shortcuts.item.pan": "Toile panoramique",
-    "shortcuts.item.fullscreen": "Basculer en plein Ã©cran",
-    "shortcuts.item.showShortcuts": "Afficher les raccourcis clavier",
-    "shortcuts.item.cheatCode": "Console de codes de triche",
-    "saveAs.title": "Enregistrer sous...",
-    "tool.imageImport": "Image [importer]",
-    "canvas.shapeDuplicated": "Forme dupliquÃ©e.",
-    "canvas.finish": "Finition",
-    "canvas.closePoly": "Fermer le chemin",
-    "canvas.duplicating": "Duplixœ¼}ÛnI–Øû|EŒ;Mb¥êÛğÈ,(Š’8Kªi’­ËXÆlTfTUHY™Ù‘™¼¨!À~±aÀ°†á§•ŸÜ†øÁö¾©àÙğ~‚Ï%"2"3²HÍ,v ifesâÄíÜâDD&[]•÷îÿLÀÿîe²¼ÍL–ËBİ{(îíÑƒıØ¨Beß³UeN*]¶E"ó¼7r©DŞ‰V]µ3«r5kä…z¢µ× ÎAiÔR7­QFJ „hª®™Íf#¬ÇªÉçñæf¡Kİ4ê½èJQVk¡ZÑln,_%¼/Ş|%—ü@s¡³•†2€öJêvs£ÄN{]«İ¸˜0ö\®}Q%pæK©«Îˆ‹
-^9zilÄ|ğ}¹ãÊP\Q«má»sø£¶8Ò¥zŞ­çÊŒš¾fĞ–(»õæÆTòQèe9î‡€Š«ñŞÛªk‘<E@ÈNä››y×â«l%èÜ—×AŸ¯”lgF5Šj{}KÌ!D¸5€”¡	¨`mn „ÙÜ@'·Zº¶™ÅüB¶*G¢û8jzRoîıˆÔ?¼¹GT/67Ÿ>ş<F×0¾B¶_Ô§B1ö¢2kÙS¤ğ„~zÌàıÉW_}…Å·Ğ•y7à½Õ-O+;ºÜ¸÷LÄày<4tó!°°tëP‡âs0‚ YU—G0^à…V—B… O¶c
-ü¡¬ jå™¦îßNcğSì}*‚‹P“X_s}å¼ÀŞ<\ƒ0Öl«ªH‚3	.~!öÅR•ÊÈ¶2Iìo#ì³•„é}¡%Ô©|b(­UÙ	İªuÿÏÿ¨’9ıueê•.—¢YÉÚÛ9“K¨½2×‰n
-:É}-ˆØ™ÅíÇ‹-äØrÆ…8À	ô¦›{
-{Ğßş94HµV8ÖŸ—º]A”­.;œ¡g/öu‘¥^GêaPÀ 'PŸÎğttÏÌ¨8,›\ßú	ô§†'#ğf+Eo¦%°…(¾5ì«‰F¨3wFi ¬*xFïÓC¨6ê‚´üÕĞV`¥bñşÿ¦AŒ,ójM„Ÿ&
-”]CwB@…¼&ü;Ñ­©Ş©—:oWÔôSğo‹uƒÆíGÜ^­Ìæ¿t^õ·Ğ³Í¬­–`ìW•ÉIûì-Pô+óåZ6 Œğğ”¨ÚFÔfóSƒ:"ëL£:3 ˜yRû!V/ø!aNëÀaä÷7âoª¾	ƒOû…ÎŞéBsïY‹ƒî*—ls¼ãá´=#%ÍƒÆUÕs5[›‡}©Š&Ö¬]N-¥.X¼‚zl{…¸RE40JR ·–e§Š¦QÒd+–ŸX81Ë²A.$*šŞF"„¬ Œ3u°XÈLQ³G ‚ÇŞÑÜ4POAÉÂ#Èeè¬›ls“«²àqH§à›”Í¶jŸT]™ó¸m@±UİEßRƒÿ]GÄë5Hf¶® ÇHş£Oÿt„qXR»uKÊí­dxüÆÓÀ¤èû^l>Š¯¿újˆ™O»'Ê¬{ıé[îŒ»?¢±ï†­À¢<HÂµiùsÒCÕBìƒ4†6ƒ1Aˆ4UÁqæ^„P@=Óï™{´¨üÑÉLUçÕyU“, Ÿ0»à_í QëÍV›³ÇR7=Ãô	ÔÅ²á.6r½ù	Ï	ª_kéÍ\Á¨\·ä:4,Îs½@+ÍŠš_‡ĞÍÍY¡-ë3œ]»p)»`€°“g!8ÚP
-Í)ş‹~M$‹¦ÑËÕ°˜ÜTºMÓrS:PUŠ•ìÚI~^¤ùK­ÕY’›yÕ¶<ƒ2æ2Õ<\Ä£ª]í“'Gâ§¸öİÍ{v¶K…‘u]™ëÓ¬—y©"}AcÄHjÓØA!šµ–ÏÛylVJµ³Z3cºôBì¼SªUíp¹‚"Àt´ªÀ`“†ÈìÆtºÒRú­é¬œÿ«vG¥—*$ó¥²\”½!Á ˆ5#v$¥
-zt²Ø!y–Ö
-¸ÍP'!“àk5zTÑY€ú¦Á÷™İáõ5kzæ­lW)"y•½svO¡AdF©J#ì4dáÁüúş¥v¶,ãõ€êëßóöwı»#ƒ)È ıw"ä"o.u­ÙHÂş8É¿¤9ˆ’	 Úl%Z9‡nn¯—TÍVVÈ×&‘	æ¶ZºlˆuÁ
-ˆÃèsSp+R-ÙŠ
-ğ Ttl@‘mCšS@Œ¿\ó89å§;à´h³pó£º0†ŞGáuQl~*î†©L®\g]!É0>	^hs'Y×X±µÃª[O"eÚdl
-“º¨`ì£)¨èûVì™©Zë÷âFQBwí$ğ=x¸ÀguìçöèĞ•TöG!@ÄÀ(9&³½>£#jS½uå4 ¨ÁWñ§ëàÓëè“á†¾®bbÆ–Ùs’Í¿Ló}Bâó‰1¸­ÿ™ÀuMøçğ—ƒd·aş\ÛQÀª±Ë3$ê÷¾Qâ¯Öy˜CâQ¯[I#_s×àC´> |êDÖŞ4ô}_3 ıôŞOdUºfsûÀ>†Ÿ]r§TXÇ1_`ü_»ï'ôD:	b®ŞkÛZàúÍÆ›á°'ü‰¨jÕ SA]i0ĞÍñ9Ğ,1>FÀÙGÌ2|²¶´Ö?Ú«å¹ùW‘…Dß`„øÖ>wÏQ b<O@	“ì¦ü¼#3ë‡ÅÉZ½¯8
-®7?½!œè©–`êòç†ßäzkÃça,˜é¨2cÏxß„ó–>jŒİá7
-âÅ½¨Ûµ¤ıˆŸÂù¾Ğ‹\µÃDß8îÁİ_¶U½tñ#i–jğ"6L7ÿ³7úˆ AÏzˆ?…ıI¯>ªÔÃĞUsnš”ÍÜ¹„ºÅŸr#/Ñ¼ƒWòÈ~¬šF—ä6Õn8J<°=šuk5‘¦…
-ãÊ†Zé4F/Uxˆâa‘}ÛÛ6öJUyº¹)77¸F… 'iX4%{hÀíLê°°u!3uè†‹‹í„a"ônhly2M{æÂ¼*xòv¹Ì´ê®âÏlGMòáŸ ˆø{Wæ`$[ásİ‰M†AYÿNµ+SuËËŞP6ÆşìÓÈ‰x¡#×Ó¹ß½ÊJ8áh"šÑ‘óÀ…;Âl!ÌÒjŸšpTF àúÁx ‘i#ˆ0®şH‰ƒà!/Â$ZœĞ0\l Íqíú"gäaà‹ç¤û±£ YÙÙqt„Ï[¡14xşJÁ¥¾(şÉ«nÕº¡àEV­×²Ä'ÿ9dİr:Óê
-A‰‡âÓıôÑ«^ñÏ¼ ÿçŸ>~ú›Ùmô÷®ìšÍOË[šÔáú%BÆÑû 3mìƒf¹,.%ßFŸ=ÿ§¸ü4FwÁOñ)¯°G”ì®zÏ_ëñÁgsİkE+Fg%¼rËòŒø5®€—æÌ2ŒãİNkÈ?]2mĞ$¼û·ÿâ?ÉŞTÄO¸¨xmµ+1v„a°jĞ! nïˆ,|3íFLÿ”GU¼.åå+UgTÔ«/_ãËHEŞZ›c¹,)œÈ1Lûš±ëœB1¨1¸òqÈ0ŠqIWŒ.c@ÃV-®d%iqh¡i¥¡2Ä5üµ¾RÅƒf°¦¥şºj4ê5€½µRÎ¡ÚóéÁò„œòvîDí–~%Z.ªó®À2\a~PJ_èÖ:`Àn¯y©æ ÈÑÆ lÄ¥š »+ªãõHvh7ÔøØ‰Ğ¼ĞR€y]æ\7j•yuéc[sS]â
-À÷‡bçäå‡û¶ò\P!{ÍÉ¥ìËD¦Ìİ;RpœSÅ®\Ì57˜ ì@ÛZ +MÄ¶rŒ‘û3´‘‹‘Ákê³,ë”.¶¡®åhèñSaœ–Ásğ@¤Á7½î(·¥Æ¯móéãÃÏ"æj?IĞ.rIÊ*À5ùÓÍhŞÜ×Ø¦*ÅÖ²mÒŒ±CÃ\	¸RÎ Czä\fï–Æ-{í£7?õ ˜ñ,t(Ëı{@™4U™§šÕ"¡ÕôX7nÍ÷TáŠ]-ÄÃd`\±/¤$)¹¦ÚR¤Er}·sßª4×Us_d+½XàĞ§oîıöÍ=NpÌÄá\£çÜ5h¡IÈ1Ó®tÈãùƒææÔB“å|™¶D35*!UWÆ-|ÖªÚ:æàƒ4ÁI	ÿ@%Û*ŸdrÆ~E#àxsƒTğÒy3)‘LŠ*ã¸aèøˆ£*XJ ¸9•5X÷qèØU6´rÎÎš	˜‚lnnsˆù_ëRÓÀ=9ÀÃZÉÀJÀú‰ŒÓzæ*X"+@G#	ô™¹ÂIæx©Ú	€=0ÃÿR]ÛF0¼ºëè¥‘¦G'Åh œßÆoFüUÆá_½¹÷æŞ_mEóÖyÕ±ad/CáÌûA	féİğvó{²D¥˜ƒYƒ¦!|èŒ…ä\º¯E}5Ñ,<[Z›AÏ·mĞ¢«01fÙD-jœÜG½‚YeF×-œÙ|T+9Ól‚-2éÖ0ÏDø·¢8–tßJ{Á `ÇÕ-0f);B»¨ÖQ]Rş+Ã	æŠ8=òùT&ä$ÖÀ2é„J¯©ªÜü£ÓùÖ6[&)œ6q‰‡àsÌQ$É”“£9®1¡ä=úY!2«LbË¶QV(5hYºÅXîà(eŠ]»9—<¿‚ø´ÆœÒ(¦½Û‰aŠ)şÚÏXÑÄ¯x(b[£­UóeVudÜ…#Ò9fÛ‡ú¨ˆôÆ,ØÚF¸çàÄaÈğ\ŠC[g]]Œ¬xhxh¯9Ú”Aİ×Ìô¢ÍİÑ,^`	4ÂuoœÍN)æPvªà¹â‰PÂ¢âLÅ7÷p&n`/¹Ô$œW˜ù;[83åLBaKi(¥Ô—°£‚ÔÙyœ¸ÆÅ¤YlCÊ¾µ©¼AÅ-´Ò‡i¾ÙŠµæ!©u¸› o@åÚ-¢ÕLçºYë†£µË²²ú¥I6ÀˆO/”Qçïäğ{˜e¹_•R õ’fmpÂÒø¥Qnñ ÕÁÑä3’ü¾„¶/M‚Ê¦Ô0M!ÊøtüuŞË“k°CJ±c‹ÜÅ´è‹†ÒÙ={£vãHk©.ÙV„f’İ`aİ,ß·FŞ{fu‡e/`d.)Nœ•HµÀé©stõÇƒ	c.#Q]¡µNóa+#ïİ¬îÂ&N»õp4{Û@“€aB¶İT¹Fµ)yx¡2·µ #ô@)µP:ßµKmâ-Üê£‚yQ]ëëMÀû |öGşÓ|BtYûxVY‡¹$È°GãÇ:íœ=óbÌ‹Ç#çùQ
-Ø úf9¨Ø™ñ „öo¼ G€2§2 ˆZ±êè+üZ‰ÊƒŸµU.­5fÀ¡^u:	yœ*c¡Ÿé±\"(øŞì-+„Ñ…¸™ù#¾ú zŸº4/½Œ .Á¸|	sfW¾9õ_Ğš ^6Æ›AzÄÅ‚–ÀŸ”wÆîêÜ®ğƒÂD°·Á2ØÌb^ˆrŠ­¡ZóUk5ü¢İ.Zon~}­jŸyB¦.t¸P—´T!ÍŞ¢avÙl7#ì;[zÿÀ^´‹ÄE`dãßmnJìÁB´~sÔxïÖ€Ä ³Tù]éÜ.”ÊºOh>x|ˆÕewuPpŠt=(ˆxé(EdLp…ü>‡|øø`’êëŞ£s´%]äÄŠ¦İ”èæaÊm.:€îÌTaäïx{ÏUJ,28%ÒWG.Şp"†‚f[†‘‡"Œ<ğ$ÆµÔUUä06úM)n?.ôÉÍ)+t¦'÷Lç9Ç&#§–¶à~/q‚+•8¶.ª¾Ïg“`D?XÛ~®€Ñaëˆï»˜*¾^ßa}#C’R¥­€¥ˆœ(ÏvÛÙrY…™¶ñ@˜<¼Å f³ÏÛ7S¤.4EÕ¨#’{¬¾d¨	"ü‡V‡±(.¡QM¾í 3`Z}¼eãÃ oÙÒBâB³'2Úæ0°E˜ª‚Rşš$4{x¸Bh¦À0²@ÃLr]]¨ïkG#ññquYÚ±ÆEnb^¶¸ô}àğQÎÆGòÚ¦'ÉGZ7çeïqãF“Ê¦·<¡¡?§V~fĞ@}ŸbÚG™¡PCòçš'tU§ I»âjdŒÑgäìe™Æ}&< ›(2˜››¹‘ÅÃÚËAÜ·MJİ‘Y†$¾®õÛÇú*N½i`‚ÚĞ ö[üÉ÷éÄ¬µ{„AP5l½úÆ˜ÊècğÇ_‚E20ÜôãøÈ›/¨ÕÀ›Èâå¶¾Gl>a [&bK¹åùïJK†#ô“^ğTĞ $†{@ÉxY""s^UE«ë8::õª_üú¡Ó‘‰BV¨Ám&o7:ºˆr&[kô€J<}5>W}Óø¥è81µ™]³1¢GÈ“«KüyzM‰¿“–?ò¹ó§vÿÍ‚NcÖ]şû²aäªG
-2êÁOÓÕô…µf¿%²b¿,Æ)rM”jëÖ’‡µ±¯} pjÚÊölö'6\7gmêÈóÿû».o]ñOYı“O°´Q„áE,¢Ï%&,v~¤7vÇÀN5Ô”JÊ2ë1áS›ø6ãı(,ğI¥€zá½ŸŞ“ë³KòÈ¯‚¾­p‘ëÚe÷âOĞvÈ<¿Mƒµ‰„Çz1Bù%ÑSpT¦€æê‚óÚ)»˜µçî8Ëw›¶Cáí`gó®¥~{TuíÈÎ<LÍëÖÖ†? —ƒC!"aæ5ò¤Øü„ëÄçmz…ÚğûÇo¾ó Ÿ8*¤…Q¦ÔÃiÀ óÊJš0ı2º®]t´MER’ÏMoã½YW®<ŒyÚ3í¾p³;Ì+ın±°§CÀğŸÃ¦š¡ƒ³@p«Tw0E'Ö®RDb¨x›9°+ëÆMÀšå
-	¡Ùş	l¤ö¹0ÒËÜ†Æ;áÃ‚™ÊóÊî‹Pki` ãI”­
-BD»(q£T¥_Ë5CŒ×¾úúëY‚CÎ {b-ü¼ÇØVî#9ï9’ã»9-õ,=´Æ™	wÇ·m¡7Å‘]%µÁÇI‚lü¥’%>‹ YG6à-Èxñ”šÕ¤H ˆ5²$¼øQ˜Àz=Äz}–Ìóç69Ö-Pã)4„Áa2•ithQFÇ;°2í»W_'9ÆìpÀ«Ajl›½™ÛEj°±0¤±,ª9¯¸EĞú~Ö”NYÓO«`y/’µÓ“Ãş]¦Hµï^¸}ı÷Ë-4È7Ó¢Ë…+‚6úşa%¼•ğúïµ„Øx OûØ'µ0&ê¹¢ô2ğ!R#õï,¾¥<V”jiSMm„l•@:k˜n”šèRÁmr®ˆ¹ƒ}Ÿ(…$gá„-PÃˆà°£
-PXbA*g;»0»@^·U¦ëjŞ&taÓš”ƒ«®ptM!ê[jIz<u(“'h—ÊíÄºOÂ³P;QX­?,ÏÇg	›á\×IE¬ø„O/'ä4Æ¦5µLYAÅgZ9FB>H|9êN€sıR,¾Ä(gšIh_ÕŞÂáùsyÄİ1Üa…ªãn§t‚G±­AÓ˜o¾@·QIŠÚ‚®˜Y¶ÂıÎìyç¸].Œş‡2ÄeÚÛ4LœC¼É‰t4:×UÙçb¦šÁ(Ú†‰9ïVÀ¥k—DÂl0Ğ6Æ6LL\9šSx LÛDîÜ°Êœ*’.~
-[6H0·[÷†e¶Ur’ôš)]èZ¿A‹äú‡Z.NáwGD@›Ìñ<ŸAk\¯ùH'‹×è £1Ù!ì©r^Í'–Ï=7ØÜ,e1(¶¢jÅõ²ÚyçOwÓÍ‘DšÖòÊ4œ{î™i ş°Ez!e§@’ÃÓAa¤zoapˆ3fÉüqüÅ‡,ŠOÿg7)b0Òğ¸+t.çca¸rq„ÿÎ/¿‚÷KL¿ê7…öyî¸÷äõÓ3øûàLrfêxo¸…Äºj]••¨WM-35˜«¬Â¸Õ…[(àŸ‹ŠÂğ8!Œ¨ÀD`WòeP”òB/y±ŠVñ/´A‚ìô¡@ç0‰š~Ÿ7Tã“ß7Ã‡5¼ÜèâAñıiF1<Š+L•Bw‡D'®rİpĞmIƒC1l›³Ë0m–RUTÜâÌ,fúô±Ï‘q¼6×M»ùi=E±¬Û¥vÎÏpÜAIİ¦hû\¯dİ‘=ûàµH¶Ùº©†tÔƒ©ÒËUúËºŞ0½³iR3ñ'ÔB£3AbSõû:;çV½$ïó> zD;pÇÎÇ+.®8’´µ‡Iñ*^N«èYg:dÉ2sUj7HE‰n®Q‹®Pí‡Ãƒ·càQ[&dk$!p“9ÏılÇç¯³òÒF§hçİè<¤6•©ı¾=¨Ï?Š`/y€”Ô–Ò§/ˆ€T@‹ŠLB5®Ò o©s@n¯r£b¢©ÇÈh
-lE¿9ë1û½#¹ã¥Ì=Ô<Û'‚gÁ¶ÖÕÃ£D
-‚ãøcH˜WÓ±+1`®ªu(ÖÜìMA·ïb¸¤ÔsğTíØŸQ¶—µÃH(“çóÈ•F½´’'Â|å§Œ¯î0Èëäõäm×€:¢%_Ócx/ƒ€›é
-•lD08w'„ÈzDoÑo:1jÉ‚¸{hH§‡Š6¥ì†áé“n ….\õ¹î[Cc}”÷‰ÿôä}`8Ùzºä€»£ñHˆc»½ocÃ–ØÔ¦ºâå¹…œ4ÙÙ Ô Û`ÏÒ~Ø>;î¨İûVÕ“`²‰ÈM ü:XÎgV9ÏĞdØØÎvÛùJ<ßŠ¦šİÕP0Mh_t*ä’ø^vôşĞQcÑsBûĞÌëë"$†–Z`;”½©ƒÆ*’aµğD”ËÒfã%Ã×•;’œ*¡“©§àÏR›ÅX&Mñ“
-GO–âÑÄç_OÁ÷jÿÈ®¸íé„Bâäæcò­¯_Å»¦ğS2ZS°¡”´“!ˆ‹Nc¥ÚØÅ|ò{28ØKÓà#×`”»
-ÇØH™Ì›$…†ñ1Îx°%lÆ}S‹¯D£y79èOW]VLğ=ÚöX'~ësøyÓ®É“c+±Å“œ/Ş-µdé	dšJØß‚^WMzéa* Ş}F{“ªxªøD)×ÜKŸeaMhŸº²C›âÜ’RqZ„#iS#şP’¸XhW}x<ŒQÊ®½Lé5B_Êz„Ë~ »¶·á‡gu5ïÔW£¨ƒ+Ë:E¨
-¶‚úZù¬«qÕ<[SµJà†UÛ‚C·ºPg¬RIš…Ù9/KûƒËü#Ê»c‚2ÏjÁz—§á×ç¶P™<iĞnÍÀ­ô,pO=Tí ÈHšI»äÙœ€s·´ÊİW@³Ïow‹v#lß®[°cT>éyJdC¢gŠ÷O€]ñìàÕ¨ä¸}D;7šÁ!â†:Ò‰@w×M õpäÜn<NZ¶Uqöÿ˜Ê^Q¯$zx˜ÃÔ¥™»³÷à7»Ğ‰2éÆ‰g @’!©1‘gêÊÕÂvş$Q %Ê!ø•º’ÿÔë0ç™;§?|UéF7™á>m=›xßŠírì<ŒR@öËh‰¤8™³(£¼Ò*µÿ‡6&@;ÎÂów›|ïH
-ŒÈáÎƒLñ5,W¼ogsóvóq&^(Ê%{Ö¶ñBÇĞ ğ,.Äeéû#ä“¼ Š§ØJœ©–uéÁÁ®$\W:¢àª_„tÉ5
-?Şi•¦Kpà-´Yûa÷98Öàİük".è|ñÍßØDø® Sßu­»W…#›ØÜExfïÈÄC¢>}üqäÊE§¬7¿_c^nV’³qk«|_–0÷]µ{ô Ñç¬ EÅ[¡VµìtÎ$t’8pËjşì®±i€œ]ŞME‡¤ËM·8I* ¿{^§Ñ½”¦´±ŸKB»%¬.è8ÁéÒ^Ì¸Cã»ü¬­Œ­Ş?‰}|%ì;ÚÍş4¾dê`3ŠÍ¸½×´OÃ5´UúîØ~9ÏE¿­.ş vH¶‹ÃÇÿ~¬«¹&«ï‘ ]8ÇĞ‰H‹N®ÁMƒÂ€µ¾Z-LaºòL¯»¢OÙà­éşKŒÌ˜>’02åœ³q‡¥©
-1—f \Ê‹ )4<
-" ¨ç§]HÂ}@OS ~’Û+L°qé`ÕFäNô)ø€³Hâ|¤:ñù}œòt-$Q¦)ŸBJÒ7øÜ«UÛ…ÙÖ)Ò>¡Ö]±ñĞ­uLaø]ÃŞ[3…è¾è<Û-0ı=w/µˆ?¨w<×•Q{}œó¸¢lw›(\tP"ç8uéOTVg~Ô=¯Ü-=´}•î‡ØÁMN‚¼c:ÈòFw“¤˜+"çÎ?¢nK<qŠE×®ÄƒI2|.6MJç×¿xìñÃÛ}*Ä¤EÉ4*.sû^UĞj!Ì©4x©TşÍIÁy;FıĞÑ²oşÌ¶ß¶ö-çF¥ËïîK[Ş	×¿ı—ÿûÿı¯k÷ò?~^9§óKæh6t"œ½ğ`Áçšpgîüxùaó\} ÷o&^Væí__#ÆšFÕg(§—8Xó[Îº+–ÆÌ)Pi¢jÑXÂ£Òø¸moñ	8Õ Í›WWl€=·çæßFàÏ¹N÷;õÿ&œÚê•[_%áüy©§ô±'dŸ—ŒKz”ô:=>ûó´ù)ÔŸöÜsğC',6b(gÒ³Öå7ßõşX—3ñ¨’rŞc|;Äøv+FÏ(İ•òlt3ÊôkG÷–LÀâçî’‡Çşmã§šcPH:qpmèàúûx›Â¿t":ú>g—îbˆg46ÙÎå8éæàÈ›ĞßÜgÓş’b-pì°iˆî\çmºûVÒyöT„Z$¬ŞÄáøZ80£ü»ş86n¶>¹v»´ÏàJèY}-zd0¸òúíÍ¶0~!xÕ:<IÅ©X–$´j²Wæ{&£á‚Ò^‡¿“K„c°è¥Ëÿ1ü¹ÓıáúöĞM|;ğ‰Ã­Ÿèí}ş9ì•X…QŒW‡ànÇ*ëÖ“şW6óîö~ÊêbzöàN^m°ÏÃÃN€Õå©r'ÒA,œú((ªŠ£œnD™¸ù$¢¬®jÀ>ğ}@?ùZ›$<T«uÓï¤Ü·/¶àpÏü¶µ;Ò£¤KÉØ~Ÿ²ÎŞ;Ùÿ)¾Î½y(¼[æMWzÙIË÷ŠHùËFO'¿W‡|˜Ã†¶—ƒ‰Y„1¦€Áø%` ›‡£2èò‹ıìò—|ÿ%ıókñà—_}úïĞ#à?¼—r¶\€Ù9ïç©nŸusA/Å	¶ãQ²Ò÷¦ğˆû1tÉÚGˆè³ñmˆ‡İŒ)v2KÂí±›äôåêÚ×÷×ÿş?xúœàóÊ„Š‡–‚<_ª¿˜¢æ7ñ…ø–•â4äÎ€)c
-Í·ùĞ»ÖÄ²'­¶+Ì›¯(K¼×
-ooÍŠ¬>Ë$ç:ÖANÅGº8rúŒ´K³ú’)ğÙ¿óN9Úé»äâq€XÆ¥.
-n€FÉu¡šª&XpÄ*2ò¿gx£Lµìı7Ä;a}&$ùv1Ô†çX†Ğ¨k8å×ØjöF)«!İy{Üh3±¿ªªF9¸ÀV	Ê±]AVkmawƒÈ©´6ËÒV†Ğ(râ^ŒQX‘İîÇg¹è0{·1pìñ†• Šîysíˆ³Nb}ÀãùÁÇxª–¨Ì¬„«ùt%<ªÓÔx;Oã}>ï™sÿ*
-+_nÚSZ'èŸ*:ƒe=Ş‘1ì¯1jÔğ>t¹—<lèê5ú@ÌÚ×)î0.ybÔBñíqW@cÍB.ĞøÖÔ ã)ü¥âãZñ¯cf
-–ç±Ç¾¯ÖskRÙGoRğdMâI·.K•VSèŞcmßŠÉñ!û‡‰‰æ1'ëÕ.X‡òZÉæ¼Á¾¡7gó!<>< N:Ó\¨#ğÔÌü&1¶êÉ!“	âŠMzˆ’ŒÃt‡Øñƒ†Q(Z±›b£•lhôWZÃÃ]ƒ·ˆ™FqFiÖ)3$ç+à‚¢ĞS×‚-Æ•ë5ßÆ„urİÒuÃİ&'œ­dLÆK—İÏj’ÿsåfT>ß—hüç6G¦‡(@·¥JÌx½ 1Ë§g·Å
-­-Â–s‹Ã)Êçº	ûeÑaëõàç1‘5–”¢¡Tnïnä&ĞqÂä8*²|RQÄç^€U„‘3+¶WØ9/ìÁ_Ä¹=®ó.düÎ1µ@Á mŞ+Ğ"Zè+AFS£ëY‚8åêNHÍ?Éë—`aÌîópù-RÂëÇ›8£Ş±Eº}n×"ŸW¾4°sÙÿ¸nQ4ã3¶c
-²+a9Øá¿_;–¾™Íf·‘:t©¥L‰j vèĞ¡¿w!P©æoşhàŸ»pËG×6Ø‰áJ”GYKdÀŒ¿· 
-t¬!Éä°CÅ¯²İFc¿ÏRà0†#_Ú3IÀÍA¦À…¨ì £cGK4ù÷ŞºÌÕÕVqİÈÙµ{>êìiÇmõš0U_tú“‚ñmÌ'.u¸‹¡ É…™`^¹»áú­ûÔì™H6ğ¿&‰Æ§(=¶?·â´²>±êší\ÖBg¯lxKt=8‡Ë¨ÊàŠØÒÈùÜÙôHBƒ5|#
->˜†ñ° #¯.K'Xà¶ÔŠæ8(ı± Çøöã’O³ã	îO@!ãÂuP}tğxôFUúfÛp 2ÕÏ
-[:""4ÙÅJÚúvÈ'9P1şÇ—4aOz|NEZ“¤%ŸÑOqF¿-Fõfl&ÎtÃSåŒN ¶¾Z#]ĞUÇhÚÅ'‹Y}½{Ÿ<Z)ì1Åâ×gß=÷ÖÑ?øv7Y.X<…Îİ¸kÍ­_I—©YW˜6¹<$Í3ä½ikHPnD‹ËÇÜmykñè…çVx¢;^®àYËxL†ÆÉK0œˆvÌÇQG–ïºb{Å»*?OĞrx,Q¬& íO¤'>|Œ=c2AMÅõ³ÛÒ–w¿­²Sà,ÉÁ M|Lœ-¡c$'¢ƒù –ˆGmƒûTfA‹ù06z{lcáçøN<ö÷(–u×’«ü9”¼ËÃ1ònkòÊûë®+L;ÀK5è¶%¤a¯´ÎAŸd·ÜoEğXØ¯«ëìıw•ú´>öB›eÜ7¨É¾©h!mÄû¥8UğP$.+ÙV’÷5ôš­ÛBâ™›™/¡£Ù%Å…eã­E¼Ïà0VI å‚e¯–¤JQû5ëµšÊ._Şv•”ç4ªnŒßıñ˜ÍEîW*½¿9kÕÚ/°·—wk KÜÕÿ‰l˜O<YBS°ÉİÀÅV*LM{–ÖÄÀà"-Lè ¯¡ü?ûğO~öÿ  ÿÿ £xFU
+    "feedback.p2": "Le moyen le plus pratique de partager vos rÃ©flexions est de remplir un formxœœWÛn7}ÏWzhZÀ^'é®›ÂÍÕm’±á‡ÆAAqGZÆ\’áEµè§ä­vŸúÑô“z†»²%YJƒ¼Ü3œë™I6RœÑO/”–¦÷ÈHaIø@¶R¼ÎÄ?ƒ_­¶9Q¬7şFDõPª“ÊºDƒm1Ø‰)8;¾ûœZ yÿn{g«'@Cí¬^à!æ pÓ„BÔÎŠš„9¾9½¨u¢6ÄÄ%XÏbš·$êã›têÓI&§ÔKX9ÑcÉ	×$!sr-¤p{K|~år*WÊ,F.´¹x~İ‡±K}ØU
+vPX”g•kY%ã.‡P_%L	ÀôODÎy—<Çƒ#
+tx"‹P{.pBã3ÙÒÇƒD§ióÅD†Ï77Ë³a=ûâåñàn§íß®ÂK1‰lÅåRÉMFDİzÃæÛé_Yx×…^…éEÍ ½®‹‡|ƒNz‚hñ¶Ñ%íˆ6äÇÓ¤.t:C ûg©ÁQ¹€˜xgk‰Ïnê¡Ñ.5Ós®¢Ãm…jÉı;ìş9i£#±—7±%îL§¤éT×°	ÆÇlPQh®•À[GZÅ~ö”B2–¦«†ş–À¹Ùİß›Õÿ#Bië+íJz©t*
+OÑ'ŞÌÕ~g>ª­qá“2¸W£*ÙFüqŞZæoô™ø%ÇÆê°xwÌŞ»>éòƒ»pÙnŒºDRìí
+çJ!N/„—a1LK!H¤¶áRq‰º;R4F°¢IÉÇí­-	Õ¹ÖmÆª*ôÒÖñ@$Æ” ÷ûĞH{‚7Ö9Oy²zÕğmŞ½lÑ£Fƒªæ•J!†W®ŠÆb¶×‹l“İ=qPlìİİÙ’w7‚˜Qxı—{(Å%ÿ{
+ãõı÷†Œ¯’Ëªyê†º#ˆo*qÈoDTÈ¢JŸ¸ìI|&~v`;­NĞh™PXév%ö¹æ¹Óò¥±FR•î,IöLt%3Y½OD~	Ó‚œHm³ç‘{¡ˆ¤¸èQĞŸ÷Õj\ëêé¹¡E`l¤ïP_¯F1ã.a¸ıœÎJä$î*o),ˆÏ…¿eáë¤]ä—Nè¬Øò]%£,ĞıJG®²‰¾R
+t®zãq›Ê]´Ö.Å®ÆÂÇG’A5û)jœ‡ˆæ¢À¿—S’Ëå §7VUu]™4†á(µxı£’©õõøP«FwÑlĞ¢àêÕäœ)®ÿÊ,Z¨ü`HÍ×ã"¤Esqô? ÎËŒAùŞÃ”ÔµÈJı|ïûëĞÁê2ü×Ùˆ>’E™à¬Yê¯Kceyè@"eäg•yöIè¹<—-µé»~éô:OÿN+”¡ğXwïzŸÏèMÙu(T>gîG:kW Æv[EtcØ@c$$ğ¬¢¾	×`àE·¹X›M7Ûäš¤ù@üs•Õæÿä#q’‘şÙËœ3?#nËa”°Œì;Ä#Îà¥xÄSWë‘.¾aŠÀuöF#µ%*÷ù€ípnÈÄ4W„¼¬S:\<Ï»êu 1ğ¤²FÁ5á»¨•ÇO°!ÛK%÷uŒNé%kP#£ıãîbÌ’ÀA‡€~ãÊB²ºu.G‹@Ì*Œ˜Ã”´ŠÌÊz[¼¬ÄùX£„ÿ¶?-®N/<“ZÑS<eà€Şú öÖûw„?sVúEd…c›àN.©àĞ“ã]\ô¼q®e¿á/Æ`[2==_E&áåIá€»ÚÕlÚ¥'Ó-ŒúIFU‚;±¬k^äŒ]×’ûã`~íFºŒ	®§ğã¦ËuC2ñ8íÚFgh¶q—ÿÂ¤ÀZ/Ñ §İ¹±6OR£fnñ°¨°ai¯î=>Šºí¦öË™,*n"c·ÜŸµ{!æ‡¼ˆºëz¬ËÕd„u46İ³zÂze\¤}gÎŠL!^¦Sø„M¶È¾½ñöûÿ  ÿÿ ±š95

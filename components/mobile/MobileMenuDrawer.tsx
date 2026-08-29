@@ -17,15 +17,16 @@ import {
     SettingsIcon, 
     CodeIcon, 
     PreviewIcon, 
-    LightbulbIcon, 
-    BugIcon, 
+    HelpCircleIcon,
+    InfoIcon,
     MessageSquareIcon, 
     ShareLinkIcon, 
     TrashIcon, 
     PlayIcon,
     KeyIcon,
     AlignShapesCenterHIcon,
-    VeretkaLogoIcon
+    VeretkaLogoIcon,
+    LogOutIcon
 } from '../icons';
 import { useLanguage } from '../LanguageContext';
 import { BetaBadge } from '../BetaBadge';
@@ -75,6 +76,7 @@ interface MobileMenuDrawerProps {
     onOpenHelp: () => void;
     onOpenShortcuts: () => void;
     onOpenFeedback: () => void;
+    onExitApp?: () => void;
 }
 
 export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
@@ -83,6 +85,7 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
     projectName,
     isProjectActive,
     onGoHome,
+    onExitApp,
     onNewProject,
     onSaveProject,
     canSave,
@@ -195,18 +198,21 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                 </div>
 
                 {/* Scrollable Content */}
-                <div className="flex-1 overflow-y-auto p-3 space-y-4 overscroll-contain text-sm">
+                <div className="flex-1 overflow-y-auto p-3 space-y-3.5 overscroll-contain text-sm">
                     {/* Navigation / Home */}
                     {isProjectActive && (
-                        <div>
-                            <button
-                                onClick={() => handleAction(onGoHome)}
-                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] font-medium transition-colors"
-                            >
-                                <HomeIcon size={18} className="text-[var(--accent-primary)]" />
-                                <span>{t('menu.home') || 'Головний екран'}</span>
-                            </button>
-                        </div>
+                        <>
+                            <div>
+                                <button
+                                    onClick={() => handleAction(onGoHome)}
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] font-medium transition-colors"
+                                >
+                                    <HomeIcon size={18} className="text-[var(--accent-primary)]" />
+                                    <span>{t('menu.home') || 'Головний екран'}</span>
+                                </button>
+                            </div>
+                            <div className="h-px bg-[var(--border-primary)]/70 my-1" />
+                        </>
                     )}
 
                     {/* Section: File & Project */}
@@ -290,6 +296,9 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                         </div>
                     </div>
 
+                    {/* Separator */}
+                    <div className="h-px bg-[var(--border-primary)]/70 my-1" />
+
                     {/* Section: Cloud Gallery */}
                     <div>
                         <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] px-3 mb-1.5">
@@ -306,6 +315,9 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                             </div>
                         </button>
                     </div>
+
+                    {/* Separator */}
+                    <div className="h-px bg-[var(--border-primary)]/70 my-1" />
 
                     {/* Section: Python Tkinter Code & Simulator */}
                     <div>
@@ -345,6 +357,9 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                             )}
                         </div>
                     </div>
+
+                    {/* Separator */}
+                    <div className="h-px bg-[var(--border-primary)]/70 my-1" />
 
                     {/* Section: View & Canvas Controls */}
                     <div>
@@ -461,6 +476,9 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                         </div>
                     </div>
 
+                    {/* Separator */}
+                    <div className="h-px bg-[var(--border-primary)]/70 my-1" />
+
                     {/* Section: Help & Information */}
                     <div>
                         <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] px-3 mb-1.5">
@@ -471,7 +489,7 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                                 onClick={() => handleAction(onOpenHelp)}
                                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[var(--bg-secondary)] text-left"
                             >
-                                <LightbulbIcon size={18} className="text-amber-400" />
+                                <HelpCircleIcon size={18} className="text-amber-400" />
                                 <span>{t('menu.help.manual') || 'Посібник користувача'}</span>
                             </button>
                             <button
@@ -485,15 +503,45 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                                 onClick={() => handleAction(onOpenAbout)}
                                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[var(--bg-secondary)] text-left"
                             >
-                                <MessageSquareIcon size={18} className="text-indigo-400" />
+                                <InfoIcon size={18} className="text-indigo-400" />
                                 <span>{t('menu.help.about') || 'Про Веретку'}</span>
                             </button>
                             <button
                                 onClick={() => handleAction(onOpenFeedback)}
                                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[var(--bg-secondary)] text-left"
                             >
-                                <BugIcon size={18} className="text-rose-400" />
+                                <MessageSquareIcon size={18} className="text-rose-400" />
                                 <span>{t('menu.help.feedback') || 'Зворотний зв\'язок'}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Separator */}
+                    <div className="h-px bg-[var(--border-primary)]/70 my-1" />
+
+                    {/* Section: Exit / Finish Session */}
+                    <div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] px-3 mb-1.5">
+                            {t('menu.exit.group') || 'Завершення роботи'}
+                        </div>
+                        <div className="space-y-1">
+                            <button
+                                onClick={() => handleAction(onExitApp || onGoHome)}
+                                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 active:bg-rose-500/25 text-rose-400 border border-rose-500/20 hover:border-rose-500/35 transition-colors text-left group shadow-xs"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="p-1 rounded-md bg-rose-500/20 text-rose-400">
+                                        <LogOutIcon size={18} className="shrink-0 group-hover:translate-x-0.5 transition-transform" />
+                                    </div>
+                                    <div>
+                                        <div className="font-semibold text-sm text-[var(--text-primary)]">
+                                            {t('menu.exit') || 'Завершити роботу'}
+                                        </div>
+                                        <div className="text-[11px] text-[var(--text-tertiary)]">
+                                            {t('menu.exit.desc') || 'Закрити проєкт та вийти з редактора'}
+                                        </div>
+                                    </div>
+                                </div>
                             </button>
                         </div>
                     </div>

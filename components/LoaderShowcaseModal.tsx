@@ -143,7 +143,7 @@ export const LoaderShowcaseModal: React.FC<LoaderShowcaseModalProps> = ({ isOpen
                 </span>
               </h2>
               <p className="text-xs text-[var(--text-tertiary)]">
-                {t('loaderShowcase.subtitle') || 'Усі 34 геометричні фігури з безперервною SVG-анімацією морфінгу'}
+                {t('loaderShowcase.subtitle') || 'Усі 36 геометричних фігур з безперервною SVG-анімацією морфінгу'}
               </p>
             </div>
           </div>
@@ -181,7 +181,7 @@ export const LoaderShowcaseModal: React.FC<LoaderShowcaseModalProps> = ({ isOpen
               }`}
             >
               <GridIcon size={14} />
-              <span>{t('loaderShowcase.viewGrid') || 'Сітка 34 фігур'}</span>
+              <span>{t('loaderShowcase.viewGrid') || 'Сітка 36 фігур'}</span>
             </button>
             <button
               onClick={() => setActiveTab('matrix')}
@@ -447,7 +447,7 @@ export const LoaderShowcaseModal: React.FC<LoaderShowcaseModalProps> = ({ isOpen
                     <span>Алгоритм точкового морфінгу</span>
                   </div>
                   <p className="text-[11px] leading-relaxed text-[var(--text-tertiary)]">
-                    Кожна з 34 фігур розраховується в реальному часі векторним семплінгом уздовж периметру. Режим Spline забезпечує унікальну плавність трансформацій.
+                    Кожна з 36 фігур розраховується в реальному часі векторним семплінгом уздовж периметру. Режим Spline забезпечує унікальну плавність трансформацій.
                   </p>
                 </div>
               </div>
@@ -460,7 +460,7 @@ export const LoaderShowcaseModal: React.FC<LoaderShowcaseModalProps> = ({ isOpen
               <div className="flex items-center gap-3">
                 <input
                   type="text"
-                  placeholder="🔍 Пошук фігури за назвою чи номером (#01 - #34)..."
+                  placeholder="🔍 Пошук фігури за назвою чи номером (#01 - #36)..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   className="flex-1 bg-[var(--bg-secondary)] text-[var(--text-primary)] text-xs rounded-xl px-4 py-2.5 border border-[var(--border-secondary)] focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -475,7 +475,7 @@ export const LoaderShowcaseModal: React.FC<LoaderShowcaseModalProps> = ({ isOpen
                 )}
               </div>
 
-              {/* Grid of 34 Cards */}
+              {/* Grid of 36 Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 {filteredShapes.map(info => {
                   const idx = info.id - 1;
@@ -612,7 +612,7 @@ export const LoaderShowcaseModal: React.FC<LoaderShowcaseModalProps> = ({ isOpen
         {/* Footer */}
         <footer className="px-5 py-3 border-t border-[var(--border-primary)] bg-[var(--bg-secondary)]/50 flex justify-between items-center text-xs">
           <span className="text-[var(--text-tertiary)] font-mono">
-            Веретка Loader • 34 Shapes • Morphing Engine
+            Веретка Loader • 36 Shapes • Morphing Engine
           </span>
 
           <button

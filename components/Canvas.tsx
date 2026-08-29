@@ -1193,16 +1193,21 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 const dy = pos.y - startPos.y;
 
                 if (shape.isAspectRatioLocked || e.shiftKey) {
-                    const dist = Math.hypot(dx, dy);
-                    const r = drawMode === 'center' ? dist : dist / 2;
-                    const cx = drawMode === 'center' ? startPos.x : startPos.x + dx / 2;
-                    const cy = drawMode === 'center' ? startPos.y : startPos.y + dy / 2;
-                    updatedShape = { ...shape, cx, cy, rx: r, ry: r };
+                    if (drawMode === 'center') {
+                        const dist = Math.hypot(dx, dy);
+                        updatedShape = { ...shape, cx: startPos.x, cy: startPos.y, rx: dist, ry: dist };
+                    } else {
+                        const size = Math.max(Math.abs(dx), Math.abs(dy));
+                        const r = size / 2;
+                        const cx = pos.x < startPos.x ? startPos.x - r : startPos.x + r;
+                        const cy = pos.y < startPos.y ? startPos.y - r : startPos.y + r;
+                        updatedShape = { ...shape, cx, cy, rx: r, ry: r };
+                    }
                 } else {
                     const rx = drawMode === 'center' ? Math.abs(dx) : Math.abs(dx) / 2;
                     const ry = drawMode === 'center' ? Math.abs(dy) : Math.abs(dy) / 2;
                     const cx = drawMode === 'center' ? startPos.x : startPos.x + dx / 2;
-                    const cy = drawMode === 'center' ? startPos.y + dy / 2 : startPos.y + dy / 2;
+                    const cy = drawMode === 'center' ? startPos.y : startPos.y + dy / 2;
                     updatedShape = { ...shape, cx, cy, rx, ry };
                 }
                 break;
@@ -1225,9 +1230,10 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 if (drawMode === 'corner') {
                     const width = Math.abs(pos.x - startPos.x);
                     const height = Math.abs(pos.y - startPos.y);
-                    cx = startPos.x + (pos.x - startPos.x) / 2;
-                    cy = startPos.y + (pos.y - startPos.y) / 2;
-                    radius = Math.min(width, height) / 2;
+                    const size = Math.max(width, height);
+                    radius = size / 2;
+                    cx = pos.x < startPos.x ? startPos.x - radius : startPos.x + radius;
+                    cy = pos.y < startPos.y ? startPos.y - radius : startPos.y + radius;
                 } else { // center mode
                     cx = startPos.x;
                     cy = startPos.y;
@@ -2661,41 +2667,47 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     
     const activePreviewPos = previewMousePos || (props.touchDrawingMode === 'virtual-joystick' ? aimPos : null);
 
-    if (isDrawingPolyline && polylinePoints.length > 0 && activePreviewPos) {
+    if (isDrawingPolyline && polylinePoints.length > 0) {
       const cleanPoints = polylinePoints.filter(Boolean);
       if (cleanPoints.length > 0) {
-          items.push({
-            id: 'temp-polyline-main', type: 'polyline', points: cleanPoints, isClosed: false,
-            stroke: strokeColor, strokeWidth: strokeWidth, fill: 'none', state: 'normal', joinstyle: 'round', rotation: 0, capstyle: 'round'
-          });
-          items.push({
-            id: 'temp-polyline-rubberband', type: 'line', points: [cleanPoints[cleanPoints.length-1], activePreviewPos],
-            stroke: strokeColor, strokeWidth: 1, rotation: 0, state: 'normal', dash: [4, 4]
-          } as LineShape);
+          if (cleanPoints.length > 1) {
+              items.push({
+                id: 'temp-polyline-main', type: 'polyline', points: cleanPoints, isClosed: false,
+                stroke: strokeColor, strokeWidth: strokeWidth, fill: 'none', state: 'normal', joinstyle: 'round', rotation: 0, capstyle: 'round'
+              });
+          }
+          if (activePreviewPos) {
+              items.push({
+                id: 'temp-polyline-rubberband', type: 'line', points: [cleanPoints[cleanPoints.length-1], activePreviewPos],
+                stroke: strokeColor, strokeWidth: 1, rotation: 0, state: 'normal', dash: [4, 4]
+              } as LineShape);
+          }
       }
     }
     
-    if (isDrawingBezier && bezierPoints.length > 0 && activePreviewPos) {
+    if (isDrawingBezier && bezierPoints.length > 0) {
         const cleanPoints = bezierPoints.filter(Boolean);
         if (cleanPoints.length > 0) {
-            const allPoints = [...cleanPoints, activePreviewPos];
-            
-            items.push({
-                id: 'temp-bezier-preview-dashed',
-                type: 'bezier',
-                points: allPoints,
-                smooth: true,
-                splinesteps: 12,
-                stroke: strokeColor,
-                strokeWidth: 1, // Thin dashed line for preview
-                dash: [4, 4],
-                capstyle: 'round',
-                rotation: 0,
-                state: 'normal',
-                isClosed: false,
-                fill: 'none',
-                joinstyle: 'round'
-            } as BezierCurveShape);
+            if (activePreviewPos) {
+                const allPoints = [...cleanPoints, activePreviewPos];
+                
+                items.push({
+                    id: 'temp-bezier-preview-dashed',
+                    type: 'bezier',
+                    points: allPoints,
+                    smooth: true,
+                    splinesteps: 12,
+                    stroke: strokeColor,
+                    strokeWidth: 1, // Thin dashed line for preview
+                    dash: [4, 4],
+                    capstyle: 'round',
+                    rotation: 0,
+                    state: 'normal',
+                    isClosed: false,
+                    fill: 'none',
+                    joinstyle: 'round'
+                } as BezierCurveShape);
+            }
 
             if (cleanPoints.length > 1) {
                 items.push({
@@ -2718,7 +2730,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     }
     
     return items;
-  }, [shapes, action, hasDraggedRef, activeTransformShape, auxiliaryTransformShapes, isDrawingPolyline, polylinePoints, previewMousePos, strokeColor, strokeWidth, isDrawingBezier, bezierPoints]);
+  }, [shapes, action, hasDraggedRef, activeTransformShape, auxiliaryTransformShapes, isDrawingPolyline, polylinePoints, previewMousePos, strokeColor, strokeWidth, isDrawingBezier, bezierPoints, aimPos, props.touchDrawingMode]);
   
   const selectedShapes = useMemo(() => {
     const s = selectedShapeIds.map(id => {
@@ -2869,7 +2881,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         const canClose = points.length >= 3;
         const canUndo = points.length >= 1;
         
-        const buttonBaseClass = "flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all text-xs font-bold select-none active:scale-95 shadow-sm";
+        const buttonBaseClass = "flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl transition-all text-xs font-bold select-none active:scale-95 shadow-sm shrink-0";
         const enabledBlueClass = "bg-[var(--accent-primary)] text-white hover:brightness-110 shadow-[0_2px_10px_rgba(59,130,246,0.3)]";
         const enabledCyanClass = "bg-cyan-600 text-white hover:bg-cyan-500 shadow-[0_2px_10px_rgba(6,182,212,0.3)]";
         const enabledAmberClass = "bg-amber-600/90 text-white hover:bg-amber-500 shadow-[0_2px_10px_rgba(245,158,11,0.3)]";
@@ -2910,7 +2922,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
         return (
             <div
-              className="absolute top-3 left-1/2 -translate-x-1/2 bg-neutral-950/90 backdrop-blur-xl border border-white/20 p-1.5 rounded-2xl shadow-2xl flex items-center gap-1.5 z-40 select-none animate-in fade-in slide-in-from-top-2"
+              className="absolute top-3 left-1/2 -translate-x-1/2 max-w-[calc(100%-24px)] overflow-x-auto bg-neutral-950/90 backdrop-blur-xl border border-white/20 p-1.5 rounded-2xl shadow-2xl flex items-center gap-1.5 z-40 select-none animate-in fade-in slide-in-from-top-2 scrollbar-none"
+              style={{ WebkitOverflowScrolling: 'touch' }}
               onPointerDown={e => e.stopPropagation()}
               onMouseDown={e => e.stopPropagation()}
               onMouseUp={e => e.stopPropagation()}
@@ -2920,8 +2933,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
               onClick={e => e.stopPropagation()}
             >
               {/* Points counter badge */}
-              <div className="flex items-center gap-1 px-2 py-1 bg-white/10 rounded-lg text-[11px] font-mono font-bold text-cyan-300">
-                <span>{isDrawingPolyline ? 'Ламана' : 'Крива'}:</span>
+              <div className="flex items-center gap-1 px-2 py-1 bg-white/10 rounded-lg text-[11px] font-mono font-bold text-cyan-300 shrink-0 whitespace-nowrap">
+                <span className="hidden sm:inline">{isDrawingPolyline ? 'Ламана' : 'Крива'}:</span>
                 <span>{points.length} т.</span>
               </div>
 
@@ -2934,8 +2947,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 disabled={!canComplete}
                 className={`${buttonBaseClass} ${canComplete ? enabledBlueClass : disabledClass}`}
               >
-                <CheckSquareIcon size={14} />
-                <span>{t('canvas.finish') || 'Завершити'}</span>
+                <CheckSquareIcon size={14} className="shrink-0" />
+                <span className="hidden sm:inline">{t('canvas.finish') || 'Завершити'}</span>
               </button>
 
               {/* Close (Closed Path) */}
@@ -2947,8 +2960,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 disabled={!canClose}
                 className={`${buttonBaseClass} ${canClose ? enabledCyanClass : disabledClass}`}
               >
-                <ClosePathIcon size={14} />
-                <span>{t('canvas.closePoly') || 'Замкнути'}</span>
+                <ClosePathIcon size={14} className="shrink-0" />
+                <span className="hidden sm:inline">{t('canvas.closePoly') || 'Замкнути'}</span>
               </button>
 
               {/* Undo Last Point */}
@@ -2960,8 +2973,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                   title="Скасувати останню точку"
                   className={`${buttonBaseClass} ${enabledAmberClass}`}
                 >
-                  <UndoIcon size={14} />
-                  <span className="hidden sm:inline">Крок назад</span>
+                  <UndoIcon size={14} className="shrink-0" />
+                  <span className="hidden md:inline">Крок назад</span>
                 </button>
               )}
 
@@ -2973,8 +2986,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 title={t('action.cancel') || 'Скасувати малювання'}
                 className={`${buttonBaseClass} ${enabledRedClass}`}
               >
-                <XSquareIcon size={14} />
-                <span>{t('action.cancel') || 'Скасувати'}</span>
+                <XSquareIcon size={14} className="shrink-0" />
+                <span className="hidden sm:inline">{t('action.cancel') || 'Скасувати'}</span>
               </button>
             </div>
         );
@@ -3609,6 +3622,35 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                             />
                         );
                     })}
+                </g>
+            )}
+
+            {/* Visual Markers for Points during Polyline / Bezier creation */}
+            {(isDrawingPolyline || isDrawingBezier) && (
+                <g className="drawing-points-overlay" style={{ pointerEvents: 'none' }}>
+                    {(isDrawingPolyline ? polylinePoints : bezierPoints).filter(Boolean).map((pt, idx) => (
+                        <g key={`draw-pt-${idx}`}>
+                            <circle
+                                cx={pt.x}
+                                cy={pt.y}
+                                r={4.5 / safeScale}
+                                fill="#374151"
+                                stroke="#ffffff"
+                                strokeWidth={1.5 / safeScale}
+                            />
+                            {idx === 0 && (
+                                <circle
+                                    cx={pt.x}
+                                    cy={pt.y}
+                                    r={7 / safeScale}
+                                    fill="none"
+                                    stroke="#374151"
+                                    strokeWidth={1 / safeScale}
+                                    strokeDasharray={`${2 / safeScale},${2 / safeScale}`}
+                                />
+                            )}
+                        </g>
+                    ))}
                 </g>
             )}
 
@@ -4347,18 +4389,23 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         pointsCount={isDrawingPolyline ? polylinePoints.length : isDrawingBezier ? bezierPoints.length : 0}
         isDrawingPolyline={isDrawingPolyline}
         isDrawingBezier={isDrawingBezier}
+        isActionActive={Boolean(action)}
         onAddPoint={() => {
           if (isDrawingBezier) {
             setBezierPoints(prev => [...prev, aimPos]);
           } else if (isDrawingPolyline) {
             setPolylinePoints(prev => [...prev, aimPos]);
-          } else if (action && action.type === 'drawing') {
-            const screenX = aimPos.x * viewTransform.scale + viewTransform.x;
-            const screenY = aimPos.y * viewTransform.scale + viewTransform.y;
+          } else if (action) {
+            // Finish current action (drawing, moving, resizing)
+            const rect = containerRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
+            const screenX = aimPos.x * viewTransform.scale + viewTransform.x + rect.left;
+            const screenY = aimPos.y * viewTransform.scale + viewTransform.y + rect.top;
             handleMouseUp({ clientX: screenX, clientY: screenY, button: 0, target: svgRef.current } as any);
-          } else if (activeTool !== 'select' && activeTool !== 'pan') {
-            const screenX = aimPos.x * viewTransform.scale + viewTransform.x;
-            const screenY = aimPos.y * viewTransform.scale + viewTransform.y;
+          } else if (activeTool !== 'pan') {
+            // Start action (drawing, or selecting/moving if activeTool === 'select')
+            const rect = containerRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
+            const screenX = aimPos.x * viewTransform.scale + viewTransform.x + rect.left;
+            const screenY = aimPos.y * viewTransform.scale + viewTransform.y + rect.top;
             handleMouseDown({ clientX: screenX, clientY: screenY, button: 0, target: svgRef.current } as any);
           }
         }}
@@ -4398,6 +4445,13 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         onAimMove={(pos) => {
           setPreviewMousePos(pos);
           props.setCursorPos(pos);
+          
+          if (action && (action.type === 'drawing' || action.type === 'moving' || action.type === 'resizing')) {
+            const rect = containerRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
+            const screenX = pos.x * viewTransform.scale + viewTransform.x + rect.left;
+            const screenY = pos.y * viewTransform.scale + viewTransform.y + rect.top;
+            handleMouseMove({ clientX: screenX, clientY: screenY, button: 0, target: svgRef.current } as any);
+          }
         }}
         activeToolName={activeTool}
       />

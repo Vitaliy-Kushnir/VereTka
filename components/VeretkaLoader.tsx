@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useId } from 'react';
 
 // Sample polygon vertices into exactly N points along perimeter
 function samplePolygon(vertices: [number, number][], totalPoints = 36): string {
@@ -36,7 +36,7 @@ function samplePolygon(vertices: [number, number][], totalPoints = 36): string {
 
 const N = 36;
 
-// 34 rich geometric shapes, every shape has EXACTLY 36 points
+// 36 rich geometric shapes, every shape has EXACTLY 36 points
 export const SHAPES: string[] = [
   // 1. Circle
   Array.from({ length: N }, (_, i) => {
@@ -123,12 +123,29 @@ export const SHAPES: string[] = [
     return `${Math.round(x * 10) / 10},${Math.round(y * 10) / 10}`;
   }).join(' '),
 
-  // 15. Gear / Cogwheel
-  Array.from({ length: N }, (_, i) => {
-    const a = (i / N) * Math.PI * 2 - Math.PI / 2;
-    const cog = Math.sin(6 * a) > 0 ? 40 : 26;
-    return `${Math.round((50 + cog * Math.cos(a)) * 10) / 10},${Math.round((50 + cog * Math.sin(a)) * 10) / 10}`;
-  }).join(' '),
+  // 15. Gear / Cogwheel (6 perfectly regular identical teeth)
+  samplePolygon(Array.from({ length: 24 }, (_, i) => {
+    const tooth = Math.floor(i / 4);
+    const sub = i % 4;
+    const baseAngle = (tooth / 6) * Math.PI * 2 - Math.PI / 2;
+    let angleOffset = 0;
+    let r = 27;
+    if (sub === 0) {
+      angleOffset = -0.30;
+      r = 27;
+    } else if (sub === 1) {
+      angleOffset = -0.15;
+      r = 42;
+    } else if (sub === 2) {
+      angleOffset = 0.15;
+      r = 42;
+    } else {
+      angleOffset = 0.30;
+      r = 27;
+    }
+    const a = baseAngle + angleOffset;
+    return [50 + r * Math.cos(a), 50 + r * Math.sin(a)];
+  }), N),
 
   // 16. Shield
   samplePolygon([
@@ -212,12 +229,18 @@ export const SHAPES: string[] = [
     return `${Math.round((50 + r * Math.cos(a)) * 10) / 10},${Math.round((50 + r * Math.sin(a)) * 10) / 10}`;
   }).join(' '),
 
-  // 30. Trefoil Clover (3 Petals)
-  Array.from({ length: N }, (_, i) => {
-    const a = (i / N) * Math.PI * 2 - Math.PI / 2;
-    const r = 26 + 14 * Math.sin(3 * a);
-    return `${Math.round((50 + r * Math.cos(a)) * 10) / 10},${Math.round((50 + r * Math.sin(a)) * 10) / 10}`;
-  }).join(' '),
+  // 30. Ball Trefoil (3 round spherical ball petals)
+  samplePolygon(Array.from({ length: 36 }, (_, i) => {
+    const petal = Math.floor(i / 12);
+    const step = (i % 12) / 11;
+    const petalAngle = -Math.PI / 2 + petal * (Math.PI * 2 / 3);
+    const centerDist = 16;
+    const cx = 50 + centerDist * Math.cos(petalAngle);
+    const cy = 50 + centerDist * Math.sin(petalAngle);
+    const ballRadius = 18;
+    const arcAngle = (petalAngle - 2.1) + step * 4.2;
+    return [cx + ballRadius * Math.cos(arcAngle), cy + ballRadius * Math.sin(arcAngle)];
+  }), N),
 
   // 31. Flame / Drop Badge
   samplePolygon([[50, 10], [68, 28], [85, 48], [82, 75], [50, 90], [18, 75], [15, 48], [32, 28]], N),
@@ -239,7 +262,25 @@ export const SHAPES: string[] = [
   }).join(' '),
 
   // 34. Octagram Diamond
-  samplePolygon([[50, 10], [78, 22], [90, 50], [78, 78], [50, 90], [22, 78], [10, 50], [22, 22]], N)
+  samplePolygon([[50, 10], [78, 22], [90, 50], [78, 78], [50, 90], [22, 78], [10, 50], [22, 22]], N),
+
+  // 35. Maple Leaf
+  samplePolygon([
+    [50, 10], [56, 26], [72, 20], [64, 36], [84, 42], [66, 56], [74, 72], [54, 66],
+    [52, 90], [48, 90], [46, 66], [26, 72], [34, 56], [16, 42], [36, 36], [28, 20], [44, 26]
+  ], N),
+
+  // 36. 4-Ball Quatrefoil (4 spherical ball lobes)
+  samplePolygon(Array.from({ length: 36 }, (_, i) => {
+    const lobe = Math.floor(i / 9);
+    const step = (i % 9) / 8;
+    const lobeAngle = lobe * (Math.PI / 2);
+    const cx = 50 + 15 * Math.cos(lobeAngle);
+    const cy = 50 + 15 * Math.sin(lobeAngle);
+    const r = 16;
+    const arcAngle = (lobeAngle - 1.8) + step * 3.6;
+    return [cx + r * Math.cos(arcAngle), cy + r * Math.sin(arcAngle)];
+  }), N)
 ];
 
 export interface VeretkaLoaderProps {
@@ -248,6 +289,9 @@ export interface VeretkaLoaderProps {
 }
 
 export const VeretkaLoader: React.FC<VeretkaLoaderProps> = ({ className, size }) => {
+  const rawId = useId();
+  const uniqueId = rawId.replace(/:/g, '_');
+
   let sizeClass = className;
   if (!sizeClass) {
     if (size === 'sm') sizeClass = 'w-6 h-6';
@@ -325,11 +369,11 @@ export const VeretkaLoader: React.FC<VeretkaLoaderProps> = ({ className, size })
     <div className={`relative flex items-center justify-center shrink-0 ${sizeClass}`}>
       <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible">
         <defs>
-          <linearGradient id="morph-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id={`morph-grad-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#818cf8" stopOpacity="0.8" />
             <stop offset="100%" stopColor="#38bdf8" stopOpacity="1" />
           </linearGradient>
-          <linearGradient id="morph-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id={`morph-glow-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#818cf8" stopOpacity="0.3" />
             <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.5" />
           </linearGradient>
@@ -338,7 +382,7 @@ export const VeretkaLoader: React.FC<VeretkaLoaderProps> = ({ className, size })
         {/* Glow effect */}
         <polygon 
           fill="none" 
-          stroke="url(#morph-glow)" 
+          stroke={`url(#morph-glow-${uniqueId})`} 
           strokeWidth="6" 
           strokeLinejoin="round"
           className="blur-sm"
@@ -357,7 +401,7 @@ export const VeretkaLoader: React.FC<VeretkaLoaderProps> = ({ className, size })
         {/* Main shape */}
         <polygon 
           fill="none" 
-          stroke="url(#morph-gradient)" 
+          stroke={`url(#morph-grad-${uniqueId})`} 
           strokeWidth="2.5" 
           strokeLinejoin="round" 
         >
@@ -398,7 +442,7 @@ export const SHAPE_INFOS: ShapeInfo[] = [
   { id: 12, nameUk: 'Ромб / Алмаз', nameEn: 'Diamond Rhombus', pointsString: SHAPES[11] },
   { id: 13, nameUk: 'Сквіркл / Супереліпс', nameEn: 'Squircle Superellipse', pointsString: SHAPES[12] },
   { id: 14, nameUk: 'Крапля', nameEn: 'Teardrop', pointsString: SHAPES[13] },
-  { id: 15, nameUk: 'Шестерня', nameEn: 'Gear Cogwheel', pointsString: SHAPES[14] },
+  { id: 15, nameUk: 'Шестерня (6 зубців)', nameEn: '6-Tooth Gear', pointsString: SHAPES[14] },
   { id: 16, nameUk: 'Захисний щит', nameEn: 'Protection Shield', pointsString: SHAPES[15] },
   { id: 17, nameUk: 'Півмісяць', nameEn: 'Crescent Moon', pointsString: SHAPES[16] },
   { id: 18, nameUk: 'Капсула / Пігулка', nameEn: 'Capsule Pill', pointsString: SHAPES[17] },
@@ -413,10 +457,12 @@ export const SHAPE_INFOS: ShapeInfo[] = [
   { id: 27, nameUk: 'Королівська корона', nameEn: 'Royal Crown', pointsString: SHAPES[26] },
   { id: 28, nameUk: 'Гексаграма (Зірка Давида)', nameEn: 'Hexagram Star', pointsString: SHAPES[27] },
   { id: 29, nameUk: 'Трикутник Рело', nameEn: 'Reuleaux Triangle', pointsString: SHAPES[28] },
-  { id: 30, nameUk: 'Трилисник (3 пелюстки)', nameEn: 'Trefoil Clover', pointsString: SHAPES[29] },
+  { id: 30, nameUk: 'Кульковий трилисник (3 кулі)', nameEn: '3-Ball Trefoil', pointsString: SHAPES[29] },
   { id: 31, nameUk: 'Полум\'я / Символ', nameEn: 'Flame Badge', pointsString: SHAPES[30] },
   { id: 32, nameUk: 'Дельтоїда', nameEn: 'Deltoid 3-Cusp', pointsString: SHAPES[31] },
   { id: 33, nameUk: 'Хвильова петля / Рибка', nameEn: 'Wave Loop', pointsString: SHAPES[32] },
   { id: 34, nameUk: 'Октаграма-алмаз', nameEn: 'Octagram Diamond', pointsString: SHAPES[33] },
+  { id: 35, nameUk: 'Кленовий лист', nameEn: 'Maple Leaf', pointsString: SHAPES[34] },
+  { id: 36, nameUk: 'Квадрофойл (4 кулі)', nameEn: '4-Ball Quatrefoil', pointsString: SHAPES[35] },
 ];
 

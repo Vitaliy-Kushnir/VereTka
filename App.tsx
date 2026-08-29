@@ -3271,7 +3271,36 @@ export default function App(): React.ReactNode {
       t('app.1121'),
       'primary'
     );
-  }, [confirmAction]);
+  }, [confirmAction, t]);
+
+  const handleExitApp = useCallback(() => {
+    confirmAction(
+      () => {
+        setIsProjectActive(false);
+
+        const isStandalonePWA =
+          (typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches) ||
+          (typeof navigator !== 'undefined' && (navigator as any).standalone === true);
+
+        try {
+          window.close();
+        } catch (e) {
+          console.warn('window.close() was prevented', e);
+        }
+
+        if (isStandalonePWA) {
+          showNotification(t('app.exit.pwaSuccess') || 'Роботу завершено. Ви можете згорнути або закрити додаток.', 'info', 4500);
+        } else {
+          showNotification(t('app.exit.browserSuccess') || 'Роботу завершено. Ви можете безпечно закрити цю вкладку браузера.', 'info', 4500);
+        }
+      },
+      t('app.exitConfirm.title') || 'Завершити роботу?',
+      t('app.exitConfirm.message') || 'У вас є незбережені зміни. Ваша робота періодично автозберігається. Якщо ви вийдете, ви зможете відновити її пізніше. Завершити роботу та вийти?',
+      t('app.exitConfirm.btn') || 'Так, завершити',
+      t('app.1121') || 'Скасувати',
+      'primary'
+    );
+  }, [confirmAction, showNotification, t]);
 
   const getSaveData = useCallback((pName: string) => {
     const shapesToSave = shapes;
@@ -3321,21 +3350,22 @@ export default function App(): React.ReactNode {
                     'application/json'
                 );
                 
+                const finalProjectName = newHandle ? newHandle.name.replace(/\.vec.json$/, '') : projectName;
                 if (newHandle) {
-                    const finalProjectName = newHandle.name.replace(/\.vec.json$/, '');
                     setFileHandle(newHandle);
-                    setProjectName(finalProjectName);
-                    lastSavedSignatureRef.current = getProjectSignature(finalProjectName, shapes);
                     addRecentProject(newHandle, saveData.thumbnail);
-                    showNotification(t('app.1001'), 'info');
-                    localStorage.removeItem(AUTOSAVE_KEY);
                 }
+                setProjectName(finalProjectName);
+                lastSavedSignatureRef.current = getProjectSignature(finalProjectName, shapes);
+                setHasUnsavedChanges(false);
+                showNotification(t('app.1001'), 'info');
+                localStorage.removeItem(AUTOSAVE_KEY);
             } catch (error) {
                 console.error(t('app.1002'), error);
                 showNotification(t('app.1003'), 'error');
             }
         }
-    }, [hasUnsavedChanges, fileHandle, getSaveData, projectName, getProjectSignature, shapes, addRecentProject, showNotification]);
+    }, [hasUnsavedChanges, fileHandle, getSaveData, projectName, getProjectSignature, shapes, addRecentProject, showNotification, t]);
 
     const handleSaveProjectAs = useCallback(async (newProjectNameFromModal: string) => {
         setIsSaveAsModalOpen(false);
@@ -3353,20 +3383,21 @@ export default function App(): React.ReactNode {
                 'application/json'
             );
             
+            const finalProjectName = newHandle ? newHandle.name.replace(/\.vec.json$/, '') : newProjectNameFromModal;
             if (newHandle) {
-                const finalProjectName = newHandle.name.replace(/\.vec.json$/, '');
                 setFileHandle(newHandle);
-                setProjectName(finalProjectName);
-                lastSavedSignatureRef.current = getProjectSignature(finalProjectName, shapes);
                 addRecentProject(newHandle, saveData.thumbnail);
-                showNotification(t('app.1001'), 'info');
-                localStorage.removeItem(AUTOSAVE_KEY);
             }
+            setProjectName(finalProjectName);
+            lastSavedSignatureRef.current = getProjectSignature(finalProjectName, shapes);
+            setHasUnsavedChanges(false);
+            showNotification(t('app.1001'), 'info');
+            localStorage.removeItem(AUTOSAVE_KEY);
         } catch (error) {
             console.error(t('app.1002'), error);
             showNotification(t('app.1003'), 'error');
         }
-    }, [getSaveData, shapes, addRecentProject, getProjectSignature, showNotification]);
+    }, [getSaveData, shapes, addRecentProject, getProjectSignature, showNotification, t]);
 
     const handleShareLink = useCallback(() => {
         if (!isProjectActive) return;
@@ -5969,6 +6000,7 @@ export default function App(): React.ReactNode {
               onOpenHelp={() => setIsHelpModalOpen(true)}
               onOpenShortcuts={() => setIsShortcutsModalOpen(true)}
               onOpenFeedback={() => setIsFeedbackModalOpen(true)}
+              onExitApp={handleExitApp}
             />
           )}
 

@@ -55,6 +55,33 @@ export type SortOption = 'newest' | 'oldest' | 'title_asc' | 'title_desc' | 'sha
 export type ShapesFilterOption = 'all' | 'small' | 'medium' | 'large';
 export type VisibilityFilterOption = 'all' | 'public' | 'private' | 'group';
 
+export const formatProjectDate = (timestamp?: number) => {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  return date.toLocaleDateString('uk-UA', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+};
+
+export const formatProjectDateTime = (timestamp?: number) => {
+  if (!timestamp) return '';
+  const date = new Date(timestamp);
+  return date.toLocaleDateString('uk-UA', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+export const isProjectUpdated = (proj: { createdAt?: number; updatedAt?: number }) => {
+  if (!proj.updatedAt || !proj.createdAt) return false;
+  return proj.updatedAt - proj.createdAt > 60000;
+};
+
 function filterAndSortProjects(
   projects: CloudProject[],
   query: string,
@@ -92,10 +119,16 @@ function filterAndSortProjects(
 
   list.sort((a, b) => {
     switch (sort) {
-      case 'newest':
-        return (b.createdAt || 0) - (a.createdAt || 0);
-      case 'oldest':
-        return (a.createdAt || 0) - (b.createdAt || 0);
+      case 'newest': {
+        const timeA = Math.max(a.updatedAt || 0, a.createdAt || 0);
+        const timeB = Math.max(b.updatedAt || 0, b.createdAt || 0);
+        return timeB - timeA;
+      }
+      case 'oldest': {
+        const timeA = a.createdAt || a.updatedAt || 0;
+        const timeB = b.createdAt || b.updatedAt || 0;
+        return timeA - timeB;
+      }
       case 'title_asc':
         return (a.title || '').localeCompare(b.title || '', 'uk');
       case 'title_desc':
@@ -351,9 +384,9 @@ const ProjectCardPreview: React.FC<ProjectCardPreviewProps> = ({
           }`}
         />
       ) : (
-        <div className="text-[var(--text-tertiary)] text-xs text-center z-10 flex flex-col items-center gap-1">
-          <span className="text-2xl">🖼️</span>
-          <span>{t('cloud.gallery.026')}</span>
+        <div className="text-[var(--text-tertiary)] text-xs text-center z-10 flex flex-col items-center justify-center gap-2 p-2">
+          <VeretkaLoader size="sm" className="w-8 h-8" />
+          <span className="text-[10px] text-[var(--text-tertiary)] font-medium line-clamp-1">{title || t('cloud.gallery.026')}</span>
         </div>
       )}
 
@@ -400,6 +433,9 @@ const ProjectLargePreviewModal: React.FC<{
     scrollLeft: 0,
     scrollTop: 0
   });
+
+  // Touch pinch-to-zoom state
+  const touchStartRef = useRef<{ dist: number; initialZoom: number } | null>(null);
 
   useEffect(() => {
     if (!project || !project.projectData) return;
@@ -448,6 +484,24 @@ const ProjectLargePreviewModal: React.FC<{
     }
   }, [project?.id]);
 
+  // Ctrl / Cmd + Mouse Wheel Zoom
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? 15 : -15;
+        setZoomMode('custom');
+        setZoomLevel(prev => Math.min(400, Math.max(25, Math.round((prev + delta) / 5) * 5)));
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
+  }, []);
+
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.button !== 0 || !scrollContainerRef.current) return;
     setIsDragging(true);
@@ -469,6 +523,37 @@ const ProjectLargePreviewModal: React.FC<{
 
   const handleMouseUpOrLeave = () => {
     setIsDragging(false);
+  };
+
+  // Touch Pinch-to-Zoom support on Mobile
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      touchStartRef.current = {
+        dist,
+        initialZoom: zoomMode === 'fit' ? 100 : zoomLevel
+      };
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 2 && touchStartRef.current) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const scale = dist / touchStartRef.current.dist;
+      const newZoom = Math.min(400, Math.max(25, Math.round((touchStartRef.current.initialZoom * scale) / 5) * 5));
+      setZoomMode('custom');
+      setZoomLevel(newZoom);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    touchStartRef.current = null;
   };
 
   const handleZoomIn = () => {
@@ -519,9 +604,8 @@ const ProjectLargePreviewModal: React.FC<{
 
   if (!project) return null;
 
-  const aspectRatio = canvasInfo.width && canvasInfo.height 
-    ? (canvasInfo.width / canvasInfo.height).toFixed(2)
-    : '1.33';
+  const targetWidth = zoomMode === 'actual' ? canvasInfo.width : Math.round((canvasInfo.width * zoomLevel) / 100);
+  const targetHeight = zoomMode === 'actual' ? canvasInfo.height : Math.round((canvasInfo.height * zoomLevel) / 100);
 
   return (
     <div 
@@ -533,36 +617,38 @@ const ProjectLargePreviewModal: React.FC<{
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-3.5 border-b border-[var(--border-primary)] bg-[var(--bg-primary)] shrink-0 z-10">
-          <div className="flex items-center gap-3 min-w-0 pr-2">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] flex items-center justify-center font-bold text-lg sm:text-xl border border-[var(--accent-primary)]/30 shrink-0 shadow-inner">
+        <div className="flex items-center justify-between gap-2 sm:gap-4 px-3 py-2.5 sm:px-6 sm:py-3.5 border-b border-[var(--border-primary)] bg-[var(--bg-primary)] shrink-0 z-20">
+          {/* Left: Info */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 pr-2">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] flex items-center justify-center font-bold text-base sm:text-xl border border-[var(--accent-primary)]/30 shrink-0 shadow-inner">
               🎨
             </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-bold text-sm sm:text-base text-[var(--text-primary)] truncate max-w-[280px] sm:max-w-md md:max-w-lg" title={project.title}>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <h3 className="font-bold text-xs sm:text-base text-[var(--text-primary)] truncate max-w-[140px] sm:max-w-xs md:max-w-md" title={project.title}>
                   {project.title}
                 </h3>
-                <span className="inline-flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded-md bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] border border-[var(--accent-primary)]/25 shrink-0" title={t('cloud.gallery.preview.canvas') || "Розмір полотна"}>
+                <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-mono px-1.5 py-0.5 rounded bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] border border-[var(--accent-primary)]/25 shrink-0" title={t('cloud.gallery.preview.canvas') || "Розмір полотна"}>
                   {canvasInfo.width} × {canvasInfo.height} px
                 </span>
-                <span className="text-[10px] text-[var(--text-tertiary)] bg-[var(--bg-secondary)] px-2 py-0.5 rounded border border-[var(--border-secondary)] shrink-0">
+                <span className="hidden xs:inline-block text-[10px] text-[var(--text-tertiary)] bg-[var(--bg-secondary)] px-1.5 py-0.5 rounded border border-[var(--border-secondary)] shrink-0">
                   {t('cloud.gallery.030') || "Об'єктів:"} <strong className="text-[var(--text-secondary)]">{canvasInfo.shapesCount}</strong>
                 </span>
               </div>
-              <p className="text-[11px] sm:text-xs text-[var(--text-tertiary)] truncate mt-0.5">
+              <p className="text-[10px] sm:text-xs text-[var(--text-tertiary)] truncate mt-0.5">
                 {t('cloud.gallery.029')} <span className="text-[var(--text-secondary)] font-medium">{project.authorName}</span> (@{project.ownerNickname})
               </p>
             </div>
           </div>
 
-          {/* View & Zoom Controls */}
+          {/* Right: Controls & Top-Right Close Button */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Zoom Controls */}
             <div className="flex items-center bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-xl p-0.5 shadow-2xs">
               <button
                 type="button"
                 onClick={handleSetFit}
-                className={`px-2.5 py-1 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 ${
+                className={`px-2 py-1 text-xs font-medium rounded-lg transition-all flex items-center gap-1 ${
                   zoomMode === 'fit'
                     ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] shadow-xs'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
@@ -570,13 +656,13 @@ const ProjectLargePreviewModal: React.FC<{
                 title={t('cloud.gallery.preview.fit') || "Вписати повністю у вікно"}
               >
                 <Maximize2 size={13} />
-                <span className="hidden md:inline">{t('cloud.gallery.preview.fit') || "Вписати"}</span>
+                <span className="hidden sm:inline">{t('cloud.gallery.preview.fit') || "Вписати"}</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleSetActual}
-                className={`px-2.5 py-1 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 ${
+                className={`px-1.5 sm:px-2 py-1 text-xs font-medium rounded-lg transition-all flex items-center gap-1 ${
                   zoomMode === 'actual'
                     ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] shadow-xs'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
@@ -584,22 +670,21 @@ const ProjectLargePreviewModal: React.FC<{
                 title={t('cloud.gallery.preview.actual') || "100% реальний розмір полотна"}
               >
                 <span>100%</span>
-                <span className="hidden md:inline text-[10px] opacity-75">1:1</span>
               </button>
 
-              <div className="h-4 w-px bg-[var(--border-secondary)] mx-1" />
+              <div className="h-3.5 w-px bg-[var(--border-secondary)] mx-0.5" />
 
               <button
                 type="button"
                 onClick={handleZoomOut}
                 disabled={zoomLevel <= 25}
-                className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] disabled:opacity-30 rounded-lg transition-colors"
+                className="p-1 sm:p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] disabled:opacity-30 rounded-lg transition-colors"
                 title={t('cloud.gallery.preview.zoomOut') || "Зменшити"}
               >
-                <ZoomOut size={14} />
+                <ZoomOut size={13} />
               </button>
 
-              <span className="text-[11px] font-mono font-medium px-1.5 text-[var(--text-secondary)] min-w-[40px] text-center">
+              <span className="text-[10px] sm:text-[11px] font-mono font-medium px-1 text-[var(--text-secondary)] min-w-[32px] sm:min-w-[38px] text-center">
                 {zoomMode === 'fit' ? 'Auto' : `${zoomLevel}%`}
               </span>
 
@@ -607,18 +692,20 @@ const ProjectLargePreviewModal: React.FC<{
                 type="button"
                 onClick={handleZoomIn}
                 disabled={zoomLevel >= 400}
-                className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] disabled:opacity-30 rounded-lg transition-colors"
+                className="p-1 sm:p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] disabled:opacity-30 rounded-lg transition-colors"
                 title={t('cloud.gallery.preview.zoomIn') || "Збільшити"}
               >
-                <ZoomIn size={14} />
+                <ZoomIn size={13} />
               </button>
             </div>
 
-            {/* Close Modal Button */}
+            {/* Close Modal Button positioned at top right */}
             <button
+              type="button"
               onClick={onClose}
-              className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] p-2 rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] border border-[var(--border-secondary)] transition-colors active:scale-95 ml-1"
+              className="p-1.5 sm:p-2 rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-secondary)] transition-all active:scale-95 shadow-xs"
               title={t('cloud.gallery.028') || "Закрити"}
+              aria-label="Закрити перегляд"
             >
               <XIcon size={18} />
             </button>
@@ -632,11 +719,16 @@ const ProjectLargePreviewModal: React.FC<{
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUpOrLeave}
           onMouseLeave={handleMouseUpOrLeave}
-          className={`flex-1 min-h-0 w-full bg-[var(--bg-secondary)] relative overflow-auto p-4 sm:p-6 md:p-8 flex ${
-            zoomMode === 'fit' ? 'items-center justify-center' : 'items-center justify-center'
-          } ${isDragging ? 'cursor-grabbing' : (zoomMode !== 'fit' || zoomLevel > 100 ? 'cursor-grab' : 'cursor-default')} overscroll-contain`}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className={`flex-1 min-h-0 w-full bg-[var(--bg-secondary)] relative overflow-auto overscroll-contain select-none ${
+            isDragging ? 'cursor-grabbing' : (zoomMode !== 'fit' ? 'cursor-grab' : 'cursor-default')
+          }`}
           style={{
-            scrollbarWidth: 'thin'
+            scrollbarWidth: 'thin',
+            touchAction: zoomMode === 'fit' ? 'auto' : 'pan-x pan-y',
+            WebkitOverflowScrolling: 'touch'
           }}
         >
           {/* Subtle Grid Backdrop */}
@@ -649,69 +741,79 @@ const ProjectLargePreviewModal: React.FC<{
           />
 
           {largeThumbUrl ? (
-            <div 
-              className={`relative transition-all duration-100 flex items-center justify-center ${
-                zoomMode === 'fit' ? 'w-full h-full max-w-full max-h-full' : ''
-              }`}
-              style={
-                zoomMode === 'fit'
-                  ? {
-                      maxWidth: '100%',
-                      maxHeight: '100%',
-                    }
-                  : {
-                      width: `${Math.round((canvasInfo.width * zoomLevel) / 100)}px`,
-                      height: `${Math.round((canvasInfo.height * zoomLevel) / 100)}px`,
-                      minWidth: `${Math.round((canvasInfo.width * zoomLevel) / 100)}px`,
-                      minHeight: `${Math.round((canvasInfo.height * zoomLevel) / 100)}px`,
-                    }
-              }
-            >
-              {/* Canvas Shadow & Frame Container */}
+            <div className="min-w-full min-h-full flex p-3 sm:p-6 md:p-8">
               <div 
-                className="relative rounded-xl shadow-2xl border border-[var(--border-primary)] overflow-hidden flex items-center justify-center group"
-                style={{
-                  backgroundColor: canvasInfo.bgColor || '#ffffff',
-                  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(128, 128, 128, 0.1)',
-                  ...(zoomMode === 'fit'
+                className="m-auto transition-all duration-100 flex items-center justify-center shrink-0"
+                style={
+                  zoomMode === 'fit'
                     ? {
                         maxWidth: '100%',
                         maxHeight: '100%',
-                        aspectRatio: `${canvasInfo.width} / ${canvasInfo.height}`
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                       }
                     : {
-                        width: '100%',
-                        height: '100%'
-                      })
-                }}
+                        width: `${targetWidth}px`,
+                        height: `${targetHeight}px`,
+                        minWidth: `${targetWidth}px`,
+                        minHeight: `${targetHeight}px`,
+                      }
+                }
               >
-                <img
-                  src={largeThumbUrl}
-                  alt={project.title}
-                  draggable={false}
-                  className={`w-full h-full object-contain pointer-events-none select-none`}
+                {/* Canvas Shadow & Frame Container */}
+                <div 
+                  className="relative rounded-xl shadow-2xl border border-[var(--border-primary)] overflow-hidden flex items-center justify-center group"
                   style={{
-                    backgroundColor: canvasInfo.bgColor || '#ffffff'
+                    backgroundColor: canvasInfo.bgColor || '#ffffff',
+                    boxShadow: '0 20px 45px -10px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(128, 128, 128, 0.1)',
+                    ...(zoomMode === 'fit'
+                      ? {
+                          maxWidth: '100%',
+                          maxHeight: '100%',
+                          aspectRatio: `${canvasInfo.width} / ${canvasInfo.height}`
+                        }
+                      : {
+                          width: '100%',
+                          height: '100%'
+                        })
                   }}
-                />
+                >
+                  <img
+                    src={largeThumbUrl}
+                    alt={project.title}
+                    draggable={false}
+                    className="w-full h-full object-contain pointer-events-none select-none block"
+                    style={{
+                      backgroundColor: canvasInfo.bgColor || '#ffffff'
+                    }}
+                  />
+                </div>
               </div>
             </div>
           ) : (
-            <div className="text-[var(--text-tertiary)] text-sm z-10 flex flex-col items-center gap-3 my-auto">
-              <span className="text-4xl">🖼️</span>
-              <span className="font-medium">{t('cloud.gallery.031')}</span>
+            <div className="min-w-full min-h-full flex items-center justify-center p-6">
+              <div className="text-[var(--text-tertiary)] text-sm z-10 flex flex-col items-center gap-3 my-auto">
+                <span className="text-4xl">🖼️</span>
+                <span className="font-medium">{t('cloud.gallery.031')}</span>
+              </div>
             </div>
           )}
-
-
         </div>
 
         {/* Footer Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-3.5 border-t border-[var(--border-primary)] bg-[var(--bg-primary)] shrink-0 z-10">
-          <div className="flex items-center gap-3 text-[11px] sm:text-xs text-[var(--text-tertiary)]">
-            <span>
-              {t('cloud.gallery.032')} <strong className="text-[var(--text-secondary)]">{new Date(project.createdAt).toLocaleDateString('uk-UA')}</strong>
-            </span>
+          <div className="flex items-center gap-2 sm:gap-3 text-[11px] sm:text-xs text-[var(--text-tertiary)] flex-wrap">
+            {(() => {
+              const latestTime = Math.max(project.updatedAt || 0, project.createdAt || 0);
+              return (
+                <span title={formatProjectDateTime(latestTime)}>
+                  {t('cloud.gallery.032') || 'Створено:'} <strong className="text-[var(--text-secondary)]">{formatProjectDate(latestTime)}</strong>
+                </span>
+              );
+            })()}
             <span className="hidden sm:inline opacity-40">•</span>
             <span className="hidden sm:inline">
               Тло: <span className="inline-block w-3 h-3 rounded-full border border-[var(--border-secondary)] align-middle ml-1 mr-0.5" style={{ backgroundColor: canvasInfo.bgColor }} /> <span className="font-mono">{canvasInfo.bgColor}</span>
@@ -808,7 +910,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
   // --- Public Gallery State ---
   const [publicProjects, setPublicProjects] = useState<CloudProject[]>([]);
   const [publicTotalCount, setPublicTotalCount] = useState<number>(0);
-  const [isLoadingPublic, setIsLoadingPublic] = useState(false);
+  const [isLoadingPublic, setIsLoadingPublic] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [publicLastVisible, setPublicLastVisible] = useState<any>(null);
   const [hasMorePublic, setHasMorePublic] = useState(true);
@@ -1407,11 +1509,16 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
   useEffect(() => {
     if (!isOpen || activeTab !== 'public') return;
 
-    const timer = setTimeout(() => {
-      loadPublicProjects(searchQuery);
-    }, 300);
-
-    return () => clearTimeout(timer);
+    if (!((searchQuery) || '').trim()) {
+      setIsLoadingPublic(true);
+      loadPublicProjects('');
+    } else {
+      setIsLoadingPublic(true);
+      const timer = setTimeout(() => {
+        loadPublicProjects(searchQuery);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
   }, [isOpen, activeTab, searchQuery]);
 
   const loadPublicProjects = async (queryStr = searchQuery) => {
@@ -2064,7 +2171,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
     if (res.success) {
       // Update local states
       const updateList = (list: CloudProject[]) => 
-        list.map(p => p.id === projectId ? { ...p, title: ((editProjectTitle) || "").trim(), description: (editProjectDesc || '').trim() } : p);
+        list.map(p => p.id === projectId ? { ...p, title: ((editProjectTitle) || "").trim(), description: (editProjectDesc || '').trim(), updatedAt: Date.now() } : p);
       
       setPersonalProjects(updateList);
       setGroupProjects(updateList);
@@ -2301,9 +2408,18 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                         <p className="text-xs text-[var(--text-tertiary)] mb-1">
                           {t('cloud.gallery.101')} <span className="text-[var(--text-secondary)] font-medium">{proj.authorName}</span> (@{proj.ownerNickname})
                         </p>
-                        <p className="text-[11px] text-[var(--text-tertiary)] mb-3">
-                          {t('cloud.gallery.102')} {proj.shapesCount} | {new Date(proj.createdAt).toLocaleDateString('uk-UA')}
-                        </p>
+                        <div className="text-[11px] text-[var(--text-tertiary)] flex items-center gap-1.5 flex-wrap mb-3">
+                          <span>{t('cloud.gallery.102')} <strong className="text-[var(--text-secondary)]">{proj.shapesCount}</strong></span>
+                          <span className="opacity-40">•</span>
+                          {(() => {
+                            const latestTime = Math.max(proj.updatedAt || 0, proj.createdAt || 0);
+                            return (
+                              <span title={formatProjectDateTime(latestTime)}>
+                                {t('cloud.gallery.032') || 'Створено:'} <span className="text-[var(--text-secondary)] font-medium">{formatProjectDate(latestTime)}</span>
+                              </span>
+                            );
+                          })()}
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-2 pt-2 border-t border-[var(--border-secondary)]">
@@ -2759,7 +2875,21 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                               </>
                             )}
                             <p className="text-xs text-[var(--text-tertiary)] mb-1">{t('cloud.gallery.155')} <span className="text-[var(--text-secondary)] font-medium">{proj.authorName}</span></p>
-                            <p className="text-[11px] text-[var(--text-tertiary)] mb-3">{t('cloud.gallery.156')} {proj.shapesCount}</p>
+                            <div className="text-[11px] text-[var(--text-tertiary)] space-y-0.5 mb-3">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span>{t('cloud.gallery.156')} <strong className="text-[var(--text-secondary)]">{proj.shapesCount}</strong></span>
+                                <span className="opacity-40">•</span>
+                                <span title={formatProjectDateTime(proj.createdAt)}>
+                                  {t('cloud.gallery.032') || 'Створено:'} <span className="text-[var(--text-secondary)] font-medium">{formatProjectDate(proj.createdAt)}</span>
+                                </span>
+                              </div>
+                              {isProjectUpdated(proj) && (
+                                <div className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-medium" title={formatProjectDateTime(proj.updatedAt)}>
+                                  <span>🔄</span>
+                                  <span>Оновлено: {formatProjectDate(proj.updatedAt)}</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
 
                           <div className="space-y-1.5 sm:space-y-2 pt-2 border-t border-[var(--border-secondary)]">
@@ -3532,7 +3662,21 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                               </>
                             )}
                             <p className="text-xs text-[var(--text-secondary)] mb-1">{t('cloud.gallery.261')} {proj.authorName} (@{proj.ownerNickname})</p>
-                            <p className="text-[11px] text-[var(--text-tertiary)] mb-3">{t('cloud.gallery.262')} {proj.shapesCount}</p>
+                            <div className="text-[11px] text-[var(--text-tertiary)] space-y-0.5 mb-3">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span>{t('cloud.gallery.262')} <strong className="text-[var(--text-secondary)]">{proj.shapesCount}</strong></span>
+                                <span className="opacity-40">•</span>
+                                <span title={formatProjectDateTime(proj.createdAt)}>
+                                  {t('cloud.gallery.032') || 'Створено:'} <span className="text-[var(--text-secondary)] font-medium">{formatProjectDate(proj.createdAt)}</span>
+                                </span>
+                              </div>
+                              {isProjectUpdated(proj) && (
+                                <div className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-medium" title={formatProjectDateTime(proj.updatedAt)}>
+                                  <span>🔄</span>
+                                  <span>Оновлено: {formatProjectDate(proj.updatedAt)}</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
 
                           <div className="flex items-center gap-2 pt-2 border-t border-[var(--border-secondary)]">
