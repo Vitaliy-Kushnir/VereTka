@@ -30,14 +30,15 @@ const generateQuadraticBezierPoints = (p0: {x:number, y:number}, p1: {x:number, 
  * Generates points for a quadratic B-spline that mimics Tkinter's `smooth=True` behavior.
  * @param userPoints The user-defined points that act as control points.
  * @param isClosed Whether the spline should form a closed loop.
+ * @param splinesteps Number of segments per curve segment (default 12 for high fidelity).
  * @returns An array of points representing the smoothed curve.
  */
-const getTkinterSplinePoints = (userPoints: { x: number; y: number }[], isClosed: boolean): {x: number, y:number}[] => {
+const getTkinterSplinePoints = (userPoints: { x: number; y: number }[], isClosed: boolean, splinesteps: number = 12): {x: number, y:number}[] => {
     const n = userPoints.length;
     if (n < 2) return userPoints;
     
     const splinePoints: {x: number, y:number}[] = [];
-    const segmentsPerCurve = 8; // How many line segments to use for each Bezier curve approximation
+    const segmentsPerCurve = Math.max(8, splinesteps || 12); // High quality line segments for each Bezier curve approximation
 
     if (isClosed) {
         if (n < 3) return userPoints; // Not enough points for a closed curve
@@ -95,16 +96,174 @@ const getTkinterSplinePoints = (userPoints: { x: number; y: number }[], isClosed
     return splinePoints;
 }
 
-export const getSplineApproximation = (shape: BezierCurveShape | PolylineShape): { x: number; y: number }[] => {
+/**
+ * Ramer-Douglas-Peucker (RDP) algorithm to simplify a polyline.
+ */
+export const simplifyPointsRDP = (
+    points: { x: number; y: number }[],
+    epsilon: number
+): { x: number; y: number }[] => {
+    if (points.length <= 2) return points;
+
+    let maxDist = 0;
+    let index = 0;
+    const start = points[0];
+    const end = points[points.length - 1];
+
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const lineLenSq = dx * dx + dy * dy;
+
+    for (let i = 1; i < points.length - 1; i++) {
+        let dist = 0;
+        if (lineLenSq === 0) {
+            dist = Math.hypot(points[i].x - start.x, points[i].y - start.y);
+        } else {
+            const t = Math.max(0, Math.min(1, ((points[i].x - start.x) * dx + (points[i].y - start.y) * dy) / lineLenSq));
+            const projX = start.x + t * dx;
+            const projY = start.y + t * dy;
+            dist = Math.hypot(points[i].x - projX, points[i].y - projY);
+        }
+
+        if (dist > maxDist) {
+            maxDist = dist;
+            index = i;
+        }
+    }
+
+    if (maxDist > epsilon) {
+        const left = simplifyPointsRDP(points.slice(0, index + 1), epsilon);
+        const right = simplifyPointsRDP(points.slice(index), epsilon);
+        return [...left.slice(0, -1), ...right];
+    } else {
+        return [start, end];
+    }
+};
+
+/**
+ * Applies a Gaussian / Binomial moving filter [0.25, 0.5, 0.25] to points
+ * keeping the first and last points fixed, to eliminate sensor jitter.
+ */
+export const smoothPointTrajectory = (
+    points: { x: number; y: number }[],
+    passes: number = 2
+): { x: number; y: number }[] => {
+    if (points.length < 3) return points;
+    let current = [...points];
+
+    for (let p = 0; p < passes; p++) {
+        const next: { x: number; y: number }[] = [current[0]];
+        for (let i = 1; i < current.length - 1; i++) {
+            const prev = current[i - 1];
+            const curr = current[i];
+            const nxt = current[i + 1];
+            next.push({
+                x: 0.25 * prev.x + 0.5 * curr.x + 0.25 * nxt.x,
+                y: 0.25 * prev.y + 0.5 * curr.y + 0.25 * nxt.y,
+            });
+        }
+        next.push(current[current.length - 1]);
+        current = next;
+    }
+    return current;
+};
+
+/**
+ * Optimizes raw points captured from pencil drawing to generate clean,
+ * notch-free control points tailored for Tkinter's quadratic B-spline.
+ */
+export const optimizePencilPoints = (
+    rawPoints: { x: number; y: number }[],
+    smooth: boolean = true
+): { x: number; y: number }[] => {
+    if (!rawPoints || rawPoints.length < 2) return rawPoints || [];
+
+    // Step 1: Remove consecutive points that are too close (< 2.5px)
+    const cleaned: { x: number; y: number }[] = [rawPoints[0]];
+    for (let i = 1; i < rawPoints.length; i++) {
+        const last = cleaned[cleaned.length - 1];
+        const dist = Math.hypot(rawPoints[i].x - last.x, rawPoints[i].y - last.y);
+        if (dist >= 2.5) {
+            cleaned.push(rawPoints[i]);
+        }
+    }
+    // Always include the actual final raw point if not already added
+    const lastRaw = rawPoints[rawPoints.length - 1];
+    if (Math.hypot(cleaned[cleaned.length - 1].x - lastRaw.x, cleaned[cleaned.length - 1].y - lastRaw.y) > 0.5) {
+        cleaned.push(lastRaw);
+    }
+
+    if (cleaned.length < 3) return cleaned;
+
+    if (!smooth) {
+        // Crisp polyline without smoothing: light RDP reduction
+        return simplifyPointsRDP(cleaned, 1.0);
+    }
+
+    // Step 2: Remove micro-hook at the end of the stroke (common mouseup / stylus lift artifact)
+    if (cleaned.length >= 4) {
+        const n = cleaned.length;
+        const pLast = cleaned[n - 1];
+        const pPrev = cleaned[n - 2];
+        const pPrev2 = cleaned[n - 3];
+        const segLast = Math.hypot(pLast.x - pPrev.x, pLast.y - pPrev.y);
+        const segPrev = Math.hypot(pPrev.x - pPrev2.x, pPrev.y - pPrev2.y);
+        
+        // If last segment is very short and makes a sharp angle backwards (> 110 degrees)
+        if (segLast < 6 && segPrev > 4) {
+            const v1x = pPrev.x - pPrev2.x;
+            const v1y = pPrev.y - pPrev2.y;
+            const v2x = pLast.x - pPrev.x;
+            const v2y = pLast.y - pPrev.y;
+            const dot = (v1x * v2x + v1y * v2y) / (segLast * segPrev);
+            if (dot < -0.3) {
+                cleaned.pop(); // Drop spurious hook
+            }
+        }
+    }
+
+    // Step 3: Low-pass filter to remove sensor jitter & quantization noise
+    const smoothedTrajectory = smoothPointTrajectory(cleaned, 2);
+
+    // Step 4: Douglas-Peucker simplification tuned for Tkinter B-splines.
+    // An epsilon of 2.2px preserves gesture & curves while removing high-frequency jaggedness.
+    let simplified = simplifyPointsRDP(smoothedTrajectory, 2.2);
+
+    if (simplified.length < 3) {
+        return simplified;
+    }
+
+    // Step 5: Ensure minimum spacing between adjacent control points
+    // (close control points cause sharp tangent spikes in Tkinter quadratic B-splines)
+    const spacedPoints: { x: number; y: number }[] = [simplified[0]];
+    for (let i = 1; i < simplified.length - 1; i++) {
+        const last = spacedPoints[spacedPoints.length - 1];
+        const dist = Math.hypot(simplified[i].x - last.x, simplified[i].y - last.y);
+        if (dist >= 6) {
+            spacedPoints.push(simplified[i]);
+        }
+    }
+    spacedPoints.push(simplified[simplified.length - 1]);
+
+    if (spacedPoints.length < 3) {
+        return spacedPoints;
+    }
+
+    // Step 6: Final gentle relaxation of internal control points to eliminate any residual kink
+    const finalRelaxed = smoothPointTrajectory(spacedPoints, 1);
+    return finalRelaxed;
+};
+
+export const getSplineApproximation = (shape: BezierCurveShape | PolylineShape | { points: { x: number; y: number }[]; smooth?: boolean; isClosed?: boolean; splinesteps?: number }): { x: number; y: number }[] => {
     const cleanPoints = shape.points.filter(p => p);
     if (cleanPoints.length < 2) return cleanPoints;
     if (shape.smooth) {
-        return getTkinterSplinePoints(cleanPoints, shape.isClosed);
+        return getTkinterSplinePoints(cleanPoints, !!shape.isClosed, shape.splinesteps ?? 12);
     }
     return cleanPoints;
 }
 
-export const getSmoothedPathData = (points: { x: number; y: number }[], smooth: boolean, isClosed: boolean): string => {
+export const getSmoothedPathData = (points: { x: number; y: number }[], smooth: boolean, isClosed: boolean, splinesteps: number = 12): string => {
     const cleanPoints = points.filter(p => p);
     if (cleanPoints.length === 0) return '';
     if (cleanPoints.length < 2) {
@@ -112,7 +271,7 @@ export const getSmoothedPathData = (points: { x: number; y: number }[], smooth: 
          if (isClosed) path += ' Z';
          return path;
     }
-    const pointsToDraw = smooth ? getTkinterSplinePoints(cleanPoints, isClosed) : cleanPoints;
+    const pointsToDraw = smooth ? getTkinterSplinePoints(cleanPoints, isClosed, splinesteps) : cleanPoints;
     let path = getPolylinePointsAsPath(pointsToDraw);
     if (isClosed) {
         path += ' Z';

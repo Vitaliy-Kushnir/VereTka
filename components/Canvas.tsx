@@ -4,7 +4,7 @@ import { useLanguage } from './LanguageContext';
 import { useState, useRef, useMemo, useCallback, useEffect } from 'react';
 import { type Shape, type Tool, type CanvasAction, type RotatableShape, type RectangleShape, type EllipseShape, type PathShape, type LineShape, PolylineShape, PolygonShape, DrawMode, IsoscelesTriangleShape, RhombusShape, ParallelogramShape, TrapezoidShape, BezierCurveShape, ViewTransform, JoinStyle, ArcShape, RightTriangleShape, TransformHandle, TextShape, ImageShape, BitmapShape, MagnifierMode } from '../types';
 import { SelectionControls } from './SelectionControls';
-import { getShapeCenter, rotatePoint, getBoundingBox, getIsoscelesTrianglePoints, getPolylinePointsAsPath, getPolygonPointsAsArray, getRhombusPoints, getTrapezoidPoints, getParallelogramPoints, getSmoothedPathData, getFinalPoints, getArcPathData, getRightTrianglePoints, getTextBoundingBox, processTextLines, getVisualBoundingBox, isShapeClosed, getClosestPointOnShapeContour, evaluateShapeContourPointAndTangent, isShapeIntersectingRect } from '../lib/geometry';
+import { getShapeCenter, rotatePoint, getBoundingBox, getIsoscelesTrianglePoints, getPolylinePointsAsPath, getPolygonPointsAsArray, getRhombusPoints, getTrapezoidPoints, getParallelogramPoints, getSmoothedPathData, getFinalPoints, getArcPathData, getRightTrianglePoints, getTextBoundingBox, processTextLines, getVisualBoundingBox, isShapeClosed, getClosestPointOnShapeContour, evaluateShapeContourPointAndTangent, isShapeIntersectingRect, optimizePencilPoints } from '../lib/geometry';
 import { CheckSquareIcon, ClosePathIcon, XSquareIcon, UndoIcon } from './icons';
 import { TOOL_TYPE_TO_NAME, ROTATE_CURSOR_STYLE, ADJUST_CURSOR_STYLE, getDefaultNameForShape, getVisualFontFamily, isDefaultName, DUPLICATE_CURSOR_STYLE } from '../lib/constants';
 import { Magnifier } from './Magnifier';
@@ -330,6 +330,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     hasMoved: boolean;
   } | null>(null);
   const isMultiTouchGestureRef = useRef<boolean>(false);
+  const lastMultiTouchEndTimeRef = useRef<number>(0);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const longPressPosRef = useRef<{ x: number; y: number; shapeId?: string } | null>(null);
   const isLongPressTriggeredRef = useRef<boolean>(false);
@@ -489,8 +490,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         if (!clickedShape) {
           onSelectShape(null);
         } else if (clickedShape && clickedShape.state === 'normal') {
-          if (!selectedShapeIds.includes(clickedShape.id)) onSelectShape(clickedShape.id, e.ctrlKey || e.metaKey, e.shiftKey);
-          else if (e.ctrlKey || e.metaKey || e.shiftKey) onSelectShape(clickedShape.id, e.ctrlKey || e.metaKey, e.shiftKey);
+          if (!selectedShapeIds.includes(clickedShape.id)) onSelectShape(clickedShape.id, e.ctrlKey || e.metaKey, e.shiftKey, true);
+          else if (e.ctrlKey || e.metaKey || e.shiftKey) onSelectShape(clickedShape.id, e.ctrlKey || e.metaKey, e.shiftKey, true);
         }
       return;
     }
@@ -554,7 +555,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         case 'circle': newShape = { id, name: localizedToolName, type: 'ellipse', cx: pos.x, cy: pos.y, rx: 0, ry: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', isAspectRatioLocked: true }; break;
         case 'ellipse': newShape = { id, name: localizedToolName, type: 'ellipse', cx: pos.x, cy: pos.y, rx: 0, ry: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', isAspectRatioLocked: false }; break;
         case 'line': newShape = { id, name: localizedToolName, type: 'line', points: [{...pos}, {...pos}], stroke: strokeColor, strokeWidth, rotation: 0, capstyle: 'round', arrowshape: [8, 10, 3], state: 'normal' }; break;
-        case 'pencil': newShape = { id, name: localizedToolName, type: 'pencil', points: [pos], stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'round', capstyle: 'round', arrowshape: [8, 10, 3], isAspectRatioLocked: false }; break;
+        case 'pencil': newShape = { id, name: localizedToolName, type: 'pencil', points: [pos], stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'round', capstyle: 'round', arrowshape: [8, 10, 3], smooth: true, splinesteps: 12, isAspectRatioLocked: false }; break;
         case 'triangle': newShape = { id, name: localizedToolName, type: 'triangle', x: pos.x, y: pos.y, width: 0, height: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'miter', topVertexOffset: 0, isAspectRatioLocked: false }; break;
         case 'right-triangle': newShape = { id, name: localizedToolName, type: 'right-triangle', x: pos.x, y: pos.y, width: 0, height: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'miter', isAspectRatioLocked: false }; break;
         case 'rhombus': newShape = { id, name: localizedToolName, type: 'rhombus', x: pos.x, y: pos.y, width: 0, height: 0, fill: fillColor, stroke: strokeColor, strokeWidth, rotation: 0, state: 'normal', joinstyle: 'miter', isAspectRatioLocked: false }; break;
@@ -1218,7 +1219,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             }
             case 'pencil': {
                 const lastPoint = shape.points[shape.points.length - 1];
-                if (!lastPoint || Math.hypot(pos.x - lastPoint.x, pos.y - lastPoint.y) >= 2) {
+                if (!lastPoint || Math.hypot(pos.x - lastPoint.x, pos.y - lastPoint.y) >= 3) {
                     updatedShape = { ...shape, points: [...shape.points, pos] };
                 } else {
                     return;
@@ -2077,8 +2078,15 @@ const Canvas: React.FC<CanvasProps> = (props) => {
            // Shape too small
         } else if (shape.type === 'line' && Math.hypot(shape.points[1].x - shape.points[0].x, shape.points[1].y - shape.points[0].y) <= DRAG_THRESHOLD) {
           // Line too short
-        } else if (shape.type === 'pencil' && shape.points.length <= 2) {
-          // Pencil stroke too short
+        } else if (shape.type === 'pencil') {
+            const rawPoints = shape.points;
+            const isSmooth = shape.smooth !== false;
+            const optimizedPoints = optimizePencilPoints(rawPoints, isSmooth);
+            if (optimizedPoints.length < 2) {
+                // Pencil stroke too short
+            } else {
+                addShape({ ...shape, points: optimizedPoints });
+            }
         } else {
             addShape(shape);
         }
@@ -2249,6 +2257,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         }
         e.preventDefault();
         
+        // Cooldown right after multi-touch gesture to prevent accidental tap on release
+        if (Date.now() - lastMultiTouchEndTimeRef.current < 250) {
+            return;
+        }
+
         // If it's a multi-touch gesture (e.g. 2+ fingers for pinch-zoom/pan):
         // Cancel any pending single-touch actions and DO NOT alter existing shape selections!
         if (e.touches.length >= 2) {
@@ -2260,6 +2273,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             isLongPressTriggeredRef.current = false;
             pendingTouchRef.current = null;
             setAction(null); // Cancel any drag or drawing action immediately
+            setActiveTransformShape(null);
+            setAuxiliaryTransformShapes([]);
 
             const [t1, t2] = [e.touches[0], e.touches[1]];
             const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
@@ -2371,9 +2386,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
         setIsTouchDown(true);
 
-        if (activeTool === 'select') {
+        if (activeTool === 'select' || activeTool === 'edit-points') {
             if (isHandle) {
-                // User touched a transform handle
+                // User touched a transform handle or node handle
                 const mockMouseEvent = { 
                     type: 'touchstart',
                     clientX: touch.clientX, 
@@ -2390,8 +2405,13 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         return;
                     }
                 }
-                // Shape is already selected: prepare drag action if user moves finger
-                setAction({ type: 'dragging', initialShape: clickedShape, startPos: pos });
+                if (activeTool === 'select') {
+                    // Shape is already selected: prepare drag action if user moves finger
+                    setAction({ type: 'dragging', initialShape: clickedShape, startPos: pos });
+                } else {
+                    // In edit-points mode, keep point selection clean, do not drag entire shape body on unconfirmed touch
+                    setAction(null);
+                }
             } else {
                 // Unselected shape or empty canvas: DO NOT select immediately!
                 // Wait for clean tap or deliberate drag gesture to avoid accidental selections during swipes/pinches.
@@ -2426,26 +2446,31 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             isLongPressTriggeredRef.current = false;
             pendingTouchRef.current = null;
             setAction(null);
+            setActiveTransformShape(null);
+            setAuxiliaryTransformShapes([]);
 
-            if (touchStateRef.current) {
-                const { initialDist, initialMidpoint, initialTransform } = touchStateRef.current;
-                if (initialDist === 0) return;
+            const [t1, t2] = [e.touches[0], e.touches[1]];
+            const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+            const currentMidpoint = { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
 
-                const [t1, t2] = [e.touches[0], e.touches[1]];
-                const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
-                const currentMidpoint = { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
-
-                let scale = initialTransform.scale * (currentDist / initialDist);
-                scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
-
-                const dx = currentMidpoint.x - initialMidpoint.x;
-                const dy = currentMidpoint.y - initialMidpoint.y;
-                
-                const newX = currentMidpoint.x - (currentMidpoint.x - (initialTransform.x + dx)) * (scale / initialTransform.scale);
-                const newY = currentMidpoint.y - (currentMidpoint.y - (initialTransform.y + dy)) * (scale / initialTransform.scale);
-
-                setViewTransform({ scale, x: newX, y: newY });
+            if (!touchStateRef.current || touchStateRef.current.initialDist < 1) {
+                touchStateRef.current = { initialDist: currentDist, initialMidpoint: currentMidpoint, initialTransform: viewTransform };
+                return;
             }
+
+            const { initialDist, initialMidpoint, initialTransform } = touchStateRef.current;
+            if (initialDist === 0) return;
+
+            let scale = initialTransform.scale * (currentDist / initialDist);
+            scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
+
+            const dx = currentMidpoint.x - initialMidpoint.x;
+            const dy = currentMidpoint.y - initialMidpoint.y;
+            
+            const newX = currentMidpoint.x - (currentMidpoint.x - (initialTransform.x + dx)) * (scale / initialTransform.scale);
+            const newY = currentMidpoint.y - (currentMidpoint.y - (initialTransform.y + dy)) * (scale / initialTransform.scale);
+
+            setViewTransform({ scale, x: newX, y: newY });
             return;
         }
 
@@ -2477,10 +2502,10 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                     longPressTimerRef.current = null;
                 }
 
-                if (activeTool === 'select' && !pendingTouchRef.current.isAlreadySelected && !pendingTouchRef.current.isHandle) {
+                if ((activeTool === 'select' || activeTool === 'edit-points') && !pendingTouchRef.current.isAlreadySelected && !pendingTouchRef.current.isHandle) {
                     if (!pendingTouchRef.current.shapeId) {
-                        // Touched empty space and dragged -> start rubberband selection box
-                        if (!action) {
+                        // Touched empty space and dragged -> start rubberband selection box (in select mode)
+                        if (!action && activeTool === 'select') {
                             setAction({ type: 'selecting', startPos: pendingTouchRef.current.startCanvasPos, currentPos: pos });
                         }
                     } else {
@@ -2511,19 +2536,37 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         if (isMultiTouchGestureRef.current) {
             if (e.touches.length === 0) {
                 isMultiTouchGestureRef.current = false;
+                lastMultiTouchEndTimeRef.current = Date.now();
                 touchStateRef.current = null;
                 pendingTouchRef.current = null;
                 setIsTouchDown(false);
                 setRawMousePos(null);
                 setPreviewMousePos(null);
                 setCursorPos(null);
+                setAction(null);
+                setActiveTransformShape(null);
+                setAuxiliaryTransformShapes([]);
             } else if (e.touches.length < 2) {
                 touchStateRef.current = null;
+                pendingTouchRef.current = null;
+                setAction(null);
             }
             return;
         }
 
         setIsTouchDown(false);
+
+        // Prevent accidental tap immediately after multi-touch pinch/zoom release
+        if (Date.now() - lastMultiTouchEndTimeRef.current < 300) {
+            pendingTouchRef.current = null;
+            setAction(null);
+            if (e.touches.length === 0) {
+                setRawMousePos(null);
+                setPreviewMousePos(null);
+                setCursorPos(null);
+            }
+            return;
+        }
 
         if (e.changedTouches && e.changedTouches.length > 0) {
             const touch = e.changedTouches[0];
@@ -2549,10 +2592,13 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
         const touch = e.changedTouches[0];
 
-        if (activeTool === 'select') {
+        if (activeTool === 'select' || activeTool === 'edit-points') {
             if (pending && !pending.hasMoved) {
                 // --- CLEAN SINGLE TAP GESTURE ---
                 const now = Date.now();
+                if (now - lastMultiTouchEndTimeRef.current < 300) {
+                    return;
+                }
                 const clickedShapeId = pending.shapeId;
                 const clickedShape = clickedShapeId ? shapes.find(s => s?.id === clickedShapeId) : null;
 
@@ -2591,22 +2637,24 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
                     if (isMultiSelectMode) {
                         // In multi-select mode, tap toggles this shape in selection
-                        onSelectShape(clickedShape.id, true, false);
+                        onSelectShape(clickedShape.id, true, false, activeTool === 'edit-points');
                     } else {
                         // Standard tap selects this shape cleanly
-                        onSelectShape(clickedShape.id, false, false);
+                        onSelectShape(clickedShape.id, false, false, activeTool === 'edit-points');
                     }
                 } else if (!clickedShape && !pending.isHandle) {
-                    // Clean tap on empty canvas space -> deselect all
-                    onSelectShape(null);
-                    if (isMultiSelectMode) {
-                        setIsMultiSelectMode?.(false);
+                    // Clean tap on empty canvas space -> deselect all (only in select mode)
+                    if (activeTool === 'select') {
+                        onSelectShape(null);
+                        if (isMultiSelectMode) {
+                            setIsMultiSelectMode?.(false);
+                        }
                     }
                 }
                 return;
             } else if (pending?.hasMoved) {
                 // Finger was swiped/dragged
-                if (action?.type === 'dragging' || action?.type === 'selecting' || action?.type === 'resizing' || action?.type === 'rotating' || action?.type === 'edit-distribute-path') {
+                if (action?.type === 'dragging' || action?.type === 'selecting' || action?.type === 'resizing' || action?.type === 'rotating' || action?.type === 'point-editing' || action?.type === 'arc-angle-editing' || action?.type === 'triangle-vertex-editing' || action?.type === 'star-inner-radius-editing' || action?.type === 'trapezoid-offset-editing' || action?.type === 'parallelogram-angle-editing' || action?.type === 'edit-distribute-path') {
                     if (touch) {
                         const mockMouseEvent = {
                             type: 'touchend',
@@ -2629,7 +2677,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         // When other tools are active (drawing shapes, bezier, polyline, etc.)
         if (touch) {
             const mockMouseEvent = { 
-                type: 'touchend',
+                type: 'touchend', 
                 clientX: touch.clientX, 
                 clientY: touch.clientY, 
                 button: 0, 
@@ -3371,7 +3419,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         return <path key={shape.id} {...finalStaticProps} stroke={shape.stroke} strokeWidth={safeStrokeWidth} d={pathData} fill={fill} {...lineLikeProps(shape)} {...joinStyleProps(shape)} />;
                     }
                     case 'pencil': {
-                        const d = shape.smooth ? getSmoothedPathData(shape.points, true, false) : getPolylinePointsAsPath(shape.points);
+                        const d = shape.smooth ? getSmoothedPathData(shape.points, true, false, shape.splinesteps ?? 12) : getPolylinePointsAsPath(shape.points);
                         return (
                             <React.Fragment key={shape.id}>
                                  <path 

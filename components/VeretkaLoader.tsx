@@ -123,29 +123,30 @@ export const SHAPES: string[] = [
     return `${Math.round(x * 10) / 10},${Math.round(y * 10) / 10}`;
   }).join(' '),
 
-  // 15. Gear / Cogwheel (6 perfectly regular identical teeth)
-  samplePolygon(Array.from({ length: 24 }, (_, i) => {
+  // 15. Gear / Cogwheel (9 perfectly regular identical teeth)
+  Array.from({ length: N }, (_, i) => {
     const tooth = Math.floor(i / 4);
     const sub = i % 4;
-    const baseAngle = (tooth / 6) * Math.PI * 2 - Math.PI / 2;
+    const step = (Math.PI * 2) / 9;
+    const baseAngle = tooth * step - Math.PI / 2;
     let angleOffset = 0;
-    let r = 27;
+    let r = 28;
     if (sub === 0) {
-      angleOffset = -0.30;
-      r = 27;
+      angleOffset = -step * 0.28;
+      r = 28;
     } else if (sub === 1) {
-      angleOffset = -0.15;
+      angleOffset = -step * 0.13;
       r = 42;
     } else if (sub === 2) {
-      angleOffset = 0.15;
+      angleOffset = step * 0.13;
       r = 42;
     } else {
-      angleOffset = 0.30;
-      r = 27;
+      angleOffset = step * 0.28;
+      r = 28;
     }
     const a = baseAngle + angleOffset;
-    return [50 + r * Math.cos(a), 50 + r * Math.sin(a)];
-  }), N),
+    return `${Math.round((50 + r * Math.cos(a)) * 10) / 10},${Math.round((50 + r * Math.sin(a)) * 10) / 10}`;
+  }).join(' '),
 
   // 16. Shield
   samplePolygon([
@@ -442,7 +443,7 @@ export const SHAPE_INFOS: ShapeInfo[] = [
   { id: 12, nameUk: 'Ромб / Алмаз', nameEn: 'Diamond Rhombus', pointsString: SHAPES[11] },
   { id: 13, nameUk: 'Сквіркл / Супереліпс', nameEn: 'Squircle Superellipse', pointsString: SHAPES[12] },
   { id: 14, nameUk: 'Крапля', nameEn: 'Teardrop', pointsString: SHAPES[13] },
-  { id: 15, nameUk: 'Шестерня (6 зубців)', nameEn: '6-Tooth Gear', pointsString: SHAPES[14] },
+  { id: 15, nameUk: 'Шестерня (9 зубців)', nameEn: '9-Tooth Gear', pointsString: SHAPES[14] },
   { id: 16, nameUk: 'Захисний щит', nameEn: 'Protection Shield', pointsString: SHAPES[15] },
   { id: 17, nameUk: 'Півмісяць', nameEn: 'Crescent Moon', pointsString: SHAPES[16] },
   { id: 18, nameUk: 'Капсула / Пігулка', nameEn: 'Capsule Pill', pointsString: SHAPES[17] },

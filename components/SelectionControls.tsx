@@ -149,6 +149,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
         }
 
         const handleNodeDown = (e: React.MouseEvent | React.TouchEvent, pointIndex: number) => {
+            if ('touches' in e && e.touches.length >= 2) return;
             e.stopPropagation();
             setActivePointIndex(pointIndex);
             const stableCenter = getShapeCenter(shape, allShapes);
@@ -176,6 +177,8 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
                     joinstyle: 'joinstyle' in shape && shape.joinstyle ? shape.joinstyle : undefined,
                     stipple: 'stipple' in shape ? shape.stipple : undefined,
                     dash: 'dash' in shape ? shape.dash : undefined,
+                    groupId: shape.groupId,
+                    locked: shape.locked,
                  };
                  
                  const oldName = shape.name;
@@ -321,6 +324,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
         const rotationHandlePos = rotatePoint(unrotatedRotationHandlePos, center, rotation);
 
         const handleLineResizeDown = (e: React.MouseEvent | React.TouchEvent, handle: 'line-start' | 'line-end') => {
+            if ('touches' in e && e.touches.length >= 2) return;
             e.stopPropagation();
             const geometricCenter = getShapeCenter(shape, allShapes)!;
             setAction({
@@ -333,6 +337,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
         };
         
         const handleRotateDown = (e: React.MouseEvent | React.TouchEvent) => {
+            if ('touches' in e && e.touches.length >= 2) return;
             e.stopPropagation();
             if (!svgRef.current) return;
             const handleCenter = getShapeCenter(shape, allShapes);
@@ -395,6 +400,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
     ];
 
     const handleResizeDown = (e: React.MouseEvent | React.TouchEvent, handle: TransformHandle) => {
+        if ('touches' in e && e.touches.length >= 2) return;
         e.stopPropagation();
         const geometricCenter = getShapeCenter(shape, allShapes)!;
         
@@ -432,6 +438,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
     const rotationHandlePos = rotatePoint(unrotatedRotationHandlePos, center, rotation);
 
     const handleRotateDown = (e: React.MouseEvent | React.TouchEvent) => {
+        if ('touches' in e && e.touches.length >= 2) return;
         e.stopPropagation();
         if (!svgRef.current) return;
         const handleCenter = getShapeCenter(shape, allShapes);
@@ -458,6 +465,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
     };
 
     const handleSpecialControlMouseDown = (e: React.MouseEvent | React.TouchEvent, type: 'arc-angle' | 'trapezoid-offset' | 'parallelogram-angle' | 'triangle-vertex' | 'star-inner-radius', handle: string) => {
+        if ('touches' in e && e.touches.length >= 2) return;
         e.stopPropagation();
         
         const eventForPosition = 'touches' in e ? e.touches[0] : e;

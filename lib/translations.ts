@@ -1,3 +1,4 @@
+// UTF-8 Translations
 export const translations = {
   "uk": {
     "toolbar.drawMode.corner": "Ğ’Ñ–Ğ´ ĞºÑƒÑ‚Ğ°",
@@ -729,6 +730,9 @@ export const translations = {
     "app.1105": "Ğ›Ğ°Ğ¼Ğ°Ğ½Ğ°",
     "app.1106": "ĞšÑ€Ğ¸Ğ²Ğ°",
     "app.1107": "Ğ ĞµĞ¶Ğ¸Ğ¼ Ñ€ĞµĞ´Ğ°Ğ³ÑƒĞ²Ğ°Ğ½Ğ½Ñ Ğ²ÑƒĞ·Ğ»Ñ–Ğ² Ğ½ĞµĞ´Ğ¾ÑÑ‚ÑƒĞ¿Ğ½Ğ¸Ğ¹ Ğ´Ğ»Ñ Ñ‚ĞµĞºÑÑ‚Ñƒ.",
+    "app.editPointsMultipleShapes": "Ğ ĞµĞ¶Ğ¸Ğ¼ Ñ€ĞµĞ´Ğ°Ğ³ÑƒĞ²Ğ°Ğ½Ğ½Ñ Ğ²ÑƒĞ·Ğ»Ñ–Ğ² Ğ½ĞµĞ´Ğ¾ÑÑ‚ÑƒĞ¿Ğ½Ğ¸Ğ¹ Ğ´Ğ»Ñ Ğ´ĞµĞºÑ–Ğ»ÑŒĞºĞ¾Ñ… Ñ„Ñ–Ğ³ÑƒÑ€. Ğ’Ğ¸Ğ´Ñ–Ğ»Ñ–Ñ‚ÑŒ Ğ¾Ğ´Ğ½Ñƒ Ñ„Ñ–Ğ³ÑƒÑ€Ñƒ.",
+    "app.editPointsGroup": "Ğ¦Ğµ Ğ³Ñ€ÑƒĞ¿Ğ°. Ğ”Ğ»Ñ Ñ€ĞµĞ´Ğ°Ğ³ÑƒĞ²Ğ°Ğ½Ğ½Ñ Ğ²ÑƒĞ·Ğ»Ñ–Ğ² Ñ€Ğ¾Ğ·Ğ³Ñ€ÑƒĞ¿ÑƒĞ¹Ñ‚Ğµ Ñ—Ñ— Ğ°Ğ±Ğ¾ Ğ²Ğ¸Ğ´Ñ–Ğ»Ñ–Ñ‚ÑŒ ĞºĞ¾Ğ½ĞºÑ€ĞµÑ‚Ğ½Ñƒ Ñ„Ñ–Ğ³ÑƒÑ€Ñƒ.",
+    "app.editPointsImage": "Ğ ĞµĞ¶Ğ¸Ğ¼ Ñ€ĞµĞ´Ğ°Ğ³ÑƒĞ²Ğ°Ğ½Ğ½Ñ Ğ²ÑƒĞ·Ğ»Ñ–Ğ² Ğ½ĞµĞ´Ğ¾ÑÑ‚ÑƒĞ¿Ğ½Ğ¸Ğ¹ Ğ´Ğ»Ñ Ğ·Ğ¾Ğ±Ñ€Ğ°Ğ¶ĞµĞ½ÑŒ.",
     "app.1108": "Ğ¡Ğ¿Ğ¾Ñ‡Ğ°Ñ‚ĞºÑƒ Ğ½Ğ°Ğ¼Ğ°Ğ»ÑĞ¹Ñ‚Ğµ Ñ‰Ğ¾ÑÑŒ Ğ½Ğ° Ğ¿Ğ¾Ğ»Ğ¾Ñ‚Ğ½Ñ–!",
     "app.1109": "Ğ‘ÑƒĞ´ÑŒ Ğ»Ğ°ÑĞºĞ°, Ğ²Ğ²ĞµĞ´Ñ–Ñ‚ÑŒ Ğ²Ğ°Ñˆ ĞºĞ»ÑÑ‡ Gemini API Ñƒ Ğ½Ğ°Ğ»Ğ°ÑˆÑ‚ÑƒĞ²Ğ°Ğ½Ğ½ÑÑ….",
     "app.1110": "ĞšĞ¾Ğ´ ÑƒÑĞ¿Ñ–ÑˆĞ½Ğ¾ Ğ·Ğ³ĞµĞ½ĞµÑ€Ğ¾Ğ²Ğ°Ğ½Ğ¾!",
@@ -2258,6 +2262,9 @@ export const translations = {
     "app.1105": "Polyline",
     "app.1106": "Curve",
     "app.1107": "Point editing mode is not available for text.",
+    "app.editPointsMultipleShapes": "Point editing mode is not available for multiple shapes. Select a single shape.",
+    "app.editPointsGroup": "This is a group. To edit points, ungroup it or select a specific shape.",
+    "app.editPointsImage": "Point editing mode is not available for images.",
     "app.1108": "Draw something on the canvas first!",
     "app.1109": "Please enter your Gemini API key in the settings.",
     "app.1110": "Code generated successfully!",
@@ -3759,6 +3766,9 @@ export const translations = {
     "app.1105": "Polilinea",
     "app.1106": "Curva",
     "app.1107": "La modalitÃ  di modifica dei punti non Ã¨ disponibile per il testo.",
+    "app.editPointsMultipleShapes": "La modalitÃ  di modifica dei punti non Ã¨ disponibile per piÃ¹ forme. Seleziona una singola forma.",
+    "app.editPointsGroup": "Questo Ã¨ un gruppo. Per modificare i nodi, separalo o seleziona una forma specifica.",
+    "app.editPointsImage": "La modalitÃ  di modifica dei punti non Ã¨ disponibile per le immagini.",
     "app.1108": "Disegna prima qualcosa sulla tela!",
     "app.1109": "Inserisci la tua chiave API Gemini nelle impostazioni.",
     "app.1110": "Codice generato con successo!",
@@ -5288,6 +5298,9 @@ export const translations = {
     "app.1105": "PolilÃ­nea",
     "app.1106": "Curva",
     "app.1107": "El modo de ediciÃ³n de puntos no estÃ¡ disponible para texto.",
+    "app.editPointsMultipleShapes": "El modo de ediciÃ³n de puntos no estÃ¡ disponible para varias figuras. Selecciona una sola figura.",
+    "app.editPointsGroup": "Esto es un grupo. Para editar nodos, desagrupa o selecciona una figura especÃ­fica.",
+    "app.editPointsImage": "El modo de ediciÃ³n de puntos no estÃ¡ disponible para imÃ¡genes.",
     "app.1108": "Â¡Dibuja algo en el lienzo primero!",
     "app.1109": "Por favor, introduce tu clave API de Gemini en la configuraciÃ³n.",
     "app.1110": "Â¡CÃ³digo generado con Ã©xito!",
@@ -6810,6 +6823,9 @@ export const translations = {
     "app.1103": "Form in Pfad umgewandelt.",
     "app.1110": "Code erfolgreich generiert!",
     "app.1107": "Der Punktbearbeitungsmodus ist fÃ¼r Text nicht verfÃ¼gbar.",
+    "app.editPointsMultipleShapes": "Der Punktbearbeitungsmodus ist fÃ¼r mehrere Formen nicht verfÃ¼gbar. WÃ¤hlen Sie eine einzelne Form aus.",
+    "app.editPointsGroup": "Dies ist eine Gruppe. Um Punkte zu bearbeiten, heben Sie die Gruppierung auf oder wÃ¤hlen Sie eine bestimmte Form aus.",
+    "app.editPointsImage": "Der Punktbearbeitungsmodus ist fÃ¼r Bilder nicht verfÃ¼gbar.",
     "app.1108": "Zeichne zuerst etwas auf die Leinwand!",
     "app.1109": "Bitte geben Sie Ihren Gemini-API-SchlÃ¼ssel in den Einstellungen ein.",
     "app.1121": "Stornieren",
@@ -7015,8 +7031,8 @@ export const translations = {
     "tool.select": "WÃ¤hlen",
     "menu.settings": "Einstellungen",
     "tool.align.centerH": "Horizontale Mitte ausrichten",
-    "help.zoomOut": "Schriftart um 5Â % verkleinern",
-    "help.zoomIn": "Schriftart um 5Â % erhÃ¶hen",
+    "help.zoomOut": "Schriftart um 5 % verkleinern",
+    "help.zoomIn": "Schriftart um 5 % erhÃ¶hen",
     "tool.editPoints": "Punkte bearbeiten",
     "help.resetZoom": "Zoom auf 100 % zurÃ¼cksetzen",
     "tool.align.right": "Rechts ausrichten",
@@ -7687,8 +7703,8 @@ export const translations = {
     "gallery.title": "Cloud Gallery",
     "mobile.menu.cloudGalleryDesc": "Public projects, groups, and classes",
     "menu.export.viewPythonCode": "View Python Code",
-    "menu.export.runSimulator": "Voir le rÃ©sultat",
-    "menu.export.savePy": "Enregistrer sous fichier (.py, .txt)",
+    "menu.export.runSimulator": "View Result",
+    "menu.export.savePy": "Save as file (.py, .txt)",
     "menu.export.runOnline": "Run in Online Sandbox",
     "theme.light": "Light theme",
     "theme.dark": "Dark theme",
@@ -7723,7 +7739,7 @@ export const translations = {
     "cloud.gallery.t8": "Enter the access password for cell \"{name}\" ({code}):",
     "cloud.gallery.t9": "Check out my vector project \"{title}\" in Veretka!",
     "cloud.gallery.t10": "Project \"{title}\" in Veretka",
-    "cloud.gallery.t11": "Greetings! View my project \"{title}\" in Veretka at the link:\n\n{url}",
+    "cloud.gallery.t11": "Greetings! View my project \"{title}\" in Veretka at the link:\\n\\n{url}",
     "cloud.gallery.t12": "For example, {suggested}",
     "cloud.gallery.003": "Sorting:",
     "cloud.gallery.002": "Clear search",
@@ -7780,9 +7796,9 @@ export const translations = {
     "cloud.gallery.045": "The entered passwords do not match. Please check your spelling.",
     "cloud.gallery.048": "To create a chest through Google, be sure to enter a password (at least 3 characters)",
     "cloud.gallery.049": "Failed to create chest via Google",
-    "cloud.gallery.050": "Couldn\'t sign in with Google",
+    "cloud.gallery.050": "Couldn't sign in with Google",
     "cloud.gallery.046": "Failed to create chest",
-    "cloud.gallery.047": "Attention: A password is required to protect your chest!\nPlease enter a password (at least 3 characters):",
+    "cloud.gallery.047": "Attention: A password is required to protect your chest!\\nPlease enter a password (at least 3 characters):",
     "cloud.gallery.054": "Enter a password",
     "cloud.gallery.055": "Failed to enter cell/group",
     "cloud.gallery.051": "Please enter your email address",
@@ -7939,7 +7955,7 @@ export const translations = {
     "cloud.gallery.205": "ğŸ”’ Fixation of delivery (prohibition of re-updating)",
     "cloud.gallery.203": "ğŸ”µ Auto-versioning (save v2, v3...)",
     "cloud.gallery.208": "â€¢ An open collection for a team, studio or interest group.",
-    "cloud.gallery.209": "â€¢ All members with a code and password can post and view each other\'s work.",
+    "cloud.gallery.209": "â€¢ All members with a code and password can post and view each other's work.",
     "cloud.gallery.206": "After passing, the student cannot update the same project (ideal for tests).",
     "cloud.gallery.210": "â€¢ Great choice for hackathons, sharing experiences and co-creation.",
     "cloud.gallery.207": "ğŸ¨ Features of the Joint Workshop:",
@@ -8005,7 +8021,7 @@ export const translations = {
     "cloud.gallery.269": "Project name:*",
     "cloud.gallery.274": "Olena K.",
     "cloud.gallery.272": "Login (Open your own chest)",
-    "cloud.gallery.273": "Author\'s name (signature):",
+    "cloud.gallery.273": "Author's name (signature):",
     "cloud.gallery.275": "Your Nickname:*",
     "cloud.gallery.271": "To publish and save a project in your personal inbox, please open your inbox.",
     "cloud.gallery.278": "Project description (optional):",
@@ -8023,7 +8039,7 @@ export const translations = {
     "cloud.gallery.286": "ğŸ« Group chest",
     "cloud.gallery.287": "Create a copy in the group.",
     "cloud.gallery.290": "Choose your group:",
-    "cloud.gallery.292": "You don\'t have any groups saved yet",
+    "cloud.gallery.292": "You don't have any groups saved yet",
     "cloud.gallery.293": "Regime:",
     "cloud.gallery.291": "Loading your group...",
     "cloud.gallery.294": "ğŸ« Educational",
@@ -8046,7 +8062,7 @@ export const translations = {
     "cloud.gallery.315": "Password change (optional):",
     "cloud.gallery.313": "Email:",
     "cloud.gallery.312": "Olena K.",
-    "cloud.gallery.314": "ğŸ’¡ Bind your mail so you don\'t lose access and be able to restore your Nickname.",
+    "cloud.gallery.314": "ğŸ’¡ Bind your mail so you don't lose access and be able to restore your Nickname.",
     "cloud.gallery.311": "Name (signature):",
     "cloud.gallery.317": "Leave blank if not changing",
     "cloud.gallery.316": "New password:",
@@ -8063,7 +8079,7 @@ export const translations = {
     "cloud.gallery.326": ". All your projects in this chest will be permanently deleted.",
     "cloud.gallery.328": "Deleting...",
     "cloud.gallery.329": "ğŸ—‘ï¸ Yes, delete the chest",
-    "cloud.gallery.332": ").\n                All members will lose access to this group.",
+    "cloud.gallery.332": ").\\n                All members will lose access to this group.",
     "cloud.gallery.331": "You are about to delete the group completely",
     "cloud.gallery.333": "Enter group password to confirm:*",
     "cloud.gallery.334": "Group password",
@@ -8199,7 +8215,7 @@ export const translations = {
     "cloud.gallery.462": "Create a copy with the following free version automatically:",
     "cloud.gallery.463": "Specify your own name or version for the copy",
     "cloud.gallery.466": "âŒ Cancel sending",
-    "props.objectsCount": "ObjetsÂ :",
+    "props.objectsCount": "Objets :",
     "prop.pathType": "Type de chemin",
     "tool.distribute.path.circle": "Cercle",
     "tool.distribute.path.line": "Ligne droite",
@@ -8243,7 +8259,7 @@ export const translations = {
     "share.loaded": "Project successfully loaded from link!",
     "share.error": "Failed to decompress or load project from link.",
     "menu.file.generate": "GÃ©nÃ©rer du code...",
-    "action.ok": "D\'ACCORD",
+    "action.ok": "D'ACCORD",
     "action.cancel": "Annuler",
     "list.layerHidden": "CachÃ©",
     "menu.edit.lock": "FermÃ©",
@@ -8251,9 +8267,9 @@ export const translations = {
     "action.drawAnyway": "Dessine quand mÃªme",
     "warning.layerHidden.title": "Le calque est masquÃ©",
     "warning.layerLocked.title": "Le calque est verrouillÃ©",
-    "warning.layerHidden.message": "Vous essayez d\'effectuer une action sur un calque masquÃ©.",
-    "warning.layerLocked.message": "Vous essayez d\'effectuer une action sur un calque verrouillÃ©.",
-    "warning.selectLayer": "SÃ©lectionnez un calque actifÂ :",
+    "warning.layerHidden.message": "Vous essayez d'effectuer une action sur un calque masquÃ©.",
+    "warning.layerLocked.message": "Vous essayez d'effectuer une action sur un calque verrouillÃ©.",
+    "warning.selectLayer": "SÃ©lectionnez un calque actif :",
     "menu.edit": "Modifier",
     "menu.edit.undo": "DÃ©faire",
     "menu.edit.redo": "Refaire",
@@ -8300,19 +8316,19 @@ export const translations = {
     "menu.help.about": "Ã€ propos",
     "menu.help.manual": "Manuel",
     "menu.help.feedback": "Envoyer des commentaires",
-    "menu.exit.group": "Session et sortie",
-    "menu.exit": "Quitter l'Ã©diteur",
-    "menu.exit.desc": "Fermer le projet et quitter l'Ã©diteur",
-    "app.exit.browserSuccess": "Travail terminÃ©. Vous pouvez fermer cet onglet en toute sÃ©curitÃ©.",
-    "app.exit.pwaSuccess": "Travail terminÃ©. Vous pouvez maintenant fermer ou rÃ©duire l'application.",
-    "app.exitConfirm.title": "Quitter l'Ã©diteurÂ ?",
-    "app.exitConfirm.message": "Vous avez des modifications non enregistrÃ©es. Votre travail est enregistrÃ© automatiquement. Quitter et terminerÂ ?",
-    "app.exitConfirm.btn": "Oui, quitter",
+    "menu.exit.group": "Exit & Session",
+    "menu.exit": "Exit Editor",
+    "menu.exit.desc": "Close project and exit editor",
+    "app.exit.browserSuccess": "Work finished. You can safely close this browser tab.",
+    "app.exit.pwaSuccess": "Work finished. You can now close or minimize the application.",
+    "app.exitConfirm.title": "Exit Editor?",
+    "app.exitConfirm.message": "You have unsaved changes. Your work is periodically autosaved. If you exit, you can restore it later. Exit and finish work?",
+    "app.exitConfirm.btn": "Yes, exit",
     "export.title": "Exporter une image",
     "export.format": "Format:",
-    "export.formatDesc": "Choisissez le format du fichier d\'exportation.",
+    "export.formatDesc": "Choisissez le format du fichier d'exportation.",
     "export.scale": "Ã‰chelle:",
-    "export.scaleDesc": "Multiplicateur de taille d\'image. 2x rendra l\'image deux fois plus grande.",
+    "export.scaleDesc": "Multiplicateur de taille d'image. 2x rendra l'image deux fois plus grande.",
     "export.quality": "QualitÃ©:",
     "export.qualityDesc": "QualitÃ© de compression JPEG de 0 (la plus basse) Ã  100 (la plus Ã©levÃ©e).",
     "export.action": "Exporter",
@@ -8320,7 +8336,7 @@ export const translations = {
     "apikey.hide": "Masquer la clÃ©",
     "apikey.show": "Afficher la clÃ©",
     "apikey.close": "Fermer",
-    "apikey.warning1": "<strong>ImportantÂ :</strong> Votre clÃ© API ne sera stockÃ©e que pendant la durÃ©e de la session en cours et sera supprimÃ©e lors de l\'actualisation ou de la fermeture de la page. Il n\'est pas enregistrÃ© de maniÃ¨re permanente pour votre sÃ©curitÃ©.",
+    "apikey.warning1": "<strong>Important :</strong> Votre clÃ© API ne sera stockÃ©e que pendant la durÃ©e de la session en cours et sera supprimÃ©e lors de l'actualisation ou de la fermeture de la page. Il n'est pas enregistrÃ© de maniÃ¨re permanente pour votre sÃ©curitÃ©.",
     "apikey.placeholder": "Collez votre clÃ© API ici",
     "apikey.whereToGet": "OÃ¹ obtenir une clÃ© API ?",
     "apikey.backToInput": "â† Retour Ã  la saisie clÃ©",
@@ -8330,18 +8346,18 @@ export const translations = {
     "apikey.step2": "<li>Connectez-vous avec votre compte Google.</li>",
     "apikey.step3": "<li>Sur la page ouverte, cliquez sur le bouton <strong>\"CrÃ©er une clÃ© API dans un nouveau projet\"</strong>.</li>",
     "apikey.step4": "<li>AprÃ¨s quelques secondes, votre clÃ© sera gÃ©nÃ©rÃ©e. Cela ressemblera Ã  une longue chaÃ®ne de caractÃ¨res alÃ©atoires.</li>",
-    "apikey.step5": "<li>Cliquez sur l\'icÃ´ne de copie Ã  cÃ´tÃ© de la clÃ©.</li>",
+    "apikey.step5": "<li>Cliquez sur l'icÃ´ne de copie Ã  cÃ´tÃ© de la clÃ©.</li>",
     "apikey.step6": "<li>Retournez ici et collez la clÃ© copiÃ©e dans le champ ci-dessus.</li>",
-    "apikey.warning2": "<strong>Important</strong>Â : Conservez votre clÃ© dans un endroit sÃ»r et ne la partagez avec personne. L\'Ã©diteur ne sauvegarde pas la clÃ© de maniÃ¨re permanente et ne la transmet nulle part sauf directement Ã  l\'API Google lors de la gÃ©nÃ©ration du code.",
+    "apikey.warning2": "<strong>Important</strong> : Conservez votre clÃ© dans un endroit sÃ»r et ne la partagez avec personne. L'Ã©diteur ne sauvegarde pas la clÃ© de maniÃ¨re permanente et ne la transmet nulle part sauf directement Ã  l'API Google lors de la gÃ©nÃ©ration du code.",
     "apikey.delete": "Supprimer la clÃ©",
     "action.confirm": "Confirmer",
-    "app.confirmReorderTitle": "Confirmer l\'action",
-    "app.confirmGroupAdd": "ÃŠtes-vous sÃ»r de vouloir dÃ©placer la forme sÃ©lectionnÃ©e dans ce groupeÂ ?",
-    "app.confirmGroupRemove": "ÃŠtes-vous sÃ»r de vouloir supprimer la forme sÃ©lectionnÃ©e de son groupeÂ ?",
+    "app.confirmReorderTitle": "Confirmer l'action",
+    "app.confirmGroupAdd": "ÃŠtes-vous sÃ»r de vouloir dÃ©placer la forme sÃ©lectionnÃ©e dans ce groupe ?",
+    "app.confirmGroupRemove": "ÃŠtes-vous sÃ»r de vouloir supprimer la forme sÃ©lectionnÃ©e de son groupe ?",
     "app.confirmExtractTitle": "Extrait du groupe",
-    "app.confirmExtractMessage": "ÃŠtes-vous sÃ»r de vouloir extraire la forme sÃ©lectionnÃ©e de son groupeÂ ?",
+    "app.confirmExtractMessage": "ÃŠtes-vous sÃ»r de vouloir extraire la forme sÃ©lectionnÃ©e de son groupe ?",
     "app.confirmGroupTitle": "Objets de groupe",
-    "app.confirmExtractAndGroup": "Certains des objets sÃ©lectionnÃ©s appartiennent dÃ©jÃ  Ã  des groupes existants. Voulez-vous vraiment les extraire de ces groupes et crÃ©er un nouveau groupeÂ ?",
+    "app.confirmExtractAndGroup": "Certains des objets sÃ©lectionnÃ©s appartiennent dÃ©jÃ  Ã  des groupes existants. Voulez-vous vraiment les extraire de ces groupes et crÃ©er un nouveau groupe ?",
     "app.confirmGroupDifferentLayers": "Les objets des calques \"{from}\" seront regroupÃ©s et placÃ©s sur le calque actif \"{to}\". Continuer?",
     "action.cancel2": "Annuler",
     "action.close": "Fermer",
@@ -8373,36 +8389,39 @@ export const translations = {
     "app.1104": "Polygone",
     "app.1105": "Polyligne",
     "app.1106": "Courbe",
-    "app.1107": "Le mode d\'Ã©dition de points n\'est pas disponible pour le texte.",
-    "app.1108": "Dessinez d\'abord quelque chose sur la toileÂ !",
+    "app.1107": "Le mode d'Ã©dition de points n'est pas disponible pour le texte.",
+    "app.editPointsMultipleShapes": "Point editing mode is not available for multiple shapes. Select a single shape.",
+    "app.editPointsGroup": "This is a group. To edit points, ungroup it or select a specific shape.",
+    "app.editPointsImage": "Point editing mode is not available for images.",
+    "app.1108": "Dessinez d'abord quelque chose sur la toile !",
     "app.1109": "Veuillez saisir votre clÃ© API Gemini dans les paramÃ¨tres.",
-    "app.1110": "Code gÃ©nÃ©rÃ© avec succÃ¨sÂ !",
-    "app.1111": "Une erreur inconnue s\'est produite.",
-    "app.1112": "Ã‰chec de la gÃ©nÃ©ration du codeÂ :",
+    "app.1110": "Code gÃ©nÃ©rÃ© avec succÃ¨s !",
+    "app.1111": "Une erreur inconnue s'est produite.",
+    "app.1112": "Ã‰chec de la gÃ©nÃ©ration du code :",
     "app.1113": "Erreur de gÃ©nÃ©ration de code.",
     "app.1114": "Toile dÃ©gagÃ©e.",
     "app.1115": "Toile transparente ?",
-    "app.1116": "CrÃ©er un nouveau projetÂ ?",
+    "app.1116": "CrÃ©er un nouveau projet ?",
     "app.1117": "Toutes les modifications non enregistrÃ©es dans le projet en cours seront perdues. Es-tu sÃ»r?",
-    "app.1118": "Retour Ã  la page principaleÂ ?",
-    "app.1119": "Vous avez des modifications non enregistrÃ©es. Votre travail est pÃ©riodiquement enregistrÃ© automatiquement. Si vous quittez, vous pourrez restaurer la derniÃ¨re version enregistrÃ©e automatiquement lors de votre prochain dÃ©marrage. Continuer Ã  revenir Ã  l\'Ã©cran principalÂ ?",
+    "app.1118": "Retour Ã  la page principale ?",
+    "app.1119": "Vous avez des modifications non enregistrÃ©es. Votre travail est pÃ©riodiquement enregistrÃ© automatiquement. Si vous quittez, vous pourrez restaurer la derniÃ¨re version enregistrÃ©e automatiquement lors de votre prochain dÃ©marrage. Continuer Ã  revenir Ã  l'Ã©cran principal ?",
     "app.1120": "Oui, sors",
     "app.1121": "Annuler",
     "app.1122": "Aucune modification non enregistrÃ©e.",
-    "app.1123": "Ã‰chec de l\'enregistrement dans un fichier",
-    "app.1124": "Ã‰chec de l\'enregistrement dans le fichier. Essayez \"Enregistrer sous...\".",
+    "app.1123": "Ã‰chec de l'enregistrement dans un fichier",
+    "app.1124": "Ã‰chec de l'enregistrement dans le fichier. Essayez \"Enregistrer sous...\".",
     "app.1125": "Confirmer la suppression",
-    "app.1126": "ÃŠtes-vous sÃ»r de vouloir supprimer la ou les formes sÃ©lectionnÃ©esÂ ? Cette action ne peut pas Ãªtre annulÃ©e.",
+    "app.1126": "ÃŠtes-vous sÃ»r de vouloir supprimer la ou les formes sÃ©lectionnÃ©es ? Cette action ne peut pas Ãªtre annulÃ©e.",
     "app.1127": "Oui, supprimer",
     "app.1000": "Projet vectoriel",
     "app.1001": "Projet enregistrÃ©.",
-    "app.1002": "Ã‰chec de l\'enregistrement du projet",
-    "app.1003": "Ã‰chec de l\'enregistrement du projet.",
+    "app.1002": "Ã‰chec de l'enregistrement du projet",
+    "app.1003": "Ã‰chec de l'enregistrement du projet.",
     "app.1004": "Projet (Ã  partir du modÃ¨le",
     "app.1005": "ModÃ¨le \"",
     "app.1006": "\" enregistrÃ©.",
-    "app.1007": "Ã‰chec de l\'enregistrement du modÃ¨le.",
-    "app.1008": "Supprimer le modÃ¨leÂ ?",
+    "app.1007": "Ã‰chec de l'enregistrement du modÃ¨le.",
+    "app.1008": "Supprimer le modÃ¨le ?",
     "app.1009": "Cette action supprimera dÃ©finitivement ce modÃ¨le. Es-tu sÃ»r?",
     "app.1010": "ModÃ¨le supprimÃ©.",
     "app.1011": "Ã‰chec de la suppression du modÃ¨le.",
@@ -8411,84 +8430,95 @@ export const translations = {
     "app.1014": "Projet chargÃ©",
     "app.1015": "Projet chargÃ© avec succÃ¨s.",
     "app.1016": "Format de fichier de projet invalide.",
-    "app.1017": "Erreur d\'analyse du fichier de projet",
+    "app.1017": "Erreur d'analyse du fichier de projet",
     "app.1018": "Ã‰chec du chargement du projet. Le fichier est corrompu.",
-    "app.1019": "Ã‰chec du chargement du projet via l\'API",
-    "app.1020": "Charger le projetÂ ?",
+    "app.1019": "Ã‰chec du chargement du projet via l'API",
+    "app.1020": "Charger le projet ?",
     "app.1021": "Toutes les modifications non enregistrÃ©es seront perdues. Es-tu sÃ»r?",
     "app.1022": "Ã‰chec du chargement du projet. Le fichier est peut-Ãªtre corrompu.",
     "app.1023": "Ã‰chec de la lecture du fichier.",
-    "app.1024": "Exportation de l\'image...",
+    "app.1024": "Exportation de l'image...",
     "app.1025": "Image SVG",
     "app.1026": "Image PNG",
     "app.1027": "Image JPEG",
-    "app.1028": "Image exportÃ©e avec succÃ¨sÂ !",
-    "app.1029": "Erreur d\'exportationÂ :",
-    "app.1030": "Ã‰chec de l\'exportation de l\'image.",
-    "app.1031": "Ã‰chec de l\'ouverture du projet rÃ©centÂ :",
-    "app.1032": "Ã‰chec de l\'ouverture du projetÂ :",
+    "app.1028": "Image exportÃ©e avec succÃ¨s !",
+    "app.1029": "Erreur d'exportation :",
+    "app.1030": "Ã‰chec de l'exportation de l'image.",
+    "app.1031": "Ã‰chec de l'ouverture du projet rÃ©cent :",
+    "app.1032": "Ã‰chec de l'ouverture du projet :",
     "app.1033": "Erreur inconnue",
     "app.1034": "Supprimer \"",
-    "app.1035": "\"Â ?",
+    "app.1035": "\" ?",
     "app.1036": "Cette action supprimera uniquement le projet de la liste rÃ©cente, pas le fichier lui-mÃªme. Es-tu sÃ»r?",
     "app.1037": "Projet supprimÃ© de la liste.",
-    "app.1038": "Effacer la liste des projets rÃ©centsÂ ?",
+    "app.1038": "Effacer la liste des projets rÃ©cents ?",
     "app.1039": "Cette action supprimera tous les projets de la liste, mais pas les fichiers eux-mÃªmes. Es-tu sÃ»r?",
     "app.1040": "Liste des projets rÃ©cents effacÃ©e.",
     "app.1041": "Aucun code Ã  enregistrer.",
     "app.1042": "Fichier Python",
     "app.1043": "Fichier texte",
     "app.1044": "Fichier enregistrÃ© avec succÃ¨s.",
-    "app.1045": "Ã‰chec de l\'enregistrement du fichierÂ :",
-    "app.1046": "Ã‰chec de l\'enregistrement du fichier.",
+    "app.1045": "Ã‰chec de l'enregistrement du fichier :",
+    "app.1046": "Ã‰chec de l'enregistrement du fichier.",
     "app.1047": "Aucun code Ã  exÃ©cuter.",
     "app.1048": "Code copiÃ© dans le presse-papiers.",
-    "app.1049": "Ã‰chec de la crÃ©ation du lien pour l\'IDE en ligne.",
+    "app.1049": "Ã‰chec de la crÃ©ation du lien pour l'IDE en ligne.",
     "app.1050": "Code trop grand",
-    "app.1051": "Le code gÃ©nÃ©rÃ© est trop volumineux pour une ouverture directe dans l\'EDI en ligne en raison des limites de longueur des URL. Vous pouvez copier le code et le coller manuellement, ou essayer d\'ouvrir le lien long, ce qui pourrait ne pas fonctionner.",
+    "app.1051": "Le code gÃ©nÃ©rÃ© est trop volumineux pour une ouverture directe dans l'EDI en ligne en raison des limites de longueur des URL. Vous pouvez copier le code et le coller manuellement, ou essayer d'ouvrir le lien long, ce qui pourrait ne pas fonctionner.",
     "app.1052": "Essayez quand mÃªme",
-    "app.1053": "Copiez le code et c\'est parti",
+    "app.1053": "Copiez le code et c'est parti",
     "app.1054": "Copie le code dans le presse-papiers et ouvre EPython dans un nouvel onglet pour le coller manuellement",
     "app.1055": "AccÃ¨s Ã  une ressource externe",
-    "app.1056": "Vous Ãªtes sur le point d\'ouvrir le code dans l\'Ã©diteur en ligne EPython. Certains Ã©lÃ©ments (par exemple des polices spÃ©cifiques, des couleurs) peuvent s\'afficher diffÃ©remment que dans l\'Ã©diteur. Continuer?",
-    "app.1057": "Oui, va",
-    "app.1058": "Rester",
-    "app.1059": "Ã‰chec de l\'entrÃ©e en mode plein Ã©cranÂ :",
-    "app.1060": "PassÃ© au gÃ©nÃ©rateur local. Le code sera mis Ã  jour automatiquement.",
-    "app.1061": "ClÃ© API enregistrÃ©e pour la session en cours.",
-    "app.1062": "ClÃ© API supprimÃ©e.",
-    "app.1063": "Projet automatiquement enregistrÃ©.",
-    "app.1064": "Erreur de sauvegarde automatique.",
-    "app.1065": "Version enregistrÃ©e automatiquement supprimÃ©e.",
-    "app.1066": "Taille de l\'Ã©cran trop petite",
-    "app.1067": "Malheureusement, l\'Ã©diteur \"VereTka\" nÃ©cessite un Ã©cran plus grand pour fonctionner correctement.",
-    "app.1068": "Veuillez ouvrir cette application sur un ordinateur ou une tablette, ou faire pivoter votre Ã©cran.",
-    "app.1069": "Nouveau dessin. VereTka",
-    "app.1070": "Ã‰chec du chargement du projet.",
-    "template.save": "Enregistrer le modÃ¨le...",
-    "template.saveAsTemplate": "Enregistrer comme modÃ¨le",
-    "template.new": "Nouveau modÃ¨le",
-    "template.name": "Nom du modÃ¨leÂ :",
-    "template.desc": "Description du modÃ¨leÂ :",
-    "project.new": "Nouveau projet",
-    "project.createFrom": "CrÃ©er Ã  partir deÂ :",
-    "project.blankCanvas": "Toile vierge",
-    "project.yourTemplates": "Vos modÃ¨les",
-    "project.shapes": "obj.",
-    "project.name": "Nom du projetÂ :",
-    "project.canvasSettings": "ParamÃ¨tres du canevas",
-    "project.width": "Largeur:",
-    "project.height": "Hauteur:",
-    "project.canvasName": "Nom de la toileÂ :",
-    "project.idWarning": "(Uniquement les lettres latines, les chiffres et \"_\". Impossible de commencer par un chiffre)",
-    "project.bgColor": "Couleur de fondÂ :",
-    "action.create": "CrÃ©er",
-    "feedback.title": "Laisser les commentaires",
-    "feedback.p1": "Vos commentaires sont extrÃªmement importants pour amÃ©liorer l\'Ã©diteur. Les rapports de bugs, les nouvelles idÃ©es et les impressions contribuent Ã  amÃ©liorer \"VereTka\".",
-    "feedback.p2": "Le moyen le plus pratique de partager vos rÃ©flexions est de remplir un formxœœWÛn7}ÏWzhZÀ^'é®›ÂÍÕm’±á‡ÆAAqGZÆ\’áEµè§ä­vŸúÑô“z†»²%YJƒ¼Ü3œë™I6RœÑO/”–¦÷ÈHaIø@¶R¼ÎÄ?ƒ_­¶9Q¬7şFDõPª“ÊºDƒm1Ø‰)8;¾ûœZ yÿn{g«'@Cí¬^à!æ pÓ„BÔÎŠš„9¾9½¨u¢6ÄÄ%XÏbš·$êã›têÓI&§ÔKX9ÑcÉ	×$!sr-¤p{K|~år*WÊ,F.´¹x~İ‡±K}ØU
-vPX”g•kY%ã.‡P_%L	ÀôODÎy—<Çƒ#
-tx"‹P{.pBã3ÙÒÇƒD§ióÅD†Ï77Ë³a=ûâåñàn§íß®ÂK1‰lÅåRÉMFDİzÃæÛé_Yx×…^…éEÍ ½®‹‡|ƒNz‚hñ¶Ñ%íˆ6äÇÓ¤.t:C ûg©ÁQ¹€˜xgk‰Ïnê¡Ñ.5Ós®¢Ãm…jÉı;ìş9i£#±—7±%îL§¤éT×°	ÆÇlPQh®•À[GZÅ~ö”B2–¦«†ş–À¹Ùİß›Õÿ#Bië+íJz©t*
-OÑ'ŞÌÕ~g>ª­qá“2¸W£*ÙFüqŞZæoô™ø%ÇÆê°xwÌŞ»>éòƒ»pÙnŒºDRìí
-çJ!N/„—a1LK!H¤¶áRq‰º;R4F°¢IÉÇí­-	Õ¹ÖmÆª*ôÒÖñ@$Æ” ÷ûĞH{‚7Ö9Oy²zÕğmŞ½lÑ£Fƒªæ•J!†W®ŠÆb¶×‹l“İ=qPlìİİÙ’w7‚˜Qxı—{(Å%ÿ{
-ãõı÷†Œ¯’Ëªyê†º#ˆo*qÈoDTÈ¢JŸ¸ìI|&~v`;­NĞh™PXév%ö¹æ¹Óò¥±FR•î,IöLt%3Y½OD~	Ó‚œHm³ç‘{¡ˆ¤¸èQĞŸ÷Õj\ëêé¹¡E`l¤ïP_¯F1ã.a¸ıœÎJä$î*o),ˆÏ…¿eáë¤]ä—Nè¬Øò]%£,ĞıJG®²‰¾R
-t®zãq›Ê]´Ö.Å®ÆÂÇG’A5û)jœ‡ˆæ¢À¿—S’Ëå §7VUu]™4†á(µxı£’©õõøP«FwÑlĞ¢àêÕäœ)®ÿÊ,Z¨ü`HÍ×ã"¤Esqô? ÎËŒAùŞÃ”ÔµÈJı|ïûëĞÁê2ü×Ùˆ>’E™à¬Yê¯Kceyè@"eäg•yöIè¹<—-µé»~éô:OÿN+”¡ğXwïzŸÏèMÙu(T>gîG:kW Æv[EtcØ@c$$ğ¬¢¾	×`àE·¹X›M7Ûäš¤ù@üs•Õæÿä#q’‘şÙËœ3?#nËa”°Œì;Ä#Îà¥xÄSWë‘.¾aŠÀuöF#µ%*÷ù€ípnÈÄ4W„¼¬S:\<Ï»êu 1ğ¤²FÁ5á»¨•ÇO°!ÛK%÷uŒNé%kP#£ıãîbÌ’ÀA‡€~ãÊB²ºu.G‹@Ì*Œ˜Ã”´ŠÌÊz[¼¬ÄùX£„ÿ¶?-®N/<“ZÑS<eà€Şú öÖûw„?sVúEd…c›àN.©àĞ“ã]\ô¼q®e¿á/Æ`[2==_E&áåIá€»ÚÕlÚ¥'Ó-ŒúIFU‚;±¬k^äŒ]×’ûã`~íFºŒ	®§ğã¦ËuC2ñ8íÚFgh¶q—ÿÂ¤ÀZ/Ñ §İ¹±6OR£fnñ°¨°ai¯î=>Šºí¦öË™,*n"c·ÜŸµ{!æ‡¼ˆºëz¬ËÕd„u46İ³zÂze\¤}gÎŠL!^¦Sø„M¶È¾½ñöûÿ  ÿÿ ±š95
+    "app.1056": "Vous Ãªtes sur le point d'ouvrir le code dans l'Ã©diteur en ligne EPython. Certains Ã©lÃ©ments (par exemple des polices spÃ©cifiques, des couleurs) peuvent s'afficher diffÃ©remment que dans l'Ã©diteur. Continuer?",
+    "app.1057": "Oui, xœ¼}]oI’ØûüŠ\nEâÄ–4³Ÿ¼]P$%q–ÔĞ$G»³ØË®ÊîN©ºª¦>šlÜƒ_Ö0`ØÃğÓŸn´gÀ¶÷m¿û7ÜğıÇGfVfUV“š=Ü`fX]ù¹’wî}$àŸ;²,'üğ'wvÅ3U7ªê}ù)~¹ş]²P‰H•Èîª¼©®ß+¡r±,àM™)‹ë÷I%s±bÿèbŸÊº¾~/d+æ×ïóë÷•lT[‰¬Hd6ÇJ$H§V•K]‹ë¿¯ø.Û¦XÊFÕª%:é‘~ˆ¤÷3 ¼wzµ©Ô\×\µÑ3	$ëZ9V5WuŸÄÇ‰º-ËJ/@îjEU¼VM¿V~Á}´ ÚaUac±²]©¹¬àÑ#ÒGú!"=W•©¸×ª~ÉãõıÒ¸:Ë™¦*JQªF7ª‡ñcÄ8‘ÙêªÚš
+¸Gˆ©¦Áúë¤.ŞÈ/ïÂ{¶Q¢u#_fm-æğ”r÷ÏŠ<i ¹ª ó¡’&:Œ?áö¶XÙ·¢hW•Õ q€Èt"‘
+4¶ÂÂŠ*Õ9OŸ¢…J4rš!ô=|1“º‚á×«&²€ÿÃ/®_¿XšÖÏ 8Ó2ÅÖäaš‚şø¿Z‘,d5ç€_%Í
+GÚXfP¿I-WŠ†ß ÔFVÌõ7™šLâ{õ…ùÙÇMŠåÒ¡psué·gL.Ã-±î¬[´:$AÀø[é’F †@­Oš~ùÜ)} ¤R@ûqU,iÙáœ®p±—²j4­İi&ó7û2_Éš¦t¡¡ô•V0 }Ğ5L:Ûyü¼¨m…ë>p½%CÓ×“AkÂnâÖ+—P½Îaòé|^3£«äòú°šfŠÌÖ¼‡w©ÓfàÇ8‘Új@x¡ô|Ñ ÄSXó1.ú™_O…¯¡€ëô…¬r¨%Bo}‘;]#põ`…¡ãt®ê{ô2YèÙßBÃ¿¼óÛ/ïLÄÑ²,`™L™§Ğ|ÌA>\™c{0„óı"+*ò¢Í/îz›q
+3AºÉa?Ï”J§2y3Æ•)î9]×´¢jS“W~=À(Ú©àƒ‰º@Î}|õKî	­«™75³/Ç÷™.hÙ:.ˆ›U-*à [c;¦íÜôXs?Ã'Bå©çè×²¬xÂ:ÀŞ©§-ß+Ãc¯“a#hŸ:Æå¿†­,SÌlËŠ7¬®!9'¼~?ËÔ	[:~¯peh¨YQ-ÛŒå“¢˜µº©q/ŞW0‰€©B•ó¶c¤ÿeğ,&Ãl¬‡õËµŸ«*òùÏÏÔRVˆºû³ûæu\
+»uMÍÛóÊìrf‹â>¾gØv½®›ëo€ç¥wÕU™ºá º•r¹ÒsŞ
+`*à€ö7H	bDCOêš=lÀ¼h
+lÀ^’@5TÂwÓ=œdr
+ä»9yı×È)`„íñ‡6Ää¹i:M$HI¸¢?ıøğU³óë•¬¶vvè÷yY­·óåŸ3µÿû]ßâÓFlJ\Áº+*­2QÃìË°öùõßµN,J`‚pgÂTÖ)O (A7z¥h/š†ç°ì¤6³¸vºnEÎ[{]Âr†µãJ˜›ĞE³¸ş§ÁÅÃ~<é5ŸfõQ&ÚFgº&Y"S#’œÈ¤SE³»n3˜°¶ò—¬ªëL£0 KÕÂ"{?—OS
+.göÌÔ¢`Vëx"K™è†è]Á²€^ÁaÏ¼iÏµ‡¹¶`®öÁx”’øëòú=°Œ¢,¹†Şjy³=ÓkñË¶^äº
+‹F¹øÏw*ûœqı²ö€9Q7Š£=QÀ^28HÄÈÖƒNêu@£’…eÕ(ÜÃ¤?“bQ©TbÑ4e½{ÿ>ğé¦MuKIM`İ	²Á¯¸ßÒo*•ÁÏ¼(J…c\q¦`jUğÍo]›ÃúÌ4
+~^;e’@v-‹˜Ëî8ÈP—ì‰sª£iîÏîËŸßƒ¨[˜uæË>ÌÃ^ûóò¤uû}¡²rÒm²8)¦š™Ã&âß§”ÊaŠm©Ä÷Åg0:¼	°a½TÄ‘NÄ)Nxœ„M¿ZU3™P	÷ ™u >¢Ù›IfùjVÉ)#.zê°M¾xõƒ8^_â"ÄNÜúa™m—şá•èĞ8.Eo;ñ€À-/Gà#ğ_Ü¢hŞ¨5Õå'q³–~Z'L2,-0`·Sy(-i¹·ÆX·#Ü¸V²J§Ñ¢È …¬ˆƒ²QáÌ”2äGé)‚e¥ÚÓ :b2ËXLnëáGP¤&33k×¸7°Ba³ >GiŠ"£¦”Ø,°‡L%ştQ–°¶°÷ÌWÒş³Ÿ˜lšõB‰0[»Y^,õã¾?VG”ä$‚"{ƒÎ²C?„Qåq<„vû6iq4ƒ„Úq»Vni §±¼Q©¯Úë?4¢³ÕÍ§š[¼W–íTYrAY,qä~!€›-c ¶ìå˜¶êQ=h-yŞf´¯É‘1!ğJ1ø™b%ùğZá_ÀàS¿ºGæŒz8N†TbÈi½Q[tš:â¤HõL©½$€
+iËŠ?õÉş€éÉx ¯[ò¦ îıcd LãœM%f=d@àŠŒ˜ÃŒ(¹Óèñ;Ô¡Í‘ĞYŠDDF°f™.ŸrÁ°‘TØé  ß$‹ÄC|"ÂFûËf4Ğ'•Åf“¸bJíÿ\õË+jéõû9’¡v"Ào0lB} 6"?+ÎsY†è (é9ˆ¸†±1IUÀbœG–/‘y[°YâWğö%Àº/«J_ã"„QJ;Á(jg£<2m–ñæXdP?«<0 ­ÆEqyîïC{³™¦ı!#…ôæ}†‡y
+6î£Ì™óº°Ê<.x í`6Y¤ºıÌçN5ì1¾Vú$«¹:ZÚ=ûŠ_³f­ªßXX6^°Pp`W:qäÇ(ˆ”¼o×4(3Cëo`¹ö¹—H²¢V§E¶&â¸ÈG¡M Áö`-“1f[“!Q™Ï¹ı{ô`;G™ßèfâxdÂĞZáu… 
+Ê¡;›şc˜8{u„í³9<ì`‡u`Ms äcwÔ°Õ ËaÚ[sï³»Xpn•ì™ÙõôB¢’£ÄV³.ÕvX
+
+	(mÛ’Aí
+!U‰wDC/í¦ÜnØê¿Ã«¦¿¿ôªİZôAOƒğ¬]NAúîw"	–d•i— ÄøÁp<*¶Á{h7€z¤1h 8m‰3KA—¿tuí8.;Ø€kÕXñÌX®‚eG¢İv”:ŞÃğ ªKótAØNe‚¾²KWµGêË;_#õw =û^ˆ­ang:†k¾(±ë‘	‘Q^—ÍaU±
+ü˜~:Ä	àıÙƒ°ğ2m{5÷8
+M-;çˆÁÓp"Zhc¤‚±°xß°UíU€õféoZ]
+}2Ã’áÇ eM³(O5ş&pšaX1>YÃ£#(‚* F±r{ÑœIœÕf”§bà‚ƒ†	
+î•j	r~û“ û|!+4²KhSşXPBmHàÅ§s®ãB¢~¶,ªr,U°Î'°ŸY+1—¨ò­#Ãä’ıš±sƒëÙ}¹[È9bGĞëvê(ìÁ|òèb©p®Ùz^êfAöY·¸>ÏŸ?éÚ"s½v†^°å^>†ö´•ÙÇÌ3WTåuI&¹èO*^‹P7Ó(z3p"¡ú$2¹Ş0¯F:¡T\¹szˆ%©>­nY©ˆª•öTÍX®˜·?Ã¿q<-d±ëŒŸF
+”m­ø|¥dûh×?Å¿#] ŞõÂ¿œÓOÁ¿İ©…ÂÎífÜı××º]¿‘‘¨˜ƒ(°_Uˆc÷—²vªJ‚Ÿ­É»¬®¿áC¡¶ªU[õ&Ô¾ÕÁ[›9ğô}Ù5òi?ÓlÙ'=ê-oá°sås–7ŞñHà¤š'M'o©<P~,ò¥ÊXW“fj.uÆÜöÆ¦	-P]ÿ"#zK™·*`Ø4Ò·‡È¼Fy·™N:b‹Qçép6c=B‚ênğ{V0µÆÜf4MÏ¬Y‡ê=têÁã„Á×­F}!„õì§²¶¶… »4cVñp…+[0^´şPüù á(gÓÅµ¹›Häø•™g0Ñ;Ú7>xĞC$9º“¡İvnÌ?uhr]æÁ"+ˆÂ5mğ´3º	È=ó£A¤Uò^ˆsû"0ê¹~ËµGQªÆP³ì¢¸(He<§Ÿ°°àß24ÿ,ÆH]w¦OuüÔ7P‡XÂ˜O˜ÎVÂœÜXHÒ…„ %Ê™“LÍØĞDR'¡ÏeëÍn6¡YòÔGñ	}x”gRˆ`VöÚ+&­
+ÏuÄn¸+-((µÙ6£õy¯µTDğ¦EÓğ4öÊ˜ÊX÷pŠfÑ9ìób}Â¼¢9}Î©=æÅv£+ÑÀæéé
+"›æ2P<Ã§:İ\Çz¡T3)5WLç‚^ˆ­7J•KÄåMdêG
+$–fˆÌvH§Í¥/ğÁÒÊQÎĞxÏÿWÛƒÒs•>’é\™ZäÁ ˆ5!f&%<cíXl?!kX¸a%AÉªõ (¢3ƒ›&ßc|@`¬ì·¨k)ÒSle³ˆI‹äy2İ˜£G¥F›X*°
+;Óõş¥~ƒj™Š—=ªSlW·ú›ßÿ;a+ƒì*  ÿAøµÁëK]*k?>Çù}ZƒÈ™  IèëNİõ]º¨š,7Ş4#æÂ>ÖÊ&Ù-aÄXØG*%P†V–ÒO¥sP…eªyœñÓ-pW¸‡.øQİ*†ŠGfu–Q›0U‹+ÕI›I’‰O½ŞáÂ&I[¶µÓª]"%ºJX ò:5Ã³o˜û(*ú¾{RQyÏ
+sè“¸íğÅzu¸™Àì‡èwÊ?i»Á#ÃŸ b älŒÙÜ0è32I®ì ÛàËğÓÚûô*øÄg…r]„Ä*SfWst *Âä^½Oi@¬P>27?X—„Ù:víŸö¬·vãÛ1Üúû{×)áW#‰<õÄ¾ñ¨Û[i?¦N®‰'`µFïUg>s?iï«VVlX—UÕ› İòŞ.d•eºdqûĞ<úŸÑÙ¥hA:ë¢ÿÚ~?¥gÏÄISõV+ë}WM{Â[ÅöNøPÕªF•‚†²Bó6›æ`g	ñÑîÍêa’àS¿js#Mñc¯¿^‘×¿$$ú3Äõö…}Æ7Æ‹”¨¢ƒS(?mùûÅÉR½-Ø .¯¿yBXÖSÌAÔ÷øÏ{~Óãë±|\øF`¦£ò„µâıÊ_·İñ	~#û]8ŠºYò×#~ò×ûLó±ÿûøßØäÁÃŸã‰`ğµï‰¢ê”}6ö¯ÿGãpÒG +äñÜ©Gt.l~Ü«çûV¼àujšê•Í
+û°ŸÒJ^ x3.ç™}@îÛ¤6•­®Ù@Üã°šcÍóAn.âJ>tº€£ã*Ægl\‘£4fWjÊvmS•õ ‹ÃšÓ¨'#œgç0°tÄyd§‹5ëø"¶ñ¸“TšZÃH³iaZdÆ"•‰VíUø™<Ğˆ=á“°Iß#É¬0º×ddõoT³¨Šv¾`Öë³ÆP}è°=%ô Ğ<­öİíXÜ3:"rêipÍ‡™í“ÊŸ”h~0ğ0m‡0­ĞI:^¤;‡Mã »ÕIÏ¯ÊAvE†ş`G}Ï¯F¬²5ÓèŸ7B£QĞørâ	ßğ :/–5{,Ë¥ÌñÉÀY{‡º´ºRäÁº+¾ı{á6^ñkÇæ#¾ıãä&ê{W‘ÊV×ßÌoèP‹ëßGï¬/äšÆ†ÏùÿÆº±Úÿ¤µÜ–Ÿ†œè6ø±zÊ+$%Û«N-„gô¨bu~XëµVtR„¥åV¦Îˆ_âÉ©è ËÌ}#ŞÍ´úõG¢s¦ÛŸÁşã_ÿÙÉ‰ó 5¶ÍÑpæÙ`°i0 •ºÅ@´ ŞWC›şØòoAyĞÄuÎn#.#(êåıW8ÃÚ‚½"olÍ‰œçdKd¦ùİˆ^§d‡Á-+ßh„ôM7‘´m@Ë2ZcĞfÕàùu¥¤ }A¬)LÓ	CQQ­Œ	ƒ=I_©l§„¬é€ßúì²ÚÔóÈè%ä˜¦s+b7Ë]ÏŠiKu¦(7#¥+rcĞT·W¿PSØHÅFÓ¬Å¥šb¤ÛmQmMe‹‚yM=#}C!úr§”64gåiqé¬ZÓª¸DÓÿGbëôÅú6Ö9£BöêÓKÙ•‰•†º¨ÑÙ¾%[sj¸Wk Öš;Ä…ş™V MÄ6ÖmöçÎÍêúw›˜¢ÿW«<ÅæR^ÁÃ}êyG?eØ|ÓËvÉäİ/İŠ–mû8=>Ø’äH€Çğgd	ÜÓê$ãAHÉ~ØÆhèYp<­‰N×èâh|jÏÜH.ÃhQ"!am/$¬ƒÒÒ®í)ï™*Cg÷P¦îc¯duc°Ü¹­ã~œÜ FxŸVşĞp9W:J™cÇK¦âó¸ Ê˜±9Á‘¦2
+ì¾ç*6º°Xí!T¤œOÉ	HøşÉõ{|¤bı ¡8Šëé+;â¸ğN€"v<Î(tégŒÂMÍ®X”YõÂ²ûõÇ¨š´„^ãÒS‚"°nûñÏŠÜó9½áßXŒ¾$ƒç^xpHª²÷/ÕÚtBÅç¹–^i|jÔ¡?Qˆüß*kìŞV‰¿JØ$ğé—w¾¼óWÑœHNñ]ÌÅa…èæ#Mxc|ğöú$€J1i%Bœ÷03ÉsEy5Ò-&ÖÎxCxQ›^|ßH+-jèÉG£’z¡ÌÖ]÷fìsJÜ—ËFªE’œW5t+îÅ(¶J„»ŞBwa…µØ²mKFĞ£7„Ì¶qCÇ’Üİx©\úB>s{Åê	@UÜ{ÒíR3•_ÿ¡©œ÷ğHµ°‹dv'±n† jL‘!É˜f¢ÙZ É[T¯|dŞ.©Z¦¡XUàÀ_e¬ºÖ^s!y}y6è)yNŒ«´}RŒ6p+V4 ñ©‰˜¤¨KÍëû	†‰©:˜‘ƒÊÎN`m)ÄZ
+:ábV¥l°û™š‚î†®!À# á¡Y³‰	#mlö ?c†x®#%ÆN¿í>(_E—ÉVeaöOTì˜ø¥gòd%ëŠ„ë
+İ|'3+¢œGÓpXÕùÉH Ç«­±Äö-ºÈb’§­qÛõ(¾n “ŞW«"1‘ÖÑïH-ı“×8Fk™ƒ=8k5
+œêz©k6Ğb(o/ñ4$}"n:õrbØï¾Oå~‘“!|ÑWÄ.Ğ²ZsŞ•Ô#Íîy7Xz{F’_l
+g&ïî (¹‹cöc“·L‘Ûè)cQ·•_½A¿±quc.‹!¬]äûFÂ{ËÕ£Ô$^º
+Á‘,ı,Ã‰Á„Ñs‘¨R²‘H0XŞéWíÊ¸I[oô	ÔhòºÆèù+õ+·RM[å<½NÂ³¹`Fè:h¡tà½KëÍÄÑ&ÉJŸ/ Ï’kô¡Êè?#ğÎîî¹ù‘ê4»	+/.|WFâc8¢¡Gc‰B˜S3°.FÀw<¶JŸwëšOÁı+íí°12ÃIıßt¶¸1è6Å¢¥_4¯ğ7nJa·$1LS¤ÒğpLÊ”Ş]´:
+¸¦äQø©²%‚‚ïõŞœu&ÖÀ2¿ÆWï(ãSç
+;©Ç^º0€¸Ñò,ı‰9ëf?A§€4yY Æ}tˆ³.€*)oİ–©9Ó9Á´&]U bÜˆù p 6bjÉ§úE©Uÿ‹¶¥¾~ÿ½àkQ:ÈSR.u¦ı£¹¨œÚ³cã¢V/ f³(`ßZÎûï‚X+âˆA&D1aL‘`+DëÂ †AZ=½ÁRùç¹Uº>çÄVÆ}ùğ 3–]µWn‡ç3tİ+ÔK0b	TªÖ+üğ
+¸	é|÷èàp´|‡éŞa›ÜÑG0Mì™·/÷T6Œ¨K•3´ß=ÊF-Šÿ18ùÍ]ÇÖÔ€©è8¿Ë0]¸‚»ˆ|/üÄFáÁ¼şoÀa…Nô(¢Uïê4eƒd ÏR° Æu‰S<™Ä5°c$­ŠnÄ'£ ß;Ê~ëŸ‡€ÀaÚˆïÛn8]»>b‘é	‘äm¸+Åš\*¾ÜlÂËÆóâÜw¬ı0œ¢	`);ıjŒÔJ“9"…`¶J¡Áè0˜Sûp«*ñº…±¸‹,eS€CŸÇlè q¦Y„3ô„¦† _ofÍ«10´(Ğ“ƒ^Ä é/JK#òñ ¸ÌÍDJ0õSX—j}ï)zÔ“!Ä±\W$‰¥H¬	 Ø{Ïe±ãY«^†Ğc‘ê„°p‹0êÆ]<ê@ş„’"W‡ ¸š‹ü"Hû*>†÷Í^’h(+
+ü¦¹—ÀÒ¼~?­d¶C{Ñ³Õst¤Ôa&º²îûÿô¾.õ'ú*ô²ÁlÆ"ˆÃ~rC:²bM°Æä[$µº¾˜ôÊèìî»Ã/Ş¹'¬ñ¨gw©Ë@‡HÂÓµn8\’ÇUw£@¡|ÜğÒ·ùb¦¿ »—e?HÆyKMª1ÜXüsˆ€fÃhtZ„¦³qG]_µ:Ø\#áæA›É›XFkE.@Pk*İ«9˜¾ìO«®cÜ¡sèZOÖ,‚è>î¦4†å¦$şN›û±ó?3ö+”0hüy6ÀHU‡$ç½f#øbÚ†>· FÔ7D\ÇûÙĞ®jí©q¿5æµ3ùFnÃÚÌşHÔß@İ±ËÕøˆ<û?¿oÓ:òÑÿ„w}Ü	–s.‚\Ğ_ˆ´å…Ä„ÅÖ×ôæİöø ¢GCK©”>3Z)5‘o:áåO*Ô±íıÛf˜T×èF’º\ôu§ZkëÃ‹?SÌƒ+˜ŞÆwÁİóô¡Üè('c@SµbïõG 7Ê¶Ç$déjwìNƒá¤MŸo[ØÉ´mhÜm3²¡fÆä3¢û!¨ah7è³	+‡äÇÙõ7h£|Ş´¥0ÀLWBpWN=§a&“DU¹î¯™†ùĞzéÎíì´ĞeiÍá°ƒt)0Ù‚ŞTõzYØòĞÊÙëFô/4qßÕ²?íĞyôóÙÌä~€Ù	š†Mâû“ö¡½<ƒóÔ¦ÀD¼¦QD¢¿åÖ%ªo P–µ]%³şâC³àãwØ`ÃçÂhK¶iD­Şİ/˜©<3ù@»< d¿ÄxFbì”aÓ3ú9¢´/>œD*Èb¨Ã¦·”ÍÙnŞ²íÆrœçz(4ÅÓŞß8®yŞXÌ©¨±6d¡/æñAHj<6z¿“;"˜o=°ê	dğ/â ¢_ëw#X¯úX¯nÂ’iúÌxÀÚiÌ0Cì’¨Dsİ~ˆµG¦yóòa´Æè)Ò1‡'öqÒLÍ¡4ÈWhÇ˜gÅOØ¼"è<?is»UÓO³½r”.’5«“íü3ÇH5o^jûêŸ·¶Ğ!wˆÎg¶
+æın%¼”ğêŸµ„Pt 	O;k'õğİ.”ŞuºCŒ^°õ»Íß’³*]>07ş¤Æ(¶‰ŠÇš¡KLFšİ•ÖÙÛxbàù—ç"Ø9…p¶(#ºGÄ€¦ƒÉéI¨6+J)"EèÜ¢®3¬ê¦†ÃRİÃM·öUÂ4‚ ¹ÙR:í÷KN»¹‘´…Ç²-9‚æXÜ,ª{ÄøĞÑ´™Ùğûå9kñ$".\è2º+ÎŸ€“)ToüŠ†Èt~†©,‰GQª*[¿&u²¡mX7·.VÁhÔŒWzWc£Gë×ÇıÀbä÷&'èvõ(03G¶¡/ãxwQ&Dd¦Tçb¢)0™Uíãà|#¿Ï8¬½ñ³ÄµÃÑKœ>UPÔUçlbz¡M_‰şì–«ÅÚÅI)Ñ<¨ş”©Úâ»ôàt:Ü 0ÅğHÓ?Fd˜ı›=Àc…!İE7Cç8nâñú%6Etex[Q¬È¬.èKä¶û¤BÏ|›öúcŠéyz]±^r†&â„k6j€íöLY½.V³ä®65gï[P³Ãv™İxëÏ·£½ÅßÔ1s4§f¶»¤atlÉÌıhıÎzeÑF»¹z}”aõ˜ÊŸT»0U¢ØúöoGYA†»yŠ	¥YaW+´‹ §-Ğ ¯ßúéx?G—_ñiãÙ9¯c(!ÌÉ‡£çğwç\U¤¶”a¨·Äº	jYä…1šu)5˜ª¤@ÕÊğÏYE]˜Èdag¥ñyÿ6:¡_éÊæHv2Àú©»Ã{îî¢¡]Ãvk>Îòoj‹ï2…ğ‚Ò·+J¢ÕÀƒŒJ×l›D‰CRœ¯Ï|Mw¶	zÄ’ŠòW¬LeìIû‹­ª½æa„`^<3Çèìza	Ø¤Gî–v½v^\Ñ¦cí¬ƒY@kÇúÑQß‘KU{–Q±c·u”&â9®¦™F­„AJ½j‚4[«?½hÕ§İóƒ0 	†­)}'—5i¡Üı 5áV¨L°h‰©Êµ PA‰Úl¥f-:RÁ.ïÏ
+¯°g¸:XCb.LØË“¿NòKc€¢(ºAb£Ö•±ÀİTõÈ†‰ŒØK6ñÓÎ´¡ô±,òhQ‘Q¨Ú6vÁÚ\{››\«h¬Å¡¢18„ÁĞZ°r;`è0[òÔA=Æ$=ÌæÚ}ÓFv6Õ!aM›÷³€eª–>C³7İ¼	Yßœ¯:¹xÓëÇ.ÙØ^ÒôLjè¥7äcx†u|Òs‹ğGò¥[2bp|Ã¯:ˆW}ˆ×mÛá|F~^!Ö2”É[ä'IŸ'"¸°y>d9 7ë‚{N+µDÿ?ŒêÓé ‚¡˜´ĞÏ!0ªìøşÁTç½¾ÑøÕ™qÿOg)Şg Ú‹k{%%¤æLÆ%o;EÆ˜(ìıT%à\ññ‹Ü@NVÉyÏpŞ‰]ÊÃ‡½³eÓ}lß3û;mıU2b™ñ¸‚;åJ9ï”Ñ <Æ—ymëØŸºY°ŞõY“„ÎEbH-Šî˜F§ûÜ3d9|}Jµâ=:óiaĞ1PóÄ…¼np|}cDÔfæ§¡»¿Œs]Ô6]ØLâ$ãX[å”ƒ?Å}1/«OÌÖ<Z~'g®ƒï¶ûccú·!æ„B'İ¤Î£;œ_…‘Ï|)ÙL¸úÜÑ¬Ïè9³VãsÆö¨í¯ã£^–"ÛaäŠ<¥	ç^%ÓÊ®oØz2˜6³a×Õâ¨5Ça“:€ÊsÑ&ÙH½{üÚäeâ·Î#Ÿco«4:·¢×÷•g7Ô¢¥Gi)yzYÔñs…1kyûıM»ÄÅ)¡lwÏû„‘›­CÊ¸ÙÃü(c‡KÑ8=|GŠxhtùğÛ·±Ğ×úİØ†FèsYpIôgMö&t?sP[øVyÕ·0Ø’Œ„{À&H×$çE5l—«ÔX“"¸^»6 Ã¤-Vêœ÷Qâc¾CÊ‡Íî(`ËTş%ÊÛC‚2M=jŞ1–£áİ6PMhB,09OinÂ± $á­O´Ìjº!„Ö9VÄŞ1@ëÎE­Î·¶ëÖØ!êMwW¡"ŠWF€8ñôğå äjûˆvQißB<±×ç`:’ê`ÉÙ :v@6M±ÿÊ^V.$³xx˜Âª¥E»µ·ó«íèH™tI†Ä´ÈŠ¤OjHä©º²m#¯­?‹”@‘r~¡®$š9õÒ÷_æÁé²wï/
+]ë^çFİì§Ù«ˆãOÌãdçi2_Æ@3ôÅÅÔ[E	¹‰†P±8ŠŒ€Ú»elèÿ–¤0w½‚Í§\qüÍõû××‹×@›Û¨ê7ª%‘AàIXˆuº=q‰ß£uÁÍl)¡ûYÔzûzáQ¸6·DğI.é	á‡Sqº*ĞLWK7í>Çˆº×ÿ¸ÈÎŠRƒ_ÿÑ8µ·¹Œº¡kì](æN-ÚÂiˆ¾ı{Á•âÛ?Š_Ğ-ñü!kõÎïí…ÉÉ°«Uº/s˜Åû¶Íºç`èüPPâpf…íìf:å‡Ä4%‘LY¼ë.Xô$äî İrHå6§»ÆEßíÉ¿½§ûÅy÷:[Ÿx4šÈ2ZoÌ;>;cS½·éyST¦q?™ˆ}|%Ì;ŠG^Ş1–Rçœ16zš"İÙ6CÁÎ·ÇvGÃi*ºÀxº©ƒªCl]Ô”µÜXÒ› ‹áÅJsCˆ´(ëgæªQĞº{\BˆªÍÏ5^	ì\A-8ºû"sÚÑGæ¥œ²÷IVE&¦²êçrå9yúÉ< /­<?E@Ü}›|—È(ˆ[ßæÎì\¾ğ1‚hc E26 Á$`ö'BçË%Íã(£k ‰2-øR,·^ïs·£š!L†°vídí»öHcÃÅXsÑÌ¢•õ‚,´`\õ÷l]ê—^w8—E¥ö:£æIA¾ëÆÕÏ^+Ú/‘²0İÒ åÅ¹›uÏ
+{­E Ò­[«$H%¦ôëäº%Åµ"r6k)İÙÜ—˜-ŠYæzkbg'J†³YÓ¢´
+ğçİ+ÉŠwoBtv)“Îã¨xíF/5¦CAXSqğ\©ôãÓŒ½¶ğ†Q
+ûø/LÿmêØãì¬´şÚÂ~‰ãqÏ[æúÿæı¿ÿùïM8ş®pëª_sÊ@2Eq°¦Tnæš‚g&áÁÜúúòİõşzñô¾‰xQTo(M<DŒ%Í4jOŸO÷®^èUÍEíÚ;‘†•S°¥‰¢A9	ÓœqÂ]	Öñ&8µ óİM‹«‘j€(·g×ß9æpÙ©ã£g3—ãßh‡S_½´§@PÇ—Q8—æôŒb &¯õ…wEÉ°¤W^I¯âó³Ë‚ÍO1 .G·wwËáWx6ê°Ø‰>Ÿ‰wÎRçŞ1øOÄÇ¢ˆòy‡ñIã“]Eé†“§ƒûLF ŸQ<¸mdÓ”Û«ÜÛÚ-5[A!)O:ÈŞº¢tó÷ğş4…)"êøÎ—nPè±g5YóRkœ¶SĞa„qĞ¯ï±èicÅ{Ñ»;Âès¶µ×}Ò%w&1Fd[$¬NÄa£J8°¢Ü».£F¦O×6Òú~!‡”k1ÓÁ–×)›Âø…8äj?Šİb™“Ğ)É^îU	Môy®ñ¶;üÅ@* œ€</­-øwˆá²Ew)ñM¶L|ÛŸğ‘”Ô+í}ş9ìNXùŒ~`tF‰s•÷ÖÓîW6qšö~Lêbz&ã&1Ô:"+ğµ$PÕù™²å æ½kI*ú(È”Š³œî1¹¯$ ¬®J˜ÀÎÚ}H?ù2š(<4+“eİÅDî›p¸Œ§.íÖ…t(ñR–ß'°Y'oÎ½€ô…/„UovE—aÂú/é.³hùĞ)w7èÙè×‹âˆoïr`ØÑæF/±’™o^ò*ø¿xÕ#ÈzwP]Y±Ÿ\ş”/¬¤Ÿbº;?}ğí?Œ@€ÿÂ®ñ"ÉÉ|q
+Zd}lµŸ'ºyÚN½[($ tØvˆG>I_T™CÜo«Š®†À¼{„ˆ:Ûßúx¨ÑÑU–b+1$LzíhM_,ÖN¸ş§¿ùÿUÀØï@	ök^Ø$¦˜pøù\ıbŒšÊóñMU²5¨IQ¦Ê4ßÁC™qˆe²¤6ô„/Èõ»k…×­&YR
+ç#I¹¥dàSaR¶^ì~F»K½¸Ï8iï´ÕYŠrzP]R1¡–q©³Œ; Vr™©º†f æe*ÀŒôï	ŞSÌ;ıñNy?3â|;Šèï†X†Ğ¸×V ”¯±×Ì=Pf‡´ó¸Ó&bQµ²p¬â•c†‚¤ÖÒdO·“È©ô2ËÜ4†ĞÈrb_Qx'"¹İÍÏ:PÑ=`ÖnCàPãõAİsâÚ1»˜„û•¹O01å5l)èşWÛòñF8Tg¦)ñNÚé|N3çñ%TdV4¿ì4YVGèŸ)JsÁ¼oY1í|—h0†	ZñN˜Üq6ta} Êš×±Ú¡Mò´R3Å™ıwMÆ* ff!g(|kêĞ‘ù†~©8ß*şµ•ƒåõöëÚÖ_‚Ë©©Ì#×1x’&ùÆveî6@Ë^Tl®m·v‹›]‡ÃÂDñã!µ5Ö!¿V²^ƒ6¸â+uSü¼ßqÚ3«•:æ	OİÌo"s«!Ï®XÇ§(ñ8ü@9Ä–›4”A kÍÄv¬Úh­dA£»ØÏöòºYXidgäLc1}r®Ö(
+#µ,éÔ¶„T/ùòt?
+¶“uC÷Ït]p¦‘-oI¶Kd¸ª‰ÿO•]QéD|‘£ğŸÇ˜"ƒ½-VbÂG‘U>¾ºNŸim`¶ìCì/QNÍ&Ì—Y‹½×M€ï…D–XRŒJ€NP©¹q‘»¬GÇ2àã¸‘¥£E˜ItRZÎ€­˜QaåX<7&áæmÈ¸p05CÆ …ãe(Íô• ¡Š©ÑŠµÈÌAìæjsœ¦VŸä£K0&÷xºü)á}á¿ä—·Õ¢İ<3ÇÏ
+WÈ…©F'<·ÈêaìÙ†‡ÀF˜lñß‡¶JO&“›HY?R¦D-[ôèĞßÛò¨Ó×@ÿ4ğÏmHX‹å£µ1v¢¹ùQÒãoEÇ}#H29P±Å'l7ÑØïØŒáæÈ}3qF	Ø¹Ùs8$•™t4qÌl	f àÑûZç©ºÚPU<7²rí³:;Z^Ö¬n'Œµƒ.Ç7¿Òà9wR›aÎ\4Ì ÓÂŞèÖÅâP3ÙŒáó!˜ŸqY[µİv!K¡4Æ¼%ºìåÓªTQá‰Ø¼’Ó©•è‘˜ïğQ´(8cÚ@2 Œ´¸ÌÙ@`ÚR*®0wÀaîÒ|œàÛ[KNJÇ#<Ü%3&cÍuP}´ğ˜J£È]7ú}Øç…b%MÊƒîƒ9rşTŒûÑ¯õ—0™[zŸ#S‘¤{nÈçôSœÓo‡V½	‹‰]óR9§$¾FWël¤3º ¥B³¢8Ù¯Øš”ëí{¤ÑJa2‹ÏÎ?æ¤£-—»v;Z.H<™N?«íeäF¯¤+ĞŒ*Lñ,»´s…rÚ4š5$lnD‹ËG_mycñ¨…zéL‘ÁŠ—m hÖ2œ“¾pòÄË¢må½ŒÒ¤ÁÁU,¯8Uå{Úû!ŠÍ¤Ø.§<I Pá£Ó‘j*lŸ‰]ˆKŞİ1xpÈJ•${g€´ğÑgnp„–œ€ú"µñìcºÂëí‰±…_à;qà.@:ÊË¶!UùC(9•‡m¤İ–¤V*í.©.Ğí ¯Å k’†¹ˆ:…ı$¹áb*‚ÇÂ>+Ö5ÈûoØ*õŸè|ì¹®<”±ß %ûUQCéJl¹·÷Å™‚‡,rÙÈ¦’œ®¡—,İfSg&®„–V—+S×ñƒÃ\%†”
+æ5|"˜ÓVŠ›±;³^j ¹“·éü¦; \a§Âíƒ;ã÷ÿ]°¸ÈãJ¥wW^má¶ö}íùí:À·í,k®'f‹Ğdl²Wg±”
+KÓ\€e¦5U w:G´0ÖPş»ŞıåGÒ†aĞ$Öç"ñ©¸Û¾¹+şµ¸«rú£şUÓŸTÑŸYu÷/?úÿ   ÿÿ øô

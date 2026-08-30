@@ -906,7 +906,7 @@ const TopToolbar: React.FC<{
             </button>
             <div className="w-px h-6 bg-[var(--border-secondary)] mx-1"></div>
             <button title={`${t('tool.select')} (V)`} onClick={() => setActiveTool('select')} className={`p-2 rounded-md ${activeTool === 'select' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}><SelectIcon /></button>
-            <button title={`${t('tool.editPoints')} (A)`} onClick={() => setActiveTool('edit-points')} disabled={selectedShapes.length > 1} className={`p-2 rounded-md ${activeTool === 'edit-points' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent'}`}><EditPointsIcon /></button>
+            <button title={`${t('tool.editPoints')} (A)`} onClick={() => setActiveTool('edit-points')} className={`p-2 rounded-md ${activeTool === 'edit-points' ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent'}`}><EditPointsIcon /></button>
             <button title={`${t('menu.edit.duplicate')} (Ctrl+D)`} onClick={onDuplicate} disabled={!isShapeSelected || isDistributingPath} className="p-2 rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] disabled:text-[var(--text-disabled)] disabled:hover:bg-transparent"><DuplicateIcon /></button>
 
             <div className="relative" ref={toolsMenuRef}>
@@ -3053,13 +3053,24 @@ export default function App(): React.ReactNode {
     const handleSetActiveTool = useCallback((tool: Tool) => {
         if (tool === 'edit-points') {
             if (selectedShapeIds.length > 1) {
-                showNotification(t('app.1107') || 'Cannot edit points for multiple shapes', 'info');
+                showNotification(t('app.editPointsMultipleShapes') || 'Режим редагування вузлів недоступний для декількох фігур. Виділіть одну фігуру.', 'info');
                 return;
             }
-            const shape = selectedShapeIds.length === 1 ? shapes.find((s: any) => s.id === selectedShapeIds[0]) : undefined;
-            if (shape?.type === 'text') {
-                showNotification(t('app.1107'), 'info');
-                return;
+
+            if (selectedShapeIds.length === 1) {
+                const shape = shapes.find((s: any) => s.id === selectedShapeIds[0]);
+                if (shape?.type === 'group') {
+                    showNotification(t('app.editPointsGroup') || 'Це група. Для редагування вузлів розгрупуйте її або виділіть конкретну фігуру.', 'info');
+                    return;
+                }
+                if (shape?.type === 'text') {
+                    showNotification(t('app.1107') || 'Режим редагування вузлів недоступний для тексту.', 'info');
+                    return;
+                }
+                if (shape?.type === 'image' || shape?.type === 'bitmap') {
+                    showNotification(t('app.editPointsImage') || 'Режим редагування вузлів недоступний для зображень.', 'info');
+                    return;
+                }
             }
         }
         
@@ -3074,7 +3085,7 @@ export default function App(): React.ReactNode {
         } else { setIsDrawingBezier(false); }
         if (tool === 'image') fileInputRef.current?.click();
         else { setPendingImage(null); setActiveTool(tool); }
-    }, [isDrawingPolyline, isDrawingBezier, handleCompletePolyline, handleCancelBezier, shapes, selectedShapeIds, showNotification]);
+    }, [isDrawingPolyline, isDrawingBezier, handleCompletePolyline, handleCancelBezier, shapes, selectedShapeIds, showNotification, t]);
 
   const handleSelectAll = useCallback(() => {
     const allIds = shapes
@@ -4786,10 +4797,17 @@ export default function App(): React.ReactNode {
     }, [selectedShapeIds, displayedShapes, distributePathState, showAxes, viewportSize, setViewTransform]);
 
     useEffect(() => {
-        if (selectedShapeIds.length > 1 && activeTool === 'edit-points') {
-            setActiveTool('select');
+        if (activeTool === 'edit-points') {
+            if (selectedShapeIds.length > 1) {
+                setActiveTool('select');
+            } else if (selectedShapeIds.length === 1) {
+                const shape = shapes.find((s: any) => s.id === selectedShapeIds[0]);
+                if (shape && (shape.type === 'text' || shape.type === 'group' || shape.type === 'image' || shape.type === 'bitmap')) {
+                    setActiveTool('select');
+                }
+            }
         }
-    }, [selectedShapeIds, activeTool, setActiveTool]);
+    }, [selectedShapeIds, activeTool, setActiveTool, shapes]);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
