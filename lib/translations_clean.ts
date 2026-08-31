@@ -1,4 +1,4 @@
-// UTF-8 Translations
+ï»¿// UTF-8 Translations
 export const translations = {
   "uk": {
     "toolbar.drawMode.corner": "Ð’Ñ–Ð´ ÐºÑƒÑ‚Ð°",
@@ -8469,144 +8469,63 @@ export const translations = {
     "app.1054": "Copie le code dans le presse-papiers et ouvre EPython dans un nouvel onglet pour le coller manuellement",
     "app.1055": "AccÃ¨s Ã  une ressource externe",
     "app.1056": "Vous Ãªtes sur le point d'ouvrir le code dans l'Ã©diteur en ligne EPython. Certains Ã©lÃ©ments (par exemple des polices spÃ©cifiques, des couleurs) peuvent s'afficher diffÃ©remment que dans l'Ã©diteur. Continuer?",
-    "app.1057": "Oui, va",
-    "app.1058": "Rester",
-    "app.1059": "Ã‰chec de l'entrÃ©e en mode plein Ã©cran :",
-    "app.1060": "PassÃ© au gÃ©nÃ©rateur local. Le code sera mis Ã  jour automatiquement.",
-    "app.1061": "ClÃ© API enregistrÃ©e pour la session en cours.",
-    "app.1062": "ClÃ© API supprimÃ©e.",
-    "app.1063": "Projet automatiquement enregistrÃ©.",
-    "app.1064": "Erreur de sauvegarde automatique.",
-    "app.1065": "Version enregistrÃ©e automatiquement supprimÃ©e.",
-    "mobile.selected.title": "Selected shapes: {count}",
-    "mobile.action.align": "Align",
-    "mobile.action.alignTitle": "Alignment and distribution",
-    "mobile.moreActions": "More selection actions",
-    "mobile.align.active": "Active",
-    "mobile.align.noShapes": "No shapes available (draw on canvas first)",
-    "mobile.align.selectShapeContour": "-- Select a shape as path --",
-    "mobile.align.orientationType": "Orientation type:",
-    "mobile.align.orientationAngle": "Orientation angle:",
-    "mobile.align.base": "Align relative to:",
-    "mobile.align.need2Plus": "(requires 2+ shapes)",
-    "mobile.align.selectedCount": "({count} selected)",
-    "mobile.align.canvasDesc": "â„¹ï¸ Canvas: Objects align relative to the bounds or center of the canvas ({w}Ã—{h}px). Works for 1 or more shapes.",
-    "mobile.align.selectionDesc": "â„¹ï¸ Selection: Shapes align relative to each other within their common selection bounding box.",
-    "mobile.align.sideAlign": "Side alignment:",
-    "mobile.align.left": "Left",
-    "mobile.align.centerX": "Center X",
-    "mobile.align.right": "Right",
-    "mobile.align.top": "Top",
-    "mobile.align.centerY": "Center Y",
-    "mobile.align.bottom": "Bottom",
-    "mobile.align.distributeSection": "Equal spacing distribution:",
-    "mobile.align.min2Objects": "Min. 2 objects",
-    "mobile.align.min3Objects": "Min. 3 objects",
-    "mobile.align.distributeH": "Horizontal",
-    "mobile.align.distributeV": "Vertical",
-    "mobile.align.distributePathHint": "Distributes selected objects along a circular, linear, or custom contour path",
-    "mobile.menu.cloudSubtitle": "Public projects, groups, and classes",
-    "mobile.menu.viewPythonCode": "View Python Code",
-    "mobile.menu.runSimulator": "Run in Simulator (Tkinter)",
-    "mobile.menu.savePyFile": "Save as .py file",
-    "mobile.menu.runOnline": "Run in Online Environment",
-    "mobile.shapes.linesAndArcs": "Lines & Arcs",
-    "mobile.shapes.textAndMedia": "Text & Media",
-    "mobile.drawMode.title": "Drawing Mode:",
-    "mobile.drawMode.corner": "From Corner",
-    "mobile.drawMode.center": "From Center",
-    "mobile.tabs.properties": "Properties",
-    "mobile.tabs.colors": "Colors",
-    "mobile.tabs.position": "Position",
-    "mobile.sheet.dragResize": "Drag left/right to resize width or swipe to switch tabs",
-    "mobile.sheet.expandWidth": "Expand sheet",
-    "mobile.sheet.collapseWidth": "Collapse sheet",
-    "mobile.sheet.expandHeight": "Expand sheet",
-    "mobile.sheet.collapseHeight": "Collapse sheet",
-    "control.quickSettings": "Quick settings: slider, presets, and reset",
-    "control.reset": "Reset",
-    "control.resetToInitial": "Reset to initial value",
-    "control.quickValues": "Quick values:",
-    "control.rotateCcw90": "Rotate by -90Â°",
-    "control.rotateCw90": "Rotate by +90Â°",
-    "share.ghPagesLabel": "GitHub Pages (for sharing)",
-    "share.localUrlLabel": "Current site (for testing)",
-    "share.testUrlLabel": "Test link (current preview)",
-    "share.ghPagesWhyTitle": "ðŸ’¡ Why did GitHub Pages open the home page?",
-    "share.ghPagesWhyDesc": "GitHub Pages currently hosts an earlier version of the editor that does not yet include updated link parsing code.",
-    "share.ghPagesWhyHint": "Publish/update your build on GitHub Pages and the link will open seamlessly there.",
-    "cloud.open.dialogTitle": "Open Project from Cloud",
-    "cloud.open.dialogSubtitle": "There is already an active project in the editor. Choose an action:",
-    "cloud.open.currentWorkspace": "Current in Editor",
-    "cloud.open.incomingProject": "Cloud Project",
-    "cloud.open.shapesCountLabel": "shapes",
-    "cloud.open.layersCountLabel": "layers",
-    "cloud.open.chooseAction": "Loading Mode:",
-    "cloud.open.modeMerge": "Insert into Current Project",
-    "cloud.open.modeMergeDesc": "Appends shapes and layers from cloud to your current canvas.",
-    "cloud.open.modeReplace": "Replace Current Project",
-    "cloud.open.modeReplaceDesc": "Completely replaces the current project with the cloud project.",
-    "cloud.open.namePreference": "Project Name after insertion:",
-    "cloud.open.nameKeep": "Keep current:",
-    "cloud.open.nameCloud": "Use cloud name:",
-    "cloud.open.nameCombine": "Combine names:",
-    "cloud.open.groupImported": "Group all imported shapes",
-    "cloud.open.groupImportedDesc": "Creates a unified group for easy moving and resizing.",
-    "cloud.open.preserveLayers": "Preserve layers from cloud project",
-    "cloud.open.preserveLayersDesc": "Adds layers from cloud to the layer list (replaces empty single layer).",
-    "cloud.open.autoExpandCanvas": "Expand canvas if cloud project is larger",
-    "cloud.open.autoExpandCanvasDesc": "Automatically expands canvas dimensions so everything fits.",
-    "cloud.open.replaceWarning": "All current shapes and layers will be replaced. Unsaved changes will be lost.",
-    "cloud.open.confirmReplace": "Replace Project",
-    "cloud.open.confirmMerge": "Insert Project",
-    "cloud.open.success": "Project opened successfully from cloud!",
-    "cloud.merge.success": "Project successfully merged with current!",
-    "cloud.project.untitled": "Cloud Project",
-    "settings.code.variableNaming": "Object Variable Naming Template",
-    "settings.code.variableNamingDesc": "Define a global prefix or template for variable names in the generated Python code (e.g., shape_ or item_).",
-    "settings.code.varPresetNone": "No variables (direct calls)",
-    "settings.code.varPresetShape": "Prefix shape_ (shape_1, shape_2...)",
-    "settings.code.varPresetItem": "Prefix item_ (item_1, item_2...)",
-    "settings.code.varPresetObj": "Prefix obj_ (obj_1, obj_2...)",
-    "settings.code.varPresetType": "By shape type (rect_1, oval_2...)",
-    "settings.code.varPresetName": "By editor shape name ({name})",
-    "settings.code.varPresetCustom": "Custom template / prefix",
-    "settings.code.varTemplatePlaceholder": "Enter prefix (e.g. item_) or template (e.g. shape_{index})",
-    "settings.code.varTagsHint": "Available template placeholders:",
-    "settings.code.varPreviewTitle": "Python code preview:",
-    "list.multiselect.select": "Select",
-    "list.multiselect.done": "Done",
-    "list.multiselect.selectAll": "Select All",
-    "list.multiselect.deselectAll": "Deselect All",
-    "list.multiselect.tapIconHint": "Tap icon to select multiple",
-    "list.reorder.grabbed": "Grabbed for moving",
-    "list.reorder.dragHint": "Drag up or down to reorder",
-    "shape.multiSelectEnabled": "Multi-select mode enabled",
-    "cloud.merge.empty": "No objects to merge",
-    "button.deselect": "Deselect",
-    "button.select": "Select",
-    "button.deselectAll": "Deselect All",
-    "button.selectAll": "Select All",
-    "button.all": "All",
-    "action.duplicate": "Duplicate",
-    "button.delete": "Delete",
-    "button.done": "Done",
-    "prop.splinesteps": "Spline Steps",
-    "file.import.isPythonScript": "The selected file is a Python script (.py), not a VereTka JSON project (.vec.json)",
-    "file.import.invalidJson": "Project file parsing error: the selected file does not contain valid JSON format (.vec.json)",
-    "file.import.readError": "Error reading project data",
-    "cloud.open.successWithName": "Project \"{name}\" successfully loaded from the cloud!",
-    "cloud.open.notFound": "Project not found in the cloud or ID is invalid",
-    "cloud.open.error": "Error loading cloud project",
-    "simulation.noShapes": "Create shapes on canvas first to run simulation",
-    "test.noShapes": "Add shapes first to test",
-    "settings.appearance.touchDrawingMode": "Touch Drawing & Input Mode",
-    "settings.appearance.touchDrawingModeDesc": "Choose your preferred interaction method on touchscreen devices.",
-    "settings.appearance.touchModeJoystick": "ðŸ•¹ï¸ Virtual Joystick & Crosshair (Joystick / Reticle)",
-    "settings.appearance.touchModeJoystickDesc": "Aim with laser crosshair using a virtual joystick, with dedicated buttons for node placement and micro-nudging.",
-    "settings.appearance.touchModeTapDrag": "ðŸ“± Direct Touch with Magnifier (Tap & Drag)",
-    "settings.appearance.touchModeTapDragDesc": "Fast and intuitive drawing directly on the canvas with your finger or stylus."
-  }
-};
-
-export type Language = 'uk' | 'en' | 'it' | 'es' | 'de' | 'fr';
+    "app.1057": "Ouixœ¼}]oI’ØûüŠ\nEâÄ–4³Ÿ¼]P$%q–ÔÐ$G»³ØË®ÊîN©ºª¦>šlÜƒ_Ö0`ØÃðÓŸn´gÀ¶÷m¿û7ÜðýÇGfVfUV“š=Ü`fX]ùyO¬ä{	øçŽ,ËÉÃ?üÉ]qçLÕªz_~Š_®—,T"R%²»*oªë÷J¨\,xSfJçâú}RÉ\ì†Ø?z€Ø§²®¯ßÙŠùõûüú}%ÕV"+™MÄ±	Ò©U%ÅR×âúoÅë¾Ë¶)–²Ñ_µj	…Nz¤"éýïAm*5×5W­DôLÉºÖEŽUMàUÝ'ñq@¢nË²ÒK Ð‡û„ZQ¯UÓ¯•_píˆvXUØXl lWj.+xôˆô‘~ˆHÏUe*îµª_òx}„4.¤Î2ÅcfF§©ŠR”ªÑêaü1Nd¶€ºª¶¦îbªi°¾Ä:©‹7òË;†0Ážm”hÝÈ—Y[‹9<¥Üý³"OhC®*è|è„¤‰ãO¸½-Vö­(ÚU¥A5@ 2H¤­°°¢JuÎÓ§há…œf}_Ì¤®`øõª€‰,àÿð‹ë×/–¦õ3(NÁ´L±5ùD˜&† ?~à¯€V$YÍyàWI³ÂQ‡6–ÔoRË•¢á·#õÑ€sýM¦&“8Æ^}a~öq“b¹tèÜ\]úí“KÅpK¬»ë­„Ið þVº¤ˆ!Pë“¦_>wJ(©Ð~\KZv8§+\ì¥¬M+d@wšÉüÍ¾ÌW²¦)]h(}¥@t“Îv?/j[áº\/dÉPÅôõdÐš°›¸5ÃÊ%T¯s˜|:Ÿ×Ìè*¹¼þ¬¦™"s…5ïá]ê´Y ø1N¤¶^(=_4ñÖ|‚‹~æ×S!Ãk¨ƒà:}!«j‰Ð[_äŽ…@×\=Xaè8«ú½Lz6Ã·Ðð/ïüöË;q´,X&Sæ)4óF†W¦ÁØá|¿ÈŠŠ†¼h3Ã;¤ÞfAœÂLnrØÏ3¥Ò©LÞL€qeŠ{N×5­¨ÚÔ¤Á•_0Ê‡v*ø`¢.s__ýÃ’{BCëªFæMÍìÆñ}¦Z¶ŽâfU‹
+øÀÖØŽi;7=–ãÜÏðI§Pyê9úµ,+Þ†°°wêi‹ÂÄ÷ÊðØëdØÚ§Žqù¯a+Ë3Û²âÍ ëkHÎ‰çA¯ßÏ2uEEÂ–Žß+\šjVTË6#Fù¤(æ@­.GjÜ‹÷L"`ªPå<…í©Ãü‹Iç0ëaýò‚GígÀªŠ|þó3µ”¢îþì¾yE—Ân@]Sóö¼2»œÙ¢¸ï¶]¯ëæúàyé]uUf…nx#€ne€\®ôœ·˜
+8 ýR‚ÑPÀ“ºf0/š°—$PU…ðÝt'™œùnN^ÿ5r
+X#a{ü¡1ynšNIR®èO¿>|Õìüz%«­zÆ}^Vëíß|yççLíÿþC×·8Æ´›W°îŠJ«LÔ0û2¬}~ýw­‹˜ Ü™0•uÊJÐ^)ÚÄË…¦!Ç9,;©Íl$®®›E‘óÖ^—°œaí¸¦À&tÑ,®¿ÁipñFç°OzÍ§Y}”‰¶Ñ™®I–äÃÔ†$'2éTÑì®Ûf¬­¼Æ%+‡ê:Ó(À‚„çRµ°ÈÞÏeÆ“Á”‚Ë…=3õŸ(˜Õº#žÈR&º!zW°, WpØ3oÚsía®-˜«}ð ¥$>Ãº¼~,£(K®¡·ZžÃlÏôZü²­¹®Â¢QîþóÊ>g\¿¬=`NÔâhO°×ƒ1²õ “zÐ¨daY5
+÷0éÄÏ¤XTj•X4MYïÞ¿|ºiS]ÀCRXG÷A‚lpçk î·´ÃÃ›Jeð3/ŠR¡Ä˜Wœ)˜Z|ó[×æ°>3‚Ÿ×N™$Ðƒ]KÅ¢ æ²;²C Ô%{Gâœêhšû³ûòç÷`êfù²ó°×~Ã¼<iÝ~_¨¬œ4E›,NŠ©fæð£‰¸À7ä)¥r˜¢ÇE[*ñ}ñYŒN'olX/q¤‡qŠ'aÓ/ƒVÕL&TÂÇ=HæBˆhöf’Y>šUrEÊBÅÃˆ…ž:l“/^ý Ž×—¸±·~ÇBfÛÃÁ¥xe':ôŽA…ËFÑÛN< pËËøÇ<ä×·(š7jMuùÉDœÁ¬€¥Ÿ€Ö	“KØíÄTJKZî­qÖí·®•¬’ÅiC´(2h!+â lTø3¥ùQAzŠ`Y©ö4ˆŽ˜Ì2“Ûzø©ÉÌLÇÇÄ5îÍ¬PØ,€OÇQš¢È¨éŸ#%6ì!S‰?C”%¬-ì}#ó•´¿Àì'¦¤f½@¢ÌÖn–Ký¸ïÕ%9‰ ÈÞ ³ìÐ¡ATy\ ¡Ý¾MZÜÍ ¡vÜ®€•…[Èi,oTê«öúM„è¬@uó©æï•e»U…œCPK¹_àfËØ€-{9¦-†zTZÁBKž·íkrdL¼R~¦XI¾¼V8Ä0øÔ¯nÄ‘9£Ž“aUrZ@oÔ¦Ž8)R=ÓFj/	`„BÚ²âO}r€?`z2èkÀ–¼)ˆ{ÿhÓ8gS‰YO†¸"#æ0#Jî4züuhsGä t–"Ñ‘¬Y¦Ë§\0l$v: è·É"ñ…ãŸ‡ˆ°QÁþ²ôÉDe±Ù$î£˜Rûã?BWýÃòŠZzý¾DŽ†d¨ÈðÛÌ›PˆÈÏŠó\–!:(Jzb®alLR°ç‘åKdÞl–øü…}	°îËªÒ×ßÄ¸a”ÒãNðŠZÆÙ(L›e¼ù#Ö#Y'ÔÏ*¨c«qQ\žûûÐÞl¦iÈH!½yŸáa^€‚û(sæ¼.¬2Ë@;‡M©n?ó¹S{ŒoÅ‚•>Éj®Ž–vÏ>ÂŸâ×¬Y«ê7–,Ø•Nù1Š"åïÛ5ÊÄÐzÁX®}îe ’¬¨Õi‘­	†8.òQhH°=XËdŒYÄÖdHTæsnÿ=ØÎQfEÀ÷º™8ð´Vx]a€Â„r¨CÄÎ&†ÿ&Î^aûl;ØaXÓ(ùØ5l5ÀÆr˜¶ÁÖœÃûì.œ[%{fv} ½¨ä(±Õ¬Kµ–‚BJÛ¶¤CF»BHUâÑÐ‹c{†)·¶…úïðªéï/½j·}ÐÇ <k—S¾ûH‚%YeÚ%(qF'~0ŠmðÚ iŒ Ú€#N[âLÀRPÃå/]]{#ŽË6àZ5V<3–«`Ù‘h7ƒ¥Ž÷0<¨êÒ<]¶SA™ ‚¯ìÒÁUí‘úòÎ×HýhOÄ¾bk˜Û™Žáš/JìzdBd”×esXU¬?¦ŸqxöàÁ,¼LÛ^Í=ŽBSËÎùbð4œˆÚi `,,Þ7lÕA»F G=†ÙBú›V—dgAŸÌ°dø1@Y@Ó,ÊSMƒ¿	œfVŒOÖðèŠ Š¨Q¬‡Ü^4g@g'Eµå©øÇ£à a‚‚;G¥Z‚œÅþ$À>_È
+ìÚ”¿”P¸…Dñéœë¸¨Ÿ-‹ª\ K¬ó	ìçDÖJÌ%ª|ëÈ0yƒd¿fDìÜàzv_.äÄrÎ…XÀôº:
+{0Ÿü :¤X*œk¶ž—ºY}Vç-®ÏóçOº¶È\/ƒ¡W l¹—¡=meö1óÌGy]’Inú“Š×"ÔÍ4ŠÞŒ#œH¨>‰L®7Ì«‘N(Wîœâ@IgªÏF«[VjÅ¢j¥=U³–+æíÏðoOYì:ã§‘e[+>_iGÄ>ÚõOñïH€†÷F½°Ç/çôSðowj¡°s»·Bÿõßµn×o`dA$*æ 
+ìE•âØý¥¬ª’àgkò.«ëoøP¨­jÕV=‚‰#µïcuðÖfN'<=d_v|ÚÏ4ÛEöIzË[8ì\ùœå·C<8i‡æIÓÉ›F*”‹|©²ÖÕ¤YÀ†šK1w…½±iBT×¿ÈHÞRæ­Ê6ôí!2¯QžÇm¦“ŽØb”Â¹C:œÍX ºüžL­€1·MÓ3kVÆ¡zOç ºDð8¡cðu«Q_a=;Ã©¬­m!€ÁnÍ˜UC<\áÊ–Œí…?>@8ÊÙt1Gmî&9~efÇ™'LtãŽö‡ôIŽîdèA·óÇDš„\—y°È
+¢pMAümAÅL€nrCÏühi•<…âÜ¾€z®ßríQ”ªñG@TÁ,»(.
+RÏé',,ø·Í‹±'R×]…éS?õÔ!–pæ“ ¦³•0'7’t`!!h‰ræ$S364‘ÔIGèsÙz³ÛƒMh–<õÁQ|Bå™"˜•=ƒöŠI«Âsñ€îJ
+JíB¶Íh}žÇëc-¼iÑ4<½2¦2Ö=\Ä£¢YtŽû¼X@Ÿ0ï†hNŸ3Cjy±ÝèJ4°yúEº‚†ˆÃ¦¹ƒÏð©N7×±^(ÕLJÍÓ¹ bëR¥Àãq¹@™úQ I€¥"³ÒisCé|°´r”£34ÞóÿÕö ô\¥d:W¦y'C0bMˆ€™É@	ÏX`;[ÄO@ÈZ 'nGXIP²j=(ŠèÌ`ç¦É÷+»Å-êZ
+‚ô$[Ù,bDÒ"ycEžL7æèÅQ©Ñ&–
+¬ÂÎt½ƒ©ß Z¦âeêÛßÕíŸþæ÷ÿNØ
+Æ »
+ è~-BðúR—ÊÚÏñ‡ÀE~ŸÖ r& h’ú:…S7E}Wƒ.ª&Ãã7Íˆ¹°µ2†IvK1ö‘JÉ”‡‡§…¡•%†4ÁSéTa™jž'gütœÅî¡~T·AƒŠ¡â‘YFegÔ&LUÁâJuÒf’dâSï…w¸°‰FÒÖ†míÃ´j—£H‰®ˆ¼NÍðìæ>JŠ¾oÄžTEcTÞ³Âú$n;<d±§§^n&ðAû¡#ú†òOÃnðÈð'€ˆ9c6wÃúŒL’+»À6ø2ü´ö>½
+>ñY¡\!±Ê”ÙÕ€Šð ¹WïS+”ÌÁMãÏÖ%á_À_¶ŽÝ„Aû§=+ä­Ýø¶F·þþÞuJøÕH"O=ñ£/A<êöVÚé„“kâ	A­Ñ{Õ™ÏÜ@Úûª•ÖeUõ&H·¼÷‡Ye™.YÜ>4þgtv A)ZŽÃzè¿¶ßOéÙ3qÄT½ÕÊzßUÓžðV±½þTµªQ¥ ¡¬Ð¼Í¦9ØYB|´{³z˜$øÔ¯ÚÜHSüØë¯†Wäõï	‰¾Áq½}aŸƒñÀñ"%ªèàT ÊO[>ÁÇÇ~q²To6À@ƒËëoÞ†–õsõ=þóžßôøzc,¾˜é¨<a­x¿ò×mw|‚ßÈ~Ž¢n–|ÀõˆŸüõ>Ó|ìÆ>~Á76yððçx"|í{¢†¨:eŸýëÿÑxœôÀ
+y<wê›ß÷êù~†/xÝ£š¦ze³Ç>ìÁ§´’—'(ÞÁŒËyfû6©Me«k6÷8l‡æØ‡Có|[£‹„¸’.`Çè¸ŠñYE£W¤ç¨ÅÙ•šò„]ÛTe=èâ°æ4ê‰ççÙ9,qÙébÍ:¾…ˆm<î$•¦Vç0Ò¬AZ˜™qƒHe¢U{~&4bGøälÒwçˆE2+ŒnÀ5YýÕ,ª¢/˜õú¬1TgŸ:lO	=4O«}w;VDw@#ÆŒŽˆœzÜE``óaæÆDû¤ò'e šL<LgÛ!L+t’ŽéÎaÓ8@ànuÒó«r]‘¡?ØQßó+†‘«lÍ4:ÆçÐh4¾œxÂ7<ˆÎ‹eÍKÅr)s|2ðBÖÃ¡.­®y°îŠoÿ^¸WüÚ±ùßˆoÿ8¹‰úÞU¤²Õõ7ó:ÔâºƒAÆ÷Ñ;ë¹¦±áÃsþ¿±n¬ö?i-·å§!'º~¬žò
+ÇIÉöªSá=ªXÝƒVàºE­¡ÇEi¹•©3â—xòA*:È2sßˆw3­~ý‘èœiÃ6Âg°ÿø×ÿEvrbç<Hms4œy6lH¥n1-ˆ÷ÕÐ¦ÿ¶ü[P4q³Ûˆ‹ÇŠzyÿÎ°„¶`¯È[s"ç9ÙÙ€i~@7¢×)ÙapGDËÊ÷!}ÆM$mÐ²ŒÖ´Y5x~]))h_k
+ÓtÂPTTëcÂ`OÒW*Û)ak:à·þ€ {c£¬6µç<2ºc	9¦éÜŠØÃrWç³bgÚR@)ÊÍHéŠÜØ 4ÕíÕ/Ô¶R±Ñt'kq©¦év[T[ÓcÙ¢`^SÏãBßÂPH¾Ü©¥ÍYyZ\:«Ö´*.ÑôÿÅ‘Ø:}±Ç†¾uÎ¨½úôRveb¥¡.*Ct¶oIÁÖœîÕÈ…µæq¡¦¨D±5F›ý¹s³ºþÅ&¦èÿÕ*Ïc1‚¹”W°ÁÀpŸzÞÑÏ@Y vßô²]r 9FwÁK·¢eÛ>N¶$9à1üY÷ô‚:‰ÆxPR²6†1zÖAëC¢Ó5º8ŸZã3·’ËpZ”HHXÛ	ëã ´t k{Ê{¦ÊÐÙ=”©ûØ+YÝ,7‚cGnë¸'7ˆ‘Þç‚•?4\Î•ŽRæØñ’©ø<.€2flN0B¤©Œ»ïy£J£ƒ.ìÖD{)çSr~A£rý©X?h(N€âzúÊŽ8.¼ ‚3
+]ºçÅ£pS³+ÖeE–A½°ì~ý1ª…&-Æ¡×¸ô” ¬[Ä~ü³"÷|ŽAoø7V£ïÉà¹R…êìýKµ6Pñy®¥GŸuèO¢ÿ·Ê»·Uâ¯6	|úå/ïüÕF4'’S|W'sqX!ºùHÞX`¼½þ	 RLAšA‰ç=ÆL²ãÜCQ^t‹‰µ3Þ^Ô¦ß7ÒJ‹zòÑ¨¤^(³u€@×½ûœ÷eÇ²‘j‘$çUÝJ„{q#Š­¡Á®·Ð]Xa-¶lÛôè!³mÜÐq£$w7ÞG*—…¾ÏÆÜG±zP÷žt»ÔLå×h*ç=<R­ì"™ÝI¬›!¨SdH2¦‡h¶V'è@òÕ+™·Kª–é£AèV•8ðW«®µ×\H^_žÍzcJžã*í€DßŸ£ÜŠ@|j"&)êEóú~‚abªfä ‚²³XAg
+±–‚N¸Ø€U)ì~¦¦ »¡kÈðHDÅhxhÖlbÂH›=ÀÏ˜!ž£ëH‰±Óo»Ê×EÑe²UY˜ý;&~iã™<YÉº"áºB7ßÉÌŠ(çÑ4ÖCGu~²Àñjk,±}‹.²Ø…äikÜv½Š¯è¤wãÕªHLd‡uô;RKÿä5ŽÑZfÀ`ÎZ§º^êš´
+ÁÛK<IŸˆ›N½œö»ïS¹_ädH _ô±´¬Öœw%5ÆH3‡{Þ–žÇž‘ä›Â™É»;Jîâ˜ýØä-Sä6zŠÀXÔmåWoÐol\Ý˜Ëbkù¾‘ðÞrõ(5‰—®Bp$K?KÀpb0aô\$ª”l$wúU»2nÒÖ}5š¼®1zþŠc}ÇÊ­TÓV9O¯†“ðl.˜ºN Z(xïÒz3q´€I²Ò§ÃÀ³ä}¨2úÏ¼³»{n~¤:ÀÇcÁnÂÊ‹ß•‘øŽhèÑØC¢æÔŒ¬‹0Ç­ÒçÅÝºæSpÿJ{;lŒÌpBÿ7] -.Dú‡M±héÍ+ü›R˜ÃÆ-IÌÓ©4<“2¥w­Ž®)y”~ª‡l‰ à{½7§@D‰5°Ì¯ñÕ;ÊøÔ¹ÂãNê±—n .A´|KbÎºÙÏ_Ð) M^ †qâlF§ JÊ[c·ejÎtN0mIW€7b>ˆ˜Zò©~QjÕÿ¢m@G©¯ß/øZ”Îò””Kiÿh.*§öì˜Ã¸h‡Õ¨Ù,
+Ø·–óþ…Å» ÖŠ¸…'b„…	QLS$Ø
+Ñº0¨aVDo°Tþyn•®Ï9±•q_><ÀŒeFWí•Ûáù]÷
+õŒXB•ªõ
+?¼nB:ŸÁ=:8-ßaº†wØ&÷G´Ä‘L{æíËý•#êR¥ÅŒíw2†Q‹"ÇN~sÅ±55`*:Îï2LE®à."ß?±‘Gx°'¯ÿpX¡=ŠhÕ»§:MÙ è³,€q]âO&qìØI«¢ñÉhhÃ÷Ž²ßúç! p˜6âû6¤„N×®ÏƒXdúFB$yFîJñ†&—Š/7›ð²1ä¼8÷kÃ@?$§hXÊÎG¿#µÒdN£ˆE!˜­’Fhð:æÔ>ÜªJ¼na,î"KÙàÐ'Çq º'@œiÖ@á=!„€©!Èß×Ä›Y³ÃÁj-
+4Çä 1Hú‹ÒÒˆ|<(.s3‘LýÖeƒÚGß{Šuàdq,×ÆIbF)k(öÁÞsY,ÂxÖªW§!ôX¤:!,Ü"L ƒº1E:?¡…¤ÈÕ!®æ"¿ˆÒ¾Š‡!Fç}³—$JÄŠ¿iî%°4¯ßO+™íÆÐ^ôlõ)u˜‰®¬ûþ?½¯K}ÅÅ‰¾
+½l0†±â°…ŸÜŽ¬X¬1ùI­®/&½2:»ûîð‹w.Â	k<êÙ]ê2Ð!’ðt­—dÄqÕÝ(P(7¼ôm~˜é/ÀîegÙÒqÞR“j7ÿ" ƒÙ0]†!…élÜQ×W­6—Àd¸¹gÐfò&–ÑZ‘ÔšJ÷ê@¦/ûSçªëwèúŸÖ“5‹ º»)a¹é‰¿Óæ~ì<äÏÌý
+¥LÚ_ ÿEž0RÕ!Éy¯Ù~†˜¶¡Ï-¨õ‘×ñ~6t„«‡Z{jÜoyíL~c§Ñ†Û°6³?õ7Pwìr5>"ÏþÏïÛ´Ž|´Å?á]Ÿw‚åœ‹ ôW'bÁmy!1a±õ5½y·=>ˆèÑÐR*¥ÏÅŒ–„gJMäÛ„£Nxùã“Šul{?Â¶&Õ5º‘¤.×}]à©ÖÚúðâÏóàÀ
+¦·q`àŸÆ]ðD÷ü}(w zÊÉÐT­Ø{ýè²í1	YºÚã»Ó`8iÓçÛv2m·GEÛŒ€l¨™ƒ1ùÀŒè~jÚú,DÂÊ!9äqvýÚ¨#Ÿ7m)0Ó‡ÐÜ•SÏiØ‡É¤QU®û«€A¦…a>´^ºs;;-tYZs8ì ]
+L¶àÆ€7U½^¶<´röºýMÜwµìO;tý|63¹`v‚¦aÓ‚øþ¤}h/ÏÆãà<µi'0¯i‘èo¹u‰ê”em×_Él…¿øÐ,øø6Øð¹0Ú’mQ«w÷f*ÏL>Ð.(Ù/1ž‘;eÅôŒ~Žh„CíË‡'‘
+²£Øc#ê°©ç-åDs¶›·l»q£çy†
+M±Ä´·Å7Žkž€7V#s*j¬£Yè‹9F|’Þï$ÇŽæB¬:FüË8€èÄßÅ×úÝÖ«>Ö«›°dš>3°ö@3Ì»$*ÑœE·bí‘iÞ¼|­1z€cŠtÌá‰}`œ4Ss(òÚ1æY1ÂÃ6¯:ÏOšÃÜnÕôÓl¯¥‹dÍêd;ÿLç1RÍ›WƒÚ¾úç­-tÈÇã¢ó™-‚‚y¿[	¯%¼úg-!HÂÓÎÚI=|·‹¥wî£lýnsÅ·ä¬J—Ì?©1Šm¢â±f¨Ä“‘fw¥uö6žxþå¹vN!œ-Êˆ.Á1 „é`rzª€ÍŠR
+‡H:·¨ë«º©á°T÷pÓ­}Õ…0 @n¶”Nûý’“çnn$má±lKŽ 97‹ê1>t4mEf6ü~yÎZ<‰ˆºŒîÁŠó'àd
+Õ¿¢!2Ÿa*KâQ”ªÊVÃ¯…IlhÖÍ­‹Uð5ãU„ÞÕØèÑúõq?°†ùÂý€IÅIº]}c
+ÌÌ‘mèË8Þ]Ôƒ	Y§)Uà¹˜h
+dfU;Å88ßÈï3ëEoü,qípô§OuÕ9[Æ„˜^hÅW¢?»åj±¶EqRJ4ª?eª¶ø.=8÷(L1<ÒôOfÿfðXácHwÑÍÐ9Ž›x¼~‰M]ÞV+r«:Ç¹í>©Ð3ß¦}€þ˜bzž^W¬—œ¡‰8áš $F{À‡=SV¯KƒUÄ,¹«MÍÙÁ{ÅÔ¬ã°]f7ÞúóíhoDqÆ7uÌÍ©™íÅ.iØ[2s?Z¿³^Y´Ñn®^eX=¦ò'Õ.L•(¶¾ýßÛQV‚ánž€bBiVØÕ
+í"èi‹'4Àë·~ú ÞÏÑåW|ÚÅxvÎëJsFòáè9üÝ9W©-eêm ñ#n‚ZyaŒæE]ÊD¦*)Ð@µ²güsBÑA¦2YØYi|Þ¿Í€NèWº²9’Ý…°~êîðžã£»»hh×Ä°Ýš³ü›Ââ»ÌD!¼ ´ãíŠ’èc5ð £Ò5Û&Qâçë3_Óm‚±ä†¢<Ç+S{’çþb«j¯y!˜ÏÌ1:»^X6é‘»%‚]¯W´éX;kãà£FÐÚ±~tÔwcäRÕÀžeTìØí@¥‰xŽ«i¦Qk aR¯š ÍÖêD/Zõig÷<Æ`@Â…akŠG_ ƒÇ‰ÄeMZ(w?HG¸U'*,Zbªrm'(TP¢6[©Y‹ŽT°Ëû3ƒÂ+ìÅ®NÖ˜öòd`§ç¯“üÒ (ŠnØ(„õAe,p·U=²a"£ ö’Mü´3m(},A ¤<ZTdª¶†]ð†6×äæ&×*$kq¨h¡@0tV¬Ü:Ì–<uP1IO³¹6FŸÃt ‘Mõ‡CHXSãæ}Ã,`™ª¥ÏÐìÂA7oBÖ7ç«N.Þôú±K6¶—4}c'“zéyÇžaDŸôÜ"ü‘|é–Œß0Ä«âUâu[Ã6DG8ŸÑ£Ÿ‡—AˆµeòùIÒ§Ç‰.lžYÈÍºàžÓJ-Ñÿcút:¨ d(&-ôsŒ*{¾0Õy¯o4~ufÜ?ÅÂÓYŠ÷Ù€öâÚ^‰G	©9F“qD	„ÆÛN‘1&
+{?U	8W|ü"7“UrÞ³'Ü…wb—òðaïlÙtÛ÷ÌþN[•ŒXf<®àN¹RÎ;e4@ ñ¥F^Ûz vÄ'‚n¬·cD}Â$¡sQ‡R‹¢;¦Ñé>·ÃY_ŸR­xÎ|ZtÔ<q!ï„_ßµ™ù)Aèî/ã\µM6“8É8ÖB9¥ÇàÏcq_Ì‹Æê³5–Â‰Ä™«Çà»íþØ˜þmˆ9¡ÐI7©óèÎDçWaä3_J6Óc®>w4ëÀ3zŽcÅ¬Õ8Äœ±=jûëø¨—¥Èv¹"OiÂy×cÉ´²+$Ã¶†ž¦„ÍlØuµx jÍqØ¤ ò\´I6Rï¿6y™ø­óÈçØÛ*Î­èõ}¥ÇÙµhédZJÇß€^uü\aÌZÞ~@Ó.ñDqJ(ÛÝsç>aäfë²Enö0?ÊÅØáÁR4Nß‘"šc>üömAìôµ~7¶¡ú\–\ýY“½	ÝÏÔ–¾U^õ-¶$£á°	Ò5ÉyQÛå*5Ö¤®×®è0i‹•:ç}”ø˜ïÂòa³;
+Ø2Õ‰òö LSšwŒåh¸c·TF“šŒ…gÎSš›p, IFxë-³šn¡uŽ±wÐºsQkóm€íºuvˆzÓÝU¨ˆâ• N<=|9(¹†Ú>¢†]TšÁw‡Oìõ9˜†ƒäF€ºXr6¨ŽMS¬Ä?¤²—•É,¦°jiÑnííüj{:R&]’!1í²"é“yª®lÛÈÇkëÏ"%P¤‚_¨+‰fN½ôý—ypºìÝû‹B×º×¹Qwûicöjâø3ä8ÙyÅ€Ì—1ÐýBq1õVQBn¢!T,Ž‡b# önúÿ…%)Ì]¯ @óÅ)Wsýþõõßâ5Ðæ6ê„úêBIdxbnO\â÷h]ps'[Jè~µÞ¾^øE®Í-Ñ¼GÒ£Kú€gB`øaÄTœ.Á
+4ÓÕÒM»Á1¢îõ¿.²³¢Ôà×4NímF.£nè{Š¹S‹¶p¢oÿ^p`¥øöâtK<ÈZ½³Ä{{EE!Gr2ìj•îËfñ¾ms‡î9:?¤8œYa;»™Nù!1MI$Sï:ƒ=‰ ¹;h·E¹Íé®qÑw{òÀoï)Ä~qÞ½ÎÖ'M&² „ŒÖ3ÁŽÏŽÃØTïmzÞ•iÜO&b_	óŽâÑŸ„—wŒ¥Ô9'CŒž¦Hw¶ÍP°óí±ÝÑpšŠ.0žnê ê[G5em7–tã&Èbxñ…ÒœÀ"-Ê:ƒã…¹j´î—¢jósW;WP`N„î¾„Èœvô‘„y)§ìý‡A’U‘‰©¬zÀ¹\yNž~2ÀK+ÏOwß&ß%2
+âÖ·¹s;—/|Œ`Úß@G‘ŒH0	˜½‡À‰ÐùrIó8
+äèH¢L>†Ë­×ûÜí¨f“!¬ÝC;Y{'Æ®=ÒÃpñÃ\43†he½ íWý=›A—zÄ¥×ÎÄeQ©½Î¨yRïºqõ³×ŠöK¤,Œc·ô@yqîfÝ³Â^«C¨t«ÃÆ*	R‰)ý:ùnGIq­ˆœÍZ
+Dwv÷%f‹bV€¹Þš…ØÙ‰’álÖ´(­üy÷J`²âÝ›]ÊÇ¤³Ç8*d»QÁKéPÖT<W*ýø4c¯-¼a”Ã>þÓ›úö8;+­¿¶°_âxÜó–¹þã¿ù_ÿïþ{Ž¿+Üºê×œ2LQ¬)•›¹¦`Æ™Ix0·¾¾|wýŸ¿^¼½o"^Õ
+CcI3ÚÓçÓ½«zUs‘c»öN¤aåli¢hPNÂ4gœ0EW‚ƒu¼	N-À|wÓâj¤ ÊíÙõwŽù\vêøèÙÌ¥Çø7ÚáÔW/í)ÔñeÎ¥9=£‡ˆÉk}á]Q2,é•WÒ«øüì²`óS¨ËÑíÝÝrøÞ‡:,v¢Ïgâ³ÔùÇŸwþDçñ±(¢|Þa|ÒÇød#FWQºáäéà>“èçFnÅ4åöj†÷¶vKÍVPHÊ“²·®(Ýü=¼?Má_J€ˆ:¾óÂ¥zìEMÆ¼Ô§ítaôë{,úÀ_ÚXñ^ôÁîN„0úœ£míuŸtÉIŒÙ	«qØh‡¬(÷®Ë¨ÃÆ€éÓµ´>‡_È¡'åZÌô@`°åuAÊ¦0~!ù€ÚO†b·Xæ$tJ²—§{UBÓ}žk¼íG1Ð€
+' ÏKk‹þb¸lÑ]J|“-ßö'|$%õã
+F{ŸŽ»dV¾Å ã…Qâ\å½õ´ûMœ¦½“º˜žÉ¸ÉGµŽÈ
+|-	Tu~¦lF9èyïZ’Š>
+2¥â,§{LFî+	(««&°³vÒO¾Œ&
+ÍÊdYw1‘ûæÅ.ã©C»u!J¼”„å÷	lÖÉ›s/ ý_áaÕ›]Qãe˜°þKº‡Ë,Z¾´GÊÝz6úõ¢8âÛ»v´¹ÑK¬dæ›—¼
+>Ç/^õ²Þ”AWVì'—?å+é§˜®ÅÎO|û#Ðà¿ðk¼Hr2_œ‚Y[íç‰nž¶SA/Å
+	¶â‘OÒUæ÷Ûª¢«!0ï!¢Î6DÄ·>jtt•¥ØJ	“žc;ZÓ‹µ®ÿéoþãðö;P‚ýš6‰)&~>W¿£æ‚ò||S•ljRg@”©2ÍwðPf\#b™,©Í=árýnÄZáu«IÖ‚”ÂùHRnc)øT˜”­W#»ŸÑîR/î3NÚ;mu–¢œT—CLè‡e\ê,ã¨•\fª®¡(‚y™
+p##ý{‚÷ÀóNC¼SÞÏÄŒ8ÂŽ"ú»á–!4îµ(åkì5s”Ù!mÆ<î´‰Ø_E­,œ'«xå˜¡ ©µ4ÙÓídr‡D*‚ý_€Ì27!4²œØCÞ‰Hnwó³Tt˜µÛ8ÔxýFPC÷œ¸vÌ.&á~åÁcîßLL…ÀGy[
+ºÿÂ¶|¼Õ™iJ¼S§v:ŸÓÌy|	™Í/»M–ÕúgŠÒ\0¯£Ç[VÌ@{ß%Œa‚Vü…&wœ€§]˜F¨²æu¬vh“<­ÔLqfÿ]“±
+h ™YÈ
+ßš:td¾!…_*Î·ŠmeÆ`y} ýº¶õÃ×£àÅrjD*óHàuž¤I¾±]™»Ð²†›kÛ­Ýâ&d×á°0Q<ÆDàxHmuÈ¯•¬× ®øJÝ”Å?ï·GœöÌj¥ŽyÂS7ó›ÈÜ*G§DHÆ³+Öñ)J<?PF±å&åCÈZ3±«6Z+YÐè.ö3‚‡½¼nVÙ9SÇXLŸœk€5ŠÂH­K:µ-!ÕK¾<Ã„‚ídÝÐýÀ3ÝDœi¤gKÆ[’í®jâÿSeWT:_ä(ü§Æ1¦ƒÈ`o‹•˜ðQAd•¯nƒÓgZ˜-ûûK”S³	óeÖbïuà{!‘%–£ Tjn\ä.ëÑ±Ìø8ndéèFf]T„–3`+fTX9ÏÍÁ_Ä…I¸y2.LÍ1HAáxJD3}%H¨bj´b-2s»¹Ú§©Õ'ùè$ŒÉ=ž.¿EJx_øo#ùåmµhA7ÏÌ1ä³Â•raªÑÉÏ-²z˜#;¤@¶!Ã!°¦[ü÷¡­ÒÇ“Éä&RGÖ”)QÄý:ô÷6d` <*Åô5ÁÿüsÖbùhmŒh®D~”4DÄø[Ñ±gŸ@Ç’LTlñ	ÛM4ö;6c¸9rßLœQvnöœÉDe&M3[‚Èxô¾Öyª®6TÏ¬\»ç¬ÎŽ–—5«Û	cíEÅ ËñãÍo£48dÎÔf˜3MA£3À´°7ºu±ø#ÔLv#cøÆ_£DÃ|HæçFœF–GÀVm·]ÈRèMã…1o	‚.{ù´*UTx"6¯ätjåz$¦Á;|-
+Î˜†ö #-.s¶'˜§¶”Š+Ìp˜»4'øvÇÖ’“ÒñÇwÉŒ€ÉXsG-<¦Ò(r×~ö@ÆÆ¹GaÃ@„F‡Ø@I“ò û`Îœã~ôkcý%Læ–ÞçÈT¤#éžò9ýçôÛÀ¡UoÂbâD×¼TÎ)‰¯ÑÕ:éŒ.(F©Ð¬(Nö+¶&åzûi´R˜LÃâ³óÏŸ9éhËå®ÝŽ–O¦ÓÏj{¹Ñ+é
+4£
+S<Ë.í\a…œ6f	›ÑâòÑW[ÞX<j¡‡^úÂSd°âe šµç¤/œ¼ ±Á²h[y/£t ippË+NUù^„và¾cˆb3)¶Ë)OTøè GÆtd„š
+Ûgbâ’wwœ²R`%ÉÞ -|ô™¡£%' ƒþ †ˆCm¼û˜gAƒ®0Æz{bláøN¸Žò²mHUþJNåai·%i†•J»Kªt;Àk1èš$¤a.¢Na?In¸˜Šà±°ÏŠuòþ¶Jý':{®«eì7hÉ~UÔÐCº[îí}q¦à!‹\6²©$§kè%K·™ÄÔ™‰+¡¥Õ%ÅÊTãµA¼Çà0W‰!¥‚yŸæ´•âfìÎ¬—hîäm:¿é(WGØ©pûàÎøý,.ò¸RéÝ•W[¸­}G{~»0ÄmûËšë‰Ù"4›ìÕY,¥ÂÒ4`™iMèÝ€…Î-Œ5”ÿî£wùÑG ´a4‰uÇÆ¹H|*î¶oîŠ-îªœþè†Õô'UôgVÝýËþ?   ÿÿ š1k
