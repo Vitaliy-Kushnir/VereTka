@@ -293,8 +293,8 @@ export const Magnifier: React.FC<MagnifierProps> = ({
       const corners = [
         { x: 16, y: 16 }, // top-left
         { x: containerW - loupeSize - 16, y: 16 }, // top-right
-        { x: containerW - loupeSize - 16, y: Math.max(16, containerH - loupeSize - (window.innerWidth < 768 && window.innerHeight > window.innerWidth ? 130 : 90)) }, // bottom-right
-        { x: 16, y: Math.max(16, containerH - loupeSize - (window.innerWidth < 768 && window.innerHeight > window.innerWidth ? 130 : 90)) }, // bottom-left
+        { x: containerW - loupeSize - 16, y: Math.max(16, containerH - loupeSize - 16) }, // bottom-right
+        { x: 16, y: Math.max(16, containerH - loupeSize - 16) }, // bottom-left
       ];
 
       let bestCorner = corners[1];

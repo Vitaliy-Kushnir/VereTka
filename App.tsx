@@ -50,6 +50,7 @@ import { MobileShapesSheet } from './components/mobile/MobileShapesSheet';
 import { MobileStyleSheet } from './components/mobile/MobileStyleSheet';
 import { MobileLayersSheet } from './components/mobile/MobileLayersSheet';
 import { MobileAlignSheet } from './components/mobile/MobileAlignSheet';
+import { MobileQuickControls } from './components/mobile/MobileQuickControls';
 import { FloatingModeControls } from './components/FloatingModeControls';
 import { MultiSelectHUD } from './components/MultiSelectHUD';
 import { useIsMobile, useIsLandscape } from './hooks/useIsMobile';
@@ -5471,9 +5472,15 @@ export default function App(): React.ReactNode {
     };
 
   return (
-    <div className="h-\[100dvh\] bg-[var(--bg-app)] text-[var(--text-primary)] font-sans flex flex-col selection:bg-[var(--accent-primary)] selection:text-[var(--accent-text)] overflow-hidden">
+    <div 
+      className="w-full bg-[var(--bg-app)] text-[var(--text-primary)] font-sans flex flex-col selection:bg-[var(--accent-primary)] selection:text-[var(--accent-text)] overflow-hidden"
+      style={{
+        height: 'var(--app-height, 100dvh)',
+        maxHeight: 'var(--app-height, 100dvh)'
+      }}
+    >
       
-      <div className="h-full flex flex-col">
+      <div className="w-full h-full flex flex-col min-h-0 flex-1 overflow-hidden">
           <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept="image/png, image/jpeg, image/gif, image/webp" onChange={handleFileSelect} />
           <input type="file" ref={projectLoadInputRef} style={{ display: 'none' }} accept=".json,.vec.json" onChange={handleProjectFileSelected} />
           {notification && (
@@ -5634,7 +5641,7 @@ export default function App(): React.ReactNode {
               setTextFontSize={setTextFontSize}
           />}
 
-           <main className={`flex-grow grid min-h-0 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-[380px_1fr] lg:grid-cols-[380px_1fr_295px]'}`}>
+           <main className={`flex-1 min-h-0 overflow-hidden ${isMobile ? 'flex flex-col' : 'grid grid-cols-1 md:grid-cols-[380px_1fr] lg:grid-cols-[380px_1fr_295px]'}`}>
              
             {/* Left Column */}
             {isProjectActive && !isMobile && <aside className={`${isLeftPanelVisible ? 'fixed inset-0 bg-[var(--bg-app)]/95 backdrop-blur-sm z-40 p-4 flex flex-col' : 'hidden'} md:static md:bg-transparent md:z-auto md:flex flex-col gap-4 min-h-0 bg-[var(--bg-primary)]/50 md:p-2`}>
@@ -5672,24 +5679,24 @@ export default function App(): React.ReactNode {
 
              {/* Center Content */}
             <div 
-                className={`flex flex-col min-w-0 min-h-0 flex-1 transition-[padding] duration-150 ease-out ${
+                className={`flex flex-col min-w-0 min-h-0 flex-1 transition-[padding] duration-150 ease-out overflow-hidden ${
                     !isProjectActive 
                         ? "p-0 sm:p-2 md:p-4 md:col-start-1 lg:col-start-1 md:col-span-3 lg:col-span-3 h-full overflow-hidden" 
-                        : "p-2 md:p-4 pb-16 lg:pb-4"
+                        : "p-1 sm:p-2 md:p-4"
                 }`}
                 style={
                     isProjectActive && isMobile
                         ? isLandscape
                             ? {
                                 paddingRight: mobileSheet && mobileSheet !== 'menu' && mobileSheetPinMode === 'docked'
-                                    ? `calc(${mobileSheetWidthVw}vw + 56px + env(safe-area-inset-right, 0px))`
-                                    : `calc(56px + env(safe-area-inset-right, 0px))`,
-                                paddingBottom: '8px'
+                                    ? `calc(${mobileSheetWidthVw}vw + 60px + env(safe-area-inset-right, 0px))`
+                                    : `calc(60px + env(safe-area-inset-right, 0px))`,
+                                paddingBottom: '4px'
                               }
                             : {
                                 paddingBottom: mobileSheet && mobileSheet !== 'menu' && mobileSheetPinMode === 'docked'
-                                    ? `calc(${mobileSheetHeightVh}vh + 54px + env(safe-area-inset-bottom, 0px))`
-                                    : `calc(54px + env(safe-area-inset-bottom, 0px))`,
+                                    ? `calc(${mobileSheetHeightVh}vh + 60px + env(safe-area-inset-bottom, 0px))`
+                                    : `calc(60px + env(safe-area-inset-bottom, 0px))`,
                                 paddingRight: '0px'
                               }
                         : undefined
@@ -5697,11 +5704,11 @@ export default function App(): React.ReactNode {
             >
                 {isProjectActive ? (
                     <>
-                        <div ref={viewportRef} className="bg-[var(--bg-secondary)] rounded-lg shadow-inner flex-grow overflow-hidden relative grid" style={{
+                        <div ref={viewportRef} className="bg-[var(--bg-secondary)] rounded-lg shadow-inner flex-1 min-h-0 overflow-hidden relative grid" style={{
                             gridTemplateRows: showAxes ? `${RULER_THICKNESS}px 1fr` : '1fr',
                             gridTemplateColumns: showAxes ? `${RULER_THICKNESS}px 1fr` : '1fr',
                         }}>
-                            {showAxes && <div className="bg-[var(--ruler-bg)] z-10 flex items-center justify-center p-1"><AxesIcon size={16}/></div>}
+                            {showAxes && <div className="bg-[var(--ruler-bg)] z-10 flex items-center justify-center p-1 select-none pointer-events-none touch-none"><AxesIcon size={16}/></div>}
                             {showAxes && <Ruler orientation="horizontal" transform={viewTransform} length={viewportSize.width - RULER_THICKNESS} canvasSize={{ width: canvasWidth, height: canvasHeight }} />}
                             {showAxes && <Ruler orientation="vertical" transform={viewTransform} length={viewportSize.height - RULER_THICKNESS} canvasSize={{ width: canvasWidth, height: canvasHeight }} />}
                             <div className="relative overflow-hidden" style={{ gridRow: showAxes ? 2 : '1 / -1', gridColumn: showAxes ? 2 : '1 / -1' }}>
@@ -5806,7 +5813,7 @@ export default function App(): React.ReactNode {
                                     type="button"
                                     onClick={() => setIsSelectionHUDCollapsed(false)}
                                     title={t('button.expand') || 'Розгорнути панель дій'}
-                                    className="absolute bottom-4 left-4 max-md:portrait:bottom-[calc(5rem+env(safe-area-inset-bottom))] z-10 flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2 rounded-full bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] active:scale-95 text-[var(--text-primary)] font-extrabold text-xs border border-[var(--border-secondary)] hover:border-[var(--accent-primary)] shadow-lg transition-all group cursor-pointer animate-in fade-in zoom-in-95 pointer-events-auto"
+                                    className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 z-10 flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2 rounded-full bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] active:scale-95 text-[var(--text-primary)] font-extrabold text-xs border border-[var(--border-secondary)] hover:border-[var(--accent-primary)] shadow-lg transition-all group cursor-pointer animate-in fade-in zoom-in-95 pointer-events-auto"
                                 >
                                     <span className="flex h-2 w-2 relative shrink-0">
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
@@ -5822,7 +5829,7 @@ export default function App(): React.ReactNode {
                             <button 
                                 onClick={() => fitCanvasToView()} 
                                 title={t('menu.view.fit')} 
-                                className={`absolute bottom-4 right-4 max-md:portrait:bottom-[calc(5rem+env(safe-area-inset-bottom))] z-10 p-2 rounded-full shadow-lg transition-colors ${
+                                className={`absolute bottom-3 right-3 sm:bottom-4 sm:right-4 z-10 p-2 rounded-full shadow-lg transition-colors ${
                                     isFitToScreenMode 
                                         ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' 
                                         : 'bg-[var(--bg-primary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
@@ -5830,6 +5837,25 @@ export default function App(): React.ReactNode {
                             >
                                 <FitToScreenIcon />
                             </button>
+
+                            {isMobile && (
+                                <div className="absolute top-3 right-3 z-20">
+                                    <MobileQuickControls
+                                        zoomLevel={viewTransform.scale}
+                                        onZoomChange={handleZoomChange}
+                                        onResetZoom={handleResetZoom}
+                                        onLocateSelectedShape={handleLocateSelectedShape}
+                                        hasSelectedShapes={selectedShapeIds.length > 0}
+                                        showCursorCoords={showCursorCoords}
+                                        setShowCursorCoords={setShowCursorCoords}
+                                        showMagnifier={showMagnifier}
+                                        setShowMagnifier={setShowMagnifier}
+                                        touchDrawingMode={touchDrawingMode}
+                                        setTouchDrawingMode={setTouchDrawingMode}
+                                        cursorPos={cursorPos}
+                                    />
+                                </div>
+                            )}
                         </div>
                             {selectedShapeIds.length > 0 && !distributePathState && !isSelectionHUDCollapsed && (
                                 <MultiSelectHUD
@@ -5853,20 +5879,22 @@ export default function App(): React.ReactNode {
                                     isMobile={isMobile}
                                 />
                             )}
-                        <StatusBar 
-                            zoomLevel={viewTransform.scale} 
-                            cursorPos={cursorPos}
-                            onZoomChange={handleZoomChange}
-                            onResetZoom={handleResetZoom}
-                            onLocateSelectedShape={handleLocateSelectedShape}
-                            selectedShapeIds={selectedShapeIds}
-                            showCursorCoords={showCursorCoords}
-                            setShowCursorCoords={setShowCursorCoords}
-                            showMagnifier={showMagnifier}
-                            setShowMagnifier={setShowMagnifier}
-                            touchDrawingMode={touchDrawingMode}
-                            setTouchDrawingMode={setTouchDrawingMode}
-                        />
+                        {!isMobile && (
+                            <StatusBar 
+                                zoomLevel={viewTransform.scale} 
+                                cursorPos={cursorPos}
+                                onZoomChange={handleZoomChange}
+                                onResetZoom={handleResetZoom}
+                                onLocateSelectedShape={handleLocateSelectedShape}
+                                selectedShapeIds={selectedShapeIds}
+                                showCursorCoords={showCursorCoords}
+                                setShowCursorCoords={setShowCursorCoords}
+                                showMagnifier={showMagnifier}
+                                setShowMagnifier={setShowMagnifier}
+                                touchDrawingMode={touchDrawingMode}
+                                setTouchDrawingMode={setTouchDrawingMode}
+                            />
+                        )}
                     </>
                 ) : (
                     <WelcomeScreen 

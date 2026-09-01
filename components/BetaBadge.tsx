@@ -3,6 +3,7 @@ import { useLanguage } from './LanguageContext';
 
 interface BetaBadgeProps {
     size?: 'sm' | 'md' | 'lg';
+    compact?: boolean;
     className?: string;
     showGlow?: boolean;
     onClick?: (e: React.MouseEvent) => void;
@@ -11,6 +12,7 @@ interface BetaBadgeProps {
 
 export const BetaBadge: React.FC<BetaBadgeProps> = ({ 
     size = 'lg', 
+    compact = false,
     className = '',
     showGlow = true,
     onClick,
@@ -68,6 +70,26 @@ export const BetaBadge: React.FC<BetaBadgeProps> = ({
     const tooltipText = tooltipTextMap[language] || tooltipTextMap.uk;
 
     if (size === 'sm') {
+        if (compact) {
+            return (
+                <button
+                    type="button"
+                    onClick={handleBadgeClick}
+                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[var(--brand-badge-bg)] border border-[var(--brand-badge-border)] shadow-xs select-none cursor-pointer active:scale-90 transition-transform ${className}`}
+                    title={tooltipText}
+                    aria-label={tooltipText}
+                >
+                    <span 
+                        className="w-1.5 h-1.5 rounded-full animate-pulse shrink-0" 
+                        style={{ backgroundColor: 'var(--brand-badge-dot-inner)' }}
+                    />
+                    <span className="font-serif italic text-xs font-bold text-[var(--brand-badge-symbol)] leading-none">
+                        β
+                    </span>
+                </button>
+            );
+        }
+
         return (
             <button
                 type="button"

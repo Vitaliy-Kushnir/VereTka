@@ -179,9 +179,28 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({
     }, 400); // 400ms delay before repeating
   };
 
+  const lastKnobTapRef = useRef<number>(0);
+
+  const handleKnobDoubleClick = useCallback((e?: React.SyntheticEvent) => {
+    if (e) e.stopPropagation();
+    touchIdRef.current = null;
+    setIsKnobActive(false);
+    setKnobOffset({ x: 0, y: 0 });
+    velocityRef.current = { x: 0, y: 0 };
+    triggerHaptic(20);
+  }, [triggerHaptic]);
+
   // Joystick touch handlers
   const handleJoystickTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     e.stopPropagation();
+    const now = Date.now();
+    if (now - lastKnobTapRef.current < 350) {
+      handleKnobDoubleClick(e);
+      lastKnobTapRef.current = 0;
+      return;
+    }
+    lastKnobTapRef.current = now;
+
     if (!joystickBaseRef.current) return;
 
     const touch = e.changedTouches[0];
@@ -282,10 +301,10 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({
 
   const dockClass = 
     dockPosition === 'left' 
-      ? 'left-3 sm:left-6 bottom-14 max-md:portrait:bottom-[calc(5.5rem+env(safe-area-inset-bottom))]' 
+      ? 'left-3 sm:left-6 bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] sm:bottom-16' 
       : dockPosition === 'center'
-      ? 'left-1/2 -translate-x-1/2 bottom-14 max-md:portrait:bottom-[calc(5.5rem+env(safe-area-inset-bottom))]'
-      : 'right-3 sm:right-6 bottom-14 max-md:portrait:bottom-[calc(5.5rem+env(safe-area-inset-bottom))]';
+      ? 'left-1/2 -translate-x-1/2 bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] sm:bottom-16'
+      : 'right-3 sm:right-6 bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] sm:bottom-16';
 
   // Do not show duplicate buttons for lines/curves since they are on the top bar
   const isPathTool = isDrawingPolyline || isDrawingBezier;
@@ -461,6 +480,7 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({
                 onTouchEnd={handleJoystickTouchEnd}
                 onTouchCancel={handleJoystickTouchEnd}
                 onMouseDown={handleMouseDown}
+                onDoubleClick={handleKnobDoubleClick}
                 className={`w-12 h-12 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing transition-transform duration-75 shadow-xl border z-20 pointer-events-auto ${
                   isKnobActive
                     ? 'bg-cyan-500 border-white text-white scale-105 shadow-cyan-500/60'

@@ -93,7 +93,7 @@ const Ruler: React.FC<RulerProps> = ({ orientation, transform, length, canvasSiz
   if (width <= 0 || height <= 0 || isNaN(width) || isNaN(height)) return null;
 
   return (
-    <svg width={width} height={height} className="bg-[var(--ruler-bg)]">
+    <svg width={width} height={height} className="bg-[var(--ruler-bg)] select-none pointer-events-none touch-none">
       <g>
         {ticks.map(({ value, position, tickHeight }, index) => (
           <React.Fragment key={`${orientation}-${position}-${index}`}>

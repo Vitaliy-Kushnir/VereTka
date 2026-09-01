@@ -302,6 +302,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   const [anchorTarget, setAnchorTarget] = useState<{ x: number; y: number } | null>(null);
   const [isDraggingAnchor, setIsDraggingAnchor] = useState(false);
   const isDraggingAnchorRef = useRef(false);
+  const [isDraggingReticle, setIsDraggingReticle] = useState(false);
+  const isDraggingReticleRef = useRef(false);
   const [magnifierCenter, setMagnifierCenter] = useState<{ x: number; y: number; radius: number } | null>(null);
 
   const handleMagnifierCenterChange = useCallback((center: { x: number; y: number; radius: number }) => {
@@ -388,7 +390,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   }, [viewTransform, snapStep]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement | undefined)?.closest?.('[data-magnifier="true"]') || (e.target as Element | undefined)?.closest?.('#magnifier-anchor-layer') || isDraggingAnchorRef.current) {
+    if ((e.target as HTMLElement | undefined)?.closest?.('[data-magnifier="true"]') || (e.target as Element | undefined)?.closest?.('#magnifier-anchor-layer') || isDraggingAnchorRef.current || (e.target as Element | undefined)?.closest?.('#virtual-joystick-reticle') || isDraggingReticleRef.current) {
         return;
     }
     if (e.button === 1 || (e.button === 0 && isSpacePressedRef.current)) { // Middle mouse button or Space+Left for panning
@@ -401,7 +403,6 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     mouseDownPosRef.current = pos;
 
     if (props.touchDrawingMode === 'virtual-joystick') {
-        setAimPos(pos);
         setPreviewMousePos(pos);
     }
 
@@ -460,8 +461,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     }
     
     const targetElement = e.target as SVGElement | undefined;
-    // Important: Check if the click is on a resize/rotate handle or anchor layer *first*.
-    if (targetElement?.closest?.('[data-handle="true"]') || targetElement?.closest?.('#magnifier-anchor-layer') || isDraggingAnchorRef.current) {
+    // Important: Check if the click is on a resize/rotate handle or anchor/reticle layer *first*.
+    if (targetElement?.closest?.('[data-handle="true"]') || targetElement?.closest?.('#magnifier-anchor-layer') || isDraggingAnchorRef.current || targetElement?.closest?.('#virtual-joystick-reticle') || isDraggingReticleRef.current) {
       // The logic for this is handled by the dedicated control handles
       return;
     }
@@ -665,7 +666,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   }, [activeTool, shapes, onSelectShape, fillColor, strokeColor, strokeWidth, textColor, textFont, textFontSize, numberOfSides, isDrawingPolyline, setPolylinePoints, isDrawingBezier, setBezierPoints, getTransformedPointerPosition, getPointerPosition, selectedShapeIds, pendingImage, setPendingImage, addShape, isImportingImage, props.onDrawingAttempt, props.distributePathState]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement | undefined)?.closest?.('[data-magnifier="true"]') || isDraggingAnchorRef.current) {
+    if ((e.target as HTMLElement | undefined)?.closest?.('[data-magnifier="true"]') || isDraggingAnchorRef.current || isDraggingReticleRef.current) {
         return;
     }
     const rawPos = getPointerPosition(e);
@@ -674,9 +675,6 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     setPreviewMousePos(pos);
     setLastKnownCanvasPos(pos);
     setCursorPos(pos);
-    if (props.touchDrawingMode === 'virtual-joystick') {
-        setAimPos(pos);
-    }
     
     if (!hasDraggedRef.current && mouseDownPosRef.current) {
         const dist = Math.hypot(pos.x - mouseDownPosRef.current.x, pos.y - mouseDownPosRef.current.y);
@@ -1998,7 +1996,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   }, [action, drawMode, activeTransformShape, getTransformedPointerPosition, setViewTransform, getPointerPosition, setCursorPos, shapes, selectedShapeIds]);
 
   const handleMouseUp = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (isDraggingAnchorRef.current) {
+    if (isDraggingAnchorRef.current || isDraggingReticleRef.current) {
         return;
     }
     if ((e as any).type === 'touchend' && props.touchDrawingMode === 'tap-drag') {
@@ -2252,7 +2250,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
   // --- TOUCH EVENTS ---
     const handleTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
-        if ((e.target as HTMLElement | undefined)?.closest?.('[data-magnifier="true"]') || (e.target as Element | undefined)?.closest?.('#magnifier-anchor-layer') || isDraggingAnchorRef.current) {
+        if ((e.target as HTMLElement | undefined)?.closest?.('[data-magnifier="true"]') || (e.target as Element | undefined)?.closest?.('#magnifier-anchor-layer') || isDraggingAnchorRef.current || (e.target as Element | undefined)?.closest?.('#virtual-joystick-reticle') || isDraggingReticleRef.current) {
             return;
         }
         e.preventDefault();
@@ -2431,7 +2429,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     }, [handleMouseDown, viewTransform, shapes, onSelectShape, isDrawingPolyline, isDrawingBezier, onCompletePolyline, onCompleteBezier, activeTool, isMultiSelectMode, selectedShapeIds, lockedShapeIds, setIsMultiSelectMode, showNotification, t, getPointerPosition, getTransformedPointerPosition, props.distributePathState]);
 
     const handleTouchMove = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
-        if ((e.target as HTMLElement | undefined)?.closest?.('[data-magnifier="true"]') || isDraggingAnchorRef.current) {
+        if ((e.target as HTMLElement | undefined)?.closest?.('[data-magnifier="true"]') || isDraggingAnchorRef.current || isDraggingReticleRef.current) {
             return;
         }
         e.preventDefault();
@@ -4105,7 +4103,10 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             })()}
             {/* Virtual Joystick Precision Reticle */}
             {props.touchDrawingMode === 'virtual-joystick' && (
-              <g id="virtual-joystick-reticle" className="pointer-events-none select-none">
+              <g 
+                id="virtual-joystick-reticle" 
+                className="select-none"
+              >
                 {/* Horizontal Guide */}
                 <line 
                   x1={0} y1={aimPos.y} x2={width} y2={aimPos.y} 
@@ -4113,6 +4114,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                   strokeWidth={1 / safeScale} 
                   strokeDasharray={`${4 / safeScale},${4 / safeScale}`} 
                   opacity={0.65}
+                  pointerEvents="none"
                 />
                 {/* Vertical Guide */}
                 <line 
@@ -4121,6 +4123,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                   strokeWidth={1 / safeScale} 
                   strokeDasharray={`${4 / safeScale},${4 / safeScale}`} 
                   opacity={0.65}
+                  pointerEvents="none"
                 />
 
                 {/* Outer Crosshair Ring */}
@@ -4132,6 +4135,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                   stroke="#00d2ff" 
                   strokeWidth={1.5 / safeScale} 
                   opacity={0.85}
+                  pointerEvents="none"
                 />
                 {/* Inner Crosshair Ring */}
                 <circle 
@@ -4141,6 +4145,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                   fill="rgba(0, 210, 255, 0.2)" 
                   stroke="#ffffff" 
                   strokeWidth={1 / safeScale} 
+                  pointerEvents="none"
                 />
                 {/* Center laser point */}
                 <circle 
@@ -4150,28 +4155,96 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                   fill="#00d2ff" 
                   stroke="#ffffff" 
                   strokeWidth={0.6 / safeScale}
+                  pointerEvents="none"
                 />
                 {/* 4 Cardinal Tick Marks */}
                 <line 
                   x1={aimPos.x} y1={aimPos.y - 20 / safeScale} 
                   x2={aimPos.x} y2={aimPos.y - 10 / safeScale} 
                   stroke="#00d2ff" strokeWidth={1.5 / safeScale} 
+                  pointerEvents="none"
                 />
                 <line 
                   x1={aimPos.x} y1={aimPos.y + 10 / safeScale} 
                   x2={aimPos.x} y2={aimPos.y + 20 / safeScale} 
                   stroke="#00d2ff" strokeWidth={1.5 / safeScale} 
+                  pointerEvents="none"
                 />
                 <line 
                   x1={aimPos.x - 20 / safeScale} y1={aimPos.y} 
                   x2={aimPos.x - 10 / safeScale} y2={aimPos.y} 
                   stroke="#00d2ff" strokeWidth={1.5 / safeScale} 
+                  pointerEvents="none"
                 />
                 <line 
                   x1={aimPos.x + 10 / safeScale} y1={aimPos.y} 
                   x2={aimPos.x + 20 / safeScale} y2={aimPos.y} 
                   stroke="#00d2ff" strokeWidth={1.5 / safeScale} 
+                  pointerEvents="none"
                 />
+
+                {/* Interactive Drag Target for Reticle directly */}
+                <circle
+                  cx={aimPos.x}
+                  cy={aimPos.y}
+                  r={24 / safeScale}
+                  fill={isDraggingReticle ? "rgba(0, 210, 255, 0.25)" : "transparent"}
+                  stroke={isDraggingReticle ? "#00d2ff" : "transparent"}
+                  strokeWidth={1.5 / safeScale}
+                  strokeDasharray={isDraggingReticle ? `${3 / safeScale},${3 / safeScale}` : undefined}
+                  className="cursor-move pointer-events-auto"
+                  style={{ touchAction: 'none' }}
+                  onPointerDown={(e) => {
+                    if (e.button !== 0 && (e as any).pointerType === 'mouse') return;
+                    e.stopPropagation();
+                    e.preventDefault();
+                    isDraggingReticleRef.current = true;
+                    try {
+                      (e.currentTarget as Element).setPointerCapture(e.pointerId);
+                    } catch {}
+                    setIsDraggingReticle(true);
+                  }}
+                  onPointerMove={(e) => {
+                    if (!isDraggingReticleRef.current) return;
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const raw = getPointerPosition(e);
+                    const cPos = getTransformedPointerPosition(raw);
+                    let fx = Math.round(cPos.x);
+                    let fy = Math.round(cPos.y);
+                    if (snapStep && snapStep > 0) {
+                      const step = snapStep;
+                      fx = Math.round(fx / step) * step;
+                      fy = Math.round(fy / step) * step;
+                    }
+                    setAimPos({ x: fx, y: fy });
+                    setPreviewMousePos({ x: fx, y: fy });
+                    setLastKnownCanvasPos({ x: fx, y: fy });
+                  }}
+                  onPointerUp={(e) => {
+                    if (!isDraggingReticleRef.current) return;
+                    e.stopPropagation();
+                    e.preventDefault();
+                    try {
+                      (e.currentTarget as Element).releasePointerCapture(e.pointerId);
+                    } catch {}
+                    isDraggingReticleRef.current = false;
+                    setIsDraggingReticle(false);
+                  }}
+                  onPointerCancel={(e) => {
+                    if (!isDraggingReticleRef.current) return;
+                    try {
+                      (e.currentTarget as Element).releasePointerCapture(e.pointerId);
+                    } catch {}
+                    isDraggingReticleRef.current = false;
+                    setIsDraggingReticle(false);
+                  }}
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                  }}
+                >
+                  <title>{t('status.reticle.drag.title')}</title>
+                </circle>
               </g>
             )}
             {/* Draggable Anchor Target Marker & Visual Tether Line (Option 1 + Option 4) */}

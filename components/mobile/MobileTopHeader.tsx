@@ -3,7 +3,6 @@ import {
     MenuIcon, 
     UndoIcon, 
     RedoIcon, 
-    PreviewIcon, 
     CloudGalleryIcon 
 } from '../icons';
 import { useLanguage } from '../LanguageContext';
@@ -80,7 +79,7 @@ export const MobileTopHeader: React.FC<MobileTopHeaderProps> = ({
                     <span className="font-extrabold text-xs tracking-tight text-[var(--brand-header-text)] shrink-0">
                         ВереTkа
                     </span>
-                    <BetaBadge size="sm" className="shrink-0" />
+                    <BetaBadge size="sm" compact className="shrink-0" />
                     {isProjectActive && (
                         <>
                             <span className="text-[var(--text-tertiary)] text-xs shrink-0 select-none">/</span>
@@ -92,7 +91,7 @@ export const MobileTopHeader: React.FC<MobileTopHeaderProps> = ({
                 </div>
             </div>
 
-            {/* Right: Quick actions (Undo, Redo, Preview, Cloud) */}
+            {/* Right: Quick actions (Undo, Redo, Cloud) */}
             <div className="flex items-center gap-1 shrink-0">
                 {isProjectActive && (
                     <>
@@ -116,15 +115,6 @@ export const MobileTopHeader: React.FC<MobileTopHeaderProps> = ({
                         </button>
 
                         <div className="w-px h-4 bg-[var(--border-secondary)] mx-0.5 shrink-0" />
-
-                        <button
-                            onClick={onOpenPreview}
-                            title={t('mobile.header.runSimulation') || 'Запустити симуляцію Tkinter'}
-                            className="px-2 py-1 rounded-lg text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 active:scale-95 transition-all flex items-center gap-1 font-semibold text-xs shrink-0"
-                        >
-                            <PreviewIcon size={15} />
-                            <span className="text-[11px]">{t('mobile.header.test') || 'Тест'}</span>
-                        </button>
                     </>
                 )}
 

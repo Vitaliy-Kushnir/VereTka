@@ -962,4 +962,18 @@ export const LogOutIcon: React.FC<IconProps> = ({ size = 20, className }) => (
     </svg>
 );
 
+export const JoystickGamepadIcon: React.FC<IconProps> = ({ size = 20, className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        {/* Joystick top ball knob */}
+        <circle cx="12" cy="5" r="3" />
+        {/* Joystick stick shaft */}
+        <line x1="12" y1="8" x2="12" y2="16" />
+        {/* Joystick base collar / ring */}
+        <ellipse cx="12" cy="16" rx="3.5" ry="1.5" />
+        {/* Joystick pedestal / base console */}
+        <path d="M4 17l2.5-3h11l2.5 3v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3z" />
+    </svg>
+);
+
+
 
