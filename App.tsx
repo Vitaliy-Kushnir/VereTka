@@ -5471,7 +5471,7 @@ export default function App(): React.ReactNode {
     };
 
   return (
-    <div className="h-screen bg-[var(--bg-app)] text-[var(--text-primary)] font-sans flex flex-col selection:bg-[var(--accent-primary)] selection:text-[var(--accent-text)] overflow-hidden">
+    <div className="h-\[100dvh\] bg-[var(--bg-app)] text-[var(--text-primary)] font-sans flex flex-col selection:bg-[var(--accent-primary)] selection:text-[var(--accent-text)] overflow-hidden">
       
       <div className="h-full flex flex-col">
           <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept="image/png, image/jpeg, image/gif, image/webp" onChange={handleFileSelect} />
@@ -5806,7 +5806,7 @@ export default function App(): React.ReactNode {
                                     type="button"
                                     onClick={() => setIsSelectionHUDCollapsed(false)}
                                     title={t('button.expand') || 'Розгорнути панель дій'}
-                                    className="absolute bottom-4 left-4 z-10 flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2 rounded-full bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] active:scale-95 text-[var(--text-primary)] font-extrabold text-xs border border-[var(--border-secondary)] hover:border-[var(--accent-primary)] shadow-lg transition-all group cursor-pointer animate-in fade-in zoom-in-95 pointer-events-auto"
+                                    className="absolute bottom-4 left-4 max-md:portrait:bottom-[calc(5rem+env(safe-area-inset-bottom))] z-10 flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2 rounded-full bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] active:scale-95 text-[var(--text-primary)] font-extrabold text-xs border border-[var(--border-secondary)] hover:border-[var(--accent-primary)] shadow-lg transition-all group cursor-pointer animate-in fade-in zoom-in-95 pointer-events-auto"
                                 >
                                     <span className="flex h-2 w-2 relative shrink-0">
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
@@ -5822,7 +5822,7 @@ export default function App(): React.ReactNode {
                             <button 
                                 onClick={() => fitCanvasToView()} 
                                 title={t('menu.view.fit')} 
-                                className={`absolute bottom-4 right-4 z-10 p-2 rounded-full shadow-lg transition-colors ${
+                                className={`absolute bottom-4 right-4 max-md:portrait:bottom-[calc(5rem+env(safe-area-inset-bottom))] z-10 p-2 rounded-full shadow-lg transition-colors ${
                                     isFitToScreenMode 
                                         ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' 
                                         : 'bg-[var(--bg-primary)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'

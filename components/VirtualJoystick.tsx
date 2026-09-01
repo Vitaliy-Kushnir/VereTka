@@ -282,10 +282,10 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({
 
   const dockClass = 
     dockPosition === 'left' 
-      ? 'left-3 sm:left-6 bottom-14' 
+      ? 'left-3 sm:left-6 bottom-14 max-md:portrait:bottom-[calc(5.5rem+env(safe-area-inset-bottom))]' 
       : dockPosition === 'center'
-      ? 'left-1/2 -translate-x-1/2 bottom-14'
-      : 'right-3 sm:right-6 bottom-14';
+      ? 'left-1/2 -translate-x-1/2 bottom-14 max-md:portrait:bottom-[calc(5.5rem+env(safe-area-inset-bottom))]'
+      : 'right-3 sm:right-6 bottom-14 max-md:portrait:bottom-[calc(5.5rem+env(safe-area-inset-bottom))]';
 
   // Do not show duplicate buttons for lines/curves since they are on the top bar
   const isPathTool = isDrawingPolyline || isDrawingBezier;
