@@ -1824,7 +1824,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     const getRootSelectedId = (id: string): string => {
         const realId = id.replace('-preview', '');
         if (selectedShapeIds.includes(realId)) return realId;
-        const parent = shapes.find(g => g.type === 'group' && g.shapeIds?.includes(id));
+        const parent = shapes.find(g => g && g.type === 'group' && g.shapeIds?.includes(id));
         if (parent) return getRootSelectedId(parent.id);
         return id;
     };
@@ -2031,11 +2031,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             const selectedSet = new Set<string>();
 
             const getRootId = (id: string): string => {
-                const shape = shapes.find(s => s.id === id);
+                const shape = shapes.find(s => s && s.id === id);
                 if (shape && shape.groupId) {
                     return getRootId(shape.groupId);
                 }
-                const groupParent = shapes.find(g => g.type === 'group' && g.shapeIds?.includes(id));
+                const groupParent = shapes.find(g => g && g.type === 'group' && g.shapeIds?.includes(id));
                 if (groupParent) {
                     return getRootId(groupParent.id);
                 }
@@ -2304,9 +2304,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         const clickedShape = clickedShapeId ? shapes.find(s => s?.id === clickedShapeId) : null;
 
         const getRootId = (id: string): string => {
-            const shape = shapes.find(s => s.id === id);
+            const shape = shapes.find(s => s && s.id === id);
             if (shape && shape.groupId) return getRootId(shape.groupId);
-            const groupParent = shapes.find(g => g.type === 'group' && g.shapeIds?.includes(id));
+            const groupParent = shapes.find(g => g && g.type === 'group' && g.shapeIds?.includes(id));
             if (groupParent) return getRootId(groupParent.id);
             return id;
         };
@@ -2809,7 +2809,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   }, [selectedShapes, selectedShapeIds]);
 
   const computeGroupBounds = (groupId: string) => {
-       const groupShape = itemsToRender.find(s => s.id === groupId);
+       const groupShape = itemsToRender.find(s => s && s.id === groupId);
        if (!groupShape || groupShape.type !== 'group') return null;
        const b = getBoundingBox(groupShape, itemsToRender);
        if (!b) return null;

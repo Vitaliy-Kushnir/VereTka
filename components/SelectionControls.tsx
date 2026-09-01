@@ -95,7 +95,7 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
     );
 
     const AnchorMarker = useMemo(() => {
-        if (shape.type !== 'text') {
+        if (!shape || shape.type !== 'text') {
             return null;
         }
         const textShape = shape as TextShape;

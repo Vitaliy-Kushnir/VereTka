@@ -56,7 +56,8 @@ const toolToIcon: Record<Tool | 'group', React.ReactNode> = {
 };
 
 // Helper moved outside the component for better performance
-const getIconForShape = (s: Shape): React.ReactNode => {
+const getIconForShape = (s: Shape | null | undefined): React.ReactNode => {
+    if (!s || !s.type) return null;
     if (s.type === 'arc') {
         return toolToIcon[s.style as Tool];
     }
@@ -912,7 +913,7 @@ const ShapeList: React.FC<ShapeListProps> = ({
                                             <span className="flex items-center gap-1">
                                                 {layer.name}
                                                 {layer.locked && <span className="flex-shrink-0 text-[var(--text-secondary)] ml-1" title={t('menu.edit.lock') || 'Заблоковано'}><LockIcon size={12} /></span>}
-                                                {!layer.visible && <span className="text-[10px] text-amber-500 font-normal leading-none tracking-normal capitalize" title={t('list.layerHidden') || 'Шар прихований'}>Прихований [H]</span>}
+                                                {!layer.visible && <span className="text-[10px] text-amber-500 font-normal leading-none tracking-normal capitalize" title={t('list.layerHidden') || 'Шар прихований'}>{t('list.hiddenBadge') || 'Прихований [H]'}</span>}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

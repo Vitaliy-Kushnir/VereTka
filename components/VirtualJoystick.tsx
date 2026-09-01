@@ -311,11 +311,11 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({
             onTouchStart={(e) => { e.stopPropagation(); triggerHaptic(); setIsMinimized(false); }}
             onClick={(e) => { e.stopPropagation(); triggerHaptic(); setIsMinimized(false); }}
             className="flex items-center gap-2 text-cyan-400 text-xs font-bold"
-            title="Розгорнути вікно джойстика"
+            title={t('joystick.expandTitle') || 'Розгорнути вікно джойстика'}
           >
             <CrosshairIcon size={16} />
-            <span>Приціл ({Math.round(aimPos.x)}, {Math.round(aimPos.y)})</span>
-            <span className="px-1.5 py-0.5 text-[10px] bg-cyan-500/20 text-cyan-300 rounded-full">Розгорнути</span>
+            <span>{t('joystick.reticle') || 'Приціл'} ({Math.round(aimPos.x)}, {Math.round(aimPos.y)})</span>
+            <span className="px-1.5 py-0.5 text-[10px] bg-cyan-500/20 text-cyan-300 rounded-full">{t('joystick.expand') || 'Розгорнути'}</span>
           </button>
         </div>
       ) : (
@@ -344,7 +344,7 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({
                 setSpeedMultiplier(speedLabels[nextIdx].mult);
               }}
               className="px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/10 active:scale-95 text-zinc-300 font-semibold text-[10px]"
-              title="Швидкість переміщення прицілу"
+              title={t('joystick.speedTitle') || 'Швидкість переміщення прицілу'}
             >
               {speedMultiplier === 0.1 ? '🎯 0.1×' : speedMultiplier === 5.0 ? '⚡ 5.0×' : speedMultiplier === 10.0 ? '🚀 10.0×' : '🚶 1.0×'}
             </button>
@@ -486,7 +486,7 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({
                     } active:scale-95 font-bold rounded-xl border transition-all pointer-events-auto`}
                 >
                   <span className="text-sm leading-none">{isActionActive ? '✔️' : '📍'}</span>
-                  <span className="text-[9px] mt-0.5">{isActionActive ? 'Фіксація' : (isPathTool && pointsCount > 0 ? 'Точка' : 'Старт')}</span>
+                  <span className="text-[9px] mt-0.5">{isActionActive ? (t('joystick.actionFix') || 'Фіксація') : (isPathTool && pointsCount > 0 ? (t('joystick.actionPoint') || 'Точка') : (t('joystick.actionStart') || 'Старт'))}</span>
                 </button>
               )}
               {onCancel && (isActionActive || (isPathTool && pointsCount > 0)) && (
@@ -494,7 +494,7 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({
                   onPointerDown={(e) => { e.stopPropagation(); e.preventDefault(); triggerHaptic(20); onCancel(); }}
                   className="flex items-center justify-center gap-1 py-1.5 bg-red-500/10 text-red-400 border border-red-500/30 active:scale-95 text-[10px] rounded-lg mt-1 pointer-events-auto"
                 >
-                  <XSquareIcon size={12} /> скинути
+                  <XSquareIcon size={12} /> {t('joystick.actionReset') || 'скинути'}
                 </button>
               )}
             </div>

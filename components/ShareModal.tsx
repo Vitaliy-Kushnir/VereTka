@@ -81,7 +81,7 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, shareUrl }) =>
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
-              GitHub Pages (для поширення)
+              {t('share.tab.ghPages') || 'GitHub Pages (для поширення)'}
             </button>
             <button
               onClick={() => setUseLocalUrl(true)}
@@ -91,13 +91,13 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, shareUrl }) =>
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
-              Поточний сайт (для тестування)
+              {t('share.tab.local') || 'Поточний сайт (для тестування)'}
             </button>
           </div>
 
           <div className="space-y-2">
             <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)] flex justify-between">
-              <span>{useLocalUrl ? 'Тестове посилання (поточний прев’ю)' : t('share.urlLabel')}</span>
+              <span>{useLocalUrl ? (t('share.testUrlLabel') || 'Тестове посилання (поточний прев’ю)') : t('share.urlLabel')}</span>
             </label>
             <div className="flex gap-2">
               <input
@@ -123,13 +123,13 @@ const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, shareUrl }) =>
 
           <div className="bg-blue-500/10 border border-blue-500/25 rounded-lg p-3 text-xs text-[var(--text-secondary)] leading-relaxed space-y-1">
             <div className="font-semibold text-[var(--text-primary)] flex items-center gap-1">
-              <span>💡 Чому сайт на GitHub Pages відкрив стартову сторінку?</span>
+              <span>💡 {t('share.hint.title') || 'Чому сайт на GitHub Pages відкрив стартову сторінку?'}</span>
             </div>
             <p>
-              На GitHub Pages зараз завантажена раніша версія редактора. Вона ще не містить оновленого коду зчитування посилань.
+              {t('share.hint.p1') || 'На GitHub Pages зараз завантажена раніша версія редактора. Вона ще не містить оновленого коду зчитування посилань.'}
             </p>
             <p className="text-[var(--text-tertiary)]">
-              Опублікуйте/оновіть збірку проекту на GitHub Pages, і посилання відкриватиме проєкт там бездоганно. Для миттєвої перевірки оберіть вкладку <strong>«Поточний сайт (для тестування)»</strong> і натисніть <strong>«Перевірити посилання»</strong>.
+              {t('share.hint.p2') || 'Опублікуйте/оновіть збірку проекту на GitHub Pages, і посилання відкриватиме проєкт там бездоганно. Для миттєвої перевірки оберіть вкладку «Поточний сайт (для тестування)» і натисніть «Перевірити посилання».'}
             </p>
           </div>
 

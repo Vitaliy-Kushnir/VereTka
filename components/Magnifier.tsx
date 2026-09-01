@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { ViewTransform } from '../types';
 import { MagnifierIcon, XIcon, PinIcon, TargetIcon } from './icons';
+import { useLanguage } from './LanguageContext';
 
 interface MagnifierProps {
   visible: boolean;
@@ -46,6 +47,7 @@ export const Magnifier: React.FC<MagnifierProps> = ({
   onMagnifierCenterChange,
   onClose,
 }) => {
+  const { t } = useLanguage();
   const [currentZoom, setCurrentZoom] = useState<number>(initialZoom);
   const [loupeSize, setLoupeSize] = useState<number>(() => {
     try {
@@ -512,6 +514,10 @@ export const Magnifier: React.FC<MagnifierProps> = ({
               style={{ shapeRendering: 'geometricPrecision' }}
             >
               <defs>
+                {/* Canvas edge drop shadow */}
+                <filter id="magnifier-canvas-shadow" x="-5%" y="-5%" width="110%" height="110%">
+                  <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#000000" floodOpacity="0.35" />
+                </filter>
                 {/* Scaled grid pattern matching canvas style */}
                 {showGrid && (
                   <pattern
@@ -545,31 +551,43 @@ export const Magnifier: React.FC<MagnifierProps> = ({
                 )}
               </defs>
 
-              {/* Background */}
+              {/* Workspace / Outside Canvas Space Background (Gray area outside the canvas) */}
               <rect
                 x={cx - canvasVisibleRadius}
                 y={cy - canvasVisibleRadius}
                 width={canvasVisibleRadius * 2}
                 height={canvasVisibleRadius * 2}
-                fill={canvasBgColor || '#ffffff'}
+                fill="var(--bg-secondary, #374151)"
               />
 
-              {/* Grid Overlay with corresponding canvas scaling & opacity */}
+              {/* Canvas Sheet Rectangle (Only within workspace [0, 0, canvasWidth, canvasHeight]) */}
+              <rect
+                x={0}
+                y={0}
+                width={canvasWidth}
+                height={canvasHeight}
+                fill={canvasBgColor || '#ffffff'}
+                filter="url(#magnifier-canvas-shadow)"
+                stroke="rgba(0, 0, 0, 0.12)"
+                strokeWidth={0.75 / currentZoom}
+              />
+
+              {/* Grid Overlay strictly constrained to the canvas sheet dimensions */}
               {showGrid && (
                 <rect
-                  x={cx - canvasVisibleRadius}
-                  y={cy - canvasVisibleRadius}
-                  width={canvasVisibleRadius * 2}
-                  height={canvasVisibleRadius * 2}
+                  x={0}
+                  y={0}
+                  width={canvasWidth}
+                  height={canvasHeight}
                   fill="url(#magnifier-grid-pattern)"
                 />
               )}
               {showGrid && effectiveMagnifierScale > 10 && (
                 <rect
-                  x={cx - canvasVisibleRadius}
-                  y={cy - canvasVisibleRadius}
-                  width={canvasVisibleRadius * 2}
-                  height={canvasVisibleRadius * 2}
+                  x={0}
+                  y={0}
+                  width={canvasWidth}
+                  height={canvasHeight}
                   fill="url(#magnifier-fine-grid-pattern)"
                 />
               )}
@@ -709,8 +727,12 @@ export const Magnifier: React.FC<MagnifierProps> = ({
           } ${
             areControlsActive ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-75 pointer-events-none'
           }`}
-          title={isAnchored ? 'Якір активний: фокус на точці полотна 🎯 (натисніть, щоб стежити за курсором)' : 'Зафіксувати точку огляду на полотні (Якір 🎯)'}
-          aria-label={isAnchored ? 'Вимкнути якір' : 'Увімкнути якір'}
+          title={isAnchored 
+            ? (t('magnifier.anchor.active.title') || 'Якір активний: фокус на точці полотна 🎯 (натисніть, щоб стежити за курсором)') 
+            : (t('magnifier.anchor.inactive.title') || 'Зафіксувати точку огляду на полотні (Якір 🎯)')}
+          aria-label={isAnchored 
+            ? (t('magnifier.anchor.disable') || 'Вимкнути якір') 
+            : (t('magnifier.anchor.enable') || 'Увімкнути якір')}
         >
           <TargetIcon size={12} strokeWidth={isAnchored ? 2.5 : 2} />
         </button>
@@ -737,8 +759,8 @@ export const Magnifier: React.FC<MagnifierProps> = ({
           className={`absolute top-0.5 right-0.5 w-6 h-6 rounded-full bg-red-600 hover:bg-red-500 active:bg-red-700 text-white flex items-center justify-center border-[1.5px] border-white shadow-[0_2px_8px_rgba(0,0,0,0.8),0_0_8px_rgba(239,68,68,0.6)] z-50 active:scale-85 transition-all duration-300 cursor-pointer ${
             areControlsActive ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-75 pointer-events-none'
           }`}
-          title="Закрити лупу"
-          aria-label="Закрити лупу"
+          title={t('magnifier.close') || 'Закрити лупу'}
+          aria-label={t('magnifier.close') || 'Закрити лупу'}
         >
           <XIcon size={12} strokeWidth={3} />
         </button>
@@ -764,8 +786,8 @@ export const Magnifier: React.FC<MagnifierProps> = ({
         className={`absolute bottom-0.5 right-0.5 w-6 h-6 rounded-full bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 text-white flex items-center justify-center border-[1.5px] border-white shadow-[0_2px_8px_rgba(0,0,0,0.8),0_0_8px_rgba(6,182,212,0.6)] z-50 cursor-se-resize active:scale-90 transition-all duration-300 ${
           areControlsActive ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-75 pointer-events-none'
         }`}
-        title="Потягніть для зміни розміру лупи або натисніть для перемикання (100 / 150 / 200 / 260 / 320 px)"
-        aria-label="Змінити розмір лупи"
+        title={t('magnifier.resize.title') || 'Потягніть для зміни розміру лупи або натисніть для перемикання (100 / 150 / 200 / 260 / 320 px)'}
+        aria-label={t('magnifier.resize.label') || 'Змінити розмір лупи'}
       >
         <span className="text-[11px] font-black leading-none select-none">⤡</span>
       </button>

@@ -1,0 +1,7278 @@
+[
+  {
+    "key": "toolbar.drawMode.corner",
+    "en": "From corner",
+    "uk": "Від кута",
+    "fr": "From corner"
+  },
+  {
+    "key": "toolbar.drawMode.center",
+    "en": "From center",
+    "uk": "Від центру",
+    "fr": "From center"
+  },
+  {
+    "key": "tool.color",
+    "en": "Color",
+    "uk": "Колір",
+    "fr": "Color"
+  },
+  {
+    "key": "tool.fillColor",
+    "en": "Fill color",
+    "uk": "Колір заливки",
+    "fr": "Fill color"
+  },
+  {
+    "key": "tool.strokeColor",
+    "en": "Stroke color",
+    "uk": "Колір контуру",
+    "fr": "Stroke color"
+  },
+  {
+    "key": "tool.strokeWidth",
+    "en": "Stroke width",
+    "uk": "Товщина контуру",
+    "fr": "Stroke width"
+  },
+  {
+    "key": "prop.textColor",
+    "en": "Text color",
+    "uk": "Колір тексту",
+    "fr": "Text color"
+  },
+  {
+    "key": "prop.fontSize",
+    "en": "Font size",
+    "uk": "Розмір шрифту",
+    "fr": "Font size"
+  },
+  {
+    "key": "prop.title",
+    "en": "Properties",
+    "uk": "Властивості",
+    "fr": "Properties"
+  },
+  {
+    "key": "tool.style",
+    "en": "Style & Colors",
+    "uk": "Стиль та Кольори",
+    "fr": "Style & Colors"
+  },
+  {
+    "key": "menu.export.code",
+    "en": "Python (Tkinter) Code",
+    "uk": "Код Python (Tkinter)",
+    "fr": "Python (Tkinter) Code"
+  },
+  {
+    "key": "prop.tags",
+    "en": "Tags",
+    "uk": "Теги",
+    "fr": "Tags"
+  },
+  {
+    "key": "prop.tags.placeholder",
+    "en": "Custom tags...",
+    "uk": "Власні теги...",
+    "fr": "Custom tags..."
+  },
+  {
+    "key": "prop.tags.title",
+    "en": "Write different tags on separate lines",
+    "uk": "Різні теги записувати у різних стрічках поля",
+    "fr": "Write different tags on separate lines"
+  },
+  {
+    "key": "prop.tags.group",
+    "en": "Group tags:",
+    "uk": "Теги групи:",
+    "fr": "Group tags:"
+  },
+  {
+    "key": "prop.tags.system",
+    "en": "System tags:",
+    "uk": "Системні теги:",
+    "fr": "System tags:"
+  },
+  {
+    "key": "form.value",
+    "en": "Value",
+    "uk": "Значення",
+    "fr": "Value"
+  },
+  {
+    "key": "button.reset",
+    "en": "Reset",
+    "uk": "Скинути",
+    "fr": "Reset"
+  },
+  {
+    "key": "form.rotateCCW",
+    "en": "Rotate -90°",
+    "uk": "Повернути на -90°",
+    "fr": "Rotate -90°"
+  },
+  {
+    "key": "form.rotateCW",
+    "en": "Rotate +90°",
+    "uk": "Повернути на +90°",
+    "fr": "Rotate +90°"
+  },
+  {
+    "key": "form.dragToAdjust",
+    "en": "Drag for smooth adjustment. Hold (or double click) for manual input",
+    "uk": "Потягніть для плавного регулювання. Затисніть (або 2x клік) для ручного вводу",
+    "fr": "Drag for smooth adjustment. Hold (or double click) for manual input"
+  },
+  {
+    "key": "form.increaseValue",
+    "en": "Increase (Shift=x10, Alt=x0.1, hold to accelerate)",
+    "uk": "Збільшити (Shift=x10, Alt=x0.1, утримуйте для прискорення)",
+    "fr": "Increase (Shift=x10, Alt=x0.1, hold to accelerate)"
+  },
+  {
+    "key": "form.decreaseValue",
+    "en": "Decrease (Shift=x10, Alt=x0.1, hold to accelerate)",
+    "uk": "Зменшити (Shift=x10, Alt=x0.1, утримуйте для прискорення)",
+    "fr": "Decrease (Shift=x10, Alt=x0.1, hold to accelerate)"
+  },
+  {
+    "key": "form.quickSettings",
+    "en": "Quick settings: slider, presets, and reset",
+    "uk": "Швидкі налаштування: слайдер, пресети та скидання",
+    "fr": "Quick settings: slider, presets, and reset"
+  },
+  {
+    "key": "form.resetToInitial",
+    "en": "Reset to initial value ({val})",
+    "uk": "Скинути до початкового значення ({val})",
+    "fr": "Reset to initial value ({val})"
+  },
+  {
+    "key": "form.quickValues",
+    "en": "Quick values:",
+    "uk": "Швидкі значення:",
+    "fr": "Quick values:"
+  },
+  {
+    "key": "tool.distribute.path.innerRadius",
+    "en": "Inner radius",
+    "uk": "Внутрішній радіус",
+    "fr": "Inner radius"
+  },
+  {
+    "key": "status.selected",
+    "en": "Selected",
+    "uk": "Виділено",
+    "fr": "Selected"
+  },
+  {
+    "key": "prop.radius",
+    "en": "Circle radius",
+    "uk": "Радіус кола",
+    "fr": "Circle radius"
+  },
+  {
+    "key": "button.apply",
+    "en": "Apply",
+    "uk": "Застосувати",
+    "fr": "Apply"
+  },
+  {
+    "key": "button.cancel",
+    "en": "Cancel",
+    "uk": "Скасувати",
+    "fr": "Cancel"
+  },
+  {
+    "key": "menu.object.flipHorizontal",
+    "en": "Flip horizontally",
+    "uk": "Віддзеркалити горизонтально",
+    "fr": "Flip horizontally"
+  },
+  {
+    "key": "menu.object.flipVertical",
+    "en": "Flip vertically",
+    "uk": "Віддзеркалити вертикально",
+    "fr": "Flip vertically"
+  },
+  {
+    "key": "menu.object.group",
+    "en": "Group",
+    "uk": "Згрупувати",
+    "fr": "Group"
+  },
+  {
+    "key": "menu.object.ungroup",
+    "en": "Ungroup",
+    "uk": "Розгрупувати",
+    "fr": "Ungroup"
+  },
+  {
+    "key": "prop.group",
+    "en": "Group",
+    "uk": "Група",
+    "fr": "Group"
+  },
+  {
+    "key": "common.on",
+    "en": "On",
+    "uk": "Увімк",
+    "fr": "On"
+  },
+  {
+    "key": "common.off",
+    "en": "Off",
+    "uk": "Вимк",
+    "fr": "Off"
+  },
+  {
+    "key": "toolbar.clear",
+    "en": "Clear canvas",
+    "uk": "Очистити полотно",
+    "fr": "Clear canvas"
+  },
+  {
+    "key": "gallery.title",
+    "en": "Cloud Gallery",
+    "uk": "Хмарна Галерея",
+    "fr": "Cloud Gallery"
+  },
+  {
+    "key": "mobile.menu.cloudGalleryDesc",
+    "en": "Public projects, groups, and classes",
+    "uk": "Публічні проєкти, групи та класи",
+    "fr": "Public projects, groups, and classes"
+  },
+  {
+    "key": "menu.export.viewPythonCode",
+    "en": "View Python Code",
+    "uk": "Перегляд коду Python",
+    "fr": "View Python Code"
+  },
+  {
+    "key": "menu.export.runSimulator",
+    "en": "View Result",
+    "uk": "Переглянути результат",
+    "fr": "View Result"
+  },
+  {
+    "key": "menu.export.savePy",
+    "en": "Save as file (.py, .txt)",
+    "uk": "Зберегти як файл (.py, .txt)",
+    "fr": "Save as file (.py, .txt)"
+  },
+  {
+    "key": "menu.export.runOnline",
+    "en": "Run in Online Sandbox",
+    "uk": "Запустити в онлайн-середовищі",
+    "fr": "Run in Online Sandbox"
+  },
+  {
+    "key": "theme.light",
+    "en": "Light theme",
+    "uk": "Світла тема",
+    "fr": "Light theme"
+  },
+  {
+    "key": "theme.dark",
+    "en": "Dark theme",
+    "uk": "Темна тема",
+    "fr": "Dark theme"
+  },
+  {
+    "key": "menu.help.cheatCodes",
+    "en": "Cheat Codes",
+    "uk": "Чит-коди",
+    "fr": "Cheat Codes"
+  },
+  {
+    "key": "mobile.shapes.basic",
+    "en": "Basic Tools",
+    "uk": "Основні інструменти",
+    "fr": "Basic Tools"
+  },
+  {
+    "key": "mobile.shapes.primitives",
+    "en": "Primitives",
+    "uk": "Примітиви",
+    "fr": "Primitives"
+  },
+  {
+    "key": "mobile.shapes.linesArcs",
+    "en": "Lines & Arcs",
+    "uk": "Лінії та Дуги",
+    "fr": "Lines & Arcs"
+  },
+  {
+    "key": "mobile.shapes.polygons",
+    "en": "Polygons",
+    "uk": "Багатокутники",
+    "fr": "Polygons"
+  },
+  {
+    "key": "mobile.shapes.textMedia",
+    "en": "Text & Media",
+    "uk": "Текст та Медіа",
+    "fr": "Text & Media"
+  },
+  {
+    "key": "mobile.shapes.drawMode",
+    "en": "Draw Mode:",
+    "uk": "Режим побудови:",
+    "fr": "Draw Mode:"
+  },
+  {
+    "key": "mobile.align.positionTab",
+    "en": "Position",
+    "uk": "Позиція",
+    "fr": "Position"
+  },
+  {
+    "key": "mobile.sheet.dragWidthHint",
+    "en": "Drag left/right to resize width or swipe to switch tabs",
+    "uk": "Потягніть вліво/вправо для зміни ширини або свайпайте для зміни вкладок",
+    "fr": "Drag left/right to resize width or swipe to switch tabs"
+  },
+  {
+    "key": "mobile.sheet.prevTab",
+    "en": "Previous tab",
+    "uk": "Попередня вкладка",
+    "fr": "Previous tab"
+  },
+  {
+    "key": "mobile.sheet.nextTab",
+    "en": "Next tab",
+    "uk": "Наступна вкладка",
+    "fr": "Next tab"
+  },
+  {
+    "key": "mobile.sheet.pinMode",
+    "en": "Pin mode",
+    "uk": "Режим пришпилення",
+    "fr": "Pin mode"
+  },
+  {
+    "key": "mobile.sheet.collapse",
+    "en": "Collapse sheet",
+    "uk": "Зменшити шторку",
+    "fr": "Collapse sheet"
+  },
+  {
+    "key": "mobile.sheet.expand",
+    "en": "Expand sheet",
+    "uk": "Розгорнути шторку",
+    "fr": "Expand sheet"
+  },
+  {
+    "key": "mobile.sheet.changeWidth",
+    "en": "Change width",
+    "uk": "Змінити ширину",
+    "fr": "Change width"
+  },
+  {
+    "key": "mobile.sheet.changeHeight",
+    "en": "Change height",
+    "uk": "Змінити висоту",
+    "fr": "Change height"
+  },
+  {
+    "key": "welcome.action.cloudDesc",
+    "en": "Browse and open shared or personal cloud projects.",
+    "uk": "Перегляд та відкриття спільних і власних проєктів у хмарі.",
+    "fr": "Browse and open shared or personal cloud projects."
+  },
+  {
+    "key": "welcome.action.cloud",
+    "en": "Cloud Gallery",
+    "uk": "Хмарна галерея",
+    "fr": "Cloud Gallery"
+  },
+  {
+    "key": "toolbar.cloudGalleryDesc",
+    "en": "Cloud storage, personal workspace, and project gallery",
+    "uk": "Хмарне сховище, особистий кабінет та галерея проєктів",
+    "fr": "Cloud storage, personal workspace, and project gallery"
+  },
+  {
+    "key": "toolbar.cloudGallery",
+    "en": "Gallery & Storage",
+    "uk": "Галерея та Сховище",
+    "fr": "Gallery & Storage"
+  },
+  {
+    "key": "menu.file.publishCloud",
+    "en": "Publish to Cloud...",
+    "uk": "Опублікувати у хмарі...",
+    "fr": "Publish to Cloud..."
+  },
+  {
+    "key": "cloud.gallery.t1",
+    "en": "Cell with code \"{code}\" not found.",
+    "uk": "Осередок з кодом \"{code}\" не знайдено.",
+    "fr": "Cell with code \"{code}\" not found."
+  },
+  {
+    "key": "cloud.gallery.t2",
+    "en": "This group works in \"Template Board\" (readonly) mode. Only its founder (@{creator}) can post work here.",
+    "uk": "Ця група працює в режимі \"Дошка шаблонів\" (readonly). Тільки її засновник (@{creator}) може публікувати сюди роботи.",
+    "fr": "This group works in \"Template Board\" (readonly) mode. Only its founder (@{creator}) can post work here."
+  },
+  {
+    "key": "cloud.gallery.t3",
+    "en": "✓ A copy of the project has been successfully sent to cell \"{name}\"!",
+    "uk": "✓ Копію проєкту успішно надіслано в осередок \"{name}\"!",
+    "fr": "✓ A copy of the project has been successfully sent to cell \"{name}\"!"
+  },
+  {
+    "key": "cloud.gallery.t4",
+    "en": "A project named \"{title}\" already exists in this cell on your behalf. Please choose a different version (eg {suggested}).",
+    "uk": "Проєкт із назвою \"{title}\" вже існує в цьому осередку від вашого імені. Будь ласка, оберіть іншу версію (наприклад, {suggested}).",
+    "fr": "A project named \"{title}\" already exists in this cell on your behalf. Please choose a different version (eg {suggested})."
+  },
+  {
+    "key": "cloud.gallery.t5",
+    "en": "Group \"{name}\" has been successfully deleted.",
+    "uk": "Групу \"{name}\" успішно видалено.",
+    "fr": "Group \"{name}\" has been successfully deleted."
+  },
+  {
+    "key": "cloud.gallery.t6",
+    "en": "Group: {id}",
+    "uk": "Група: {id}",
+    "fr": "Group: {id}"
+  },
+  {
+    "key": "cloud.gallery.t7",
+    "en": "In groups ({count})",
+    "uk": "У групах ({count})",
+    "fr": "In groups ({count})"
+  },
+  {
+    "key": "cloud.gallery.t8",
+    "en": "Enter the access password for cell \"{name}\" ({code}):",
+    "uk": "Вкажіть пароль доступу для осередка \"{name}\" ({code}):",
+    "fr": "Enter the access password for cell \"{name}\" ({code}):"
+  },
+  {
+    "key": "cloud.gallery.t9",
+    "en": "Check out my vector project \"{title}\" in Veretka!",
+    "uk": "Перегляньте мій векторний проєкт \"{title}\" у Веретці!",
+    "fr": "Check out my vector project \"{title}\" in Veretka!"
+  },
+  {
+    "key": "cloud.gallery.t10",
+    "en": "Project \"{title}\" in Veretka",
+    "uk": "Проєкт \"{title}\" у Веретці",
+    "fr": "Project \"{title}\" in Veretka"
+  },
+  {
+    "key": "cloud.gallery.t11",
+    "en": "Greetings! View my project \"{title}\" in Veretka at the link:\\n\\n{url}",
+    "uk": "Привіт! Переглянь мій проєкт \"{title}\" у Веретці за посиланням:\\n\\n{url}",
+    "fr": "Greetings! View my project \"{title}\" in Veretka at the link:\\n\\n{url}"
+  },
+  {
+    "key": "cloud.gallery.t12",
+    "en": "For example, {suggested}",
+    "uk": "Наприклад, {suggested}",
+    "fr": "For example, {suggested}"
+  },
+  {
+    "key": "cloud.gallery.003",
+    "en": "Sorting:",
+    "uk": "Сортування:",
+    "fr": "Sorting:"
+  },
+  {
+    "key": "cloud.gallery.002",
+    "en": "Clear search",
+    "uk": "Очистити пошук",
+    "fr": "Clear search"
+  },
+  {
+    "key": "cloud.gallery.004",
+    "en": "🕒 Newest first",
+    "uk": "🕒 Новіші спочатку",
+    "fr": "🕒 Newest first"
+  },
+  {
+    "key": "cloud.gallery.001",
+    "en": "🔍 Search by title, author...",
+    "uk": "🔍 Пошук за назвою, автором...",
+    "fr": "🔍 Search by title, author..."
+  },
+  {
+    "key": "cloud.gallery.005",
+    "en": "⌛ Older ones first",
+    "uk": "⌛ Старіші спочатку",
+    "fr": "⌛ Older ones first"
+  },
+  {
+    "key": "cloud.gallery.010",
+    "en": "Objects:",
+    "uk": "Об'єкти:",
+    "fr": "Objects:"
+  },
+  {
+    "key": "cloud.gallery.008",
+    "en": "🧩 More objects",
+    "uk": "🧩 Більше об'єктів",
+    "fr": "🧩 More objects"
+  },
+  {
+    "key": "cloud.gallery.007",
+    "en": "🔠 Name (Z - A)",
+    "uk": "🔠 Назва (Я - А)",
+    "fr": "🔠 Name (Z - A)"
+  },
+  {
+    "key": "cloud.gallery.006",
+    "en": "🔤 Name (A - Z)",
+    "uk": "🔤 Назва (А - Я)",
+    "fr": "🔤 Name (A - Z)"
+  },
+  {
+    "key": "cloud.gallery.009",
+    "en": "🎯 Fewer objects",
+    "uk": "🎯 Менше об'єктів",
+    "fr": "🎯 Fewer objects"
+  },
+  {
+    "key": "cloud.gallery.015",
+    "en": "Type:",
+    "uk": "Тип:",
+    "fr": "Type:"
+  },
+  {
+    "key": "cloud.gallery.012",
+    "en": "🟢 Simple (1–10)",
+    "uk": "🟢 Прості (1–10)",
+    "fr": "🟢 Simple (1–10)"
+  },
+  {
+    "key": "cloud.gallery.011",
+    "en": "📊 All sizes",
+    "uk": "📊 Усі розміри",
+    "fr": "📊 All sizes"
+  },
+  {
+    "key": "cloud.gallery.014",
+    "en": "🔴 Difficult (50+)",
+    "uk": "🔴 Складні (50+)",
+    "fr": "🔴 Difficult (50+)"
+  },
+  {
+    "key": "cloud.gallery.013",
+    "en": "🟡 Medium (11–50)",
+    "uk": "🟡 Середні (11–50)",
+    "fr": "🟡 Medium (11–50)"
+  },
+  {
+    "key": "cloud.gallery.020",
+    "en": "Update the list",
+    "uk": "Оновити список",
+    "fr": "Update the list"
+  },
+  {
+    "key": "cloud.gallery.016",
+    "en": "👁️ All types",
+    "uk": "👁️ Усі типи",
+    "fr": "👁️ All types"
+  },
+  {
+    "key": "cloud.gallery.018",
+    "en": "🔒 Private",
+    "uk": "🔒 Приватні",
+    "fr": "🔒 Private"
+  },
+  {
+    "key": "cloud.gallery.019",
+    "en": "🏫 For groups",
+    "uk": "🏫 Для груп",
+    "fr": "🏫 For groups"
+  },
+  {
+    "key": "cloud.gallery.017",
+    "en": "🌐 Public",
+    "uk": "🌐 Публічні",
+    "fr": "🌐 Public"
+  },
+  {
+    "key": "cloud.gallery.023",
+    "en": "(from",
+    "uk": "(з",
+    "fr": "(from"
+  },
+  {
+    "key": "cloud.gallery.025",
+    "en": "Click for enlarged modal view",
+    "uk": "Натисніть для збільшеного модального перегляду",
+    "fr": "Click for enlarged modal view"
+  },
+  {
+    "key": "cloud.gallery.021",
+    "en": "🔄 Update",
+    "uk": "🔄 Оновити",
+    "fr": "🔄 Update"
+  },
+  {
+    "key": "cloud.gallery.022",
+    "en": "Shown projects:",
+    "uk": "Показано проєктів:",
+    "fr": "Shown projects:"
+  },
+  {
+    "key": "cloud.gallery.024",
+    "en": "✕ Reset all filters",
+    "uk": "✕ Скинути всі фільтри",
+    "fr": "✕ Reset all filters"
+  },
+  {
+    "key": "cloud.gallery.028",
+    "en": "close",
+    "uk": "Закрити",
+    "fr": "close"
+  },
+  {
+    "key": "cloud.gallery.029",
+    "en": "Author:",
+    "uk": "Автор:",
+    "fr": "Author:"
+  },
+  {
+    "key": "cloud.gallery.026",
+    "en": "No image",
+    "uk": "Без зображення",
+    "fr": "No image"
+  },
+  {
+    "key": "cloud.gallery.030",
+    "en": ") • Objects:",
+    "uk": ") • Об'єктів:",
+    "fr": ") • Objects:"
+  },
+  {
+    "key": "cloud.gallery.027",
+    "en": "🔍 Click to expand",
+    "uk": "🔍 Натисніть для розгортання",
+    "fr": "🔍 Click to expand"
+  },
+  {
+    "key": "cloud.gallery.035",
+    "en": "The group name cannot be empty",
+    "uk": "Назва групи не може бути порожньою",
+    "fr": "The group name cannot be empty"
+  },
+  {
+    "key": "cloud.gallery.031",
+    "en": "Failed to generate view",
+    "uk": "Не вдалося згенерувати перегляд",
+    "fr": "Failed to generate view"
+  },
+  {
+    "key": "cloud.gallery.032",
+    "en": "Created by:",
+    "uk": "Створено:",
+    "fr": "Created by:"
+  },
+  {
+    "key": "cloud.gallery.033",
+    "en": "🚀 Open in the editor",
+    "uk": "🚀 Відкрити в редакторі",
+    "fr": "🚀 Open in the editor"
+  },
+  {
+    "key": "cloud.gallery.034",
+    "en": "🔗 Share",
+    "uk": "🔗 Поділитися",
+    "fr": "🔗 Share"
+  },
+  {
+    "key": "cloud.gallery.preview.fit",
+    "en": "Fit to Screen",
+    "uk": "Вписати повністю",
+    "fr": "Fit to Screen"
+  },
+  {
+    "key": "cloud.gallery.preview.actual",
+    "en": "100% (Actual Size)",
+    "uk": "100% (Реальний розмір)",
+    "fr": "100% (Actual Size)"
+  },
+  {
+    "key": "cloud.gallery.preview.zoomIn",
+    "en": "Zoom In",
+    "uk": "Збільшити масштаб",
+    "fr": "Zoom In"
+  },
+  {
+    "key": "cloud.gallery.preview.zoomOut",
+    "en": "Zoom Out",
+    "uk": "Зменшити масштаб",
+    "fr": "Zoom Out"
+  },
+  {
+    "key": "cloud.gallery.preview.reset",
+    "en": "Reset Zoom",
+    "uk": "Скинути масштаб",
+    "fr": "Reset Zoom"
+  },
+  {
+    "key": "cloud.gallery.preview.downloadSvg",
+    "en": "Download SVG",
+    "uk": "Завантажити SVG",
+    "fr": "Download SVG"
+  },
+  {
+    "key": "cloud.gallery.preview.canvas",
+    "en": "Canvas size:",
+    "uk": "Розмір полотна:",
+    "fr": "Canvas size:"
+  },
+  {
+    "key": "cloud.gallery.preview.scrollHint",
+    "en": "Drag to pan or scroll to inspect",
+    "uk": "Перетягуйте мишкою або прокручуйте для огляду",
+    "fr": "Drag to pan or scroll to inspect"
+  },
+  {
+    "key": "cloud.gallery.036",
+    "en": "My project",
+    "uk": "Мій проєкт",
+    "fr": "My project"
+  },
+  {
+    "key": "cloud.gallery.038",
+    "en": "newer",
+    "uk": "новшу",
+    "fr": "newer"
+  },
+  {
+    "key": "cloud.gallery.039",
+    "en": "An error occurred during the execution of the action",
+    "uk": "Помилка при виконанні дії",
+    "fr": "An error occurred during the execution of the action"
+  },
+  {
+    "key": "cloud.gallery.037",
+    "en": "An error occurred when sending the project to the group",
+    "uk": "Помилка при надсиланні проєкту у групу",
+    "fr": "An error occurred when sending the project to the group"
+  },
+  {
+    "key": "cloud.gallery.040",
+    "en": "Please enter a Nickname and Password",
+    "uk": "Будь ласка, вкажіть Нікнейм та Пароль",
+    "fr": "Please enter a Nickname and Password"
+  },
+  {
+    "key": "cloud.gallery.041",
+    "en": "Failed to open personal chest",
+    "uk": "Не вдалося відкрити особисту скриню",
+    "fr": "Failed to open personal chest"
+  },
+  {
+    "key": "cloud.gallery.044",
+    "en": "Please enter the password for the chest",
+    "uk": "Будь ласка, вкажіть пароль до скрині",
+    "fr": "Please enter the password for the chest"
+  },
+  {
+    "key": "cloud.gallery.042",
+    "en": "Please enter Nickname (Login)",
+    "uk": "Будь ласка, вкажіть Нікнейм (Логін)",
+    "fr": "Please enter Nickname (Login)"
+  },
+  {
+    "key": "cloud.gallery.043",
+    "en": "Such Nickname is already used in the community. Please choose another.",
+    "uk": "Такий Нікнейм вже зайнятий у спільноті. Будь ласка, оберіть інший.",
+    "fr": "Such Nickname is already used in the community. Please choose another."
+  },
+  {
+    "key": "cloud.gallery.045",
+    "en": "The entered passwords do not match. Please check your spelling.",
+    "uk": "Введені паролі не збігаються. Будь ласка, перевірте написання.",
+    "fr": "The entered passwords do not match. Please check your spelling."
+  },
+  {
+    "key": "cloud.gallery.048",
+    "en": "To create a chest through Google, be sure to enter a password (at least 3 characters)",
+    "uk": "Для створення скрині через Google обов’язково вкажіть пароль (щонайменше 3 символи)",
+    "fr": "To create a chest through Google, be sure to enter a password (at least 3 characters)"
+  },
+  {
+    "key": "cloud.gallery.049",
+    "en": "Failed to create chest via Google",
+    "uk": "Не вдалося створити скриню через Google",
+    "fr": "Failed to create chest via Google"
+  },
+  {
+    "key": "cloud.gallery.050",
+    "en": "Couldn't sign in with Google",
+    "uk": "Не вдалося увійти через Google",
+    "fr": "Couldn't sign in with Google"
+  },
+  {
+    "key": "cloud.gallery.046",
+    "en": "Failed to create chest",
+    "uk": "Не вдалося створити скриню",
+    "fr": "Failed to create chest"
+  },
+  {
+    "key": "cloud.gallery.047",
+    "en": "Attention: A password is required to protect your chest!\\nPlease enter a password (at least 3 characters):",
+    "uk": "Увага: Пароль є обов’язковим для захисту вашої скрині!\\nБудь ласка, введіть пароль (щонайменше 3 символи):",
+    "fr": "Attention: A password is required to protect your chest!\\nPlease enter a password (at least 3 characters):"
+  },
+  {
+    "key": "cloud.gallery.054",
+    "en": "Enter a password",
+    "uk": "Вкажіть пароль",
+    "fr": "Enter a password"
+  },
+  {
+    "key": "cloud.gallery.055",
+    "en": "Failed to enter cell/group",
+    "uk": "Не вдалося увійти в осередку/групу",
+    "fr": "Failed to enter cell/group"
+  },
+  {
+    "key": "cloud.gallery.051",
+    "en": "Please enter your email address",
+    "uk": "Будь ласка, вкажіть вашу електронну пошту",
+    "fr": "Please enter your email address"
+  },
+  {
+    "key": "cloud.gallery.052",
+    "en": "Your personal chest and its projects have been successfully deleted.",
+    "uk": "Вашу особисту скриню та її проєкти успішно видалено.",
+    "fr": "Your personal chest and its projects have been successfully deleted."
+  },
+  {
+    "key": "cloud.gallery.053",
+    "en": "Enter the group code",
+    "uk": "Вкажіть код групи",
+    "fr": "Enter the group code"
+  },
+  {
+    "key": "cloud.gallery.057",
+    "en": "Passwords do not match. Check the correct input.",
+    "uk": "Паролі не збігаються. Перевірте правильність введення.",
+    "fr": "Passwords do not match. Check the correct input."
+  },
+  {
+    "key": "cloud.gallery.060",
+    "en": "Cloud storage...",
+    "uk": "Збереження у хмару...",
+    "fr": "Cloud storage..."
+  },
+  {
+    "key": "cloud.gallery.056",
+    "en": "Fill in the name, code and password for the new group",
+    "uk": "Заповніть назву, код та пароль для нової групи",
+    "fr": "Fill in the name, code and password for the new group"
+  },
+  {
+    "key": "cloud.gallery.058",
+    "en": "Anonym",
+    "uk": "Анонім",
+    "fr": "Anonym"
+  },
+  {
+    "key": "cloud.gallery.059",
+    "en": "Error creating group",
+    "uk": "Помилка створення групи",
+    "fr": "Error creating group"
+  },
+  {
+    "key": "cloud.gallery.064",
+    "en": "Anonym",
+    "uk": "Анонім",
+    "fr": "Anonym"
+  },
+  {
+    "key": "cloud.gallery.065",
+    "en": "Storage error",
+    "uk": "Помилка зберігання",
+    "fr": "Storage error"
+  },
+  {
+    "key": "cloud.gallery.061",
+    "en": "Anonym",
+    "uk": "Анонім",
+    "fr": "Anonym"
+  },
+  {
+    "key": "cloud.gallery.063",
+    "en": "The project has been successfully saved in the cloud!",
+    "uk": "Проєкт успішно збережено в хмарі!",
+    "fr": "The project has been successfully saved in the cloud!"
+  },
+  {
+    "key": "cloud.gallery.062",
+    "en": "Anonym",
+    "uk": "Анонім",
+    "fr": "Anonym"
+  },
+  {
+    "key": "cloud.gallery.070",
+    "en": "Cloud storage...",
+    "uk": "Збереження у хмару...",
+    "fr": "Cloud storage..."
+  },
+  {
+    "key": "cloud.gallery.066",
+    "en": "Enter the name of the project",
+    "uk": "Вкажіть назву проєкту",
+    "fr": "Enter the name of the project"
+  },
+  {
+    "key": "cloud.gallery.069",
+    "en": "The canvas is empty! Create shapes before publishing.",
+    "uk": "Полотно порожнє! Створіть фігури перед публікацією.",
+    "fr": "The canvas is empty! Create shapes before publishing."
+  },
+  {
+    "key": "cloud.gallery.068",
+    "en": "Authorization error. Open the chest again.",
+    "uk": "Помилка авторизації. Відкрийте скриню знову.",
+    "fr": "Authorization error. Open the chest again."
+  },
+  {
+    "key": "cloud.gallery.067",
+    "en": "Please open your personal chest first",
+    "uk": "Будь ласка, спочатку відкрийте свою особисту скриню",
+    "fr": "Please open your personal chest first"
+  },
+  {
+    "key": "cloud.gallery.071",
+    "en": "Enter the group code for publication",
+    "uk": "Вкажіть код групи для публікації",
+    "fr": "Enter the group code for publication"
+  },
+  {
+    "key": "cloud.gallery.072",
+    "en": "Storage error",
+    "uk": "Помилка зберігання",
+    "fr": "Storage error"
+  },
+  {
+    "key": "cloud.gallery.075",
+    "en": "Action execution error",
+    "uk": "Помилка виконання дії",
+    "fr": "Action execution error"
+  },
+  {
+    "key": "cloud.gallery.074",
+    "en": "Enter the password to perform the action",
+    "uk": "Вкажіть пароль для виконання дії",
+    "fr": "Enter the password to perform the action"
+  },
+  {
+    "key": "cloud.gallery.073",
+    "en": "Failed to delete project",
+    "uk": "Не вдалося видалити проєкт",
+    "fr": "Failed to delete project"
+  },
+  {
+    "key": "cloud.gallery.080",
+    "en": "Repository of VereTka projects",
+    "uk": "Сховище проєктів ВереTkа",
+    "fr": "Repository of VereTka projects"
+  },
+  {
+    "key": "cloud.gallery.077",
+    "en": "Failed to send to group",
+    "uk": "Не вдалося надіслати у групу",
+    "fr": "Failed to send to group"
+  },
+  {
+    "key": "cloud.gallery.076",
+    "en": "Enter the group / cell code:",
+    "uk": "Введіть код групи / осередка:",
+    "fr": "Enter the group / cell code:"
+  },
+  {
+    "key": "cloud.gallery.078",
+    "en": "The name of the project cannot be empty",
+    "uk": "Назва проєкту не може бути порожньою",
+    "fr": "The name of the project cannot be empty"
+  },
+  {
+    "key": "cloud.gallery.079",
+    "en": "Save error",
+    "uk": "Помилка збереження",
+    "fr": "Save error"
+  },
+  {
+    "key": "cloud.gallery.083",
+    "en": "Your account",
+    "uk": "Ваш акаунт",
+    "fr": "Your account"
+  },
+  {
+    "key": "cloud.gallery.081",
+    "en": "Cloud space of projects, cells and gallery",
+    "uk": "Хмарний простір проєктів, осередків та галереї",
+    "fr": "Cloud space of projects, cells and gallery"
+  },
+  {
+    "key": "cloud.gallery.082",
+    "en": "My account",
+    "uk": "Мій акаунт",
+    "fr": "My account"
+  },
+  {
+    "key": "cloud.gallery.085",
+    "en": "⚙️ Edit account",
+    "uk": "⚙️ Редагувати акаунт",
+    "fr": "⚙️ Edit account"
+  },
+  {
+    "key": "cloud.gallery.084",
+    "en": "Signature:",
+    "uk": "Підпис:",
+    "fr": "Signature:"
+  },
+  {
+    "key": "cloud.gallery.086",
+    "en": "🚪 Close the chest",
+    "uk": "🚪 Закрити скриню",
+    "fr": "🚪 Close the chest"
+  },
+  {
+    "key": "cloud.gallery.089",
+    "en": "close",
+    "uk": "Закрити",
+    "fr": "close"
+  },
+  {
+    "key": "cloud.gallery.088",
+    "en": "Registration",
+    "uk": "Реєстрація",
+    "fr": "Registration"
+  },
+  {
+    "key": "cloud.gallery.087",
+    "en": "Exit",
+    "uk": "Вхід",
+    "fr": "Exit"
+  },
+  {
+    "key": "cloud.gallery.090",
+    "en": "🌐 General gallery",
+    "uk": "🌐 Загальна галерея",
+    "fr": "🌐 General gallery"
+  },
+  {
+    "key": "cloud.gallery.092",
+    "en": "🏫 Group/cell box",
+    "uk": "🏫 Скриня групи/осередку",
+    "fr": "🏫 Group/cell box"
+  },
+  {
+    "key": "cloud.gallery.093",
+    "en": "☁️ Publish the current project",
+    "uk": "☁️ Опублікувати поточний проєкт",
+    "fr": "☁️ Publish the current project"
+  },
+  {
+    "key": "cloud.gallery.094",
+    "en": "Search the entire gallery (title, author, nickname)...",
+    "uk": "Пошук по всій галереї (назва, автор, нікнейм)...",
+    "fr": "Search the entire gallery (title, author, nickname)..."
+  },
+  {
+    "key": "cloud.gallery.091",
+    "en": "👤 My personal chest",
+    "uk": "👤 Моя особиста скриня",
+    "fr": "👤 My personal chest"
+  },
+  {
+    "key": "cloud.gallery.095",
+    "en": "Loading gallery...",
+    "uk": "Завантаження галереї...",
+    "fr": "Loading gallery..."
+  },
+  {
+    "key": "cloud.gallery.098",
+    "en": "Publish your project first with the \"Publish Current Project\" button",
+    "uk": "Опублікуйте свій проєкт першим за допомогою кнопки \"Опублікувати поточний проєкт\"",
+    "fr": "Publish your project first with the \"Publish Current Project\" button"
+  },
+  {
+    "key": "cloud.gallery.099",
+    "en": "Try changing the search or filter criteria",
+    "uk": "Спробуйте змінити критерії пошуку чи фільтрації",
+    "fr": "Try changing the search or filter criteria"
+  },
+  {
+    "key": "cloud.gallery.100",
+    "en": "Public",
+    "uk": "Публічний",
+    "fr": "Public"
+  },
+  {
+    "key": "cloud.gallery.096",
+    "en": "There are no public projects yet",
+    "uk": "Публічних проєктів поки немає",
+    "fr": "There are no public projects yet"
+  },
+  {
+    "key": "cloud.gallery.097",
+    "en": "No projects were found for the selected filters",
+    "uk": "Жодного проєкту не знайдено за вибраними фільтрами",
+    "fr": "No projects were found for the selected filters"
+  },
+  {
+    "key": "cloud.gallery.105",
+    "en": "Loading...",
+    "uk": "Завантаження...",
+    "fr": "Loading..."
+  },
+  {
+    "key": "cloud.gallery.102",
+    "en": "Objects:",
+    "uk": "Об'єктів:",
+    "fr": "Objects:"
+  },
+  {
+    "key": "cloud.gallery.103",
+    "en": "Open in the editor",
+    "uk": "Відкрити в редакторі",
+    "fr": "Open in the editor"
+  },
+  {
+    "key": "cloud.gallery.104",
+    "en": "Share the link",
+    "uk": "Поділитися посиланням",
+    "fr": "Share the link"
+  },
+  {
+    "key": "cloud.gallery.101",
+    "en": "Author:",
+    "uk": "Автор:",
+    "fr": "Author:"
+  },
+  {
+    "key": "cloud.gallery.107",
+    "en": "🔓 Login (Open chest)",
+    "uk": "🔓 Вхід (Відкрити скриню)",
+    "fr": "🔓 Login (Open chest)"
+  },
+  {
+    "key": "cloud.gallery.106",
+    "en": "Download more",
+    "uk": "Завантажити ще",
+    "fr": "Download more"
+  },
+  {
+    "key": "cloud.gallery.108",
+    "en": "📝 Registration (Get Chest)",
+    "uk": "📝 Реєстрація (Отримати скриню)",
+    "fr": "📝 Registration (Get Chest)"
+  },
+  {
+    "key": "cloud.gallery.109",
+    "en": "Open personal chest",
+    "uk": "Відкрити особисту скриню",
+    "fr": "Open personal chest"
+  },
+  {
+    "key": "cloud.gallery.110",
+    "en": "Enter your unique Nickname (or Email) and Password from your chest",
+    "uk": "Вкажіть свій унікальний Нікнейм (або Email) та Пароль від вашої скрині",
+    "fr": "Enter your unique Nickname (or Email) and Password from your chest"
+  },
+  {
+    "key": "cloud.gallery.114",
+    "en": "Forgot your nickname or password?",
+    "uk": "Забули нікнейм або пароль?",
+    "fr": "Forgot your nickname or password?"
+  },
+  {
+    "key": "cloud.gallery.111",
+    "en": "Your Nickname or Email:*",
+    "uk": "Ваш Нікнейм або Email:*",
+    "fr": "Your Nickname or Email:*"
+  },
+  {
+    "key": "cloud.gallery.115",
+    "en": "Enter your password",
+    "uk": "Введіть пароль",
+    "fr": "Enter your password"
+  },
+  {
+    "key": "cloud.gallery.112",
+    "en": "for example: petro_2026 or user@gmail.com",
+    "uk": "наприклад: petro_2026 або user@gmail.com",
+    "fr": "for example: petro_2026 or user@gmail.com"
+  },
+  {
+    "key": "cloud.gallery.113",
+    "en": "Password to the chest:*",
+    "uk": "Пароль до скрині:*",
+    "fr": "Password to the chest:*"
+  },
+  {
+    "key": "cloud.gallery.116",
+    "en": "Authorization...",
+    "uk": "Авторизація...",
+    "fr": "Authorization..."
+  },
+  {
+    "key": "cloud.gallery.117",
+    "en": "Open personal chest",
+    "uk": "Відкрити особисту скриню",
+    "fr": "Open personal chest"
+  },
+  {
+    "key": "cloud.gallery.120",
+    "en": "Your unique Nickname (Login):*",
+    "uk": "Ваш унікальний Нікнейм (Логін):*",
+    "fr": "Your unique Nickname (Login):*"
+  },
+  {
+    "key": "cloud.gallery.119",
+    "en": "Come up with a unique Nickname and Password to protect and organize your projects",
+    "uk": "Придумайте унікальний Нікнейм та Пароль для захисту та впорядкування ваших проєктів",
+    "fr": "Come up with a unique Nickname and Password to protect and organize your projects"
+  },
+  {
+    "key": "cloud.gallery.118",
+    "en": "Create a new personal chest",
+    "uk": "Створити нову особисту скриню",
+    "fr": "Create a new personal chest"
+  },
+  {
+    "key": "cloud.gallery.125",
+    "en": "(optional)",
+    "uk": "(необов'язково)",
+    "fr": "(optional)"
+  },
+  {
+    "key": "cloud.gallery.121",
+    "en": "for example: petro_2026",
+    "uk": "наприклад: petro_2026",
+    "fr": "for example: petro_2026"
+  },
+  {
+    "key": "cloud.gallery.124",
+    "en": "Name (Signature)",
+    "uk": "Ім'я (підпис)",
+    "fr": "Name (Signature)"
+  },
+  {
+    "key": "cloud.gallery.122",
+    "en": "⚠️ Such a nickname is already busy in the community. Choose another.",
+    "uk": "⚠️ Такий нікнейм вже зайнятий у спільноті. Оберіть інший.",
+    "fr": "⚠️ Such a nickname is already busy in the community. Choose another."
+  },
+  {
+    "key": "cloud.gallery.123",
+    "en": "✓ The nickname is free",
+    "uk": "✓ Нікнейм вільний",
+    "fr": "✓ The nickname is free"
+  },
+  {
+    "key": "cloud.gallery.128",
+    "en": "Come up with a password",
+    "uk": "Придумайте пароль",
+    "fr": "Come up with a password"
+  },
+  {
+    "key": "cloud.gallery.126",
+    "en": "Olena K.",
+    "uk": "Олена К.",
+    "fr": "Olena K."
+  },
+  {
+    "key": "cloud.gallery.127",
+    "en": "Password to the chest:*",
+    "uk": "Пароль до скрині:*",
+    "fr": "Password to the chest:*"
+  },
+  {
+    "key": "cloud.gallery.130",
+    "en": "Confirm password",
+    "uk": "Підтвердіть пароль",
+    "fr": "Confirm password"
+  },
+  {
+    "key": "cloud.gallery.129",
+    "en": "Repeat password:*",
+    "uk": "Повторіть пароль:*",
+    "fr": "Repeat password:*"
+  },
+  {
+    "key": "cloud.gallery.132",
+    "en": "(optional)",
+    "uk": "(необов'язково)",
+    "fr": "(optional)"
+  },
+  {
+    "key": "cloud.gallery.131",
+    "en": "Email:",
+    "uk": "Електронна пошта (Email):",
+    "fr": "Email:"
+  },
+  {
+    "key": "cloud.gallery.134",
+    "en": "What is mail for:",
+    "uk": "Для чого пошта:",
+    "fr": "What is mail for:"
+  },
+  {
+    "key": "cloud.gallery.133",
+    "en": "for example: user@gmail.com",
+    "uk": "наприклад: user@gmail.com",
+    "fr": "for example: user@gmail.com"
+  },
+  {
+    "key": "cloud.gallery.135",
+    "en": "This field is optional. If you fill it out, mail will serve as a reliable way to recover your Nickname and access to the chest if you suddenly forget them.",
+    "uk": "Це поле не є обов'язковим. Якщо ви його заповните, пошта слугуватиме надійним способом відновити свій Нікнейм та доступ до скрині, якщо ви їх раптом забудете.",
+    "fr": "This field is optional. If you fill it out, mail will serve as a reliable way to recover your Nickname and access to the chest if you suddenly forget them."
+  },
+  {
+    "key": "cloud.gallery.138",
+    "en": "or",
+    "uk": "або",
+    "fr": "or"
+  },
+  {
+    "key": "cloud.gallery.136",
+    "en": "Creating a chest...",
+    "uk": "Створення скрині...",
+    "fr": "Creating a chest..."
+  },
+  {
+    "key": "cloud.gallery.139",
+    "en": "Get via Google",
+    "uk": "Отримати через Google",
+    "fr": "Get via Google"
+  },
+  {
+    "key": "cloud.gallery.137",
+    "en": "✨ Get and open the chest",
+    "uk": "✨ Отримати та відкрити скриню",
+    "fr": "✨ Get and open the chest"
+  },
+  {
+    "key": "cloud.gallery.140",
+    "en": "Sign in with Google",
+    "uk": "Увійти через Google",
+    "fr": "Sign in with Google"
+  },
+  {
+    "key": "cloud.gallery.144",
+    "en": "There are no saved projects in your personal chest yet",
+    "uk": "У вашій особистій скрині ще немає збережених проєктів",
+    "fr": "There are no saved projects in your personal chest yet"
+  },
+  {
+    "key": "cloud.gallery.145",
+    "en": "Nothing was found in the personal inbox for the selected filters",
+    "uk": "Нічого не знайдено в особистій скрині за вибраними фільтрами",
+    "fr": "Nothing was found in the personal inbox for the selected filters"
+  },
+  {
+    "key": "cloud.gallery.141",
+    "en": "💡 When received through Google, the default nickname will be part of the mail (before @), and the password is specified in the field above or requested when creating.",
+    "uk": "💡 При отримані через Google Нікнеймом за замовчуванням стане частина пошти (до @), а пароль вказується у полі вище або запитується при створенні.",
+    "fr": "💡 When received through Google, the default nickname will be part of the mail (before @), and the password is specified in the field above or requested when creating."
+  },
+  {
+    "key": "cloud.gallery.143",
+    "en": "Chest update...",
+    "uk": "Оновлення скрині...",
+    "fr": "Chest update..."
+  },
+  {
+    "key": "cloud.gallery.142",
+    "en": "Searching my inbox...",
+    "uk": "Пошук у моїй скрині...",
+    "fr": "Searching my inbox..."
+  },
+  {
+    "key": "cloud.gallery.148",
+    "en": "Project description...",
+    "uk": "Опис проєкту...",
+    "fr": "Project description..."
+  },
+  {
+    "key": "cloud.gallery.150",
+    "en": "Cancel",
+    "uk": "Скасувати",
+    "fr": "Cancel"
+  },
+  {
+    "key": "cloud.gallery.146",
+    "en": "Save the current project to My Personal Inbox using the \"Publish\" tab",
+    "uk": "Збережіть поточний проєкт у Мою особисту скриню за допомогою вкладки \"Опублікувати\"",
+    "fr": "Save the current project to My Personal Inbox using the \"Publish\" tab"
+  },
+  {
+    "key": "cloud.gallery.149",
+    "en": "save",
+    "uk": "Зберегти",
+    "fr": "save"
+  },
+  {
+    "key": "cloud.gallery.147",
+    "en": "Try changing the search or filter criteria",
+    "uk": "Спробуйте змінити критерії пошуку чи фільтрації",
+    "fr": "Try changing the search or filter criteria"
+  },
+  {
+    "key": "cloud.gallery.151",
+    "en": "Edit title/description",
+    "uk": "Редагувати назву/опис",
+    "fr": "Edit title/description"
+  },
+  {
+    "key": "cloud.gallery.155",
+    "en": "Signature:",
+    "uk": "Підпис:",
+    "fr": "Signature:"
+  },
+  {
+    "key": "cloud.gallery.154",
+    "en": "Click to view a list of groups where a copy of the project has been sent",
+    "uk": "Натисніть, щоб переглянути список груп, куди надіслано копію проєкту",
+    "fr": "Click to view a list of groups where a copy of the project has been sent"
+  },
+  {
+    "key": "cloud.gallery.153",
+    "en": "Private",
+    "uk": "Приватний",
+    "fr": "Private"
+  },
+  {
+    "key": "cloud.gallery.152",
+    "en": "Public",
+    "uk": "Публічний",
+    "fr": "Public"
+  },
+  {
+    "key": "cloud.gallery.160",
+    "en": "🌐 Display in the gallery",
+    "uk": "🌐 Виставити у галереї",
+    "fr": "🌐 Display in the gallery"
+  },
+  {
+    "key": "cloud.gallery.156",
+    "en": "Objects:",
+    "uk": "Об'єктів:",
+    "fr": "Objects:"
+  },
+  {
+    "key": "cloud.gallery.157",
+    "en": "Open in the editor",
+    "uk": "Відкрити в редакторі",
+    "fr": "Open in the editor"
+  },
+  {
+    "key": "cloud.gallery.158",
+    "en": "Share the link",
+    "uk": "Поділитися посиланням",
+    "fr": "Share the link"
+  },
+  {
+    "key": "cloud.gallery.159",
+    "en": "🔗 Share",
+    "uk": "🔗 Поділитися",
+    "fr": "🔗 Share"
+  },
+  {
+    "key": "cloud.gallery.163",
+    "en": "Remove",
+    "uk": "Видалити",
+    "fr": "Remove"
+  },
+  {
+    "key": "cloud.gallery.161",
+    "en": "🔒 Remove from gallery",
+    "uk": "🔒 Прибрати з галереї",
+    "fr": "🔒 Remove from gallery"
+  },
+  {
+    "key": "cloud.gallery.162",
+    "en": "🏫 Send a copy to the group",
+    "uk": "🏫 Надіслати копію у групу",
+    "fr": "🏫 Send a copy to the group"
+  },
+  {
+    "key": "cloud.gallery.165",
+    "en": "My groups/cells",
+    "uk": "Мої групи/осередки",
+    "fr": "My groups/cells"
+  },
+  {
+    "key": "cloud.gallery.164",
+    "en": "🔑 Login by code",
+    "uk": "🔑 Вхід за кодом",
+    "fr": "🔑 Login by code"
+  },
+  {
+    "key": "cloud.gallery.168",
+    "en": "Group / cell code:*",
+    "uk": "Код групи / осередку:*",
+    "fr": "Group / cell code:*"
+  },
+  {
+    "key": "cloud.gallery.169",
+    "en": "for example: HUB-CLASS8A",
+    "uk": "наприклад: HUB-CLASS8A",
+    "fr": "for example: HUB-CLASS8A"
+  },
+  {
+    "key": "cloud.gallery.166",
+    "en": "➕ Create a cell",
+    "uk": "➕ Створити осередок",
+    "fr": "➕ Create a cell"
+  },
+  {
+    "key": "cloud.gallery.167",
+    "en": "💡 Only authorized users can create new groups and view their own cells. But you can join with access code and password.",
+    "uk": "💡 Створювати нові групи та переглядати власні осередки можуть лише авторизовані користувачі. Але ви можете приєднатися за кодом доступу та паролем.",
+    "fr": "💡 Only authorized users can create new groups and view their own cells. But you can join with access code and password."
+  },
+  {
+    "key": "cloud.gallery.170",
+    "en": "Group access password:",
+    "uk": "Пароль доступу до групи:",
+    "fr": "Group access password:"
+  },
+  {
+    "key": "cloud.gallery.174",
+    "en": "Open the group chest",
+    "uk": "Відкрити скриню групи",
+    "fr": "Open the group chest"
+  },
+  {
+    "key": "cloud.gallery.172",
+    "en": "Leave blank if saved",
+    "uk": "Залиште порожнім, якщо збережено",
+    "fr": "Leave blank if saved"
+  },
+  {
+    "key": "cloud.gallery.173",
+    "en": "Audit...",
+    "uk": "Перевірка...",
+    "fr": "Audit..."
+  },
+  {
+    "key": "cloud.gallery.171",
+    "en": "Optional for owners and saved groups",
+    "uk": "Необов'язково для власників та збережених груп",
+    "fr": "Optional for owners and saved groups"
+  },
+  {
+    "key": "cloud.gallery.175",
+    "en": "📋 My groups and cells",
+    "uk": "📋 Мої групи та осередки",
+    "fr": "📋 My groups and cells"
+  },
+  {
+    "key": "cloud.gallery.178",
+    "en": "Loading your groups...",
+    "uk": "Завантаження ваших груп...",
+    "fr": "Loading your groups..."
+  },
+  {
+    "key": "cloud.gallery.177",
+    "en": "🔄 Update",
+    "uk": "🔄 Оновити",
+    "fr": "🔄 Update"
+  },
+  {
+    "key": "cloud.gallery.176",
+    "en": "Cells you founded or classes where you are a member",
+    "uk": "Засновані вами осередки або класи, де ви є учасником",
+    "fr": "Cells you founded or classes where you are a member"
+  },
+  {
+    "key": "cloud.gallery.179",
+    "en": "You do not have any saved groups or published works in cells yet.",
+    "uk": "У вас поки немає збережених груп або опублікованих робіт в осередках.",
+    "fr": "You do not have any saved groups or published works in cells yet."
+  },
+  {
+    "key": "cloud.gallery.180",
+    "en": "➕ Create the first cell",
+    "uk": "➕ Створити перший осередок",
+    "fr": "➕ Create the first cell"
+  },
+  {
+    "key": "cloud.gallery.184",
+    "en": "🏫 Educational class",
+    "uk": "🏫 Освітній клас",
+    "fr": "🏫 Educational class"
+  },
+  {
+    "key": "cloud.gallery.183",
+    "en": "Regime:",
+    "uk": "Режим:",
+    "fr": "Regime:"
+  },
+  {
+    "key": "cloud.gallery.181",
+    "en": "👑 Founder",
+    "uk": "👑 Засновник",
+    "fr": "👑 Founder"
+  },
+  {
+    "key": "cloud.gallery.182",
+    "en": "👤 Participant",
+    "uk": "👤 Учасник",
+    "fr": "👤 Participant"
+  },
+  {
+    "key": "cloud.gallery.185",
+    "en": "📢 Template board",
+    "uk": "📢 Дошка шаблонів",
+    "fr": "📢 Template board"
+  },
+  {
+    "key": "cloud.gallery.189",
+    "en": "Joint workshop",
+    "uk": "Спільна майстерня",
+    "fr": "Joint workshop"
+  },
+  {
+    "key": "cloud.gallery.190",
+    "en": "Everyone sees everything",
+    "uk": "Всі бачать все",
+    "fr": "Everyone sees everything"
+  },
+  {
+    "key": "cloud.gallery.186",
+    "en": "🎨 Joint workshop",
+    "uk": "🎨 Спільна майстерня",
+    "fr": "🎨 Joint workshop"
+  },
+  {
+    "key": "cloud.gallery.187",
+    "en": "🚀 Enter this cell",
+    "uk": "🚀 Увійти в цей осередок",
+    "fr": "🚀 Enter this cell"
+  },
+  {
+    "key": "cloud.gallery.188",
+    "en": "Choose a mode (usage scenario):",
+    "uk": "Оберіть режим (сценарій використання):",
+    "fr": "Choose a mode (usage scenario):"
+  },
+  {
+    "key": "cloud.gallery.191",
+    "en": "Educational class",
+    "uk": "Освітній клас",
+    "fr": "Educational class"
+  },
+  {
+    "key": "cloud.gallery.193",
+    "en": "Pattern board",
+    "uk": "Дошка шаблонів",
+    "fr": "Pattern board"
+  },
+  {
+    "key": "cloud.gallery.192",
+    "en": "Private transfer",
+    "uk": "Приватна здача",
+    "fr": "Private transfer"
+  },
+  {
+    "key": "cloud.gallery.194",
+    "en": "Published by the founder",
+    "uk": "Публікує засновник",
+    "fr": "Published by the founder"
+  },
+  {
+    "key": "cloud.gallery.195",
+    "en": "🏫 Features of the Educational Class:",
+    "uk": "🏫 Особливості Освітнього Класу:",
+    "fr": "🏫 Features of the Educational Class:"
+  },
+  {
+    "key": "cloud.gallery.196",
+    "en": "• Students report this Code and Password and send completed tasks here.",
+    "uk": "• Учні повідомляють цей Код та Пароль і надсилають сюди виконані завдання.",
+    "fr": "• Students report this Code and Password and send completed tasks here."
+  },
+  {
+    "key": "cloud.gallery.198",
+    "en": "Students see only their work and your templates.",
+    "uk": "Учні бачать лише свої роботи та ваші шаблони.",
+    "fr": "Students see only their work and your templates."
+  },
+  {
+    "key": "cloud.gallery.199",
+    "en": "• As the founder, you have full access to check the work of all students.",
+    "uk": "• Ви як засновник маєте повний доступ до перевірки робіт усіх учнів.",
+    "fr": "• As the founder, you have full access to check the work of all students."
+  },
+  {
+    "key": "cloud.gallery.197",
+    "en": "Protection against write-off:",
+    "uk": "Захист від списування:",
+    "fr": "Protection against write-off:"
+  },
+  {
+    "key": "cloud.gallery.200",
+    "en": "🎓 The rule for students to resubmit works:",
+    "uk": "🎓 Правило повторного надсилання робіт учнями:",
+    "fr": "🎓 The rule for students to resubmit works:"
+  },
+  {
+    "key": "cloud.gallery.204",
+    "en": "Each resubmission creates a separate new version of the work to track progress.",
+    "uk": "Кожне повторне надсилання створює окрему нову версію роботи для відстеження прогресу.",
+    "fr": "Each resubmission creates a separate new version of the work to track progress."
+  },
+  {
+    "key": "cloud.gallery.201",
+    "en": "🟢 Free update (allow overwriting)",
+    "uk": "🟢 Вільне оновлення (дозволити перезапис)",
+    "fr": "🟢 Free update (allow overwriting)"
+  },
+  {
+    "key": "cloud.gallery.202",
+    "en": "The student can update the existing submitted work - the old version is overwritten.",
+    "uk": "Учень може оновлювати існуючу здану роботу — стара версія перезаписується.",
+    "fr": "The student can update the existing submitted work - the old version is overwritten."
+  },
+  {
+    "key": "cloud.gallery.205",
+    "en": "🔒 Fixation of delivery (prohibition of re-updating)",
+    "uk": "🔒 Фіксація здачі (заборона повторного оновлення)",
+    "fr": "🔒 Fixation of delivery (prohibition of re-updating)"
+  },
+  {
+    "key": "cloud.gallery.203",
+    "en": "🔵 Auto-versioning (save v2, v3...)",
+    "uk": "🔵 Авто-версіонування (зберігати v2, v3...)",
+    "fr": "🔵 Auto-versioning (save v2, v3...)"
+  },
+  {
+    "key": "cloud.gallery.208",
+    "en": "• An open collection for a team, studio or interest group.",
+    "uk": "• Відкрита колекція для команди, студії чи групи за інтересами.",
+    "fr": "• An open collection for a team, studio or interest group."
+  },
+  {
+    "key": "cloud.gallery.209",
+    "en": "• All members with a code and password can post and view each other's work.",
+    "uk": "• Усі учасники з кодом та паролем можуть публікувати та переглядати роботи один одного.",
+    "fr": "• All members with a code and password can post and view each other's work."
+  },
+  {
+    "key": "cloud.gallery.206",
+    "en": "After passing, the student cannot update the same project (ideal for tests).",
+    "uk": "Після здачі учень не може оновити цей же проєкт (ідеально для контрольних робіт).",
+    "fr": "After passing, the student cannot update the same project (ideal for tests)."
+  },
+  {
+    "key": "cloud.gallery.210",
+    "en": "• Great choice for hackathons, sharing experiences and co-creation.",
+    "uk": "• Чудовий вибір для хакатонів, обміну досвідом та спільної творчості.",
+    "fr": "• Great choice for hackathons, sharing experiences and co-creation."
+  },
+  {
+    "key": "cloud.gallery.207",
+    "en": "🎨 Features of the Joint Workshop:",
+    "uk": "🎨 Особливості Спільної Майстерні:",
+    "fr": "🎨 Features of the Joint Workshop:"
+  },
+  {
+    "key": "cloud.gallery.215",
+    "en": "ONLY the founder (you) can send new projects here.",
+    "uk": "Надсилати нові проєкти сюди може ТІЛЬКИ засновник (ви).",
+    "fr": "ONLY the founder (you) can send new projects here."
+  },
+  {
+    "key": "cloud.gallery.212",
+    "en": "• Catalog of ready-made blanks, vector fonts and vector patterns.",
+    "uk": "• Каталог готових заготовок, векторних шрифтів та векторних узорів.",
+    "fr": "• Catalog of ready-made blanks, vector fonts and vector patterns."
+  },
+  {
+    "key": "cloud.gallery.214",
+    "en": "Publication restrictions:",
+    "uk": "Обмеження публікації:",
+    "fr": "Publication restrictions:"
+  },
+  {
+    "key": "cloud.gallery.211",
+    "en": "📢 Features of the Template Board:",
+    "uk": "📢 Особливості Дошки Шаблонів:",
+    "fr": "📢 Features of the Template Board:"
+  },
+  {
+    "key": "cloud.gallery.213",
+    "en": "• Members can log in and upload copies to their editor.",
+    "uk": "• Учасники можуть заходити й завантажувати копії у свій редактор.",
+    "fr": "• Members can log in and upload copies to their editor."
+  },
+  {
+    "key": "cloud.gallery.220",
+    "en": "for example: Official templates Veretka",
+    "uk": "наприклад: Офіційні шаблони Веретка",
+    "fr": "for example: Official templates Veretka"
+  },
+  {
+    "key": "cloud.gallery.218",
+    "en": "Name of the group / cell:*",
+    "uk": "Назва групи / осередку:*",
+    "fr": "Name of the group / cell:*"
+  },
+  {
+    "key": "cloud.gallery.216",
+    "en": "Class / group name:*",
+    "uk": "Назва класу / групи:*",
+    "fr": "Class / group name:*"
+  },
+  {
+    "key": "cloud.gallery.219",
+    "en": "for example: 8-A class (Graphic design)",
+    "uk": "наприклад: 8-А клас (Графічний дизайн)",
+    "fr": "for example: 8-A class (Graphic design)"
+  },
+  {
+    "key": "cloud.gallery.217",
+    "en": "Template collection name:*",
+    "uk": "Назва колекції шаблонів:*",
+    "fr": "Template collection name:*"
+  },
+  {
+    "key": "cloud.gallery.222",
+    "en": "Unique Code (in English letters):*",
+    "uk": "Унікальний Код (англійськими літерами):*",
+    "fr": "Unique Code (in English letters):*"
+  },
+  {
+    "key": "cloud.gallery.225",
+    "en": "Brief description of the cell",
+    "uk": "Короткий опис осередка",
+    "fr": "Brief description of the cell"
+  },
+  {
+    "key": "cloud.gallery.224",
+    "en": "for example: Submission of practical works on the topic \"Vector shapes\"",
+    "uk": "наприклад: Здача практичних робіт з теми \"Векторні форми\"",
+    "fr": "for example: Submission of practical works on the topic \"Vector shapes\""
+  },
+  {
+    "key": "cloud.gallery.223",
+    "en": "Description (optional):",
+    "uk": "Опис (опціонально):",
+    "fr": "Description (optional):"
+  },
+  {
+    "key": "cloud.gallery.221",
+    "en": "for example: Club of vectorists \"Palette\"",
+    "uk": "наприклад: Клуб вектористів \"Палітра\"",
+    "fr": "for example: Club of vectorists \"Palette\""
+  },
+  {
+    "key": "cloud.gallery.227",
+    "en": "Template access password:*",
+    "uk": "Пароль доступу до шаблонів:*",
+    "fr": "Template access password:*"
+  },
+  {
+    "key": "cloud.gallery.228",
+    "en": "Group password:*",
+    "uk": "Пароль групи:*",
+    "fr": "Group password:*"
+  },
+  {
+    "key": "cloud.gallery.226",
+    "en": "Class password (for students):*",
+    "uk": "Пароль класу (для учнів):*",
+    "fr": "Class password (for students):*"
+  },
+  {
+    "key": "cloud.gallery.229",
+    "en": "Come up with an access password",
+    "uk": "Придумайте пароль доступу",
+    "fr": "Come up with an access password"
+  },
+  {
+    "key": "cloud.gallery.230",
+    "en": "💡 Communicate this password and code to students to enter the classroom.",
+    "uk": "💡 Повідомте цей пароль та код учням для входу в клас.",
+    "fr": "💡 Communicate this password and code to students to enter the classroom."
+  },
+  {
+    "key": "cloud.gallery.231",
+    "en": "💡 Knowing this password and code, participants will be able to enter the cell.",
+    "uk": "💡 Знаючи цей пароль та код, учасники зможуть увійти в осередок.",
+    "fr": "💡 Knowing this password and code, participants will be able to enter the cell."
+  },
+  {
+    "key": "cloud.gallery.234",
+    "en": "Founder (Administrator):",
+    "uk": "Засновник (Адміністратор):",
+    "fr": "Founder (Administrator):"
+  },
+  {
+    "key": "cloud.gallery.232",
+    "en": "Repeat password:*",
+    "uk": "Повторіть пароль:*",
+    "fr": "Repeat password:*"
+  },
+  {
+    "key": "cloud.gallery.233",
+    "en": "Confirm password",
+    "uk": "Підтвердіть пароль",
+    "fr": "Confirm password"
+  },
+  {
+    "key": "cloud.gallery.235",
+    "en": "Creation...",
+    "uk": "Створення...",
+    "fr": "Creation..."
+  },
+  {
+    "key": "cloud.gallery.239",
+    "en": "👀 Guest",
+    "uk": "👀 Гість",
+    "fr": "👀 Guest"
+  },
+  {
+    "key": "cloud.gallery.240",
+    "en": "Mode of operation:",
+    "uk": "Режим роботи:",
+    "fr": "Mode of operation:"
+  },
+  {
+    "key": "cloud.gallery.237",
+    "en": "👑 Founder of the group",
+    "uk": "👑 Засновник групи",
+    "fr": "👑 Founder of the group"
+  },
+  {
+    "key": "cloud.gallery.236",
+    "en": "Create a cell",
+    "uk": "Створити осередок",
+    "fr": "Create a cell"
+  },
+  {
+    "key": "cloud.gallery.238",
+    "en": "👤 Group member",
+    "uk": "👤 Учасник групи",
+    "fr": "👤 Group member"
+  },
+  {
+    "key": "cloud.gallery.245",
+    "en": "👥 Participants",
+    "uk": "👥 Учасники",
+    "fr": "👥 Participants"
+  },
+  {
+    "key": "cloud.gallery.243",
+    "en": "🎨 Joint workshop (Everyone sees everything)",
+    "uk": "🎨 Спільна майстерня (Всі бачать все)",
+    "fr": "🎨 Joint workshop (Everyone sees everything)"
+  },
+  {
+    "key": "cloud.gallery.241",
+    "en": "🏫 Educational class (Students see only their works)",
+    "uk": "🏫 Освітній клас (Учні бачать лише свої роботи)",
+    "fr": "🏫 Educational class (Students see only their works)"
+  },
+  {
+    "key": "cloud.gallery.244",
+    "en": "View all members of this group",
+    "uk": "Переглянути всіх учасників цієї групи",
+    "fr": "View all members of this group"
+  },
+  {
+    "key": "cloud.gallery.242",
+    "en": "🔒 Template Board (Published only by the founder)",
+    "uk": "🔒 Дошка шаблонів (Публікує лише засновник)",
+    "fr": "🔒 Template Board (Published only by the founder)"
+  },
+  {
+    "key": "cloud.gallery.250",
+    "en": "Searching the group inbox...",
+    "uk": "Пошук у скрині групи...",
+    "fr": "Searching the group inbox..."
+  },
+  {
+    "key": "cloud.gallery.248",
+    "en": "Return to my groups",
+    "uk": "Повернутися до моїх груп",
+    "fr": "Return to my groups"
+  },
+  {
+    "key": "cloud.gallery.247",
+    "en": "⚙️ Settings",
+    "uk": "⚙️ Налаштування",
+    "fr": "⚙️ Settings"
+  },
+  {
+    "key": "cloud.gallery.249",
+    "en": "📋 My groups",
+    "uk": "📋 Мої групи",
+    "fr": "📋 My groups"
+  },
+  {
+    "key": "cloud.gallery.246",
+    "en": "Settings for this group",
+    "uk": "Налаштування цієї групи",
+    "fr": "Settings for this group"
+  },
+  {
+    "key": "cloud.gallery.251",
+    "en": "Loading cell...",
+    "uk": "Завантаження осередку...",
+    "fr": "Loading cell..."
+  },
+  {
+    "key": "cloud.gallery.253",
+    "en": "Nothing was found in the group with the selected filters",
+    "uk": "Нічого не знайдено у групі за вибраними фільтрами",
+    "fr": "Nothing was found in the group with the selected filters"
+  },
+  {
+    "key": "cloud.gallery.252",
+    "en": "There are no published projects in this group yet",
+    "uk": "У цій групі ще немає опублікованих проєктів",
+    "fr": "There are no published projects in this group yet"
+  },
+  {
+    "key": "cloud.gallery.255",
+    "en": "Try changing the search or filter criteria",
+    "uk": "Спробуйте змінити критерії пошуку чи фільтрації",
+    "fr": "Try changing the search or filter criteria"
+  },
+  {
+    "key": "cloud.gallery.254",
+    "en": "Publish your project to this group via the \"Publish\" tab",
+    "uk": "Опублікуйте свій проєкт у цю групу через вкладку \"Опублікувати\"",
+    "fr": "Publish your project to this group via the \"Publish\" tab"
+  },
+  {
+    "key": "cloud.gallery.259",
+    "en": "Edit title/description",
+    "uk": "Редагувати назву/опис",
+    "fr": "Edit title/description"
+  },
+  {
+    "key": "cloud.gallery.257",
+    "en": "save",
+    "uk": "Зберегти",
+    "fr": "save"
+  },
+  {
+    "key": "cloud.gallery.260",
+    "en": "Group",
+    "uk": "Група",
+    "fr": "Group"
+  },
+  {
+    "key": "cloud.gallery.258",
+    "en": "Cancel",
+    "uk": "Скасувати",
+    "fr": "Cancel"
+  },
+  {
+    "key": "cloud.gallery.256",
+    "en": "Project description...",
+    "uk": "Опис проєкту...",
+    "fr": "Project description..."
+  },
+  {
+    "key": "cloud.gallery.261",
+    "en": "Author:",
+    "uk": "Автор:",
+    "fr": "Author:"
+  },
+  {
+    "key": "cloud.gallery.265",
+    "en": "Remove from group",
+    "uk": "Видалити з групи",
+    "fr": "Remove from group"
+  },
+  {
+    "key": "cloud.gallery.263",
+    "en": "Open in the editor",
+    "uk": "Відкрити в редакторі",
+    "fr": "Open in the editor"
+  },
+  {
+    "key": "cloud.gallery.262",
+    "en": "Objects:",
+    "uk": "Об'єктів:",
+    "fr": "Objects:"
+  },
+  {
+    "key": "cloud.gallery.264",
+    "en": "Share the link",
+    "uk": "Поділитися посиланням",
+    "fr": "Share the link"
+  },
+  {
+    "key": "cloud.gallery.268",
+    "en": "objects",
+    "uk": "об'єктів",
+    "fr": "objects"
+  },
+  {
+    "key": "cloud.gallery.270",
+    "en": "for example: My little lady",
+    "uk": "наприклад: Моє сонечко",
+    "fr": "for example: My little lady"
+  },
+  {
+    "key": "cloud.gallery.267",
+    "en": "On canvas now:",
+    "uk": "На полотні зараз:",
+    "fr": "On canvas now:"
+  },
+  {
+    "key": "cloud.gallery.266",
+    "en": "Publish / Save the current project",
+    "uk": "Опублікувати / Зберегти поточний проєкт",
+    "fr": "Publish / Save the current project"
+  },
+  {
+    "key": "cloud.gallery.269",
+    "en": "Project name:*",
+    "uk": "Назва проєкту:*",
+    "fr": "Project name:*"
+  },
+  {
+    "key": "cloud.gallery.274",
+    "en": "Olena K.",
+    "uk": "Олена К.",
+    "fr": "Olena K."
+  },
+  {
+    "key": "cloud.gallery.272",
+    "en": "Login (Open your own chest)",
+    "uk": "Увійти (Відкрити власну скриню)",
+    "fr": "Login (Open your own chest)"
+  },
+  {
+    "key": "cloud.gallery.273",
+    "en": "Author's name (signature):",
+    "uk": "Ім'я автора (підпис):",
+    "fr": "Author's name (signature):"
+  },
+  {
+    "key": "cloud.gallery.275",
+    "en": "Your Nickname:*",
+    "uk": "Ваш Нікнейм:*",
+    "fr": "Your Nickname:*"
+  },
+  {
+    "key": "cloud.gallery.271",
+    "en": "To publish and save a project in your personal inbox, please open your inbox.",
+    "uk": "Для публікації та збереження проєкту у вашій особистій скрині, будь ласка, відкрийте свою скриню.",
+    "fr": "To publish and save a project in your personal inbox, please open your inbox."
+  },
+  {
+    "key": "cloud.gallery.278",
+    "en": "Project description (optional):",
+    "uk": "Опис проєкту (необов'язково):",
+    "fr": "Project description (optional):"
+  },
+  {
+    "key": "cloud.gallery.277",
+    "en": "🔄 Change",
+    "uk": "🔄 Змінити",
+    "fr": "🔄 Change"
+  },
+  {
+    "key": "cloud.gallery.279",
+    "en": "A brief description of your project, used ornaments or a comment...",
+    "uk": "Короткий опис вашого проєкту, використаних орнаментів або коментар...",
+    "fr": "A brief description of your project, used ornaments or a comment..."
+  },
+  {
+    "key": "cloud.gallery.280",
+    "en": "Post settings:",
+    "uk": "Налаштування публікації:",
+    "fr": "Post settings:"
+  },
+  {
+    "key": "cloud.gallery.276",
+    "en": "Go to login to change account",
+    "uk": "Перейти до входу для зміни акаунту",
+    "fr": "Go to login to change account"
+  },
+  {
+    "key": "cloud.gallery.283",
+    "en": ". Below you can choose additional places for publication.",
+    "uk": ". Нижче Ви можете обрати додаткові місця для публікації.",
+    "fr": ". Below you can choose additional places for publication."
+  },
+  {
+    "key": "cloud.gallery.285",
+    "en": "The project will be visible to everyone in the \"Public Gallery\" tab.",
+    "uk": "Проєкт буде видно всім у вкладці \"Публічна галерея\".",
+    "fr": "The project will be visible to everyone in the \"Public Gallery\" tab."
+  },
+  {
+    "key": "cloud.gallery.284",
+    "en": "🌐 General gallery",
+    "uk": "🌐 Загальна галерея",
+    "fr": "🌐 General gallery"
+  },
+  {
+    "key": "cloud.gallery.281",
+    "en": "ℹ️ Your project is always automatically saved to your",
+    "uk": "ℹ️ Ваш проєкт завжди автоматично зберігається у Вашу",
+    "fr": "ℹ️ Your project is always automatically saved to your"
+  },
+  {
+    "key": "cloud.gallery.282",
+    "en": "Personal chest",
+    "uk": "Особисту скриню",
+    "fr": "Personal chest"
+  },
+  {
+    "key": "cloud.gallery.288",
+    "en": "Group / cell code:*",
+    "uk": "Код групи / осередка:*",
+    "fr": "Group / cell code:*"
+  },
+  {
+    "key": "cloud.gallery.289",
+    "en": "📋 Your groups",
+    "uk": "📋 Ваші групи",
+    "fr": "📋 Your groups"
+  },
+  {
+    "key": "cloud.gallery.286",
+    "en": "🏫 Group chest",
+    "uk": "🏫 Скриня групи",
+    "fr": "🏫 Group chest"
+  },
+  {
+    "key": "cloud.gallery.287",
+    "en": "Create a copy in the group.",
+    "uk": "Створити копію у групі.",
+    "fr": "Create a copy in the group."
+  },
+  {
+    "key": "cloud.gallery.290",
+    "en": "Choose your group:",
+    "uk": "Оберіть вашу групу:",
+    "fr": "Choose your group:"
+  },
+  {
+    "key": "cloud.gallery.292",
+    "en": "You don't have any groups saved yet",
+    "uk": "У вас ще немає збережених груп",
+    "fr": "You don't have any groups saved yet"
+  },
+  {
+    "key": "cloud.gallery.293",
+    "en": "Regime:",
+    "uk": "Режим:",
+    "fr": "Regime:"
+  },
+  {
+    "key": "cloud.gallery.291",
+    "en": "Loading your group...",
+    "uk": "Завантаження вашої групи...",
+    "fr": "Loading your group..."
+  },
+  {
+    "key": "cloud.gallery.294",
+    "en": "🏫 Educational",
+    "uk": "🏫 Освітній",
+    "fr": "🏫 Educational"
+  },
+  {
+    "key": "cloud.gallery.295",
+    "en": "🔒 Pattern board",
+    "uk": "🔒 Дошка шаблонів",
+    "fr": "🔒 Pattern board"
+  },
+  {
+    "key": "cloud.gallery.300",
+    "en": "🔒 Pattern board",
+    "uk": "🔒 Дошка шаблонів",
+    "fr": "🔒 Pattern board"
+  },
+  {
+    "key": "cloud.gallery.297",
+    "en": "Select ➔",
+    "uk": "Обрати ➔",
+    "fr": "Select ➔"
+  },
+  {
+    "key": "cloud.gallery.296",
+    "en": "🎨 Gallery",
+    "uk": "🎨 Галерея",
+    "fr": "🎨 Gallery"
+  },
+  {
+    "key": "cloud.gallery.299",
+    "en": "🏫 Educational mode",
+    "uk": "🏫 Освітній режим",
+    "fr": "🏫 Educational mode"
+  },
+  {
+    "key": "cloud.gallery.298",
+    "en": "for example: HUB-ROBOT3",
+    "uk": "наприклад: HUB-ROBOT3",
+    "fr": "for example: HUB-ROBOT3"
+  },
+  {
+    "key": "cloud.gallery.305",
+    "en": "successfully",
+    "uk": "успішно",
+    "fr": "successfully"
+  },
+  {
+    "key": "cloud.gallery.301",
+    "en": "🎨 Gallery",
+    "uk": "🎨 Галерея",
+    "fr": "🎨 Gallery"
+  },
+  {
+    "key": "cloud.gallery.304",
+    "en": "✓ Open gallery: all members of the group can publish works.",
+    "uk": "✓ Відкрита галерея: всі учасники групи можуть публікувати роботи.",
+    "fr": "✓ Open gallery: all members of the group can publish works."
+  },
+  {
+    "key": "cloud.gallery.303",
+    "en": "⚠️ Templates mode: post is allowed by the founder (@",
+    "uk": "⚠️ Режим шаблонів: публікація дозволена засновникy (@",
+    "fr": "⚠️ Templates mode: post is allowed by the founder (@"
+  },
+  {
+    "key": "cloud.gallery.302",
+    "en": "💡 In educational mode, students see only their published works.",
+    "uk": "💡 В освітньому режимі учні бачать тільки свої опубліковані роботи.",
+    "fr": "💡 In educational mode, students see only their published works."
+  },
+  {
+    "key": "cloud.gallery.309",
+    "en": "Chest Nickname:",
+    "uk": "Нікнейм скрині:",
+    "fr": "Chest Nickname:"
+  },
+  {
+    "key": "cloud.gallery.307",
+    "en": "🚀 Publish the project",
+    "uk": "🚀 Опублікувати проєкт",
+    "fr": "🚀 Publish the project"
+  },
+  {
+    "key": "cloud.gallery.308",
+    "en": "⚙️ Account editing",
+    "uk": "⚙️ Редагування акаунту",
+    "fr": "⚙️ Account editing"
+  },
+  {
+    "key": "cloud.gallery.306",
+    "en": "Preservation...",
+    "uk": "Збереження...",
+    "fr": "Preservation..."
+  },
+  {
+    "key": "cloud.gallery.310",
+    "en": "Here you can link or update mail, as well as change the password for your mailbox.",
+    "uk": "Тут ви можете прив'язати або оновити пошту, а також змінити пароль до вашої скрині.",
+    "fr": "Here you can link or update mail, as well as change the password for your mailbox."
+  },
+  {
+    "key": "cloud.gallery.315",
+    "en": "Password change (optional):",
+    "uk": "Зміна паролю (необов'язково):",
+    "fr": "Password change (optional):"
+  },
+  {
+    "key": "cloud.gallery.313",
+    "en": "Email:",
+    "uk": "Електронна пошта (Email):",
+    "fr": "Email:"
+  },
+  {
+    "key": "cloud.gallery.312",
+    "en": "Olena K.",
+    "uk": "Олена К.",
+    "fr": "Olena K."
+  },
+  {
+    "key": "cloud.gallery.314",
+    "en": "💡 Bind your mail so you don't lose access and be able to restore your Nickname.",
+    "uk": "💡 Прив'яжіть пошту, щоб не втратити доступ та мати змогу відновити Нікнейм.",
+    "fr": "💡 Bind your mail so you don't lose access and be able to restore your Nickname."
+  },
+  {
+    "key": "cloud.gallery.311",
+    "en": "Name (signature):",
+    "uk": "Ім'я (підпис):",
+    "fr": "Name (signature):"
+  },
+  {
+    "key": "cloud.gallery.317",
+    "en": "Leave blank if not changing",
+    "uk": "Залиште порожнім, якщо не змінюєте",
+    "fr": "Leave blank if not changing"
+  },
+  {
+    "key": "cloud.gallery.316",
+    "en": "New password:",
+    "uk": "Новий пароль:",
+    "fr": "New password:"
+  },
+  {
+    "key": "cloud.gallery.319",
+    "en": "Enter your current password",
+    "uk": "Введіть поточний пароль",
+    "fr": "Enter your current password"
+  },
+  {
+    "key": "cloud.gallery.320",
+    "en": "Cancel",
+    "uk": "Скасувати",
+    "fr": "Cancel"
+  },
+  {
+    "key": "cloud.gallery.318",
+    "en": "Current password (for confirmation):",
+    "uk": "Поточний пароль (для підтвердження):",
+    "fr": "Current password (for confirmation):"
+  },
+  {
+    "key": "cloud.gallery.325",
+    "en": "You are about to permanently delete your personal chest",
+    "uk": "Ви збираєтеся остаточно видалити вашу особисту скриню",
+    "fr": "You are about to permanently delete your personal chest"
+  },
+  {
+    "key": "cloud.gallery.322",
+    "en": "Save changes",
+    "uk": "Зберегти зміни",
+    "fr": "Save changes"
+  },
+  {
+    "key": "cloud.gallery.324",
+    "en": "WARNING! Irreversible action!",
+    "uk": "Увага! Незворотна дія!",
+    "fr": "WARNING! Irreversible action!"
+  },
+  {
+    "key": "cloud.gallery.323",
+    "en": "🗑️ Delete personal chest (account)",
+    "uk": "🗑️ Видалити особисту скриню (акаунт)",
+    "fr": "🗑️ Delete personal chest (account)"
+  },
+  {
+    "key": "cloud.gallery.321",
+    "en": "Preservation...",
+    "uk": "Збереження...",
+    "fr": "Preservation..."
+  },
+  {
+    "key": "cloud.gallery.327",
+    "en": "Cancel",
+    "uk": "Скасувати",
+    "fr": "Cancel"
+  },
+  {
+    "key": "cloud.gallery.330",
+    "en": "🗑️ Deleting a group / cell",
+    "uk": "🗑️ Видалення групи / осередку",
+    "fr": "🗑️ Deleting a group / cell"
+  },
+  {
+    "key": "cloud.gallery.326",
+    "en": ". All your projects in this chest will be permanently deleted.",
+    "uk": ". Усі ваші проєкти в цій скрині будуть видалені безповоротно.",
+    "fr": ". All your projects in this chest will be permanently deleted."
+  },
+  {
+    "key": "cloud.gallery.328",
+    "en": "Deleting...",
+    "uk": "Видалення...",
+    "fr": "Deleting..."
+  },
+  {
+    "key": "cloud.gallery.329",
+    "en": "🗑️ Yes, delete the chest",
+    "uk": "🗑️ Так, видалити скриню",
+    "fr": "🗑️ Yes, delete the chest"
+  },
+  {
+    "key": "cloud.gallery.332",
+    "en": ").\\n                All members will lose access to this group.",
+    "uk": ").\\n                Усі учасники втратять доступ до цієї групи.",
+    "fr": ").\\n                All members will lose access to this group."
+  },
+  {
+    "key": "cloud.gallery.331",
+    "en": "You are about to delete the group completely",
+    "uk": "Ви збираєтеся повністю видалити групу",
+    "fr": "You are about to delete the group completely"
+  },
+  {
+    "key": "cloud.gallery.333",
+    "en": "Enter group password to confirm:*",
+    "uk": "Введіть пароль групи для підтвердження:*",
+    "fr": "Enter group password to confirm:*"
+  },
+  {
+    "key": "cloud.gallery.334",
+    "en": "Group password",
+    "uk": "Пароль групи",
+    "fr": "Group password"
+  },
+  {
+    "key": "cloud.gallery.335",
+    "en": "Cancel",
+    "uk": "Скасувати",
+    "fr": "Cancel"
+  },
+  {
+    "key": "cloud.gallery.336",
+    "en": "Deleting...",
+    "uk": "Видалення...",
+    "fr": "Deleting..."
+  },
+  {
+    "key": "cloud.gallery.337",
+    "en": "Delete group",
+    "uk": "Видалити групу",
+    "fr": "Delete group"
+  },
+  {
+    "key": "cloud.gallery.339",
+    "en": "Enter your registered e-mail (Email). An email will be sent to this email with your linked Nickname and access password:",
+    "uk": "Вкажіть вашу зареєстровану електронну пошту (Email). На цю пошту буде надіслано лист із вашим прив'язаним Нікнеймом та паролем доступу:",
+    "fr": "Enter your registered e-mail (Email). An email will be sent to this email with your linked Nickname and access password:"
+  },
+  {
+    "key": "cloud.gallery.338",
+    "en": "🔑 Nickname / Access recovery",
+    "uk": "🔑 Відновлення Нікнейму / Доступу",
+    "fr": "🔑 Nickname / Access recovery"
+  },
+  {
+    "key": "cloud.gallery.340",
+    "en": "Your e-mail (Email):*",
+    "uk": "Ваша електронна пошта (Email):*",
+    "fr": "Your e-mail (Email):*"
+  },
+  {
+    "key": "cloud.gallery.341",
+    "en": "close",
+    "uk": "Закрити",
+    "fr": "close"
+  },
+  {
+    "key": "cloud.gallery.342",
+    "en": "Sending...",
+    "uk": "Надсилання...",
+    "fr": "Sending..."
+  },
+  {
+    "key": "cloud.gallery.343",
+    "en": "✓ The letter has been sent",
+    "uk": "✓ Лист надіслано",
+    "fr": "✓ The letter has been sent"
+  },
+  {
+    "key": "cloud.gallery.345",
+    "en": "The project already exists",
+    "uk": "Проєкт вже існує",
+    "fr": "The project already exists"
+  },
+  {
+    "key": "cloud.gallery.344",
+    "en": "📧 Restore and send",
+    "uk": "📧 Відновити та надіслати",
+    "fr": "📧 Restore and send"
+  },
+  {
+    "key": "cloud.gallery.347",
+    "en": ". Do you want to update an existing project or create a new one?",
+    "uk": ". Бажаєте оновити існуючий проєкт чи створити новий?",
+    "fr": ". Do you want to update an existing project or create a new one?"
+  },
+  {
+    "key": "cloud.gallery.348",
+    "en": "Cancel",
+    "uk": "Скасувати",
+    "fr": "Cancel"
+  },
+  {
+    "key": "cloud.gallery.346",
+    "en": "You already have a project with the name in your chest",
+    "uk": "У вашій скрині вже є проєкт з назвою",
+    "fr": "You already have a project with the name in your chest"
+  },
+  {
+    "key": "cloud.gallery.350",
+    "en": "(Copy)",
+    "uk": " (Копія)",
+    "fr": "(Copy)"
+  },
+  {
+    "key": "cloud.gallery.349",
+    "en": "Update an existing one",
+    "uk": "Оновити існуючий",
+    "fr": "Update an existing one"
+  },
+  {
+    "key": "cloud.gallery.355",
+    "en": "🔐 Action confirmation",
+    "uk": "🔐 Підтвердження дії",
+    "fr": "🔐 Action confirmation"
+  },
+  {
+    "key": "cloud.gallery.354",
+    "en": "🔒 Cleaning from the General Gallery",
+    "uk": "🔒 Прибрання із Загальної галереї",
+    "fr": "🔒 Cleaning from the General Gallery"
+  },
+  {
+    "key": "cloud.gallery.352",
+    "en": "🗑️ Deleting the project",
+    "uk": "🗑️ Видалення проєкту",
+    "fr": "🗑️ Deleting the project"
+  },
+  {
+    "key": "cloud.gallery.353",
+    "en": "🌐 Publication in the General Gallery",
+    "uk": "🌐 Публікація у Загальну галерею",
+    "fr": "🌐 Publication in the General Gallery"
+  },
+  {
+    "key": "cloud.gallery.351",
+    "en": "Create a new one",
+    "uk": "Створити новий",
+    "fr": "Create a new one"
+  },
+  {
+    "key": "cloud.gallery.358",
+    "en": "Publication in the General Gallery:",
+    "uk": "Публікація у Загальну галерею:",
+    "fr": "Publication in the General Gallery:"
+  },
+  {
+    "key": "cloud.gallery.356",
+    "en": "WARNING!",
+    "uk": "Увага!",
+    "fr": "WARNING!"
+  },
+  {
+    "key": "cloud.gallery.359",
+    "en": "You are about to publish this project to the Public Gallery. It will be available for viewing and downloading by the entire VereTka community. You can put it back at any time.",
+    "uk": "Ви збираєтеся опублікувати цей проєкт у Загальній галереї. Він стане доступним для перегляду та завантаження усією спільнотою ВереTkа. Ви зможете прибрати його назад у будь-який момент.",
+    "fr": "You are about to publish this project to the Public Gallery. It will be available for viewing and downloading by the entire VereTka community. You can put it back at any time."
+  },
+  {
+    "key": "cloud.gallery.360",
+    "en": "Cleaning from the General Gallery:",
+    "uk": "Прибрання із Загальної галереї:",
+    "fr": "Cleaning from the General Gallery:"
+  },
+  {
+    "key": "cloud.gallery.357",
+    "en": "You are about to permanently delete this project. This action cannot be undone. Are you sure you want to continue?",
+    "uk": "Ви збираєтеся остаточно видалити цей проєкт. Цю дію неможливо скасувати. Ви дійсно бажаєте продовжити?",
+    "fr": "You are about to permanently delete this project. This action cannot be undone. Are you sure you want to continue?"
+  },
+  {
+    "key": "cloud.gallery.365",
+    "en": "🗑️ Yes, delete",
+    "uk": "🗑️ Так, видалити",
+    "fr": "🗑️ Yes, delete"
+  },
+  {
+    "key": "cloud.gallery.363",
+    "en": "Enter your password",
+    "uk": "Введіть пароль",
+    "fr": "Enter your password"
+  },
+  {
+    "key": "cloud.gallery.364",
+    "en": "Cancel",
+    "uk": "Скасувати",
+    "fr": "Cancel"
+  },
+  {
+    "key": "cloud.gallery.362",
+    "en": "Enter the project/author password for confirmation:",
+    "uk": "Вкажіть пароль проєкту/автора для підтвердження:",
+    "fr": "Enter the project/author password for confirmation:"
+  },
+  {
+    "key": "cloud.gallery.361",
+    "en": "You are about to remove this project from the General Gallery. It will remain stored in your personal inbox and will no longer be available to other users.",
+    "uk": "Ви збираєтеся прибрати цей проєкт із Загальної галереї. Він залишиться збереженим у вашій особистій скрині і більше не буде доступний іншим користувачам.",
+    "fr": "You are about to remove this project from the General Gallery. It will remain stored in your personal inbox and will no longer be available to other users."
+  },
+  {
+    "key": "cloud.gallery.366",
+    "en": "🌐 Yes, publish",
+    "uk": "🌐 Так, опублікувати",
+    "fr": "🌐 Yes, publish"
+  },
+  {
+    "key": "cloud.gallery.369",
+    "en": "Send to group / cell",
+    "uk": "Надіслати у групу / осередок",
+    "fr": "Send to group / cell"
+  },
+  {
+    "key": "cloud.gallery.368",
+    "en": "Confirm",
+    "uk": "Підтвердити",
+    "fr": "Confirm"
+  },
+  {
+    "key": "cloud.gallery.370",
+    "en": "Project: \"",
+    "uk": "Проєкт: \"",
+    "fr": "Project: \""
+  },
+  {
+    "key": "cloud.gallery.367",
+    "en": "🔒 Yes, remove",
+    "uk": "🔒 Так, прибрати",
+    "fr": "🔒 Yes, remove"
+  },
+  {
+    "key": "cloud.gallery.375",
+    "en": "🔒 Pattern board",
+    "uk": "🔒 Дошка шаблонів",
+    "fr": "🔒 Pattern board"
+  },
+  {
+    "key": "cloud.gallery.374",
+    "en": "🎓 Educational",
+    "uk": "🎓 Освітня",
+    "fr": "🎓 Educational"
+  },
+  {
+    "key": "cloud.gallery.372",
+    "en": "Enter the code (for example: UA-8392)",
+    "uk": "Введіть код (наприклад: UA-8392)",
+    "fr": "Enter the code (for example: UA-8392)"
+  },
+  {
+    "key": "cloud.gallery.371",
+    "en": "Group or cell code:",
+    "uk": "Код групи або осередка:",
+    "fr": "Group or cell code:"
+  },
+  {
+    "key": "cloud.gallery.373",
+    "en": "Community center",
+    "uk": "Осередок спільноти",
+    "fr": "Community center"
+  },
+  {
+    "key": "cloud.gallery.380",
+    "en": "⚠️ This group works in \"Template Board\" (readonly) mode. Only its founder is allowed to post new works here (@",
+    "uk": "⚠️ Ця група працює у режимі \"Дошка шаблонів\" (readonly). Публікувати нові роботи сюди дозволено лише її засновнику (@",
+    "fr": "⚠️ This group works in \"Template Board\" (readonly) mode. Only its founder is allowed to post new works here (@"
+  },
+  {
+    "key": "cloud.gallery.376",
+    "en": "🖼️ Gallery",
+    "uk": "🖼️ Галерея",
+    "fr": "🖼️ Gallery"
+  },
+  {
+    "key": "cloud.gallery.379",
+    "en": "Code:",
+    "uk": "Код:",
+    "fr": "Code:"
+  },
+  {
+    "key": "cloud.gallery.377",
+    "en": "Founder: @",
+    "uk": "Засновник: @",
+    "fr": "Founder: @"
+  },
+  {
+    "key": "cloud.gallery.378",
+    "en": "anonym",
+    "uk": "анонім",
+    "fr": "anonym"
+  },
+  {
+    "key": "cloud.gallery.381",
+    "en": "Or choose from your cells:",
+    "uk": "Або оберіть зі своїх осередків:",
+    "fr": "Or choose from your cells:"
+  },
+  {
+    "key": "cloud.gallery.385",
+    "en": "close",
+    "uk": "Закрити",
+    "fr": "close"
+  },
+  {
+    "key": "cloud.gallery.382",
+    "en": "Cancel",
+    "uk": "Скасувати",
+    "fr": "Cancel"
+  },
+  {
+    "key": "cloud.gallery.383",
+    "en": "Sending...",
+    "uk": "Надсилання...",
+    "fr": "Sending..."
+  },
+  {
+    "key": "cloud.gallery.384",
+    "en": "🏫 Send to group",
+    "uk": "🏫 Надіслати у групу",
+    "fr": "🏫 Send to group"
+  },
+  {
+    "key": "cloud.gallery.386",
+    "en": "Groups with a copy of the project",
+    "uk": "Групи з копією проєкту",
+    "fr": "Groups with a copy of the project"
+  },
+  {
+    "key": "cloud.gallery.388",
+    "en": "There is no information about groups",
+    "uk": "Інформація про групи відсутня",
+    "fr": "There is no information about groups"
+  },
+  {
+    "key": "cloud.gallery.389",
+    "en": "Sent by:",
+    "uk": "Надіслано:",
+    "fr": "Sent by:"
+  },
+  {
+    "key": "cloud.gallery.387",
+    "en": "A copy of this project has been saved/sent to the following groups and cells:",
+    "uk": "Копію цього проєкту збережено/надіслано у такі групи та осередки:",
+    "fr": "A copy of this project has been saved/sent to the following groups and cells:"
+  },
+  {
+    "key": "cloud.gallery.390",
+    "en": "✓ Copied",
+    "uk": "✓ Скопійовано",
+    "fr": "✓ Copied"
+  },
+  {
+    "key": "cloud.gallery.393",
+    "en": "close",
+    "uk": "Закрити",
+    "fr": "close"
+  },
+  {
+    "key": "cloud.gallery.395",
+    "en": "Share the project",
+    "uk": "Поділитися проєктом",
+    "fr": "Share the project"
+  },
+  {
+    "key": "cloud.gallery.394",
+    "en": "close",
+    "uk": "Закрити",
+    "fr": "close"
+  },
+  {
+    "key": "cloud.gallery.391",
+    "en": "📋 Code",
+    "uk": "📋 Код",
+    "fr": "📋 Code"
+  },
+  {
+    "key": "cloud.gallery.392",
+    "en": "🏫 Jump",
+    "uk": "🏫 Перейти",
+    "fr": "🏫 Jump"
+  },
+  {
+    "key": "cloud.gallery.398",
+    "en": "Objects:",
+    "uk": "Об'єктів:",
+    "fr": "Objects:"
+  },
+  {
+    "key": "cloud.gallery.400",
+    "en": "✓ Copied",
+    "uk": "✓ Скопійовано",
+    "fr": "✓ Copied"
+  },
+  {
+    "key": "cloud.gallery.399",
+    "en": "Direct link to the project:",
+    "uk": "Пряме посилання на проєкт:",
+    "fr": "Direct link to the project:"
+  },
+  {
+    "key": "cloud.gallery.396",
+    "en": "VereTka",
+    "uk": "ВереTkа",
+    "fr": "VereTka"
+  },
+  {
+    "key": "cloud.gallery.397",
+    "en": "🎨 Vector project by VereTka",
+    "uk": "🎨 Векторний проєкт ВереTkа",
+    "fr": "🎨 Vector project by VereTka"
+  },
+  {
+    "key": "cloud.gallery.401",
+    "en": "📋 Copy",
+    "uk": "📋 Скопіювати",
+    "fr": "📋 Copy"
+  },
+  {
+    "key": "cloud.gallery.402",
+    "en": "Share on social networks and messengers:",
+    "uk": "Поділитися в соціальних мережах та месенджерах:",
+    "fr": "Share on social networks and messengers:"
+  },
+  {
+    "key": "cloud.gallery.405",
+    "en": "Group code:",
+    "uk": "Код групи:",
+    "fr": "Group code:"
+  },
+  {
+    "key": "cloud.gallery.404",
+    "en": "Group settings",
+    "uk": "Налаштування групи",
+    "fr": "Group settings"
+  },
+  {
+    "key": "cloud.gallery.403",
+    "en": "close",
+    "uk": "Закрити",
+    "fr": "close"
+  },
+  {
+    "key": "cloud.gallery.408",
+    "en": "Direct link:",
+    "uk": "Пряме посилання:",
+    "fr": "Direct link:"
+  },
+  {
+    "key": "cloud.gallery.407",
+    "en": "📋 Copy the code",
+    "uk": "📋 Скопіювати код",
+    "fr": "📋 Copy the code"
+  },
+  {
+    "key": "cloud.gallery.406",
+    "en": "Code copied!",
+    "uk": "Код скопійовано!",
+    "fr": "Code copied!"
+  },
+  {
+    "key": "cloud.gallery.410",
+    "en": "🔗 Copy link",
+    "uk": "🔗 Скопіювати посилання",
+    "fr": "🔗 Copy link"
+  },
+  {
+    "key": "cloud.gallery.409",
+    "en": "Link copied!",
+    "uk": "Посилання скопійовано!",
+    "fr": "Link copied!"
+  },
+  {
+    "key": "cloud.gallery.413",
+    "en": "Your role:",
+    "uk": "Ваша роль:",
+    "fr": "Your role:"
+  },
+  {
+    "key": "cloud.gallery.412",
+    "en": "Anonym",
+    "uk": "Анонім",
+    "fr": "Anonym"
+  },
+  {
+    "key": "cloud.gallery.415",
+    "en": "👤 Group member",
+    "uk": "👤 Учасник групи",
+    "fr": "👤 Group member"
+  },
+  {
+    "key": "cloud.gallery.411",
+    "en": "Founder:",
+    "uk": "Засновник:",
+    "fr": "Founder:"
+  },
+  {
+    "key": "cloud.gallery.414",
+    "en": "👑 Group Founder (Full Access)",
+    "uk": "👑 Засновник групи (Повний доступ)",
+    "fr": "👑 Group Founder (Full Access)"
+  },
+  {
+    "key": "cloud.gallery.420",
+    "en": "🎨 Joint workshop (Everyone sees everything)",
+    "uk": "🎨 Спільна майстерня (Всі бачать все)",
+    "fr": "🎨 Joint workshop (Everyone sees everything)"
+  },
+  {
+    "key": "cloud.gallery.419",
+    "en": "Mode of operation of the group:",
+    "uk": "Режим роботи групи:",
+    "fr": "Mode of operation of the group:"
+  },
+  {
+    "key": "cloud.gallery.416",
+    "en": "Editing group data (Founder):",
+    "uk": "Редагування даних групи (Засновник):",
+    "fr": "Editing group data (Founder):"
+  },
+  {
+    "key": "cloud.gallery.417",
+    "en": "Group name:*",
+    "uk": "Назва групи:*",
+    "fr": "Group name:*"
+  },
+  {
+    "key": "cloud.gallery.418",
+    "en": "Group description:",
+    "uk": "Опис групи:",
+    "fr": "Group description:"
+  },
+  {
+    "key": "cloud.gallery.424",
+    "en": "🟢 Free update (allow overwriting)",
+    "uk": "🟢 Вільне оновлення (дозволити перезапис)",
+    "fr": "🟢 Free update (allow overwriting)"
+  },
+  {
+    "key": "cloud.gallery.421",
+    "en": "🏫 Educational class (Students see only their works)",
+    "uk": "🏫 Освітній клас (Учні бачать лише свої роботи)",
+    "fr": "🏫 Educational class (Students see only their works)"
+  },
+  {
+    "key": "cloud.gallery.423",
+    "en": "🎓 The rule for students to resubmit works:",
+    "uk": "🎓 Правило повторного надсилання робіт учнями:",
+    "fr": "🎓 The rule for students to resubmit works:"
+  },
+  {
+    "key": "cloud.gallery.425",
+    "en": "The student can update the existing submitted work - the old version is overwritten.",
+    "uk": "Учень може оновлювати існуючу здану роботу — стара версія перезаписується.",
+    "fr": "The student can update the existing submitted work - the old version is overwritten."
+  },
+  {
+    "key": "cloud.gallery.422",
+    "en": "🔒 Template Board (Published only by the founder)",
+    "uk": "🔒 Дошка шаблонів (Публікує лише засновник)",
+    "fr": "🔒 Template Board (Published only by the founder)"
+  },
+  {
+    "key": "cloud.gallery.428",
+    "en": "🔒 Fixation of delivery (prohibition of re-updating)",
+    "uk": "🔒 Фіксація здачі (заборона повторного оновлення)",
+    "fr": "🔒 Fixation of delivery (prohibition of re-updating)"
+  },
+  {
+    "key": "cloud.gallery.427",
+    "en": "Each resubmission creates a separate new version of the work to track progress.",
+    "uk": "Кожне повторне надсилання створює окрему нову версію роботи для відстеження прогресу.",
+    "fr": "Each resubmission creates a separate new version of the work to track progress."
+  },
+  {
+    "key": "cloud.gallery.430",
+    "en": "New group password (leave blank if not changing):",
+    "uk": "Новий пароль групи (залиште порожнім, якщо не змінюєте):",
+    "fr": "New group password (leave blank if not changing):"
+  },
+  {
+    "key": "cloud.gallery.429",
+    "en": "After passing, the student cannot update the same project (ideal for tests).",
+    "uk": "Після здачі учень не може оновити цей же проєкт (ідеально для контрольних робіт).",
+    "fr": "After passing, the student cannot update the same project (ideal for tests)."
+  },
+  {
+    "key": "cloud.gallery.426",
+    "en": "🔵 Auto-versioning (save v2, v3...)",
+    "uk": "🔵 Авто-версіонування (зберігати v2, v3...)",
+    "fr": "🔵 Auto-versioning (save v2, v3...)"
+  },
+  {
+    "key": "cloud.gallery.432",
+    "en": "Preservation...",
+    "uk": "Збереження...",
+    "fr": "Preservation..."
+  },
+  {
+    "key": "cloud.gallery.431",
+    "en": "New password",
+    "uk": "Новий пароль",
+    "fr": "New password"
+  },
+  {
+    "key": "cloud.gallery.433",
+    "en": "💾 Save changes to the group",
+    "uk": "💾 Зберегти зміни в групі",
+    "fr": "💾 Save changes to the group"
+  },
+  {
+    "key": "cloud.gallery.434",
+    "en": "Only its Founder has the right to change the name, mode and password of the group.",
+    "uk": "Змінювати назву, режим та пароль групи має право лише її Засновник.",
+    "fr": "Only its Founder has the right to change the name, mode and password of the group."
+  },
+  {
+    "key": "cloud.gallery.435",
+    "en": "Activities with a group:",
+    "uk": "Дії з групою:",
+    "fr": "Activities with a group:"
+  },
+  {
+    "key": "cloud.gallery.438",
+    "en": "close",
+    "uk": "Закрити",
+    "fr": "close"
+  },
+  {
+    "key": "cloud.gallery.439",
+    "en": "Group members",
+    "uk": "Учасники групи",
+    "fr": "Group members"
+  },
+  {
+    "key": "cloud.gallery.436",
+    "en": "🚪 Leave the group",
+    "uk": "🚪 Вийти з групи",
+    "fr": "🚪 Leave the group"
+  },
+  {
+    "key": "cloud.gallery.440",
+    "en": "\" • Total:",
+    "uk": "\" • Всього:",
+    "fr": "\" • Total:"
+  },
+  {
+    "key": "cloud.gallery.437",
+    "en": "🗑️ Delete group",
+    "uk": "🗑️ Видалити групу",
+    "fr": "🗑️ Delete group"
+  },
+  {
+    "key": "cloud.gallery.445",
+    "en": "projects",
+    "uk": "проєкти",
+    "fr": "projects"
+  },
+  {
+    "key": "cloud.gallery.443",
+    "en": "There are no registered members in this group yet",
+    "uk": "У цій групі ще немає зареєстрованих учасників",
+    "fr": "There are no registered members in this group yet"
+  },
+  {
+    "key": "cloud.gallery.444",
+    "en": "project",
+    "uk": "проєкт",
+    "fr": "project"
+  },
+  {
+    "key": "cloud.gallery.442",
+    "en": "Loading list of participants...",
+    "uk": "Завантаження списку учасників...",
+    "fr": "Loading list of participants..."
+  },
+  {
+    "key": "cloud.gallery.441",
+    "en": "🔍 Search for a participant by name or nickname...",
+    "uk": "🔍 Пошук учасника за ім'ям або нікнеймом...",
+    "fr": "🔍 Search for a participant by name or nickname..."
+  },
+  {
+    "key": "cloud.gallery.446",
+    "en": "projects",
+    "uk": "проєктів",
+    "fr": "projects"
+  },
+  {
+    "key": "cloud.gallery.448",
+    "en": "👑 Founder",
+    "uk": "👑 Засновник",
+    "fr": "👑 Founder"
+  },
+  {
+    "key": "cloud.gallery.450",
+    "en": "close",
+    "uk": "Закрити",
+    "fr": "close"
+  },
+  {
+    "key": "cloud.gallery.447",
+    "en": "in a group",
+    "uk": "у групі",
+    "fr": "in a group"
+  },
+  {
+    "key": "cloud.gallery.449",
+    "en": "👤 Participant",
+    "uk": "👤 Учасник",
+    "fr": "👤 Participant"
+  },
+  {
+    "key": "cloud.gallery.453",
+    "en": "there is already a project with the name",
+    "uk": "вже є проєкт з назвою",
+    "fr": "there is already a project with the name"
+  },
+  {
+    "key": "cloud.gallery.455",
+    "en": "Group rule: Fixation of handover.",
+    "uk": "Правило групи: Фіксація здачі.",
+    "fr": "Group rule: Fixation of handover."
+  },
+  {
+    "key": "cloud.gallery.451",
+    "en": "⚠️ Duplicate project detected",
+    "uk": "⚠️ Виявлено дублікат проєкту",
+    "fr": "⚠️ Duplicate project detected"
+  },
+  {
+    "key": "cloud.gallery.452",
+    "en": "In a group",
+    "uk": "У групі",
+    "fr": "In a group"
+  },
+  {
+    "key": "cloud.gallery.454",
+    "en": "from the same author (",
+    "uk": "від цього ж автора (",
+    "fr": "from the same author ("
+  },
+  {
+    "key": "cloud.gallery.456",
+    "en": "Updating an existing project is prohibited by the author of the group. You can publish it as a new copy with a different name.",
+    "uk": "Оновлення існуючого проєкту заборонено автором групи. Ви можете опублікувати його як нову копію з іншою назвою.",
+    "fr": "Updating an existing project is prohibited by the author of the group. You can publish it as a new copy with a different name."
+  },
+  {
+    "key": "cloud.gallery.458",
+    "en": "It is recommended that you create a new version to track your learning progress.",
+    "uk": "Для відстеження вашого навчального прогресу рекомендується створити нову версію.",
+    "fr": "It is recommended that you create a new version to track your learning progress."
+  },
+  {
+    "key": "cloud.gallery.460",
+    "en": "Overwrite the content of the existing project with a new version. Convenient for finalizing the task.",
+    "uk": "Перезаписати вміст існуючого проєкту новою версією. Зручно для доопрацювання завдання.",
+    "fr": "Overwrite the content of the existing project with a new version. Convenient for finalizing the task."
+  },
+  {
+    "key": "cloud.gallery.459",
+    "en": "Update an existing project in the group",
+    "uk": "Оновити існуючий проєкт у групі",
+    "fr": "Update an existing project in the group"
+  },
+  {
+    "key": "cloud.gallery.457",
+    "en": "Group rule: Auto-versioning.",
+    "uk": "Правило групи: Авто-версіонування.",
+    "fr": "Group rule: Auto-versioning."
+  },
+  {
+    "key": "cloud.gallery.465",
+    "en": "save",
+    "uk": "Зберегти",
+    "fr": "save"
+  },
+  {
+    "key": "cloud.gallery.464",
+    "en": "Project (v.5)",
+    "uk": "Проєкт (v.5)",
+    "fr": "Project (v.5)"
+  },
+  {
+    "key": "cloud.gallery.461",
+    "en": "Publish as a separate copy (author version)",
+    "uk": "Опублікувати як окрему копію (автоверсія)",
+    "fr": "Publish as a separate copy (author version)"
+  },
+  {
+    "key": "cloud.gallery.462",
+    "en": "Create a copy with the following free version automatically:",
+    "uk": "Створити копію з автоматичною наступною вільною версією:",
+    "fr": "Create a copy with the following free version automatically:"
+  },
+  {
+    "key": "cloud.gallery.463",
+    "en": "Specify your own name or version for the copy",
+    "uk": "Вказати власну назву чи версію для копії",
+    "fr": "Specify your own name or version for the copy"
+  },
+  {
+    "key": "cloud.gallery.466",
+    "en": "❌ Cancel sending",
+    "uk": "❌ Скасувати надсилання",
+    "fr": "❌ Cancel sending"
+  },
+  {
+    "key": "menu.mainTitle",
+    "en": "Main Menu",
+    "uk": "Головне меню",
+    "fr": "Main Menu"
+  },
+  {
+    "key": "menu.file.shareLink",
+    "en": "Share via Link...",
+    "uk": "Поділитися посиланням...",
+    "fr": "Share via Link..."
+  },
+  {
+    "key": "share.title",
+    "en": "Project Share Link (GitHub Pages)",
+    "uk": "Посилання на проєкт (GitHub Pages)",
+    "fr": "Project Share Link (GitHub Pages)"
+  },
+  {
+    "key": "share.desc",
+    "en": "Copy this link to share your project. Opening it will load your project directly in the VereTka editor hosted on GitHub Pages (https://Vitaliy-Kushnir.github.io/VereTka/).",
+    "uk": "Скопіюйте це посилання, щоб передати проєкт. При переході редактор Веретка на GitHub Pages (https://Vitaliy-Kushnir.github.io/VereTka/) відкриється із цим проєктом.",
+    "fr": "Copy this link to share your project. Opening it will load your project directly in the VereTka editor hosted on GitHub Pages (https://Vitaliy-Kushnir.github.io/VereTka/)."
+  },
+  {
+    "key": "share.urlLabel",
+    "en": "GitHub Pages Project Link",
+    "uk": "Посилання проєкту на GitHub Pages",
+    "fr": "GitHub Pages Project Link"
+  },
+  {
+    "key": "share.copy",
+    "en": "Copy Link",
+    "uk": "Скопіювати посилання",
+    "fr": "Copy Link"
+  },
+  {
+    "key": "share.copied",
+    "en": "Copied!",
+    "uk": "Скопійовано!",
+    "fr": "Copied!"
+  },
+  {
+    "key": "share.size",
+    "en": "Link Size",
+    "uk": "Розмір посилання",
+    "fr": "Link Size"
+  },
+  {
+    "key": "share.chars",
+    "en": "chars",
+    "uk": "симв.",
+    "fr": "chars"
+  },
+  {
+    "key": "share.testOpen",
+    "en": "Test in New Tab",
+    "uk": "Перевірити у новій вкладці",
+    "fr": "Test in New Tab"
+  },
+  {
+    "key": "share.tooLongWarning",
+    "en": "Warning: The link is large due to embedded raster images. Ensure your messaging app does not truncate long links.",
+    "uk": "Увага: Посилання досить велике через растрові зображення в проєкті. Переконайтеся, що месенджер не обріже його.",
+    "fr": "Warning: The link is large due to embedded raster images. Ensure your messaging app does not truncate long links."
+  },
+  {
+    "key": "share.loaded",
+    "en": "Project successfully loaded from link!",
+    "uk": "Проєкт успішно завантажено за посиланням!",
+    "fr": "Project successfully loaded from link!"
+  },
+  {
+    "key": "share.error",
+    "en": "Failed to decompress or load project from link.",
+    "uk": "Не вдалося розпакувати або завантажити проєкт за посиланням.",
+    "fr": "Failed to decompress or load project from link."
+  },
+  {
+    "key": "history.title",
+    "en": "Change History",
+    "uk": "Історія змін",
+    "fr": "Change History"
+  },
+  {
+    "key": "history.selectUndo",
+    "en": "Select an action to undo to",
+    "uk": "Оберіть дію, до якої скасувати стан",
+    "fr": "Select an action to undo to"
+  },
+  {
+    "key": "history.selectRedo",
+    "en": "Select an action to restore to",
+    "uk": "Оберіть дію, до якої відновити стан",
+    "fr": "Select an action to restore to"
+  },
+  {
+    "key": "history.fullTimeline",
+    "en": "Quick jump across all actions",
+    "uk": "Швидкий перехід по всіх діях",
+    "fr": "Quick jump across all actions"
+  },
+  {
+    "key": "history.filterAll",
+    "en": "All",
+    "uk": "Всі",
+    "fr": "All"
+  },
+  {
+    "key": "history.filterUndo",
+    "en": "Undo",
+    "uk": "Назад",
+    "fr": "Undo"
+  },
+  {
+    "key": "history.filterRedo",
+    "en": "Redo",
+    "uk": "Вперед",
+    "fr": "Redo"
+  },
+  {
+    "key": "history.jumpToStart",
+    "en": "Jump to start",
+    "uk": "Повернутися на самий початок",
+    "fr": "Jump to start"
+  },
+  {
+    "key": "history.jumpToLatest",
+    "en": "Jump to latest state",
+    "uk": "Перейти до найновішого стану",
+    "fr": "Jump to latest state"
+  },
+  {
+    "key": "history.start",
+    "en": "Start",
+    "uk": "Початок",
+    "fr": "Start"
+  },
+  {
+    "key": "history.latest",
+    "en": "Latest",
+    "uk": "Останній",
+    "fr": "Latest"
+  },
+  {
+    "key": "history.current",
+    "en": "Current",
+    "uk": "Поточний",
+    "fr": "Current"
+  },
+  {
+    "key": "history.empty",
+    "en": "No records in the selected filter",
+    "uk": "Немає записів у вибраному фільтрі",
+    "fr": "No records in the selected filter"
+  },
+  {
+    "key": "history.initialState",
+    "en": "Initial project state",
+    "uk": "Початковий стан проєкту",
+    "fr": "Initial project state"
+  },
+  {
+    "key": "history.step",
+    "en": "Step",
+    "uk": "Крок",
+    "fr": "Step"
+  },
+  {
+    "key": "history.of",
+    "en": "of",
+    "uk": "з",
+    "fr": "of"
+  },
+  {
+    "key": "history.shapesCount",
+    "en": "shapes",
+    "uk": "фігур",
+    "fr": "shapes"
+  },
+  {
+    "key": "history.tipLongPress",
+    "en": "Hold to view history",
+    "uk": "Утримуйте для перегляду історії",
+    "fr": "Hold to view history"
+  },
+  {
+    "key": "history.longPressTip",
+    "en": "Long press arrow buttons to open history",
+    "uk": "Довгий клік по стрілках для виклику історії",
+    "fr": "Long press arrow buttons to open history"
+  },
+  {
+    "key": "menu.exit.group",
+    "en": "Exit & Session",
+    "uk": "Завершення роботи",
+    "fr": "Exit & Session"
+  },
+  {
+    "key": "menu.exit",
+    "en": "Exit Editor",
+    "uk": "Завершити роботу",
+    "fr": "Exit Editor"
+  },
+  {
+    "key": "menu.exit.desc",
+    "en": "Close project and exit editor",
+    "uk": "Закрити проєкт та вийти з редактора",
+    "fr": "Close project and exit editor"
+  },
+  {
+    "key": "app.exit.browserSuccess",
+    "en": "Work finished. You can safely close this browser tab.",
+    "uk": "Роботу завершено. Ви можете безпечно закрити цю вкладку браузера.",
+    "fr": "Work finished. You can safely close this browser tab."
+  },
+  {
+    "key": "app.exit.pwaSuccess",
+    "en": "Work finished. You can now close or minimize the application.",
+    "uk": "Роботу завершено. Ви можете згорнути або закрити додаток.",
+    "fr": "Work finished. You can now close or minimize the application."
+  },
+  {
+    "key": "app.exitConfirm.title",
+    "en": "Exit Editor?",
+    "uk": "Завершити роботу?",
+    "fr": "Exit Editor?"
+  },
+  {
+    "key": "app.exitConfirm.message",
+    "en": "You have unsaved changes. Your work is periodically autosaved. If you exit, you can restore it later. Exit and finish work?",
+    "uk": "У вас є незбережені зміни. Ваша робота періодично автозберігається. Якщо ви вийдете, ви зможете відновити її пізніше. Завершити роботу та вийти?",
+    "fr": "You have unsaved changes. Your work is periodically autosaved. If you exit, you can restore it later. Exit and finish work?"
+  },
+  {
+    "key": "app.exitConfirm.btn",
+    "en": "Yes, exit",
+    "uk": "Так, завершити",
+    "fr": "Yes, exit"
+  },
+  {
+    "key": "export.format",
+    "en": "Format:",
+    "uk": "Формат:",
+    "fr": "Format:"
+  },
+  {
+    "key": "app.editPointsMultipleShapes",
+    "en": "Point editing mode is not available for multiple shapes. Select a single shape.",
+    "uk": "Режим редагування вузлів недоступний для декількох фігур. Виділіть одну фігуру.",
+    "fr": "Point editing mode is not available for multiple shapes. Select a single shape."
+  },
+  {
+    "key": "app.editPointsGroup",
+    "en": "This is a group. To edit points, ungroup it or select a specific shape.",
+    "uk": "Це група. Для редагування вузлів розгрупуйте її або виділіть конкретну фігуру.",
+    "fr": "This is a group. To edit points, ungroup it or select a specific shape."
+  },
+  {
+    "key": "app.editPointsImage",
+    "en": "Point editing mode is not available for images.",
+    "uk": "Режим редагування вузлів недоступний для зображень.",
+    "fr": "Point editing mode is not available for images."
+  },
+  {
+    "key": "app.1066",
+    "en": "Screen size too small",
+    "uk": "Розмір екрана замалий"
+  },
+  {
+    "key": "app.1067",
+    "en": "Unfortunately, the \"VereTka\" editor requires a larger screen to function properly.",
+    "uk": "На жаль, для коректної роботи редактора \"ВереTkа\" потрібен більший екран."
+  },
+  {
+    "key": "app.1068",
+    "en": "Please open this app on a computer or tablet, or rotate your screen.",
+    "uk": "Будь ласка, відкрийте цей застосунок на комп’ютері чи планшеті або оберніть екран."
+  },
+  {
+    "key": "app.1069",
+    "en": "New drawing. VereTka",
+    "uk": "Новий малюнок. ВереTkа"
+  },
+  {
+    "key": "app.1070",
+    "en": "Failed to load project.",
+    "uk": "Не вдалося завантажити проєкт."
+  },
+  {
+    "key": "template.save",
+    "en": "Save template...",
+    "uk": "Зберегти шаблон..."
+  },
+  {
+    "key": "template.saveAsTemplate",
+    "en": "Save as template",
+    "uk": "Зберегти як шаблон"
+  },
+  {
+    "key": "template.new",
+    "en": "New template",
+    "uk": "Новий шаблон"
+  },
+  {
+    "key": "template.name",
+    "en": "Template name:",
+    "uk": "Назва шаблону:"
+  },
+  {
+    "key": "template.desc",
+    "en": "Template description:",
+    "uk": "Опис шаблону:"
+  },
+  {
+    "key": "project.new",
+    "en": "New project",
+    "uk": "Новий проєкт"
+  },
+  {
+    "key": "project.createFrom",
+    "en": "Create from:",
+    "uk": "Створити з:"
+  },
+  {
+    "key": "project.blankCanvas",
+    "en": "Blank canvas",
+    "uk": "Чисте полотно"
+  },
+  {
+    "key": "project.yourTemplates",
+    "en": "Your templates",
+    "uk": "Ваші шаблони"
+  },
+  {
+    "key": "project.shapes",
+    "en": "obj.",
+    "uk": "об."
+  },
+  {
+    "key": "project.name",
+    "en": "Project name:",
+    "uk": "Назва проєкту:"
+  },
+  {
+    "key": "project.canvasSettings",
+    "en": "Canvas settings",
+    "uk": "Налаштування полотна"
+  },
+  {
+    "key": "project.width",
+    "en": "Width:",
+    "uk": "Ширина:"
+  },
+  {
+    "key": "project.height",
+    "en": "Height:",
+    "uk": "Висота:"
+  },
+  {
+    "key": "project.canvasName",
+    "en": "Canvas name:",
+    "uk": "Назва полотна:"
+  },
+  {
+    "key": "project.idWarning",
+    "en": "(Only latin letters, numbers and \"_\". Cannot start with a number)",
+    "uk": "(Лише латинські літери, цифри та \"_\". Не може починатись з цифри)"
+  },
+  {
+    "key": "project.bgColor",
+    "en": "Background color:",
+    "uk": "Колір тла:"
+  },
+  {
+    "key": "action.create",
+    "en": "Create",
+    "uk": "Створити"
+  },
+  {
+    "key": "feedback.title",
+    "en": "Leave feedback",
+    "uk": "Залишити відгук"
+  },
+  {
+    "key": "feedback.p1",
+    "en": "Your feedback is extremely important for improving the editor. Bug reports, new ideas and just impressions help make \"VereTkа\" better.",
+    "uk": "Ваш відгук надзвичайно важливий для покращення редактора. Повідомлення про помилки, нові ідеї та просто враження допомагають робити \"ВереTkа\" кращою."
+  },
+  {
+    "key": "feedback.p2",
+    "en": "The most convenient way to share your thoughts is to fill out a special Google Form. It will only take a few minutes.",
+    "uk": "Найзручніший спосіб поділитися думками — заповнити спеціальну Google Форму. Це займе лише кілька хвилин."
+  },
+  {
+    "key": "feedback.note",
+    "en": "<strong>Note:</strong> Data about the editor version, your OS and browser will be added to the form automatically.",
+    "uk": "<strong>Примітка:</strong> Дані про версію редактора, вашу ОС та браузер будуть додані до форми автоматично."
+  },
+  {
+    "key": "feedback.goto",
+    "en": "Go to feedback form",
+    "uk": "Перейти до форми відгуків"
+  },
+  {
+    "key": "about.title",
+    "en": "About \"VereTka\" editor",
+    "uk": "Про редактор \"ВереTkа\""
+  },
+  {
+    "key": "about.p1",
+    "en": "<strong className=\"text-[var(--text-primary)]\">VereTkа</strong> is a simple vector editor designed for quick creation of graphic primitives and generating corresponding Python code for the Tkinter library.",
+    "uk": "<strong className=\"text-[var(--text-primary)]\">ВереTkа</strong> — це простий векторний редактор, призначений для швидкого створення графічних примітивів та генерації відповідного Python коду для бібліотеки Tkinter."
+  },
+  {
+    "key": "about.p2",
+    "en": "It uses a local code generator for instant and reliable results, and can also use the Google Gemini API for experimental capabilities.",
+    "uk": "Він використовує локальний генератор коду для миттєвого та надійного результату, а також може використовувати Google Gemini API для експериментальних можливостей."
+  },
+  {
+    "key": "about.author",
+    "en": "<strong className=\"text-[var(--text-primary)]\">Idea & Development:</strong> Vitaliy Kushnir",
+    "uk": "<strong className=\"text-[var(--text-primary)]\">Ідея та розробка:</strong> Віталій Кушнір"
+  },
+  {
+    "key": "about.support",
+    "en": "<strong className=\"text-[var(--text-primary)]\">Support:</strong> AI assistant powered by Google Gemini.",
+    "uk": "<strong className=\"text-[var(--text-primary)]\">Підтримка:</strong> AI-асистент на базі Google Gemini."
+  },
+  {
+    "key": "about.tech",
+    "en": "Created with <a href=\"https://aistudio.google.com/\" target=\"_blank\" rel=\"noopener noreferrer\" className=\"underline text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)]\">AI Studio Google</a>, Visual Studio Code.",
+    "uk": "Створено за допомогою <a href=\"https://aistudio.google.com/\" target=\"_blank\" rel=\"noopener noreferrer\" className=\"underline text-[var(--accent-primary)] hover:text-[var(--accent-primary-hover)]\">AI Studio Google</a>, Visual Studio Code."
+  },
+  {
+    "key": "about.version",
+    "en": "Version",
+    "uk": "Версія"
+  },
+  {
+    "key": "help.touchMobile",
+    "en": "6. Touch screens, Loupe & Joystick",
+    "uk": "6. Сенсорні екрани, лупа та джойстик"
+  },
+  {
+    "key": "help.intro",
+    "en": "1. Introduction",
+    "uk": "1. Вступ"
+  },
+  {
+    "key": "help.interface",
+    "en": "2. Interface Overview",
+    "uk": "2. Огляд інтерфейсу"
+  },
+  {
+    "key": "help.projects",
+    "en": "3. Working with projects",
+    "uk": "3. Робота з проєктами"
+  },
+  {
+    "key": "help.templates",
+    "en": "4. Working with templates",
+    "uk": "4. Робота з шаблонами"
+  },
+  {
+    "key": "help.shapes",
+    "en": "5. Working with shapes",
+    "uk": "5. Робота з об’єктами"
+  },
+  {
+    "key": "help.codeExport",
+    "en": "7. Code and export",
+    "uk": "7. Код та експорт"
+  },
+  {
+    "key": "help.feedback",
+    "en": "9. Feedback",
+    "uk": "9. Зворотний зв’язок"
+  },
+  {
+    "key": "help.hotkeys",
+    "en": "10. Hotkeys",
+    "uk": "10. Гарячі клавіші"
+  },
+  {
+    "key": "menu.help.shortcuts",
+    "en": "Keyboard Shortcuts",
+    "uk": "Гарячі клавіші"
+  },
+  {
+    "key": "shortcuts.title",
+    "en": "Keyboard Shortcuts",
+    "uk": "Гарячі клавіші"
+  },
+  {
+    "key": "shortcuts.searchPlaceholder",
+    "en": "Search keys or actions...",
+    "uk": "Пошук клавіш або дій..."
+  },
+  {
+    "key": "shortcuts.all",
+    "en": "All",
+    "uk": "Усі"
+  },
+  {
+    "key": "shortcuts.cat.file",
+    "en": "File & History",
+    "uk": "Файл та історія"
+  },
+  {
+    "key": "shortcuts.cat.tools",
+    "en": "Tools & Selection",
+    "uk": "Інструменти та виділення"
+  },
+  {
+    "key": "shortcuts.cat.movement",
+    "en": "Nudging & Positioning",
+    "uk": "Переміщення та позиціонування"
+  },
+  {
+    "key": "shortcuts.cat.navigation",
+    "en": "Canvas & View",
+    "uk": "Полотно та вигляд"
+  },
+  {
+    "key": "shortcuts.cat.extra",
+    "en": "Extra",
+    "uk": "Додатково"
+  },
+  {
+    "key": "shortcuts.notFound",
+    "en": "No shortcuts found matching your query",
+    "uk": "Нічого не знайдено за вашим запитом"
+  },
+  {
+    "key": "shortcuts.footerHint",
+    "en": "Press Esc or ? to close",
+    "uk": "Натисніть Esc або ? для закриття"
+  },
+  {
+    "key": "shortcuts.item.save",
+    "en": "Save project",
+    "uk": "Зберегти проєкт"
+  },
+  {
+    "key": "shortcuts.item.undo",
+    "en": "Undo action",
+    "uk": "Скасувати дію"
+  },
+  {
+    "key": "shortcuts.item.redo",
+    "en": "Redo action",
+    "uk": "Повернути скасовану дію"
+  },
+  {
+    "key": "shortcuts.item.selectTool",
+    "en": "Select tool",
+    "uk": "Інструмент «Вибрати»"
+  },
+  {
+    "key": "shortcuts.item.editPointsTool",
+    "en": "Edit points tool",
+    "uk": "Інструмент «Редагувати вузли»"
+  },
+  {
+    "key": "shortcuts.item.duplicate",
+    "en": "Duplicate selected objects",
+    "uk": "Дублювати виділені об’єкти"
+  },
+  {
+    "key": "shortcuts.item.delete",
+    "en": "Delete objects or point",
+    "uk": "Видалити об’єкти або вузол"
+  },
+  {
+    "key": "shortcuts.item.group",
+    "en": "Group selected objects",
+    "uk": "Згрупувати виділені об’єкти"
+  },
+  {
+    "key": "shortcuts.item.ungroup",
+    "en": "Ungroup objects",
+    "uk": "Розгрупувати об’єкт"
+  },
+  {
+    "key": "shortcuts.item.flipH",
+    "en": "Flip horizontally",
+    "uk": "Віддзеркалити по горизонталі"
+  },
+  {
+    "key": "shortcuts.item.flipV",
+    "en": "Flip vertically",
+    "uk": "Віддзеркалити по вертикалі"
+  },
+  {
+    "key": "shortcuts.item.cancel",
+    "en": "Cancel action / deselect",
+    "uk": "Скасувати дію / зняти виділення"
+  },
+  {
+    "key": "shortcuts.item.move1px",
+    "en": "Nudge object by 1px",
+    "uk": "Точне переміщення на 1px"
+  },
+  {
+    "key": "shortcuts.item.move10px",
+    "en": "Nudge object by 10px",
+    "uk": "Переміщення на 10px"
+  },
+  {
+    "key": "shortcuts.item.moveNoSnap",
+    "en": "Move ignoring snapping",
+    "uk": "Переміщення без прив’язки"
+  },
+  {
+    "key": "shortcuts.item.zoom",
+    "en": "Zoom in / out",
+    "uk": "Масштабування полотна"
+  },
+  {
+    "key": "shortcuts.item.pan",
+    "en": "Pan canvas",
+    "uk": "Панорамування полотна"
+  },
+  {
+    "key": "shortcuts.item.fullscreen",
+    "en": "Toggle fullscreen",
+    "uk": "Повноекранний режим"
+  },
+  {
+    "key": "shortcuts.item.showShortcuts",
+    "en": "Show keyboard shortcuts",
+    "uk": "Показати гарячі клавіші"
+  },
+  {
+    "key": "shortcuts.item.cheatCode",
+    "en": "Cheat code console",
+    "uk": "Консоль чит-кодів"
+  },
+  {
+    "key": "saveAs.title",
+    "en": "Save as...",
+    "uk": "Зберегти як..."
+  },
+  {
+    "key": "tool.imageImport",
+    "en": "Image [import]",
+    "uk": "Зображення [імпорт]"
+  },
+  {
+    "key": "canvas.shapeDuplicated",
+    "en": "Shape duplicated.",
+    "uk": "Фігуру дубльовано."
+  },
+  {
+    "key": "canvas.finish",
+    "en": "Finish",
+    "uk": "Завершити"
+  },
+  {
+    "key": "canvas.closePoly",
+    "en": "Close path",
+    "uk": "Замкнути"
+  },
+  {
+    "key": "canvas.duplicating",
+    "en": "Duplicating",
+    "uk": "Дублювання"
+  },
+  {
+    "key": "canvas.angle",
+    "en": "Angle",
+    "uk": "Кут"
+  },
+  {
+    "key": "selection.anchorPoint",
+    "en": "Text anchor point",
+    "uk": "Точка прив’язки тексту"
+  },
+  {
+    "key": "code.saveFileAs",
+    "en": "Save Code As...",
+    "uk": "Зберегти код як..."
+  },
+  {
+    "key": "code.saveDesc",
+    "en": "Set a name and select the desired file extension (type).",
+    "uk": "Задайте назву та оберіть необхідне розширення (тип) файлу."
+  },
+  {
+    "key": "code.fileNameDesc",
+    "en": "Enter a name for your file.",
+    "uk": "Введіть назву для вашого файлу."
+  },
+  {
+    "key": "code.fileName",
+    "en": "File Name:",
+    "uk": "Назва файлу:"
+  },
+  {
+    "key": "code.selectExt",
+    "en": "Select file extension",
+    "uk": "Вибрати розширення файлу"
+  },
+  {
+    "key": "code.saveLineNumbers",
+    "en": "Save with line numbers",
+    "uk": "Зберігати із номерами рядків"
+  },
+  {
+    "key": "code.saveLineNumbersDesc",
+    "en": "Add line numbers to the beginning of each line in the text file",
+    "uk": "Додати номери рядків на початок кожного рядка у текстовому файлі"
+  },
+  {
+    "key": "cheat.reset",
+    "en": "All active cheat codes have been reset.",
+    "uk": "Усі активні чит-коди скинуто."
+  },
+  {
+    "key": "cheat.activated",
+    "en": "Cheat code \"{code}\" activated!",
+    "uk": "Чит-код \"{code}\" активовано!"
+  },
+  {
+    "key": "cheat.invalid",
+    "en": "Invalid cheat code: \"{code}\"",
+    "uk": "Невірний чит-код: \"{code}\""
+  },
+  {
+    "key": "cheat.formatError",
+    "en": "Invalid format. Expected \"#000\".",
+    "uk": "Неправильний формат коду. Очікується \"#000\"."
+  },
+  {
+    "key": "cheat.title",
+    "en": "Enter cheat code",
+    "uk": "Введення чит-коду"
+  },
+  {
+    "key": "cheat.desc",
+    "en": "Enter code in format #000",
+    "uk": "Введіть код у форматі #000"
+  },
+  {
+    "key": "cheat.activate",
+    "en": "Activate",
+    "uk": "Активувати"
+  },
+  {
+    "key": "cheat.showList",
+    "en": "View all cheat codes list",
+    "uk": "Переглянути список усіх чит-кодів"
+  },
+  {
+    "key": "cheat.hideList",
+    "en": "Hide cheat codes list",
+    "uk": "Приховати список чит-кодів"
+  },
+  {
+    "key": "cheat.code.000",
+    "en": "Reset all active cheat codes",
+    "uk": "Скидання всіх активних чит-кодів"
+  },
+  {
+    "key": "cheat.code.001",
+    "en": "Enable \"Image\" tool",
+    "uk": "Увімкнути інструмент «Зображення»"
+  },
+  {
+    "key": "cheat.code.002",
+    "en": "Enable \"Image\" tool & AI generator",
+    "uk": "Увімкнути «Зображення» та AI-генератор"
+  },
+  {
+    "key": "cheat.code.003",
+    "en": "Enable \"Share via link...\" menu item",
+    "uk": "Увімкнути меню «Поділитися посиланням...»"
+  },
+  {
+    "key": "cheat.code.004",
+    "en": "Loader morphing shapes showcase gallery",
+    "uk": "Галерея та демонстрація фігур морфінгу завантаження"
+  },
+  {
+    "key": "cheat.active",
+    "en": "Active",
+    "uk": "Активний"
+  },
+  {
+    "key": "loaderShowcase.title",
+    "en": "Loader Morphing Shapes Showcase",
+    "uk": "Галерея фігур завантаження (Морфінг)"
+  },
+  {
+    "key": "loaderShowcase.subtitle",
+    "en": "All 34 geometric shapes with continuous SVG morphing animation",
+    "uk": "Усі 34 геометричні фігури з безперервною SVG-анімацією морфінгу"
+  },
+  {
+    "key": "loaderShowcase.viewFeatured",
+    "en": "Featured Morph Inspector",
+    "uk": "Інспектор морфінгу"
+  },
+  {
+    "key": "loaderShowcase.viewGrid",
+    "en": "34 Shapes Grid",
+    "uk": "Сітка 34 фігур"
+  },
+  {
+    "key": "loaderShowcase.viewMatrix",
+    "en": "Morphing Matrix",
+    "uk": "Матриця морфінгу"
+  },
+  {
+    "key": "loaderShowcase.speed",
+    "en": "Speed",
+    "uk": "Швидкість"
+  },
+  {
+    "key": "loaderShowcase.color",
+    "en": "Color",
+    "uk": "Колір"
+  },
+  {
+    "key": "loaderShowcase.prev",
+    "en": "Previous",
+    "uk": "Попередня"
+  },
+  {
+    "key": "loaderShowcase.next",
+    "en": "Next",
+    "uk": "Наступна"
+  },
+  {
+    "key": "loaderShowcase.random",
+    "en": "Random",
+    "uk": "Випадкова"
+  },
+  {
+    "key": "loaderShowcase.pause",
+    "en": "Pause",
+    "uk": "Пауза"
+  },
+  {
+    "key": "loaderShowcase.play",
+    "en": "Play",
+    "uk": "Відтворити"
+  },
+  {
+    "key": "loaderShowcase.strokeWidth",
+    "en": "Stroke Width",
+    "uk": "Товщина контуру"
+  },
+  {
+    "key": "preview.title",
+    "en": "Preview",
+    "uk": "Попередній перегляд"
+  },
+  {
+    "key": "status.toggleCoords",
+    "en": "Show/hide coordinates near cursor",
+    "uk": "Показувати/приховувати координати біля курсора"
+  },
+  {
+    "key": "status.coords",
+    "en": "Cursor coordinates on canvas",
+    "uk": "Координати курсора на полотні"
+  },
+  {
+    "key": "status.zoom",
+    "en": "Zoom",
+    "uk": "Масштаб"
+  },
+  {
+    "key": "status.zoomClick",
+    "en": "Click to change zoom",
+    "uk": "Натисніть, щоб змінити масштаб"
+  },
+  {
+    "key": "status.showSelected",
+    "en": "Show selected object",
+    "uk": "Показати виділений об’єкт"
+  },
+  {
+    "key": "welcome.thumbnail",
+    "en": "Thumbnail",
+    "uk": "Ескіз"
+  },
+  {
+    "key": "help.title",
+    "en": "Help & Manual",
+    "uk": "Довідка та інструкції"
+  },
+  {
+    "key": "help.search",
+    "en": "Search in help...",
+    "uk": "Пошук у довідці..."
+  },
+  {
+    "key": "help.clearSearch",
+    "en": "Clear search",
+    "uk": "Очистити пошук"
+  },
+  {
+    "key": "help.prevResult",
+    "en": "Previous result",
+    "uk": "Попередній результат"
+  },
+  {
+    "key": "help.nextResult",
+    "en": "Next result",
+    "uk": "Наступний результат"
+  },
+  {
+    "key": "help.notFound",
+    "en": "Not found",
+    "uk": "Не знайдено"
+  },
+  {
+    "key": "help.zoomOut",
+    "en": "Decrease font by 5%",
+    "uk": "Зменшити шрифт на 5%"
+  },
+  {
+    "key": "help.zoomIn",
+    "en": "Increase font by 5%",
+    "uk": "Збільшити шрифт на 5%"
+  },
+  {
+    "key": "help.resetZoom",
+    "en": "Reset zoom to 100%",
+    "uk": "Скинути масштаб до 100%"
+  },
+  {
+    "key": "help.close",
+    "en": "Close",
+    "uk": "Закрити"
+  },
+  {
+    "key": "help.prevSection",
+    "en": "Previous section",
+    "uk": "Попередній розділ"
+  },
+  {
+    "key": "help.nextSection",
+    "en": "Next section",
+    "uk": "Наступний розділ"
+  },
+  {
+    "key": "help.toc",
+    "en": "Table of Contents",
+    "uk": "Зміст"
+  },
+  {
+    "key": "help.sections",
+    "en": "Help Sections",
+    "uk": "Розділи довідки"
+  },
+  {
+    "key": "help.fontSize",
+    "en": "Font size",
+    "uk": "Розмір шрифту"
+  },
+  {
+    "key": "help.scrollToTop",
+    "en": "Scroll to top",
+    "uk": "Вгору"
+  },
+  {
+    "key": "menu.home",
+    "en": "Home",
+    "uk": "На головну"
+  },
+  {
+    "key": "menu.settings",
+    "en": "Settings",
+    "uk": "Налаштування"
+  },
+  {
+    "key": "tool.select",
+    "en": "Select",
+    "uk": "Вибрати"
+  },
+  {
+    "key": "tool.editPoints",
+    "en": "Edit Points",
+    "uk": "Редагувати вузли"
+  },
+  {
+    "key": "tool.align.left",
+    "en": "Align Left",
+    "uk": "Вирівняти ліворуч"
+  },
+  {
+    "key": "tool.align.centerH",
+    "en": "Align Horizontal Center",
+    "uk": "Вирівняти по центру (горизонтально)"
+  },
+  {
+    "key": "tool.align.right",
+    "en": "Align Right",
+    "uk": "Вирівняти праворуч"
+  },
+  {
+    "key": "tool.align.top",
+    "en": "Align Top",
+    "uk": "Вирівняти по верхньому краю"
+  },
+  {
+    "key": "tool.align.centerV",
+    "en": "Align Vertical Center",
+    "uk": "Вирівняти по центру (вертикально)"
+  },
+  {
+    "key": "tool.align.bottom",
+    "en": "Align Bottom",
+    "uk": "Вирівняти по нижньому краю"
+  },
+  {
+    "key": "tool.align.centerBothCanvas",
+    "en": "Center on Canvas",
+    "uk": "В центр полотна"
+  },
+  {
+    "key": "tool.align.selection",
+    "en": "Relative to selection",
+    "uk": "Відносно виділення"
+  },
+  {
+    "key": "tool.align.canvas",
+    "en": "Relative to canvas",
+    "uk": "Відносно полотна"
+  },
+  {
+    "key": "menu.object.centerCanvas",
+    "en": "Center on Canvas",
+    "uk": "В центр полотна"
+  },
+  {
+    "key": "sheet.pin",
+    "en": "Pin sheet (keep open while interacting with canvas)",
+    "uk": "Пришпилити вікно (не закривати при роботі з полотном)"
+  },
+  {
+    "key": "sheet.unpin",
+    "en": "Unpin sheet (normal modal mode)",
+    "uk": "Відшпилити вікно (звичайний режим)"
+  },
+  {
+    "key": "sheet.pinnedBadge",
+    "en": "Pinned",
+    "uk": "Пришпилено"
+  },
+  {
+    "key": "sheet.mode.modal",
+    "en": "Modal overlay (closes when clicking outside)",
+    "uk": "Звичайний оверлей (закривається при кліку поза вікном)"
+  },
+  {
+    "key": "sheet.mode.float",
+    "en": "Floating pin (canvas interactive beneath)",
+    "uk": "Пришпилено поверх (полотно активне під шторкою)"
+  },
+  {
+    "key": "sheet.mode.docked",
+    "en": "Split screen (canvas scaled side-by-side without overlap)",
+    "uk": "Розділений екран (полотно масштабується поруч без перекриття)"
+  },
+  {
+    "key": "sheet.badge.float",
+    "en": "📌 Floating",
+    "uk": "📌 Плаваюче"
+  },
+  {
+    "key": "sheet.badge.docked",
+    "en": "📑 Split screen",
+    "uk": "📑 Розділений екран"
+  },
+  {
+    "key": "sheet.swipeHint",
+    "en": "Swipe left/right to switch tabs",
+    "uk": "Свайпайте вліво/вправо для зміни вкладок"
+  },
+  {
+    "key": "tool.distribute.h",
+    "en": "Distribute Horizontally",
+    "uk": "Розподілити горизонтально"
+  },
+  {
+    "key": "tool.distribute.v",
+    "en": "Distribute Vertically",
+    "uk": "Розподілити вертикально"
+  },
+  {
+    "key": "tool.distribute.path",
+    "en": "Distribute by Path",
+    "uk": "Розподілити за шляхом"
+  },
+  {
+    "key": "tool.distribute.path.orient.radial",
+    "en": "Radial",
+    "uk": "Радіально"
+  },
+  {
+    "key": "tool.distribute.path.orient.tangent",
+    "en": "Tangent",
+    "uk": "Дотично"
+  },
+  {
+    "key": "tool.distribute.path.orient.parallel",
+    "en": "Parallel",
+    "uk": "Вздовж лінії"
+  },
+  {
+    "key": "tool.distribute.path.orient.perpendicular",
+    "en": "Perpendicular",
+    "uk": "Перпендикулярно"
+  },
+  {
+    "key": "tool.distribute.path.orient.custom",
+    "en": "Custom",
+    "uk": "Під кутом"
+  },
+  {
+    "key": "tool.distribute.circle",
+    "en": "Distribute along Circle",
+    "uk": "Розподілити по колу"
+  },
+  {
+    "key": "tool.distribute.circle.rotate",
+    "en": "Rotate along path",
+    "uk": "Обертати вздовж шляху"
+  },
+  {
+    "key": "tool.distribute.path.orient",
+    "en": "Orient along path",
+    "uk": "Орієнтувати вздовж шляху"
+  },
+  {
+    "key": "tool.distribute.path.radial",
+    "en": "Radial",
+    "uk": "Радіально"
+  },
+  {
+    "key": "tool.distribute.path.tangent",
+    "en": "Tangent",
+    "uk": "Тангенційно"
+  },
+  {
+    "key": "tool.distribute.path.parallel",
+    "en": "Parallel",
+    "uk": "Паралельно"
+  },
+  {
+    "key": "tool.distribute.path.perpendicular",
+    "en": "Perpendicular",
+    "uk": "Перпендикулярно"
+  },
+  {
+    "key": "tool.distribute.path.custom",
+    "en": "Custom angle",
+    "uk": "Заданий кут"
+  },
+  {
+    "key": "tool.distribute.path.rotate",
+    "en": "Rotate along path",
+    "uk": "Обертати вздовж шляху"
+  },
+  {
+    "key": "prop.cx",
+    "en": "Center X",
+    "uk": "Центр X"
+  },
+  {
+    "key": "prop.cy",
+    "en": "Center Y",
+    "uk": "Центр Y"
+  },
+  {
+    "key": "prop.r",
+    "en": "Radius",
+    "uk": "Радіус"
+  },
+  {
+    "key": "prop.rotation",
+    "en": "Rotation Angle",
+    "uk": "Кут обертання"
+  },
+  {
+    "key": "tool.distributePath.title",
+    "en": "Distribute along Path",
+    "uk": "Розподіл за шляхом"
+  },
+  {
+    "key": "tool.distributePath.type",
+    "en": "Path Type",
+    "uk": "Тип шляху"
+  },
+  {
+    "key": "tool.distributePath.alignment",
+    "en": "Alignment to Path",
+    "uk": "Вирівнювання відносно шляху"
+  },
+  {
+    "key": "align.center",
+    "en": "Center",
+    "uk": "По центру"
+  },
+  {
+    "key": "align.top",
+    "en": "Top",
+    "uk": "По верхньому краю"
+  },
+  {
+    "key": "align.bottom",
+    "en": "Bottom",
+    "uk": "По нижньому краю"
+  },
+  {
+    "key": "menu.tools.align",
+    "en": "Align",
+    "uk": "Вирівняти"
+  },
+  {
+    "key": "tool.rectangle",
+    "en": "Rectangle",
+    "uk": "Прямокутник"
+  },
+  {
+    "key": "tool.square",
+    "en": "Square",
+    "uk": "Квадрат"
+  },
+  {
+    "key": "tool.circle",
+    "en": "Circle",
+    "uk": "Коло"
+  },
+  {
+    "key": "tool.ellipse",
+    "en": "Ellipse",
+    "uk": "Еліпс"
+  },
+  {
+    "key": "tool.line",
+    "en": "Line",
+    "uk": "Лінія"
+  },
+  {
+    "key": "tool.polyline",
+    "en": "Polyline",
+    "uk": "Ламана"
+  },
+  {
+    "key": "tool.bezier",
+    "en": "Curve",
+    "uk": "Крива"
+  },
+  {
+    "key": "tool.arc",
+    "en": "Arc",
+    "uk": "Дуга"
+  },
+  {
+    "key": "tool.pieslice",
+    "en": "Pieslice",
+    "uk": "Сектор"
+  },
+  {
+    "key": "tool.chord",
+    "en": "Chord",
+    "uk": "Сегмент"
+  },
+  {
+    "key": "tool.polygon",
+    "en": "Polygon",
+    "uk": "Багатокутник"
+  },
+  {
+    "key": "tool.star",
+    "en": "Star",
+    "uk": "Зірка"
+  },
+  {
+    "key": "tool.triangle",
+    "en": "Triangle",
+    "uk": "Трикутник"
+  },
+  {
+    "key": "tool.rightTriangle",
+    "en": "Right Triangle",
+    "uk": "Прямокутний трикутник"
+  },
+  {
+    "key": "tool.rhombus",
+    "en": "Rhombus",
+    "uk": "Ромб"
+  },
+  {
+    "key": "tool.trapezoid",
+    "en": "Trapezoid",
+    "uk": "Трапеція"
+  },
+  {
+    "key": "tool.parallelogram",
+    "en": "Parallelogram",
+    "uk": "Паралелограм"
+  },
+  {
+    "key": "tool.text",
+    "en": "Text",
+    "uk": "Текст"
+  },
+  {
+    "key": "tool.pencil",
+    "en": "Pencil",
+    "uk": "Олівець"
+  },
+  {
+    "key": "tool.image",
+    "en": "Image",
+    "uk": "Зображення"
+  },
+  {
+    "key": "tool.bitmap",
+    "en": "Bitmap",
+    "uk": "Bitmap"
+  },
+  {
+    "key": "prop.fill",
+    "en": "Fill",
+    "uk": "Заливка"
+  },
+  {
+    "key": "prop.stroke",
+    "en": "Outline",
+    "uk": "Контур"
+  },
+  {
+    "key": "prop.width",
+    "en": "Width",
+    "uk": "Товщина"
+  },
+  {
+    "key": "prop.sides",
+    "en": "Sides",
+    "uk": "Сторони"
+  },
+  {
+    "key": "prop.innerRadius",
+    "en": "Inner Radius",
+    "uk": "Внутрішній радіус"
+  },
+  {
+    "key": "prop.color",
+    "en": "Color",
+    "uk": "Колір"
+  },
+  {
+    "key": "prop.font",
+    "en": "Font",
+    "uk": "Шрифт"
+  },
+  {
+    "key": "prop.size",
+    "en": "Size",
+    "uk": "Розмір"
+  },
+  {
+    "key": "prop.drawMode.corner",
+    "en": "Draw from Corner",
+    "uk": "Малювати від кута"
+  },
+  {
+    "key": "prop.drawMode.center",
+    "en": "Draw from Center",
+    "uk": "Малювати від центру"
+  },
+  {
+    "key": "prop.dash",
+    "en": "Dash",
+    "uk": "Штрихування"
+  },
+  {
+    "key": "action.clear",
+    "en": "Clear",
+    "uk": "Очистити"
+  },
+  {
+    "key": "action.generate",
+    "en": "Generate Code",
+    "uk": "Згенерувати код"
+  },
+  {
+    "key": "action.generating",
+    "en": "Generating...",
+    "uk": "Генерація..."
+  },
+  {
+    "key": "action.placeImage",
+    "en": "Click on canvas to place the image.",
+    "uk": "Клацніть на полотні, щоб розмістити зображення."
+  },
+  {
+    "key": "style.bold",
+    "en": "Bold",
+    "uk": "Виразний"
+  },
+  {
+    "key": "style.italic",
+    "en": "Italic",
+    "uk": "Курсив"
+  },
+  {
+    "key": "style.underline",
+    "en": "Underline",
+    "uk": "Підкреслений"
+  },
+  {
+    "key": "style.strikethrough",
+    "en": "Strikethrough",
+    "uk": "Закреслений"
+  },
+  {
+    "key": "align.left",
+    "en": "Left",
+    "uk": "Ліворуч"
+  },
+  {
+    "key": "align.right",
+    "en": "Right",
+    "uk": "Праворуч"
+  },
+  {
+    "key": "settings.title",
+    "en": "Settings",
+    "uk": "Налаштування"
+  },
+  {
+    "key": "settings.close",
+    "en": "Close",
+    "uk": "Закрити"
+  },
+  {
+    "key": "settings.tab.canvas",
+    "en": "Canvas",
+    "uk": "Полотно"
+  },
+  {
+    "key": "settings.tab.grid",
+    "en": "Grid",
+    "uk": "Сітка"
+  },
+  {
+    "key": "settings.tab.appearance",
+    "en": "Appearance",
+    "uk": "Вигляд"
+  },
+  {
+    "key": "settings.tab.code",
+    "en": "Code",
+    "uk": "Код"
+  },
+  {
+    "key": "settings.tab.templates",
+    "en": "Templates",
+    "uk": "Шаблони"
+  },
+  {
+    "key": "settings.appearance.interface",
+    "en": "Interface",
+    "uk": "Інтерфейс"
+  },
+  {
+    "key": "settings.appearance.language",
+    "en": "Language",
+    "uk": "Мова / Language"
+  },
+  {
+    "key": "settings.appearance.showTkinterNames",
+    "en": "Show Tkinter command names",
+    "uk": "Показувати назви команд Tkinter"
+  },
+  {
+    "key": "settings.appearance.showTkinterNamesDesc",
+    "en": "E.g.: \"Rectangle [rectangle]\".",
+    "uk": "Наприклад: \"Прямокутник [rectangle]\"."
+  },
+  {
+    "key": "settings.appearance.showAxes",
+    "en": "Show rulers",
+    "uk": "Показувати лінійки"
+  },
+  {
+    "key": "settings.appearance.showAxesDesc",
+    "en": "Displays rulers on the left and top of the canvas.",
+    "uk": "Відображає лінійки зліва та зверху від полотна."
+  },
+  {
+    "key": "settings.appearance.showCenterGuides",
+    "en": "Center guides",
+    "uk": "Центральні напрямні"
+  },
+  {
+    "key": "settings.appearance.showCenterGuidesDesc",
+    "en": "Displays horizontal and vertical center axes on the canvas.",
+    "uk": "Відображати горизонтальну та вертикальну осі по центру полотна."
+  },
+  {
+    "key": "settings.appearance.enableSnapping",
+    "en": "Smart snapping guides",
+    "uk": "Розумні лінії прилипання"
+  },
+  {
+    "key": "settings.appearance.enableSnappingDesc",
+    "en": "Displays guides when aligning shapes to each other.",
+    "uk": "Відображати напрямні при вирівнюванні фігур одна відносно одної."
+  },
+  {
+    "key": "settings.appearance.showCursorCoords",
+    "en": "Show coordinates near cursor",
+    "uk": "Показувати координати біля курсора"
+  },
+  {
+    "key": "settings.appearance.showCursorCoordsDesc",
+    "en": "Dynamically displays X/Y coordinates next to the cursor.",
+    "uk": "Динамічно відображає координати X/Y поруч з курсором."
+  },
+  {
+    "key": "settings.appearance.showMagnifier",
+    "en": "Magnifier loupe when drawing & editing",
+    "uk": "Лупа при малюванні та редагуванні"
+  },
+  {
+    "key": "settings.appearance.showMagnifierDesc",
+    "en": "Zooms in on the area under your finger or cursor for pixel-precision positioning.",
+    "uk": "Збільшує область під пальцем або курсором для надточного позиціонування."
+  },
+  {
+    "key": "settings.appearance.showRotationAngle",
+    "en": "Show rotation angle",
+    "uk": "Показувати кут при обертанні"
+  },
+  {
+    "key": "settings.appearance.showRotationAngleDesc",
+    "en": "Dynamically displays angle tooltip when rotating.",
+    "uk": "Динамічно відображає кут у підказці біля курсора."
+  },
+  {
+    "key": "settings.appearance.openAsWebApp",
+    "en": "Open as web app",
+    "uk": "Відкривати як веб-додаток"
+  },
+  {
+    "key": "settings.appearance.openAsWebAppDesc",
+    "en": "Launches the editor in a standalone window without browser UI (PWA mode).",
+    "uk": "Запускає редактор у окремому вікні без елементів браузера (PWA/standalone режим)."
+  },
+  {
+    "key": "settings.appearance.launchAsPwa",
+    "en": "Launch as Web App (PWA)",
+    "uk": "Запускати як веб-додаток (PWA)"
+  },
+  {
+    "key": "settings.appearance.launchAsPwaDesc",
+    "en": "Open the editor as a standalone web application window on launch.",
+    "uk": "Відкривати редактор при запуску в окремому автономному вікні без елементів браузера."
+  },
+  {
+    "key": "settings.appearance.homeScreen",
+    "en": "Home Screen",
+    "uk": "Головний екран"
+  },
+  {
+    "key": "settings.appearance.maxRecentProjects",
+    "en": "Max projects:",
+    "uk": "К-сть проєктів:"
+  },
+  {
+    "key": "settings.appearance.maxRecentProjectsDesc",
+    "en": "Max number of projects in the \"Recent\" list.",
+    "uk": "Макс. кількість проєктів у списку \"Останні\"."
+  },
+  {
+    "key": "settings.canvas.size",
+    "en": "Canvas Size",
+    "uk": "Розмір полотна"
+  },
+  {
+    "key": "settings.canvas.width",
+    "en": "Width:",
+    "uk": "Ширина:"
+  },
+  {
+    "key": "settings.canvas.height",
+    "en": "Height:",
+    "uk": "Висота:"
+  },
+  {
+    "key": "settings.canvas.background",
+    "en": "Background",
+    "uk": "Тло"
+  },
+  {
+    "key": "settings.canvas.bgColor",
+    "en": "Bg Color:",
+    "uk": "Колір тла:"
+  },
+  {
+    "key": "settings.canvas.codeDisplay",
+    "en": "Code Representation",
+    "uk": "Відображення в коді"
+  },
+  {
+    "key": "settings.canvas.varName",
+    "en": "Canvas Name:",
+    "uk": "Назва полотна:"
+  },
+  {
+    "key": "settings.canvas.varNameDesc",
+    "en": "(Latin letters, numbers, and \"_\" only. Cannot start with a number)",
+    "uk": "(Лише латинські літери, цифри та \"_\". Не може починатись з цифри)"
+  },
+  {
+    "key": "settings.grid.settings",
+    "en": "Grid Settings",
+    "uk": "Налаштування сітки"
+  },
+  {
+    "key": "settings.grid.size",
+    "en": "Grid Size:",
+    "uk": "Крок сітки:"
+  },
+  {
+    "key": "settings.grid.snapStep",
+    "en": "Snap Step:",
+    "uk": "Крок прив'язки:"
+  },
+  {
+    "key": "settings.code.generatorMethod",
+    "en": "Generation Method",
+    "uk": "Метод генерації"
+  },
+  {
+    "key": "settings.code.local",
+    "en": "Local Generator",
+    "uk": "Локальний генератор"
+  },
+  {
+    "key": "settings.code.localDesc",
+    "en": "Fast, works offline. Recommended.",
+    "uk": "Швидко, працює офлайн. Рекомендовано."
+  },
+  {
+    "key": "settings.code.gemini",
+    "en": "Gemini API",
+    "uk": "Gemini API"
+  },
+  {
+    "key": "settings.code.geminiDesc",
+    "en": "Requires API key and internet connection.",
+    "uk": "Вимагає ключ API та інтернет-з'єднання."
+  },
+  {
+    "key": "settings.code.manageKey",
+    "en": "Manage API Key",
+    "uk": "Керувати ключем API"
+  },
+  {
+    "key": "settings.code.settings",
+    "en": "Code Settings",
+    "uk": "Налаштування коду"
+  },
+  {
+    "key": "settings.code.outline",
+    "en": "Add `outline=\"\"`",
+    "uk": "Додавати `outline=\"\"`"
+  },
+  {
+    "key": "settings.code.outlineDesc",
+    "en": "For filled shapes with no stroke, prevents default 1px border.",
+    "uk": "Для фігур із заливкою, але без контуру, щоб уникнути рамки в 1px."
+  },
+  {
+    "key": "settings.code.comments",
+    "en": "Auto Comments",
+    "uk": "Автоматичні коментарі"
+  },
+  {
+    "key": "settings.code.commentsDesc",
+    "en": "Adds description for each shape in the code.",
+    "uk": "Генерувати описи та пояснення у коді для кожного об’єкта."
+  },
+  {
+    "key": "settings.code.showComments",
+    "en": "Show Comments",
+    "uk": "Відображати коментарі"
+  },
+  {
+    "key": "settings.code.showCommentsDesc",
+    "en": "Show or hide comments (automatic and manual) in the code window.",
+    "uk": "Показувати або приховувати коментарі (автоматичні та ручні) у вікні коду."
+  },
+  {
+    "key": "settings.code.lineNumbers",
+    "en": "Line Numbers",
+    "uk": "Номери рядків"
+  },
+  {
+    "key": "settings.code.lineNumbersDesc",
+    "en": "Show line numbers in the code window.",
+    "uk": "Показувати номери рядків у вікні коду."
+  },
+  {
+    "key": "settings.code.highlight",
+    "en": "Highlight Code",
+    "uk": "Підсвічувати код"
+  },
+  {
+    "key": "settings.code.highlightDesc",
+    "en": "Highlight the code line corresponding to the selected shape.",
+    "uk": "Підсвічувати рядок коду, що відповідає вибраній фігурі."
+  },
+  {
+    "key": "settings.code.generateTags",
+    "en": "Generate Tkinter tags",
+    "uk": "Генерувати теги (для груп/шарів)"
+  },
+  {
+    "key": "settings.code.generateTagsDesc",
+    "en": "Add tags= parameter for groups/layers in Tkinter code.",
+    "uk": "Додавати параметр tags= у Tkinter для фігур."
+  },
+  {
+    "key": "settings.templates.title",
+    "en": "Project Templates",
+    "uk": "Шаблони проєктів"
+  },
+  {
+    "key": "settings.templates.rename",
+    "en": "Rename",
+    "uk": "Перейменувати"
+  },
+  {
+    "key": "settings.templates.delete",
+    "en": "Delete",
+    "uk": "Видалити"
+  },
+  {
+    "key": "settings.templates.empty",
+    "en": "No templates saved. You can save the current canvas as a template via the \"File\" menu.",
+    "uk": "Шаблони не збережено. Ви можете зберегти поточне полотно як шаблон через меню \"Файл\"."
+  },
+  {
+    "key": "welcome.autosave.found",
+    "en": "Autosave found!",
+    "uk": "Знайдено автозбережену версію!"
+  },
+  {
+    "key": "welcome.autosave.message",
+    "en": "Project \"{name}\" was saved {time}.",
+    "uk": "Проєкт \"{name}\" був збережений {time}."
+  },
+  {
+    "key": "welcome.autosave.recently",
+    "en": "recently",
+    "uk": "нещодавно"
+  },
+  {
+    "key": "welcome.autosave.restore",
+    "en": "Restore",
+    "uk": "Відновити"
+  },
+  {
+    "key": "welcome.autosave.dismiss",
+    "en": "Dismiss autosave",
+    "uk": "Відхилити та видалити автозбережену версію"
+  },
+  {
+    "key": "welcome.title",
+    "en": "VereTka",
+    "uk": "ВереTkа"
+  },
+  {
+    "key": "welcome.subtitle",
+    "en": "Convert your drawings into code for Tkinter Canvas",
+    "uk": "Перетворюйте ваші малюнки на готовий код для Canvas Tkinter"
+  },
+  {
+    "key": "welcome.description",
+    "en": "A simple vector editor with quick Python (Tkinter) code generation based on your drawings",
+    "uk": "Простий векторний редактор із функцією швидкої генерації коду Python (Tkinter) на основі ваших малюнків"
+  },
+  {
+    "key": "welcome.action.new",
+    "en": "New Project",
+    "uk": "Створити новий проєкт"
+  },
+  {
+    "key": "welcome.action.newDesc",
+    "en": "Start with a blank canvas and new ideas.",
+    "uk": "Почати з чистого полотна та нових ідей."
+  },
+  {
+    "key": "welcome.action.load",
+    "en": "Load Project",
+    "uk": "Завантажити проєкт"
+  },
+  {
+    "key": "welcome.action.loadDesc",
+    "en": "Open existing .vec.json file.",
+    "uk": "Відкрити існуючий файл .vec.json."
+  },
+  {
+    "key": "welcome.action.return",
+    "en": "Return to Project",
+    "uk": "Повернутися до проєкту"
+  },
+  {
+    "key": "welcome.action.returnDesc",
+    "en": "Continue editing your drawing.",
+    "uk": "Продовжити редагування вашого малюнка."
+  },
+  {
+    "key": "welcome.recent.title",
+    "en": "Recent Projects",
+    "uk": "Останні проєкти"
+  },
+  {
+    "key": "welcome.recent.clear",
+    "en": "Clear List",
+    "uk": "Очистити список"
+  },
+  {
+    "key": "welcome.recent.delete",
+    "en": "Remove from list",
+    "uk": "Видалити зі списку"
+  },
+  {
+    "key": "welcome.recent.noThumbnail",
+    "en": "No Thumbnail",
+    "uk": "Немає ескізу"
+  },
+  {
+    "key": "welcome.recent.opened",
+    "en": "Opened",
+    "uk": "Відкрито"
+  },
+  {
+    "key": "welcome.recent.empty",
+    "en": "Recent projects list is empty.",
+    "uk": "Список останніх проєктів порожній."
+  },
+  {
+    "key": "welcome.recent.emptyDesc",
+    "en": "Start working by creating or loading a project.",
+    "uk": "Почніть роботу, створивши або завантаживши проєкт."
+  },
+  {
+    "key": "welcome.date.today",
+    "en": "Today",
+    "uk": "Сьогодні"
+  },
+  {
+    "key": "welcome.date.yesterday",
+    "en": "Yesterday",
+    "uk": "Вчора"
+  },
+  {
+    "key": "welcome.date.daysAgo",
+    "en": "{days} days ago",
+    "uk": "{days} дні тому"
+  },
+  {
+    "key": "code.title",
+    "en": "Tkinter Code",
+    "uk": "Код Tkinter"
+  },
+  {
+    "key": "code.wordWrap.on",
+    "en": "Enable word wrap",
+    "uk": "Увімкнути перенесення рядків"
+  },
+  {
+    "key": "code.wordWrap.off",
+    "en": "Disable word wrap",
+    "uk": "Вимкнути перенесення рядків"
+  },
+  {
+    "key": "code.update",
+    "en": "Update",
+    "uk": "Оновити"
+  },
+  {
+    "key": "code.preview",
+    "en": "Preview",
+    "uk": "Перегляд"
+  },
+  {
+    "key": "code.copy",
+    "en": "Copy",
+    "uk": "Копіювати"
+  },
+  {
+    "key": "code.copied",
+    "en": "Copied!",
+    "uk": "Скопійовано!"
+  },
+  {
+    "key": "code.options",
+    "en": "Options",
+    "uk": "Додаткові опції"
+  },
+  {
+    "key": "code.showComments",
+    "en": "Show comments",
+    "uk": "Показувати коментарі"
+  },
+  {
+    "key": "code.showLineNumbers",
+    "en": "Show line numbers",
+    "uk": "Показувати номери рядків"
+  },
+  {
+    "key": "code.highlight",
+    "en": "Highlight Code",
+    "uk": "Підсвічувати код"
+  },
+  {
+    "key": "code.highlightDesc",
+    "en": "Highlight the code line corresponding to the selected shape.",
+    "uk": "Підсвічувати рядок коду, що відповідає вибраній фігурі."
+  },
+  {
+    "key": "code.saveFile",
+    "en": "Save to file...",
+    "uk": "Зберегти у файл..."
+  },
+  {
+    "key": "code.saveFileDesc",
+    "en": "Save code to file",
+    "uk": "Зберегти код у файл"
+  },
+  {
+    "key": "code.openOnline",
+    "en": "Open in online IDE...",
+    "uk": "Відкрити в онлайн IDE..."
+  },
+  {
+    "key": "code.openOnlineDesc",
+    "en": "Open code in online editor",
+    "uk": "Відкрити код в онлайн-редакторі"
+  },
+  {
+    "key": "code.runOnline",
+    "en": "Run in online IDE...",
+    "uk": "Запустити в онлайн IDE..."
+  },
+  {
+    "key": "code.runOnlineDesc",
+    "en": "Run code online",
+    "uk": "Запустити код онлайн"
+  },
+  {
+    "key": "code.generating",
+    "en": "Generating Python code...",
+    "uk": "Генеруємо Python код..."
+  },
+  {
+    "key": "code.error",
+    "en": "Generation Error",
+    "uk": "Помилка генерації"
+  },
+  {
+    "key": "code.settings",
+    "en": "Go to Settings",
+    "uk": "Перейти в налаштування"
+  },
+  {
+    "key": "code.switchToLocal",
+    "en": "Switch to Local Generator",
+    "uk": "Перемкнутись на локальний генератор"
+  },
+  {
+    "key": "code.placeholder.title",
+    "en": "Code will appear here",
+    "uk": "Код з'явиться тут"
+  },
+  {
+    "key": "code.placeholder.commentsHidden",
+    "en": "Comments hidden. Enable them to see the code.",
+    "uk": "Коментарі приховані. Увімкніть їх, щоб побачити код."
+  },
+  {
+    "key": "code.placeholder.draw",
+    "en": "Draw shapes and generate code.",
+    "uk": "Намалюйте фігури та згенеруйте код."
+  },
+  {
+    "key": "list.title",
+    "en": "Objects",
+    "uk": "Об'єкти"
+  },
+  {
+    "key": "list.autoscroll.on",
+    "en": "Autoscroll ON",
+    "uk": "Автопошук увімкнено"
+  },
+  {
+    "key": "list.autoscroll.noSelection",
+    "en": "Select an object to find",
+    "uk": "Виберіть об'єкт для пошуку"
+  },
+  {
+    "key": "list.autoscroll.visible",
+    "en": "Selected object is visible",
+    "uk": "Виділений об'єкт вже видимий"
+  },
+  {
+    "key": "list.autoscroll.scroll",
+    "en": "Scroll to selected object",
+    "uk": "Прокрутити до виділеного об'єкта"
+  },
+  {
+    "key": "list.autoscroll.toggle",
+    "en": "Autoscroll",
+    "uk": "Автопрокрутка"
+  },
+  {
+    "key": "list.find",
+    "en": "Find in list",
+    "uk": "Знайти у списку"
+  },
+  {
+    "key": "list.visibility.show",
+    "en": "Show",
+    "uk": "Показати"
+  },
+  {
+    "key": "list.visibility.hide",
+    "en": "Hide",
+    "uk": "Приховати"
+  },
+  {
+    "key": "list.moveUp",
+    "en": "Move Up",
+    "uk": "Перемістити вище"
+  },
+  {
+    "key": "list.moveDown",
+    "en": "Move Down",
+    "uk": "Перемістити нижче"
+  },
+  {
+    "key": "list.delete",
+    "en": "Delete",
+    "uk": "Видалити"
+  },
+  {
+    "key": "list.empty",
+    "en": "No objects.",
+    "uk": "Немає об'єктів."
+  },
+  {
+    "key": "list.emptyLayer",
+    "en": "Empty layer",
+    "uk": "Шар порожній"
+  },
+  {
+    "key": "list.selectAll",
+    "en": "Select all",
+    "uk": "Виділити всі"
+  },
+  {
+    "key": "list.deselectAll",
+    "en": "Deselect all",
+    "uk": "Зняти всі виділення"
+  },
+  {
+    "key": "list.hidden",
+    "en": "hidden",
+    "uk": "прихований"
+  },
+  {
+    "key": "props.title",
+    "en": "Properties",
+    "uk": "Властивості"
+  },
+  {
+    "key": "props.commonTitle",
+    "en": "Common Properties",
+    "uk": "Спільні властивості"
+  },
+  {
+    "key": "props.stroke",
+    "en": "Stroke:",
+    "uk": "Контур:"
+  },
+  {
+    "key": "props.strokeWidth",
+    "en": "Stroke Width:",
+    "uk": "Товщина контуру:"
+  },
+  {
+    "key": "props.fill",
+    "en": "Fill:",
+    "uk": "Заливка:"
+  },
+  {
+    "key": "props.mixed",
+    "en": "Mixed",
+    "uk": "Різні"
+  },
+  {
+    "key": "props.none",
+    "en": "None",
+    "uk": "Немає"
+  },
+  {
+    "key": "props.empty",
+    "en": "Select an object to see its properties.",
+    "uk": "Виберіть об'єкт, щоб побачити його властивості."
+  },
+  {
+    "key": "props.name",
+    "en": "Name:",
+    "uk": "Назва:"
+  },
+  {
+    "key": "props.nameDesc",
+    "en": "Object name for identification.",
+    "uk": "Назва об'єкта для ідентифікації."
+  },
+  {
+    "key": "props.comment",
+    "en": "Comment:",
+    "uk": "Коментар:"
+  },
+  {
+    "key": "props.commentDesc",
+    "en": "Object comment in code.",
+    "uk": "Коментар до об’єкта у коді."
+  },
+  {
+    "key": "props.commentPlaceholder",
+    "en": "This comment will be added to code",
+    "uk": "Цей коментар буде додано до коду"
+  },
+  {
+    "key": "props.commentTooltip",
+    "en": "Add an explanation that will appear in the generated code.",
+    "uk": "Додайте пояснення, яке з’явиться у згенерованому коді."
+  },
+  {
+    "key": "props.geometry",
+    "en": "Geometry",
+    "uk": "Геометрія"
+  },
+  {
+    "key": "props.x",
+    "en": "X:",
+    "uk": "X:"
+  },
+  {
+    "key": "props.xDesc",
+    "en": "X coordinate",
+    "uk": "X координата"
+  },
+  {
+    "key": "props.y",
+    "en": "Y:",
+    "uk": "Y:"
+  },
+  {
+    "key": "props.width",
+    "en": "Width:",
+    "uk": "Ширина:"
+  },
+  {
+    "key": "props.height",
+    "en": "Height:",
+    "uk": "Висота:"
+  },
+  {
+    "key": "props.ratioLocked",
+    "en": "Ratio Locked",
+    "uk": "Пропорції заблоковано"
+  },
+  {
+    "key": "props.ratioUnlocked",
+    "en": "Lock Ratio",
+    "uk": "Зберегти пропорції"
+  },
+  {
+    "key": "props.lockRatioDesc",
+    "en": "Lock aspect ratio",
+    "uk": "Блокувати співвідношення сторін"
+  },
+  {
+    "key": "props.rotation",
+    "en": "Rotation:",
+    "uk": "Обертання:"
+  },
+  {
+    "key": "props.rotationDesc",
+    "en": "Rotation angle",
+    "uk": "Кут обертання"
+  },
+  {
+    "key": "props.tkinterCoords",
+    "en": "Tkinter Coordinates",
+    "uk": "Координати Tkinter"
+  },
+  {
+    "key": "props.nodes",
+    "en": "Nodes",
+    "uk": "Вузли"
+  },
+  {
+    "key": "props.nodesDesc",
+    "en": "Manage shape nodes.",
+    "uk": "Керування вузлами фігури."
+  },
+  {
+    "key": "props.nodes.count",
+    "en": "Nodes ({count})",
+    "uk": "Вузли ({count})"
+  },
+  {
+    "key": "props.nodeDelete",
+    "en": "Delete node",
+    "uk": "Видалити вузол"
+  },
+  {
+    "key": "props.state",
+    "en": "State",
+    "uk": "Стан"
+  },
+  {
+    "key": "props.state.normal",
+    "en": "Normal",
+    "uk": "Звичайний"
+  },
+  {
+    "key": "props.state.hidden",
+    "en": "Hidden",
+    "uk": "Прихований"
+  },
+  {
+    "key": "props.state.disabled",
+    "en": "Disabled",
+    "uk": "Вимкнений"
+  },
+  {
+    "key": "props.joinstyle",
+    "en": "Join Style",
+    "uk": "Стиль з'єднання"
+  },
+  {
+    "key": "props.joinstyle.miter",
+    "en": "Miter",
+    "uk": "Гострий"
+  },
+  {
+    "key": "props.joinstyle.round",
+    "en": "Round",
+    "uk": "Круглий"
+  },
+  {
+    "key": "props.joinstyle.bevel",
+    "en": "Bevel",
+    "uk": "Скошений"
+  },
+  {
+    "key": "props.capstyle",
+    "en": "Cap Style",
+    "uk": "Стиль кінця"
+  },
+  {
+    "key": "props.capstyle.butt",
+    "en": "Butt",
+    "uk": "Плаский"
+  },
+  {
+    "key": "props.capstyle.round",
+    "en": "Round",
+    "uk": "Круглий"
+  },
+  {
+    "key": "props.capstyle.projecting",
+    "en": "Projecting",
+    "uk": "Квадратний"
+  },
+  {
+    "key": "props.arrow",
+    "en": "Arrows",
+    "uk": "Стрілки"
+  },
+  {
+    "key": "props.arrow.none",
+    "en": "None",
+    "uk": "Немає"
+  },
+  {
+    "key": "props.arrow.first",
+    "en": "First",
+    "uk": "На початку"
+  },
+  {
+    "key": "props.arrow.last",
+    "en": "Last",
+    "uk": "В кінці"
+  },
+  {
+    "key": "props.arrow.both",
+    "en": "Both",
+    "uk": "На обох кінцях"
+  },
+  {
+    "key": "props.stipple",
+    "en": "Fill Pattern",
+    "uk": "Патерн заливки"
+  },
+  {
+    "key": "props.stipple.none",
+    "en": "None",
+    "uk": "Немає"
+  },
+  {
+    "key": "props.smooth",
+    "en": "Smooth",
+    "uk": "Згладжування"
+  },
+  {
+    "key": "props.closed",
+    "en": "Closed",
+    "uk": "Замкнутий контур"
+  },
+  {
+    "key": "props.dashOffset",
+    "en": "Dash Offset",
+    "uk": "Зсув штриха"
+  },
+  {
+    "key": "props.dashOffsetDesc",
+    "en": "Shifts the start of the dash pattern.",
+    "uk": "Зсуває початок патерну штрихування."
+  },
+  {
+    "key": "props.splinesteps",
+    "en": "Spline Steps",
+    "uk": "Кроки сплайна"
+  },
+  {
+    "key": "prop.title.stipple",
+    "en": "Select pattern to fill the shape.",
+    "uk": "Вибрати патерн для заповнення фігури."
+  },
+  {
+    "key": "props.stippleNote",
+    "en": "Note: stipple may only work on X11.",
+    "uk": "Примітка: stipple може працювати лише на X11."
+  },
+  {
+    "key": "prop.title.enableFill",
+    "en": "Enable or disable shape fill.",
+    "uk": "Увімкнути або вимкнути заливку фігури."
+  },
+  {
+    "key": "prop.title.fillColor",
+    "en": "Shape fill color.",
+    "uk": "Колір заливки фігури."
+  },
+  {
+    "key": "prop.title.enableStroke",
+    "en": "Enable or disable shape outline.",
+    "uk": "Увімкнути або вимкнути контур фігури."
+  },
+  {
+    "key": "prop.title.strokeColor",
+    "en": "Shape outline color.",
+    "uk": "Колір контуру фігури."
+  },
+  {
+    "key": "prop.title.strokeWidthLine",
+    "en": "Outline width in pixels.",
+    "uk": "Товщина лінії контуру в пікселях."
+  },
+  {
+    "key": "prop.title.nodeX",
+    "en": "X-coordinate of node {i}",
+    "uk": "X-координата вузла {i}"
+  },
+  {
+    "key": "prop.title.nodeY",
+    "en": "Y-coordinate of node {i}",
+    "uk": "Y-координата вузла {i}"
+  },
+  {
+    "key": "prop.title.addNode",
+    "en": "Add node between this and next",
+    "uk": "Додати вузол між цим та наступним"
+  },
+  {
+    "key": "prop.title.tkX1",
+    "en": "X-coordinate of top left Tkinter bounding box corner.",
+    "uk": "X-координата верхнього лівого кута рамки Tkinter."
+  },
+  {
+    "key": "prop.title.connectEnds",
+    "en": "Connect start and end points.",
+    "uk": "З’єднати початкову та кінцеву точки."
+  },
+  {
+    "key": "prop.title.tkY1",
+    "en": "Y-coordinate of top left Tkinter bounding box corner.",
+    "uk": "Y-координата верхнього лівого кута рамки Tkinter."
+  },
+  {
+    "key": "prop.title.tkX2",
+    "en": "X-coordinate of bottom right Tkinter bounding box corner.",
+    "uk": "X-координата нижнього правого кута рамки Tkinter."
+  },
+  {
+    "key": "prop.title.tkY2",
+    "en": "Y-coordinate of bottom right Tkinter bounding box corner.",
+    "uk": "Y-координата нижнього правого кута рамки Tkinter."
+  },
+  {
+    "key": "prop.title.state",
+    "en": "Visibility and interactivity state of object.",
+    "uk": "Стан видимості та інтерактивності об’єкта."
+  },
+  {
+    "key": "prop.title.joinstyle",
+    "en": "Line segment join style.",
+    "uk": "Стиль з’єднання сегментів лінії."
+  },
+  {
+    "key": "prop.title.joinstyleDesc",
+    "en": "Determines how corners look when connecting lines.",
+    "uk": "Визначає, як виглядають кути при з’єднанні ліній."
+  },
+  {
+    "key": "prop.title.capstyle",
+    "en": "Cap style of unclosed lines.",
+    "uk": "Стиль кінців незамкнених ліній."
+  },
+  {
+    "key": "prop.title.capstyleDesc",
+    "en": "Determines how line ends look.",
+    "uk": "Визначає, як виглядають кінці ліній."
+  },
+  {
+    "key": "prop.title.addArrows",
+    "en": "Add arrows to line ends.",
+    "uk": "Додати стрілки на кінці лінії."
+  },
+  {
+    "key": "prop.title.arrowDesc",
+    "en": "Add arrows to start, end, or both ends of the line.",
+    "uk": "Додати стрілки на початок, кінець або на обидва кінці лінії."
+  },
+  {
+    "key": "props.arrowTipOffset",
+    "en": "Tip Offset:",
+    "uk": "Відступ вістря:"
+  },
+  {
+    "key": "prop.title.arrowTipOffset",
+    "en": "Distance from line end to arrow tip.",
+    "uk": "Відстань від кінця лінії до вістря стрілки."
+  },
+  {
+    "key": "props.arrowWingsOffset",
+    "en": "Wings Offset:",
+    "uk": "Відступ крил:"
+  },
+  {
+    "key": "prop.title.arrowWingsOffset",
+    "en": "Distance from line end to the widest part of arrow.",
+    "uk": "Відстань від кінця лінії до найширшої частини стрілки."
+  },
+  {
+    "key": "props.arrowWingWidth",
+    "en": "Wing Width:",
+    "uk": "Ширина крила:"
+  },
+  {
+    "key": "prop.title.arrowWingWidth",
+    "en": "Width of one arrow wing. Total width will be doubled.",
+    "uk": "Ширина одного крила стрілки. Загальна ширина буде вдвічі більшою."
+  },
+  {
+    "key": "prop.title.sides",
+    "en": "Number of sides or rays in the shape.",
+    "uk": "Кількість сторін або променів у фігури."
+  },
+  {
+    "key": "props.innerRadius",
+    "en": "Inner Radius:",
+    "uk": "Внутр. радіус:"
+  },
+  {
+    "key": "prop.title.innerRadius",
+    "en": "Radius of inner vertices of the star.",
+    "uk": "Радіус внутрішніх вершин зірки."
+  },
+  {
+    "key": "props.sideLength",
+    "en": "Side Length:",
+    "uk": "Довжина сторони:"
+  },
+  {
+    "key": "prop.title.sideLength",
+    "en": "Length of one polygon side.",
+    "uk": "Довжина однієї сторони багатокутника."
+  },
+  {
+    "key": "props.topOffset",
+    "en": "Top Offset:",
+    "uk": "Зсув вершини:"
+  },
+  {
+    "key": "prop.title.topOffset",
+    "en": "Horizontal offset of the top vertex relative to the base center.",
+    "uk": "Горизонтальне зміщення верхньої вершини відносно центру основи."
+  },
+  {
+    "key": "props.symmetric",
+    "en": "Symmetric:",
+    "uk": "Симетрична:"
+  },
+  {
+    "key": "prop.title.symmetric",
+    "en": "Make the offset of top corners equal.",
+    "uk": "Зробити зміщення верхніх кутів однаковим."
+  },
+  {
+    "key": "props.offsetL",
+    "en": "Left Offset (%):",
+    "uk": "Зсув зліва (%):"
+  },
+  {
+    "key": "prop.title.offsetL",
+    "en": "Offset of the top left corner inwards in percentage of width.",
+    "uk": "Зміщення верхнього лівого кута всередину у відсотках від ширини."
+  },
+  {
+    "key": "props.offsetR",
+    "en": "Right Offset (%):",
+    "uk": "Зсув справа (%):"
+  },
+  {
+    "key": "prop.title.offsetR",
+    "en": "Offset of the top right corner inwards in percentage of width.",
+    "uk": "Зміщення верхнього правого кута всередину у відсотках від ширини."
+  },
+  {
+    "key": "props.angle",
+    "en": "Angle (º):",
+    "uk": "Кут (º):"
+  },
+  {
+    "key": "prop.title.angle",
+    "en": "Tilt angle of side edges (90 degrees = rectangle).",
+    "uk": "Кут нахилу бічних сторін (90 градусів = прямокутник)."
+  },
+  {
+    "key": "fonts.sans",
+    "en": "Popular Sans-Serif",
+    "uk": "Популярні Sans-Serif"
+  },
+  {
+    "key": "fonts.serif",
+    "en": "Popular Serif",
+    "uk": "Популярні Serif"
+  },
+  {
+    "key": "fonts.mono",
+    "en": "Popular Monospace",
+    "uk": "Популярні Monospace"
+  },
+  {
+    "key": "fonts.decorative",
+    "en": "Decorative",
+    "uk": "Декоративні"
+  },
+  {
+    "key": "fonts.error.notSupported",
+    "en": "Your browser or environment does not support loading local fonts.",
+    "uk": "Ваш браузер або середовище не підтримує завантаження локальних шрифтів."
+  },
+  {
+    "key": "fonts.error.notFound",
+    "en": "Local fonts not found or permission not granted.",
+    "uk": "Локальні шрифти не знайдено або дозвіл не було надано."
+  },
+  {
+    "key": "fonts.success.loaded",
+    "en": "Loaded {count} new system fonts.",
+    "uk": "Завантажено {count} нових системних шрифтів."
+  },
+  {
+    "key": "fonts.success.noNew",
+    "en": "No new unique system fonts found.",
+    "uk": "Нових унікальних системних шрифтів не знайдено."
+  },
+  {
+    "key": "fonts.error.loading",
+    "en": "Error loading system fonts:",
+    "uk": "Помилка під час завантаження системних шрифтів:"
+  },
+  {
+    "key": "fonts.error.details",
+    "en": "Failed to load fonts. Check console for details.",
+    "uk": "Не вдалося завантажити шрифти. Дивіться консоль для деталей."
+  },
+  {
+    "key": "fonts.error.blocked",
+    "en": "Font access is blocked by environment security policy.",
+    "uk": "Доступ до шрифтів заблоковано політикою безпеки середовища."
+  },
+  {
+    "key": "fonts.error.denied",
+    "en": "You denied permission to access fonts.",
+    "uk": "Ви відхилили дозвіл на доступ до шрифтів."
+  },
+  {
+    "key": "props.anchor",
+    "en": "Anchor:",
+    "uk": "Прив’язка:"
+  },
+  {
+    "key": "props.anchor.nw",
+    "en": "Top Left",
+    "uk": "Верхній лівий кут"
+  },
+  {
+    "key": "props.anchor.n",
+    "en": "Top Center",
+    "uk": "Верхній центр"
+  },
+  {
+    "key": "props.anchor.ne",
+    "en": "Top Right",
+    "uk": "Верхній правий кут"
+  },
+  {
+    "key": "props.anchor.w",
+    "en": "Center Left",
+    "uk": "Центр ліворуч"
+  },
+  {
+    "key": "props.anchor.center",
+    "en": "Center",
+    "uk": "Центр"
+  },
+  {
+    "key": "props.anchor.e",
+    "en": "Center Right",
+    "uk": "Центр праворуч"
+  },
+  {
+    "key": "props.anchor.sw",
+    "en": "Bottom Left",
+    "uk": "Нижній лівий кут"
+  },
+  {
+    "key": "props.anchor.s",
+    "en": "Bottom Center",
+    "uk": "Нижній центр"
+  },
+  {
+    "key": "props.anchor.se",
+    "en": "Bottom Right",
+    "uk": "Нижній правий кут"
+  },
+  {
+    "key": "props.style",
+    "en": "Style:",
+    "uk": "Стиль:"
+  },
+  {
+    "key": "props.startAngle",
+    "en": "Start (º):",
+    "uk": "Початок (º):"
+  },
+  {
+    "key": "props.endAngle",
+    "en": "End (º):",
+    "uk": "Кінець (º):"
+  },
+  {
+    "key": "props.extent",
+    "en": "Extent (º):",
+    "uk": "Довжина (º):"
+  },
+  {
+    "key": "props.lockExtent",
+    "en": "Lock Extent",
+    "uk": "Блокувати довжину"
+  },
+  {
+    "key": "props.fonts.system",
+    "en": "System Fonts",
+    "uk": "Системні шрифти"
+  },
+  {
+    "key": "props.fonts.tk",
+    "en": "Tk Logical Fonts",
+    "uk": "Логічні шрифти Tk"
+  },
+  {
+    "key": "props.actions",
+    "en": "Actions",
+    "uk": "Дії"
+  },
+  {
+    "key": "props.fonts.load",
+    "en": "Load system fonts",
+    "uk": "Завантажити системні шрифти"
+  },
+  {
+    "key": "props.fonts.loading",
+    "en": "Loading...",
+    "uk": "Завантаження..."
+  },
+  {
+    "key": "props.anchorX",
+    "en": "Anchor X:",
+    "uk": "X прив’язки:"
+  },
+  {
+    "key": "props.anchorY",
+    "en": "Anchor Y:",
+    "uk": "Y прив’язки:"
+  },
+  {
+    "key": "props.justify",
+    "en": "Justify:",
+    "uk": "Вирівнювання:"
+  },
+  {
+    "key": "props.blockWidth",
+    "en": "Block Width:",
+    "uk": "Ширина блока:"
+  },
+  {
+    "key": "props.bitmapType",
+    "en": "Type:",
+    "uk": "Тип:"
+  },
+  {
+    "key": "props.fgColor",
+    "en": "Foreground:",
+    "uk": "Основний колір:"
+  },
+  {
+    "key": "props.bgColor",
+    "en": "Background:",
+    "uk": "Тловий колір:"
+  },
+  {
+    "key": "prop.title.color",
+    "en": "Line color.",
+    "uk": "Колір лінії."
+  },
+  {
+    "key": "prop.title.width",
+    "en": "Line width in pixels.",
+    "uk": "Товщина лінії в пікселях."
+  },
+  {
+    "key": "prop.title.closed",
+    "en": "Connect start and end points.",
+    "uk": "З’єднати початкову та кінцеву точки."
+  },
+  {
+    "key": "prop.title.smooth",
+    "en": "Smooth corners to form a curve.",
+    "uk": "Згладити кути, перетворивши на криву."
+  },
+  {
+    "key": "prop.title.splinesteps",
+    "en": "Number of segments to approximate curve.",
+    "uk": "Кількість сегментів для апроксимації кривої."
+  },
+  {
+    "key": "prop.title.arcStyle",
+    "en": "Arc style: Sector (pieslice), Chord, or Arc.",
+    "uk": "Стиль дуги: Сектор (pieslice), Хорда (chord), або Дуга (arc)."
+  },
+  {
+    "key": "prop.title.startAngle",
+    "en": "Start angle of the arc in degrees (0 - 3 o’clock).",
+    "uk": "Початковий кут дуги в градусах (0 - на 3 години)."
+  },
+  {
+    "key": "prop.title.endAngle",
+    "en": "End angle of the arc in degrees.",
+    "uk": "Кінцевий кут дуги в градусах."
+  },
+  {
+    "key": "prop.title.extent",
+    "en": "Length of the arc in degrees.",
+    "uk": "Довжина дуги в градусах."
+  },
+  {
+    "key": "prop.title.lockExtent",
+    "en": "Preserve arc length when changing its ends.",
+    "uk": "Зберігати довжину дуги при зміні її кінців."
+  },
+  {
+    "key": "prop.title.text",
+    "en": "Text to display.",
+    "uk": "Текст для відображення."
+  },
+  {
+    "key": "prop.title.font",
+    "en": "Font for the text.",
+    "uk": "Шрифт для тексту."
+  },
+  {
+    "key": "prop.title.fontSize",
+    "en": "Font size.",
+    "uk": "Розмір шрифту."
+  },
+  {
+    "key": "prop.title.textColor",
+    "en": "Text color.",
+    "uk": "Колір тексту."
+  },
+  {
+    "key": "prop.title.textStyle",
+    "en": "Text styles.",
+    "uk": "Стилі тексту."
+  },
+  {
+    "key": "prop.title.anchor",
+    "en": "The point on the text that will be placed at the specified coordinates.",
+    "uk": "Точка на тексті, яка буде розташована за вказаними координатами."
+  },
+  {
+    "key": "prop.title.anchorX",
+    "en": "Anchor X coordinate.",
+    "uk": "X-координата точки прив’язки."
+  },
+  {
+    "key": "prop.title.anchorY",
+    "en": "Anchor Y coordinate.",
+    "uk": "Y-координата точки прив’язки."
+  },
+  {
+    "key": "prop.title.justify",
+    "en": "Text alignment inside its bounding box.",
+    "uk": "Вирівнювання тексту всередині його рамки."
+  },
+  {
+    "key": "prop.title.blockWidth",
+    "en": "Text block width. 0 means no wrap.",
+    "uk": "Ширина текстового блока. 0 - без переносу."
+  },
+  {
+    "key": "prop.title.bitmapType",
+    "en": "Standard Tkinter bitmap type.",
+    "uk": "Стандартний тип бітової карти в Tkinter."
+  },
+  {
+    "key": "prop.title.fgColor",
+    "en": "Bitmap foreground color.",
+    "uk": "Колір переднього плану бітової карти."
+  },
+  {
+    "key": "prop.title.bgColor",
+    "en": "Bitmap background color.",
+    "uk": "Колір тла бітової карти."
+  },
+  {
+    "key": "prop.title.posY",
+    "en": "Y-coordinate of bounding box top left corner.",
+    "uk": "Y-координата верхнього лівого кута рамки виділення."
+  },
+  {
+    "key": "prop.title.widthGeom",
+    "en": "Geometric width of the object (without rotation).",
+    "uk": "Геометрична ширина об’єкта (без обертання)."
+  },
+  {
+    "key": "prop.title.heightGeom",
+    "en": "Geometric height of the object (without rotation).",
+    "uk": "Геометрична висота об’єкта (без обертання)."
+  },
+  {
+    "key": "prop.dash.strokeLen",
+    "en": "Length of {i} stroke in pixels.",
+    "uk": "Довжина {i}-го штриха в пікселях."
+  },
+  {
+    "key": "prop.dash.gapLen",
+    "en": "Length of {i} gap in pixels.",
+    "uk": "Довжина {i}-го пропуску в пікселях."
+  },
+  {
+    "key": "prop.dash.stroke",
+    "en": "Stroke {i} (px):",
+    "uk": "Штрих {i} (px):"
+  },
+  {
+    "key": "prop.dash.gap",
+    "en": "Gap {i} (px):",
+    "uk": "Пропуск {i} (px):"
+  },
+  {
+    "key": "prop.dash.strokeLenTitle",
+    "en": "Stroke length in pixels",
+    "uk": "Довжина штриха в пікселях"
+  },
+  {
+    "key": "prop.dash.gapLenTitle",
+    "en": "Gap length in pixels",
+    "uk": "Довжина пропуску в пікселях"
+  },
+  {
+    "key": "prop.dash.removeSegment",
+    "en": "Delete the last segment (stroke and gap)",
+    "uk": "Видалити останній сегмент (штрих і пропуск)"
+  },
+  {
+    "key": "prop.dash.addSegment",
+    "en": "Add a segment (stroke and gap)",
+    "uk": "Додати сегмент (штрих і пропуск)"
+  },
+  {
+    "key": "prop.dash.custom",
+    "en": "Custom",
+    "uk": "Користувацьке"
+  },
+  {
+    "key": "action.apply",
+    "en": "Apply",
+    "uk": "Застосувати"
+  },
+  {
+    "key": "color.allColorsShort",
+    "en": "All Tkinter colors...",
+    "uk": "Усі кольори Tkinter..."
+  },
+  {
+    "key": "color.allColorsTitle",
+    "en": "All Tkinter Colors",
+    "uk": "Усі кольори Tkinter"
+  },
+  {
+    "key": "color.searchPlaceholder",
+    "en": "Search by name or HEX...",
+    "uk": "Пошук за назвою або HEX..."
+  },
+  {
+    "key": "color.sortBy",
+    "en": "Sort by:",
+    "uk": "Сортування:"
+  },
+  {
+    "key": "color.sortGroup",
+    "en": "By group",
+    "uk": "За групами"
+  },
+  {
+    "key": "color.sortGroupTitle",
+    "en": "Sort by logical color groups",
+    "uk": "Сортувати за логічними групами кольорів"
+  },
+  {
+    "key": "color.sortAlpha",
+    "en": "Alphabetical (A-Z)",
+    "uk": "За алфавітом (A-Z)"
+  },
+  {
+    "key": "color.sortAlphaTitle",
+    "en": "Sort by name alphabetically",
+    "uk": "Сортувати за назвою за алфавітом"
+  },
+  {
+    "key": "color.sortHex",
+    "en": "By code (#)",
+    "uk": "За кодом (#)"
+  },
+  {
+    "key": "color.sortHexTitle",
+    "en": "Sort by hexadecimal code",
+    "uk": "Сортувати за шістнадцятковим кодом"
+  },
+  {
+    "key": "color.selected",
+    "en": "Selected:",
+    "uk": "Обрано:"
+  },
+  {
+    "key": "color.none",
+    "en": "None",
+    "uk": "Не обрано"
+  },
+  {
+    "key": "color.notFound",
+    "en": "Not found",
+    "uk": "Нічого не знайдено"
+  },
+  {
+    "key": "color.recent",
+    "en": "Recent Colors",
+    "uk": "Останні кольори"
+  },
+  {
+    "key": "color.recentColors",
+    "en": "Recent Colors",
+    "uk": "Останні кольори"
+  },
+  {
+    "key": "layer.add",
+    "en": "Add layer",
+    "uk": "Додати шар"
+  },
+  {
+    "key": "layer.delete",
+    "en": "Delete layer",
+    "uk": "Видалити шар"
+  },
+  {
+    "key": "layer.duplicateName",
+    "en": "A layer with this name already exists. Please choose another name.",
+    "uk": "Шар з такою назвою вже існує. Будь ласка, виберіть іншу назву."
+  },
+  {
+    "key": "layer.hide",
+    "en": "Hide layer",
+    "uk": "Приховати шар"
+  },
+  {
+    "key": "layer.lock",
+    "en": "Lock layer",
+    "uk": "Заблокувати шар"
+  },
+  {
+    "key": "layer.show",
+    "en": "Show layer",
+    "uk": "Показати шар"
+  },
+  {
+    "key": "layer.unlock",
+    "en": "Unlock layer",
+    "uk": "Розблокувати шар"
+  },
+  {
+    "key": "layer.clear",
+    "en": "Clear layer",
+    "uk": "Очистити шар"
+  },
+  {
+    "key": "layer.clearConfirmTitle",
+    "en": "Clear Layer",
+    "uk": "Очищення шару"
+  },
+  {
+    "key": "layer.clearConfirmText",
+    "en": "Are you sure you want to remove all objects from layer \"{name}\"? The layer itself will remain.",
+    "uk": "Ви впевнені, що хочете видалити всі об'єкти з шару \"{name}\"? Сам шар залишиться."
+  },
+  {
+    "key": "layer.lockedCannotClear",
+    "en": "Locked layer cannot be cleared",
+    "uk": "Заблокований шар не можна очистити"
+  },
+  {
+    "key": "menu.edit.language",
+    "en": "Interface language",
+    "uk": "Мова інтерфейсу"
+  },
+  {
+    "key": "prop.title.dashArray",
+    "en": "Dash array",
+    "uk": "Пунктир"
+  },
+  {
+    "key": "prop.title.dashOffset",
+    "en": "Dash offset",
+    "uk": "Зсув пунктиру"
+  },
+  {
+    "key": "props.hiddenWarning",
+    "en": "Object is hidden (on hidden layer)",
+    "uk": "Об'єкт прихований (на прихованому шарі)"
+  },
+  {
+    "key": "help.cloudStorage",
+    "en": "8. Cloud Storage and Gallery",
+    "uk": "8. Хмарне сховище і галерея"
+  },
+  {
+    "key": "settings.appearance.showSystemTags",
+    "en": "Show system tags",
+    "uk": "Відображати системні теги"
+  },
+  {
+    "key": "settings.appearance.showSystemTagsDesc",
+    "en": "Add automatic shape and group IDs to tags.",
+    "uk": "Додавати автоматичні ідентифікатори фігур і груп у теги."
+  },
+  {
+    "key": "mobile.header.openMenu",
+    "en": "Open menu",
+    "uk": "Відкрити меню"
+  },
+  {
+    "key": "mobile.header.test",
+    "en": "Test",
+    "uk": "Тест"
+  },
+  {
+    "key": "mobile.header.runSimulation",
+    "en": "Run Tkinter simulation",
+    "uk": "Запустити симуляцію Tkinter"
+  },
+  {
+    "key": "mobile.bottomBar.label",
+    "en": "Control bar",
+    "uk": "Панель керування"
+  },
+  {
+    "key": "mobile.nav.nodes",
+    "en": "Nodes",
+    "uk": "Вузли"
+  },
+  {
+    "key": "mobile.nav.select",
+    "en": "Select",
+    "uk": "Вибір"
+  },
+  {
+    "key": "mobile.nav.shapes",
+    "en": "Shapes",
+    "uk": "Фігури"
+  },
+  {
+    "key": "mobile.nav.shapesTitle",
+    "en": "Shapes and tools",
+    "uk": "Фігури та інструменти"
+  },
+  {
+    "key": "mobile.nav.style",
+    "en": "Style",
+    "uk": "Стиль"
+  },
+  {
+    "key": "mobile.nav.styleTitle",
+    "en": "Style and colors",
+    "uk": "Стиль та колір"
+  },
+  {
+    "key": "mobile.nav.objects",
+    "en": "Objects",
+    "uk": "Обʼєкти"
+  },
+  {
+    "key": "mobile.nav.objectsTitle",
+    "en": "Objects and layers",
+    "uk": "Обʼєкти та шари"
+  },
+  {
+    "key": "mobile.nav.code",
+    "en": "Code",
+    "uk": "Код"
+  },
+  {
+    "key": "mobile.nav.codeTitle",
+    "en": "Tkinter code",
+    "uk": "Код Tkinter"
+  },
+  {
+    "key": "mobile.selected.count",
+    "en": "Selected: {count}",
+    "uk": "Вибрано: {count}"
+  },
+  {
+    "key": "mobile.selected.title",
+    "en": "Selected shapes: {count}",
+    "uk": "Вибрано фігур: {count}",
+    "fr": "Selected shapes: {count}"
+  },
+  {
+    "key": "mobile.action.align",
+    "en": "Align",
+    "uk": "Вирівняти",
+    "fr": "Align"
+  },
+  {
+    "key": "mobile.action.alignTitle",
+    "en": "Alignment and distribution",
+    "uk": "Вирівнювання та розподіл",
+    "fr": "Alignment and distribution"
+  },
+  {
+    "key": "mobile.moreActions",
+    "en": "More selection actions",
+    "uk": "Додаткові дії з виділенням",
+    "fr": "More selection actions"
+  },
+  {
+    "key": "mobile.align.active",
+    "en": "Active",
+    "uk": "Активно",
+    "fr": "Active"
+  },
+  {
+    "key": "mobile.align.noShapes",
+    "en": "No shapes available (draw on canvas first)",
+    "uk": "Немає доступних фігур (намалюйте на полотні)",
+    "fr": "No shapes available (draw on canvas first)"
+  },
+  {
+    "key": "mobile.align.selectShapeContour",
+    "en": "-- Select a shape as path --",
+    "uk": "-- Оберіть фігуру як контур --",
+    "fr": "-- Select a shape as path --"
+  },
+  {
+    "key": "mobile.align.orientationType",
+    "en": "Orientation type:",
+    "uk": "Тип орієнтації:",
+    "fr": "Orientation type:"
+  },
+  {
+    "key": "mobile.align.orientationAngle",
+    "en": "Orientation angle:",
+    "uk": "Кут орієнтації:",
+    "fr": "Orientation angle:"
+  },
+  {
+    "key": "mobile.align.base",
+    "en": "Align relative to:",
+    "uk": "База вирівнювання (Відносно чого):",
+    "fr": "Align relative to:"
+  },
+  {
+    "key": "mobile.align.need2Plus",
+    "en": "(requires 2+ shapes)",
+    "uk": "(потрібно 2+ фігури)",
+    "fr": "(requires 2+ shapes)"
+  },
+  {
+    "key": "mobile.align.selectedCount",
+    "en": "({count} selected)",
+    "uk": "({count} виділено)",
+    "fr": "({count} selected)"
+  },
+  {
+    "key": "mobile.align.canvasDesc",
+    "en": "ℹ️ Canvas: Objects align relative to the bounds or center of the canvas ({w}×{h}px). Works for 1 or more shapes.",
+    "uk": "ℹ️ Полотно: Обʼєкти вирівнюються за межами або центром робочого полотна ({w}×{h}px). Працює для 1 або більше фігур.",
+    "fr": "ℹ️ Canvas: Objects align relative to the bounds or center of the canvas ({w}×{h}px). Works for 1 or more shapes."
+  },
+  {
+    "key": "mobile.align.selectionDesc",
+    "en": "ℹ️ Selection: Shapes align relative to each other within their common selection bounding box.",
+    "uk": "ℹ️ Виділення: Фігури вирівнюються одна відносно одної за крайніми координатами спільної рамки виділення.",
+    "fr": "ℹ️ Selection: Shapes align relative to each other within their common selection bounding box."
+  },
+  {
+    "key": "mobile.align.sideAlign",
+    "en": "Side alignment:",
+    "uk": "Вирівнювання сторін:",
+    "fr": "Side alignment:"
+  },
+  {
+    "key": "mobile.align.left",
+    "en": "Left",
+    "uk": "Зліва",
+    "fr": "Left"
+  },
+  {
+    "key": "mobile.align.centerX",
+    "en": "Center X",
+    "uk": "Центр X",
+    "fr": "Center X"
+  },
+  {
+    "key": "mobile.align.right",
+    "en": "Right",
+    "uk": "Справа",
+    "fr": "Right"
+  },
+  {
+    "key": "mobile.align.top",
+    "en": "Top",
+    "uk": "Зверху",
+    "fr": "Top"
+  },
+  {
+    "key": "mobile.align.centerY",
+    "en": "Center Y",
+    "uk": "Центр Y",
+    "fr": "Center Y"
+  },
+  {
+    "key": "mobile.align.bottom",
+    "en": "Bottom",
+    "uk": "Знизу",
+    "fr": "Bottom"
+  },
+  {
+    "key": "mobile.align.distributeSection",
+    "en": "Equal spacing distribution:",
+    "uk": "Рівномірний розподіл інтервалів:",
+    "fr": "Equal spacing distribution:"
+  },
+  {
+    "key": "mobile.align.min2Objects",
+    "en": "Min. 2 objects",
+    "uk": "Мін. 2 обʼєкти",
+    "fr": "Min. 2 objects"
+  },
+  {
+    "key": "mobile.align.min3Objects",
+    "en": "Min. 3 objects",
+    "uk": "Мін. 3 обʼєкти",
+    "fr": "Min. 3 objects"
+  },
+  {
+    "key": "mobile.align.distributeH",
+    "en": "Horizontal",
+    "uk": "Горизонтально",
+    "fr": "Horizontal"
+  },
+  {
+    "key": "mobile.align.distributeV",
+    "en": "Vertical",
+    "uk": "Вертикально",
+    "fr": "Vertical"
+  },
+  {
+    "key": "mobile.align.distributePathHint",
+    "en": "Distributes selected objects along a circular, linear, or custom contour path",
+    "uk": "Розміщує виділені обʼєкти вздовж кругового, лінійного або довільного контуру",
+    "fr": "Distributes selected objects along a circular, linear, or custom contour path"
+  },
+  {
+    "key": "mobile.menu.cloudSubtitle",
+    "en": "Public projects, groups, and classes",
+    "uk": "Публічні проєкти, групи та класи",
+    "fr": "Public projects, groups, and classes"
+  },
+  {
+    "key": "mobile.menu.viewPythonCode",
+    "en": "View Python Code",
+    "uk": "Перегляд коду Python",
+    "fr": "View Python Code"
+  },
+  {
+    "key": "mobile.menu.runSimulator",
+    "en": "Run in Simulator (Tkinter)",
+    "uk": "Запуск у симуляторі (Tkinter)",
+    "fr": "Run in Simulator (Tkinter)"
+  },
+  {
+    "key": "mobile.menu.savePyFile",
+    "en": "Save as .py file",
+    "uk": "Зберегти як .py файл",
+    "fr": "Save as .py file"
+  },
+  {
+    "key": "mobile.menu.runOnline",
+    "en": "Run in Online Environment",
+    "uk": "Запустити в онлайн-середовищі",
+    "fr": "Run in Online Environment"
+  },
+  {
+    "key": "mobile.shapes.linesAndArcs",
+    "en": "Lines & Arcs",
+    "uk": "Лінії та Дуги",
+    "fr": "Lines & Arcs"
+  },
+  {
+    "key": "mobile.shapes.textAndMedia",
+    "en": "Text & Media",
+    "uk": "Текст та Медіа",
+    "fr": "Text & Media"
+  },
+  {
+    "key": "mobile.drawMode.title",
+    "en": "Drawing Mode:",
+    "uk": "Режим побудови:",
+    "fr": "Drawing Mode:"
+  },
+  {
+    "key": "mobile.drawMode.corner",
+    "en": "From Corner",
+    "uk": "Від кута",
+    "fr": "From Corner"
+  },
+  {
+    "key": "mobile.drawMode.center",
+    "en": "From Center",
+    "uk": "Від центру",
+    "fr": "From Center"
+  },
+  {
+    "key": "mobile.tabs.properties",
+    "en": "Properties",
+    "uk": "Властивості",
+    "fr": "Properties"
+  },
+  {
+    "key": "mobile.tabs.colors",
+    "en": "Colors",
+    "uk": "Кольори",
+    "fr": "Colors"
+  },
+  {
+    "key": "mobile.tabs.position",
+    "en": "Position",
+    "uk": "Позиція",
+    "fr": "Position"
+  },
+  {
+    "key": "mobile.sheet.dragResize",
+    "en": "Drag left/right to resize width or swipe to switch tabs",
+    "uk": "Потягніть вліво/вправо для зміни ширини або свайпайте для зміни вкладок",
+    "fr": "Drag left/right to resize width or swipe to switch tabs"
+  },
+  {
+    "key": "mobile.sheet.expandWidth",
+    "en": "Expand sheet",
+    "uk": "Розширити шторку",
+    "fr": "Expand sheet"
+  },
+  {
+    "key": "mobile.sheet.collapseWidth",
+    "en": "Collapse sheet",
+    "uk": "Звузити шторку",
+    "fr": "Collapse sheet"
+  },
+  {
+    "key": "mobile.sheet.expandHeight",
+    "en": "Expand sheet",
+    "uk": "Розгорнути шторку",
+    "fr": "Expand sheet"
+  },
+  {
+    "key": "mobile.sheet.collapseHeight",
+    "en": "Collapse sheet",
+    "uk": "Зменшити шторку",
+    "fr": "Collapse sheet"
+  },
+  {
+    "key": "control.quickSettings",
+    "en": "Quick settings: slider, presets, and reset",
+    "uk": "Швидкі налаштування: слайдер, пресети та скидання",
+    "fr": "Quick settings: slider, presets, and reset"
+  },
+  {
+    "key": "control.reset",
+    "en": "Reset",
+    "uk": "Скинути",
+    "fr": "Reset"
+  },
+  {
+    "key": "control.resetToInitial",
+    "en": "Reset to initial value",
+    "uk": "Скинути до початкового значення",
+    "fr": "Reset to initial value"
+  },
+  {
+    "key": "control.quickValues",
+    "en": "Quick values:",
+    "uk": "Швидкі значення:",
+    "fr": "Quick values:"
+  },
+  {
+    "key": "control.rotateCcw90",
+    "en": "Rotate by -90°",
+    "uk": "Повернути на -90°",
+    "fr": "Rotate by -90°"
+  },
+  {
+    "key": "control.rotateCw90",
+    "en": "Rotate by +90°",
+    "uk": "Повернути на +90°",
+    "fr": "Rotate by +90°"
+  },
+  {
+    "key": "share.ghPagesLabel",
+    "en": "GitHub Pages (for sharing)",
+    "uk": "GitHub Pages (для поширення)",
+    "fr": "GitHub Pages (for sharing)"
+  },
+  {
+    "key": "share.localUrlLabel",
+    "en": "Current site (for testing)",
+    "uk": "Поточний сайт (для тестування)",
+    "fr": "Current site (for testing)"
+  },
+  {
+    "key": "share.testUrlLabel",
+    "en": "Test link (current preview)",
+    "uk": "Тестове посилання (поточний превʼю)",
+    "fr": "Test link (current preview)"
+  },
+  {
+    "key": "share.ghPagesWhyTitle",
+    "en": "💡 Why did GitHub Pages open the home page?",
+    "uk": "💡 Чому сайт на GitHub Pages відкрив стартову сторінку?",
+    "fr": "💡 Why did GitHub Pages open the home page?"
+  },
+  {
+    "key": "share.ghPagesWhyDesc",
+    "en": "GitHub Pages currently hosts an earlier version of the editor that does not yet include updated link parsing code.",
+    "uk": "На GitHub Pages зараз завантажена раніша версія редактора. Вона ще не містить оновленого коду зчитування посилань.",
+    "fr": "GitHub Pages currently hosts an earlier version of the editor that does not yet include updated link parsing code."
+  },
+  {
+    "key": "share.ghPagesWhyHint",
+    "en": "Publish/update your build on GitHub Pages and the link will open seamlessly there.",
+    "uk": "Опублікуйте/оновіть збірку проекту на GitHub Pages, і посилання відкриватиме проєкт там бездоганно.",
+    "fr": "Publish/update your build on GitHub Pages and the link will open seamlessly there."
+  },
+  {
+    "key": "cloud.open.dialogTitle",
+    "en": "Open Project from Cloud",
+    "uk": "Відкриття проєкту з хмари",
+    "fr": "Open Project from Cloud"
+  },
+  {
+    "key": "cloud.open.dialogSubtitle",
+    "en": "There is already an active project in the editor. Choose an action:",
+    "uk": "У редакторі вже є створений проєкт. Оберіть дію:",
+    "fr": "There is already an active project in the editor. Choose an action:"
+  },
+  {
+    "key": "cloud.open.currentWorkspace",
+    "en": "Current in Editor",
+    "uk": "Поточний у редакторі",
+    "fr": "Current in Editor"
+  },
+  {
+    "key": "cloud.open.incomingProject",
+    "en": "Cloud Project",
+    "uk": "Проєкт із хмари",
+    "fr": "Cloud Project"
+  },
+  {
+    "key": "cloud.open.shapesCountLabel",
+    "en": "shapes",
+    "uk": "фігур",
+    "fr": "shapes"
+  },
+  {
+    "key": "cloud.open.layersCountLabel",
+    "en": "layers",
+    "uk": "шарів",
+    "fr": "layers"
+  },
+  {
+    "key": "cloud.open.chooseAction",
+    "en": "Loading Mode:",
+    "uk": "Варіант завантаження:",
+    "fr": "Loading Mode:"
+  },
+  {
+    "key": "cloud.open.modeMerge",
+    "en": "Insert into Current Project",
+    "uk": "Вставити в поточний проєкт",
+    "fr": "Insert into Current Project"
+  },
+  {
+    "key": "cloud.open.modeMergeDesc",
+    "en": "Appends shapes and layers from cloud to your current canvas.",
+    "uk": "Додає фігури та шари з хмари до вашого малюнка.",
+    "fr": "Appends shapes and layers from cloud to your current canvas."
+  },
+  {
+    "key": "cloud.open.modeReplace",
+    "en": "Replace Current Project",
+    "uk": "Замінити поточний проєкт",
+    "fr": "Replace Current Project"
+  },
+  {
+    "key": "cloud.open.modeReplaceDesc",
+    "en": "Completely replaces the current project with the cloud project.",
+    "uk": "Повністю замінює поточний проєкт на проєкт із хмари.",
+    "fr": "Completely replaces the current project with the cloud project."
+  },
+  {
+    "key": "cloud.open.namePreference",
+    "en": "Project Name after insertion:",
+    "uk": "Назва проєкту після вставки:",
+    "fr": "Project Name after insertion:"
+  },
+  {
+    "key": "cloud.open.nameKeep",
+    "en": "Keep current:",
+    "uk": "Залишити поточну:",
+    "fr": "Keep current:"
+  },
+  {
+    "key": "cloud.open.nameCloud",
+    "en": "Use cloud name:",
+    "uk": "Взяти з хмари:",
+    "fr": "Use cloud name:"
+  },
+  {
+    "key": "cloud.open.nameCombine",
+    "en": "Combine names:",
+    "uk": "Об’єднати назви:",
+    "fr": "Combine names:"
+  },
+  {
+    "key": "cloud.open.groupImported",
+    "en": "Group all imported shapes",
+    "uk": "Згрупувати всі імпортовані фігури",
+    "fr": "Group all imported shapes"
+  },
+  {
+    "key": "cloud.open.groupImportedDesc",
+    "en": "Creates a unified group for easy moving and resizing.",
+    "uk": "Створює спільну групу для зручного переміщення та масштабування.",
+    "fr": "Creates a unified group for easy moving and resizing."
+  },
+  {
+    "key": "cloud.open.preserveLayers",
+    "en": "Preserve layers from cloud project",
+    "uk": "Зберегти шари з хмарного проєкту",
+    "fr": "Preserve layers from cloud project"
+  },
+  {
+    "key": "cloud.open.preserveLayersDesc",
+    "en": "Adds layers from cloud to the layer list (replaces empty single layer).",
+    "uk": "Додає шари з хмари до списку шарів (якщо в поточному є 1 порожній шар — він замінюється).",
+    "fr": "Adds layers from cloud to the layer list (replaces empty single layer)."
+  },
+  {
+    "key": "cloud.open.autoExpandCanvas",
+    "en": "Expand canvas if cloud project is larger",
+    "uk": "Розширити полотно, якщо хмарний проєкт більший",
+    "fr": "Expand canvas if cloud project is larger"
+  },
+  {
+    "key": "cloud.open.autoExpandCanvasDesc",
+    "en": "Automatically expands canvas dimensions so everything fits.",
+    "uk": "Автоматично збільшує розмір полотна, щоб усі елементи помістилися.",
+    "fr": "Automatically expands canvas dimensions so everything fits."
+  },
+  {
+    "key": "cloud.open.replaceWarning",
+    "en": "All current shapes and layers will be replaced. Unsaved changes will be lost.",
+    "uk": "Усі поточні фігури та шари будуть замінені. Незбережені зміни буде втрачено.",
+    "fr": "All current shapes and layers will be replaced. Unsaved changes will be lost."
+  },
+  {
+    "key": "cloud.open.confirmReplace",
+    "en": "Replace Project",
+    "uk": "Замінити проєкт",
+    "fr": "Replace Project"
+  },
+  {
+    "key": "cloud.open.confirmMerge",
+    "en": "Insert Project",
+    "uk": "Вставити проєкт",
+    "fr": "Insert Project"
+  },
+  {
+    "key": "cloud.open.success",
+    "en": "Project opened successfully from cloud!",
+    "uk": "Проєкт успішно відкрито з хмари!",
+    "fr": "Project opened successfully from cloud!"
+  },
+  {
+    "key": "cloud.merge.success",
+    "en": "Project successfully merged with current!",
+    "uk": "Проєкт успішно об'єднано з поточним!",
+    "fr": "Project successfully merged with current!"
+  },
+  {
+    "key": "cloud.project.untitled",
+    "en": "Cloud Project",
+    "uk": "Хмарний проєкт",
+    "fr": "Cloud Project"
+  },
+  {
+    "key": "settings.code.variableNaming",
+    "en": "Object Variable Naming Template",
+    "uk": "Шаблон назв змінних об'єктів",
+    "fr": "Object Variable Naming Template"
+  },
+  {
+    "key": "settings.code.variableNamingDesc",
+    "en": "Define a global prefix or template for variable names in the generated Python code (e.g., shape_ or item_).",
+    "uk": "Визначте глобальний префікс або шаблон для імен змінних у згенерованому коді Python (наприклад, shape_ або item_).",
+    "fr": "Define a global prefix or template for variable names in the generated Python code (e.g., shape_ or item_)."
+  },
+  {
+    "key": "settings.code.varPresetNone",
+    "en": "No variables (direct calls)",
+    "uk": "Без змінних (лише виклики)",
+    "fr": "No variables (direct calls)"
+  },
+  {
+    "key": "settings.code.varPresetShape",
+    "en": "Prefix shape_ (shape_1, shape_2...)",
+    "uk": "Префікс shape_ (shape_1, shape_2...)",
+    "fr": "Prefix shape_ (shape_1, shape_2...)"
+  },
+  {
+    "key": "settings.code.varPresetItem",
+    "en": "Prefix item_ (item_1, item_2...)",
+    "uk": "Префікс item_ (item_1, item_2...)",
+    "fr": "Prefix item_ (item_1, item_2...)"
+  },
+  {
+    "key": "settings.code.varPresetObj",
+    "en": "Prefix obj_ (obj_1, obj_2...)",
+    "uk": "Префікс obj_ (obj_1, obj_2...)",
+    "fr": "Prefix obj_ (obj_1, obj_2...)"
+  },
+  {
+    "key": "settings.code.varPresetType",
+    "en": "By shape type (rect_1, oval_2...)",
+    "uk": "За типом фігури (rect_1, oval_2...)",
+    "fr": "By shape type (rect_1, oval_2...)"
+  },
+  {
+    "key": "settings.code.varPresetName",
+    "en": "By editor shape name ({name})",
+    "uk": "За назвою з редактора ({name})",
+    "fr": "By editor shape name ({name})"
+  },
+  {
+    "key": "settings.code.varPresetCustom",
+    "en": "Custom template / prefix",
+    "uk": "Власний шаблон / префікс",
+    "fr": "Custom template / prefix"
+  },
+  {
+    "key": "settings.code.varTemplatePlaceholder",
+    "en": "Enter prefix (e.g. item_) or template (e.g. shape_{index})",
+    "uk": "Введіть префікс (напр. item_) або шаблон (напр. shape_{index})",
+    "fr": "Enter prefix (e.g. item_) or template (e.g. shape_{index})"
+  },
+  {
+    "key": "settings.code.varTagsHint",
+    "en": "Available template placeholders:",
+    "uk": "Доступні плейсхолдери:",
+    "fr": "Available template placeholders:"
+  },
+  {
+    "key": "settings.code.varPreviewTitle",
+    "en": "Python code preview:",
+    "uk": "Попередній перегляд у коді Python:",
+    "fr": "Python code preview:"
+  },
+  {
+    "key": "list.multiselect.select",
+    "en": "Select",
+    "uk": "Вибрати",
+    "fr": "Select"
+  },
+  {
+    "key": "list.multiselect.done",
+    "en": "Done",
+    "uk": "Готово",
+    "fr": "Done"
+  },
+  {
+    "key": "list.multiselect.selectAll",
+    "en": "Select All",
+    "uk": "Вибрати всі",
+    "fr": "Select All"
+  },
+  {
+    "key": "list.multiselect.deselectAll",
+    "en": "Deselect All",
+    "uk": "Зняти вибір",
+    "fr": "Deselect All"
+  },
+  {
+    "key": "list.multiselect.tapIconHint",
+    "en": "Tap icon to select multiple",
+    "uk": "Натисніть на іконку для мультивибору",
+    "fr": "Tap icon to select multiple"
+  },
+  {
+    "key": "list.reorder.grabbed",
+    "en": "Grabbed for moving",
+    "uk": "Захоплено для переміщення",
+    "fr": "Grabbed for moving"
+  },
+  {
+    "key": "list.reorder.dragHint",
+    "en": "Drag up or down to reorder",
+    "uk": "Перетягніть вище або нижче для зміни порядку",
+    "fr": "Drag up or down to reorder"
+  },
+  {
+    "key": "shape.multiSelectEnabled",
+    "en": "Multi-select mode enabled",
+    "uk": "Режим мультивибору увімкнено",
+    "fr": "Multi-select mode enabled"
+  },
+  {
+    "key": "cloud.merge.empty",
+    "en": "No objects to merge",
+    "uk": "Немає об'єктів для об'єднання",
+    "fr": "No objects to merge"
+  },
+  {
+    "key": "button.deselect",
+    "en": "Deselect",
+    "uk": "Зняти виділення",
+    "fr": "Deselect"
+  },
+  {
+    "key": "button.select",
+    "en": "Select",
+    "uk": "Вибрати",
+    "fr": "Select"
+  },
+  {
+    "key": "button.deselectAll",
+    "en": "Deselect All",
+    "uk": "Зняти вибір",
+    "fr": "Deselect All"
+  },
+  {
+    "key": "button.selectAll",
+    "en": "Select All",
+    "uk": "Вибрати всі",
+    "fr": "Select All"
+  },
+  {
+    "key": "button.all",
+    "en": "All",
+    "uk": "Всі",
+    "fr": "All"
+  },
+  {
+    "key": "action.duplicate",
+    "en": "Duplicate",
+    "uk": "Дублювати",
+    "fr": "Duplicate"
+  },
+  {
+    "key": "button.delete",
+    "en": "Delete",
+    "uk": "Видалити",
+    "fr": "Delete"
+  },
+  {
+    "key": "button.done",
+    "en": "Done",
+    "uk": "Готово",
+    "fr": "Done"
+  },
+  {
+    "key": "prop.splinesteps",
+    "en": "Spline Steps",
+    "uk": "Кроки сплайну",
+    "fr": "Spline Steps"
+  },
+  {
+    "key": "file.import.isPythonScript",
+    "en": "The selected file is a Python script (.py), not a VereTka JSON project (.vec.json)",
+    "uk": "Вибраний файл є Python-скриптом (.py), а не JSON-проєктом Веретки (.vec.json)",
+    "fr": "The selected file is a Python script (.py), not a VereTka JSON project (.vec.json)"
+  },
+  {
+    "key": "file.import.invalidJson",
+    "en": "Project file parsing error: the selected file does not contain valid JSON format (.vec.json)",
+    "uk": "Помилка читання файлу проєкту: вибраний файл не містить дійсного JSON-формату (.vec.json)",
+    "fr": "Project file parsing error: the selected file does not contain valid JSON format (.vec.json)"
+  },
+  {
+    "key": "file.import.readError",
+    "en": "Error reading project data",
+    "uk": "Помилка читання даних проєкту",
+    "fr": "Error reading project data"
+  },
+  {
+    "key": "cloud.open.successWithName",
+    "en": "Project \"{name}\" successfully loaded from the cloud!",
+    "uk": "Проєкт \"{name}\" успішно завантажено з хмари!",
+    "fr": "Project \"{name}\" successfully loaded from the cloud!"
+  },
+  {
+    "key": "cloud.open.notFound",
+    "en": "Project not found in the cloud or ID is invalid",
+    "uk": "Проєкт не знайдено у хмарі або ID є недійсним",
+    "fr": "Project not found in the cloud or ID is invalid"
+  },
+  {
+    "key": "cloud.open.error",
+    "en": "Error loading cloud project",
+    "uk": "Помилка завантаження хмарного проєкту",
+    "fr": "Error loading cloud project"
+  },
+  {
+    "key": "simulation.noShapes",
+    "en": "Create shapes on canvas first to run simulation",
+    "uk": "Спочатку створіть фігури для симуляції",
+    "fr": "Create shapes on canvas first to run simulation"
+  },
+  {
+    "key": "test.noShapes",
+    "en": "Add shapes first to test",
+    "uk": "Спочатку додайте фігури для тесту",
+    "fr": "Add shapes first to test"
+  },
+  {
+    "key": "settings.appearance.touchDrawingMode",
+    "en": "Touch Drawing & Input Mode",
+    "uk": "Режим сенсорного введення та малювання",
+    "fr": "Touch Drawing & Input Mode"
+  },
+  {
+    "key": "settings.appearance.touchDrawingModeDesc",
+    "en": "Choose your preferred interaction method on touchscreen devices.",
+    "uk": "Виберіть зручний спосіб керування на сенсорних екранах.",
+    "fr": "Choose your preferred interaction method on touchscreen devices."
+  },
+  {
+    "key": "settings.appearance.touchModeJoystick",
+    "en": "🕹️ Virtual Joystick & Crosshair (Joystick / Reticle)",
+    "uk": "🕹️ Віртуальний джойстик і приціл (Joystick / Reticle)",
+    "fr": "🕹️ Virtual Joystick & Crosshair (Joystick / Reticle)"
+  },
+  {
+    "key": "settings.appearance.touchModeJoystickDesc",
+    "en": "Aim with laser crosshair using a virtual joystick, with dedicated buttons for node placement and micro-nudging.",
+    "uk": "Наведення лазерного прицілу джойстиком з окремими кнопками додавання точок та мікрозміщення.",
+    "fr": "Aim with laser crosshair using a virtual joystick, with dedicated buttons for node placement and micro-nudging."
+  },
+  {
+    "key": "settings.appearance.touchModeTapDrag",
+    "en": "📱 Direct Touch with Magnifier (Tap & Drag)",
+    "uk": "📱 Прямий дотик з лупою (Tap & Drag)",
+    "fr": "📱 Direct Touch with Magnifier (Tap & Drag)"
+  },
+  {
+    "key": "settings.appearance.touchModeTapDragDesc",
+    "en": "Fast and intuitive drawing directly on the canvas with your finger or stylus.",
+    "uk": "Швидке та інтуїтивне малювання пальцем напряму по полотну.",
+    "fr": "Fast and intuitive drawing directly on the canvas with your finger or stylus."
+  }
+]

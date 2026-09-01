@@ -522,8 +522,8 @@ const ContextualControls: React.FC<ContextualControlsProps> = ({ allShapes, sele
     const getChildren = (shapeIds: string[]): Shape[] => {
       let res: Shape[] = [];
       shapeIds.forEach((id: string) => {
-        const s = allShapes.find(x => x.id === id);
-        if (s) {
+        const s = allShapes.find(x => x && x.id === id);
+        if (s && s.type) {
           if (s.type === 'group') {
             res = res.concat(getChildren((s as any).shapeIds || []));
           } else {
@@ -536,10 +536,12 @@ const ContextualControls: React.FC<ContextualControlsProps> = ({ allShapes, sele
     
     let res: Shape[] = [];
     selectedShapes.forEach((s: any) => {
-      if (s.type === 'group') {
-        res = res.concat(getChildren((s as any).shapeIds || []));
-      } else {
-        res.push(s);
+      if (s && s.type) {
+        if (s.type === 'group') {
+          res = res.concat(getChildren((s as any).shapeIds || []));
+        } else {
+          res.push(s);
+        }
       }
     });
     return res;
@@ -1498,10 +1500,10 @@ export default function App(): React.ReactNode {
 
   const applyGroupCenters = useCallback((state: any) => {
         let changedCenter = false;
-        const shapesCopy = [...state.shapes];
+        const shapesCopy = [...(state.shapes || [])];
         for (let pass = 0; pass < 2; pass++) {
             for (let i = 0; i < shapesCopy.length; i++) {
-                if (shapesCopy[i].type === 'group') {
+                if (shapesCopy[i] && shapesCopy[i].type === 'group') {
                     const groupShape = shapesCopy[i];
                     const tempGroup = { ...groupShape, rotationCenter: undefined };
                     const newCenter = getShapeCenter(tempGroup as any, shapesCopy);
@@ -2178,10 +2180,11 @@ export default function App(): React.ReactNode {
     if (isImportingImage) {
         setIsImportingImage(false);
     }
-    if (newShapes.length === 0) return;
-    setShapes(prevShapes => [...prevShapes, ...newShapes]);
-    if (isDuplication || (newShapes[0].type !== 'polyline' && newShapes[0].type !== 'bezier')) {
-        const topLevelIds = newShapes.filter((s: any) => !s.groupId || !newShapes.some(ns => ns.id === s.groupId)).map((s: any) => s.id);
+    const validNewShapes = (newShapes || []).filter(Boolean);
+    if (validNewShapes.length === 0) return;
+    setShapes(prevShapes => [...prevShapes, ...validNewShapes]);
+    if (isDuplication || (validNewShapes[0]?.type !== 'polyline' && validNewShapes[0]?.type !== 'bezier')) {
+        const topLevelIds = validNewShapes.filter((s: any) => !s.groupId || !validNewShapes.some(ns => ns.id === s.groupId)).map((s: any) => s.id);
         setSelectedShapeIds(topLevelIds);
         setActiveTool('select');
     }
@@ -2477,12 +2480,13 @@ export default function App(): React.ReactNode {
         let newLayers = [...(prev.layers || [])];
         let newShapes = [...prev.shapes];
 
-        const draggedShapeIdx = newShapes.findIndex((s: any) => s.id === draggedId);
-        const targetShapeIdx = newShapes.findIndex((s: any) => s.id === targetId);
+        const draggedShapeIdx = newShapes.findIndex((s: any) => s && s.id === draggedId);
+        const targetShapeIdx = newShapes.findIndex((s: any) => s && s.id === targetId);
         if (draggedShapeIdx === -1 || targetShapeIdx === -1) return prev;
         
         let draggedShape = { ...newShapes[draggedShapeIdx] };
         const targetShape = newShapes[targetShapeIdx];
+        if (!targetShape || !draggedShape) return prev;
         
         const oldGroupId = draggedShape.groupId;
         let finalGroupId = draggedShape.groupId;
@@ -2721,8 +2725,8 @@ export default function App(): React.ReactNode {
 
         // CASE 1: shape is inside a group
         if (shapeToMove.groupId) {
-            const groupIdx = newShapes.findIndex((s: any) => s.id === shapeToMove.groupId);
-            if (groupIdx !== -1 && newShapes[groupIdx].type === 'group') {
+            const groupIdx = newShapes.findIndex((s: any) => s && s.id === shapeToMove.groupId);
+            if (groupIdx !== -1 && newShapes[groupIdx] && newShapes[groupIdx].type === 'group') {
                 const groupShape = { ...newShapes[groupIdx] };
                 const groupShapeIds = [...(groupShape.shapeIds || [])];
                 const myIndex = groupShapeIds.indexOf(id);

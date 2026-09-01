@@ -84,7 +84,7 @@ export const MultiSelectHUD: React.FC<MultiSelectHUDProps> = ({
         <div 
             className="w-full bg-[var(--bg-secondary)] border-t border-[var(--border-secondary)] z-[100] transition-all duration-200 animate-in fade-in slide-in-from-bottom-2 pointer-events-auto"
             role="toolbar"
-            aria-label="Панель вибору"
+            aria-label={t('hud.selectionPanel') || 'Панель вибору'}
             onWheel={(e) => e.stopPropagation()}
         >
             <div 

@@ -146,10 +146,10 @@ const StatusBar: React.FC<StatusBarProps> = ({
                     }`}
                     title={
                         magMode === 'pinned'
-                            ? 'Лупа: Зафіксовано 📌 (завжди на екрані). Натисніть для вимкнення'
+                            ? (t('status.magnifier.pinned.title') || 'Лупа: Зафіксовано 📌 (завжди на екрані). Натисніть для вимкнення')
                             : magMode === 'auto'
-                                ? 'Лупа: Авто (при контакті). Натисніть для фіксації'
-                                : 'Лупа: Вимкнено. Натисніть для увімкнення'
+                                ? (t('status.magnifier.auto.title') || 'Лупа: Авто (при контакті). Натисніть для фіксації')
+                                : (t('status.magnifier.off.title') || 'Лупа: Вимкнено. Натисніть для увімкнення')
                     }
                 >
                     {magMode === 'pinned' ? (
@@ -158,7 +158,11 @@ const StatusBar: React.FC<StatusBarProps> = ({
                         <MagnifierIcon size={12} className={magMode === 'auto' ? 'text-cyan-400' : 'opacity-60'} />
                     )}
                     <span className="text-[10px] hidden md:inline">
-                        {magMode === 'pinned' ? 'Лупа 📌' : magMode === 'auto' ? 'Лупа (Авто)' : 'Лупа (Вимк)'}
+                        {magMode === 'pinned' 
+                            ? (t('status.magnifier.pinned') || 'Лупа 📌') 
+                            : magMode === 'auto' 
+                                ? (t('status.magnifier.auto') || 'Лупа (Авто)') 
+                                : (t('status.magnifier.off') || 'Лупа (Вимк)')}
                     </span>
                 </button>
             );
@@ -171,11 +175,15 @@ const StatusBar: React.FC<StatusBarProps> = ({
                         ? 'text-cyan-400 bg-cyan-950/40 border border-cyan-500/30 font-medium'
                         : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]'
                 }`}
-                title={touchDrawingMode === 'virtual-joystick' ? 'Режим: Джойстик / Приціл (натисніть для перемикання)' : 'Режим: Прямий дотик (натисніть для джойстика)'}
+                title={touchDrawingMode === 'virtual-joystick' 
+                    ? (t('status.touch.joystick.title') || 'Режим: Джойстик / Приціл (натисніть для перемикання)') 
+                    : (t('status.touch.tap.title') || 'Режим: Прямий дотик (натисніть для джойстика)')}
             >
                 <JoystickIcon size={12} />
                 <span className="text-[10px] hidden md:inline">
-                    {touchDrawingMode === 'virtual-joystick' ? 'Джойстик' : 'Дотик'}
+                    {touchDrawingMode === 'virtual-joystick' 
+                        ? (t('status.touch.joystick') || 'Джойстик') 
+                        : (t('status.touch.tap') || 'Дотик')}
                 </span>
             </button>
         )}

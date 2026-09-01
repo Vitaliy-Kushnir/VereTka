@@ -320,8 +320,8 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                                             className="w-4 h-4 text-[var(--accent-primary)] bg-[var(--bg-secondary)] border-[var(--border-primary)] mt-0.5"
                                                         />
                                                         <div className="ml-2.5">
-                                                            <span className="text-xs font-semibold block">Вимкнено</span>
-                                                            <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">Не показувати лупу</p>
+                                                            <span className="text-xs font-semibold block">{t('settings.magnifier.off') || 'Вимкнено'}</span>
+                                                            <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">{t('settings.magnifier.offDesc') || 'Не показувати лупу'}</p>
                                                         </div>
                                                     </label>
 
@@ -341,9 +341,9 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                                         <div className="ml-2.5">
                                                             <span className="text-xs font-semibold block flex items-center gap-1">
                                                                 <MagnifierIcon size={12} className="text-cyan-400" />
-                                                                Автоматично
+                                                                {t('settings.magnifier.auto') || 'Автоматично'}
                                                             </span>
-                                                            <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">При контакті з екраном</p>
+                                                            <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">{t('settings.magnifier.autoDesc') || 'При контакті з екраном'}</p>
                                                         </div>
                                                     </label>
 
@@ -363,9 +363,9 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                                         <div className="ml-2.5">
                                                             <span className="text-xs font-semibold block flex items-center gap-1">
                                                                 <PinIcon size={12} className="text-amber-400" />
-                                                                Зафіксовано 📌
+                                                                {t('settings.magnifier.pinned') || 'Зафіксовано 📌'}
                                                             </span>
-                                                            <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">Завжди на екрані</p>
+                                                            <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">{t('settings.magnifier.pinnedDesc') || 'Завжди на екрані'}</p>
                                                         </div>
                                                     </label>
                                                 </div>
@@ -419,7 +419,7 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                                 </div>
                                             ) : (
                                                 <div className="text-xs text-[var(--text-tertiary)] bg-[var(--bg-secondary)] p-2.5 rounded-lg border border-[var(--border-secondary)]">
-                                                    Ці налаштування відображаються та доступні лише на пристроях із сенсорним екраном (наприклад, планшетах або смартфонах).
+                                                    {t('settings.touch.onlyOnTouchDevices') || 'Ці налаштування відображаються та доступні лише на пристроях із сенсорним екраном (наприклад, планшетах або смартфонах).'}
                                                 </div>
                                             )}
                                         </div>
@@ -553,8 +553,8 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                     <div className="flex items-start pt-1">
                                         <input id="showSystemTags" type="checkbox" checked={props.showSystemTags} onChange={e => props.setShowSystemTags(e.target.checked)} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)] mt-0.5" />
                                         <label htmlFor="showSystemTags" className="ml-3 text-sm font-medium text-[var(--text-secondary)] cursor-pointer">
-                                            Відображати системні теги
-                                            <p className="text-xs text-[var(--text-tertiary)] mt-1">Додавати автоматичні ідентифікатори фігур і груп у теги.</p>
+                                            {t('settings.code.showSystemTags') || 'Відображати системні теги'}
+                                            <p className="text-xs text-[var(--text-tertiary)] mt-1">{t('settings.code.showSystemTagsDesc') || 'Додавати автоматичні ідентифікатори фігур і груп у теги.'}</p>
                                         </label>
                                     </div>
                                     <div className="flex items-start pt-1">
@@ -649,7 +649,7 @@ const SettingsModal: React.FC<SettingsModalProps> = (props) => {
                                                                 props.setVariableNamingTemplate!(current ? `${current}${tag}` : tag);
                                                             }}
                                                             className="text-[11px] px-2 py-0.5 rounded bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] border border-[var(--border-secondary)] font-mono text-[var(--accent-primary)] transition-colors cursor-pointer"
-                                                            title={`Додати ${tag} до шаблону`}
+                                                            title={(t('settings.code.addTagToTemplate') || 'Додати {tag} до шаблону').replace('{tag}', tag)}
                                                         >
                                                             +{tag}
                                                         </button>

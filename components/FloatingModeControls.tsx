@@ -169,7 +169,7 @@ export const FloatingModeControls: React.FC<FloatingModeControlsProps> = ({
                                     ? 'bg-[var(--accent-primary)] text-white shadow-sm'
                                     : 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--border-secondary)]'
                             }`}
-                            title="Відкрити вікно параметрів розподілу"
+                            title={t('tool.distribute.path.settingsTitle') || 'Відкрити вікно параметрів розподілу'}
                         >
                             <SettingsIcon size={13} className={isParamsOpen ? 'animate-spin-slow' : ''} />
                             <span>{t('menu.settings') || 'Параметри'}</span>
@@ -185,9 +185,9 @@ export const FloatingModeControls: React.FC<FloatingModeControlsProps> = ({
                                         ? 'bg-amber-500 text-white animate-pulse shadow-md'
                                         : 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-secondary)]'
                                 }`}
-                                title="Клікніть по фігурі на полотні"
+                                title={t('tool.distribute.path.pickShapeTitle') || 'Клікніть по фігурі на полотні'}
                             >
-                                <span>{isSelectingPathShape ? '👆 Обрати...' : '🎯 Контур'}</span>
+                                <span>{isSelectingPathShape ? (t('tool.distribute.path.pickShapeBtn') || '👆 Обрати...') : (t('tool.distribute.path.contourBtn') || '🎯 Контур')}</span>
                             </button>
                         )}
 
@@ -196,10 +196,10 @@ export const FloatingModeControls: React.FC<FloatingModeControlsProps> = ({
                             type="button"
                             onClick={onConfirmDistributePath}
                             className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-bold shadow-sm transition-all shrink-0 text-xs"
-                            title="Застосувати зміни"
+                            title={t('tool.distribute.path.applyTitle') || 'Застосувати зміни'}
                         >
                             <CheckIcon size={13} />
-                            <span>Готово</span>
+                            <span>{t('button.done') || 'Готово'}</span>
                         </button>
 
                         {/* Cancel Button */}
@@ -207,7 +207,7 @@ export const FloatingModeControls: React.FC<FloatingModeControlsProps> = ({
                             type="button"
                             onClick={onCancelDistributePath}
                             className="flex items-center gap-1 p-1 rounded-xl hover:bg-red-500/15 text-red-400 hover:text-red-300 transition-colors shrink-0"
-                            title="Скасувати розподіл"
+                            title={t('tool.distribute.path.cancelTitle') || 'Скасувати розподіл'}
                         >
                             <XIcon size={15} />
                         </button>
@@ -223,7 +223,7 @@ export const FloatingModeControls: React.FC<FloatingModeControlsProps> = ({
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
                             </span>
                             <span className="font-bold text-cyan-400">
-                                🎯 Клікніть фігуру на полотні для вибору контуру
+                                {t('tool.distribute.path.standalonePick') || '🎯 Клікніть фігуру на полотні для вибору контуру'}
                             </span>
                         </div>
                         {onToggleSelectPathShape && (
@@ -233,7 +233,7 @@ export const FloatingModeControls: React.FC<FloatingModeControlsProps> = ({
                                 className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 text-xs font-semibold"
                             >
                                 <XIcon size={14} />
-                                <span>Скасувати</span>
+                                <span>{t('button.cancel') || 'Скасувати'}</span>
                             </button>
                         )}
                     </>
@@ -248,7 +248,9 @@ export const FloatingModeControls: React.FC<FloatingModeControlsProps> = ({
                                 {t('tool.editPoints') || 'Редагування точок'}
                             </span>
                             <span className="text-[11px] text-[var(--text-tertiary)]">
-                                {activePointIndex !== null ? `(Вузол #${activePointIndex + 1})` : `(${shapePointsCount} точок)`}
+                                {activePointIndex !== null 
+                                    ? (t('tool.editPoints.nodeNum', { index: activePointIndex + 1 }) || `(Вузол #${activePointIndex + 1})`)
+                                    : (t('tool.editPoints.pointsCount', { count: shapePointsCount }) || `(${shapePointsCount} точок)`)}
                             </span>
                         </div>
 
@@ -259,10 +261,10 @@ export const FloatingModeControls: React.FC<FloatingModeControlsProps> = ({
                                 onClick={() => onDeletePoint(activePointShape.id, activePointIndex)}
                                 disabled={shapePointsCount <= 2}
                                 className="flex items-center gap-1 px-2 py-1 rounded-xl bg-red-500/15 text-red-400 hover:bg-red-500/25 disabled:opacity-40 font-semibold transition-all shrink-0 text-xs"
-                                title="Видалити вибрану точку"
+                                title={t('tool.editPoints.deletePoint') || 'Видалити вибрану точку'}
                             >
                                 <TrashIcon size={13} />
-                                <span>Видалити</span>
+                                <span>{t('button.delete') || 'Видалити'}</span>
                             </button>
                         )}
 
@@ -272,9 +274,9 @@ export const FloatingModeControls: React.FC<FloatingModeControlsProps> = ({
                                 type="button"
                                 onClick={() => onAddPoint(activePointShape.id, activePointIndex)}
                                 className="flex items-center gap-1 px-2 py-1 rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--border-secondary)] font-semibold transition-all shrink-0 text-xs"
-                                title="Вставити нову точку після поточної"
+                                title={t('tool.editPoints.addPoint') || 'Вставити нову точку після поточної'}
                             >
-                                <span>+ Точка</span>
+                                <span>{t('tool.editPoints.addPointBtn') || '+ Точка'}</span>
                             </button>
                         )}
 
@@ -288,7 +290,7 @@ export const FloatingModeControls: React.FC<FloatingModeControlsProps> = ({
                             className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-[var(--accent-text)] font-bold shadow-sm transition-all shrink-0 text-xs"
                         >
                             <CheckIcon size={13} />
-                            <span>Готово</span>
+                            <span>{t('button.done') || 'Готово'}</span>
                         </button>
                     </>
                 )}
@@ -298,7 +300,7 @@ export const FloatingModeControls: React.FC<FloatingModeControlsProps> = ({
                     <>
                         <div className="flex items-center gap-2 pr-2 border-r border-[var(--border-primary)]">
                             <span className="font-bold text-amber-400">
-                                🖼️ Клікніть на полотні для розміщення зображення
+                                {t('tool.image.placeHint') || '🖼️ Клікніть на полотні для розміщення зображення'}
                             </span>
                         </div>
                         {onCancelImportImage && (
@@ -308,7 +310,7 @@ export const FloatingModeControls: React.FC<FloatingModeControlsProps> = ({
                                 className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 text-xs font-semibold"
                             >
                                 <XIcon size={14} />
-                                <span>Скасувати</span>
+                                <span>{t('button.cancel') || 'Скасувати'}</span>
                             </button>
                         )}
                     </>
@@ -476,8 +478,8 @@ export const FloatingModeControls: React.FC<FloatingModeControlsProps> = ({
                                 >
                                     <option value="">
                                         {candidatePathShapes.length === 0 
-                                            ? 'Немає фігур на полотні' 
-                                            : '-- Оберіть контур зі списку --'}
+                                            ? (t('tool.distribute.path.noShapesCanvas') || 'Немає фігур на полотні') 
+                                            : (t('tool.distribute.path.selectContourFromList') || '-- Оберіть контур зі списку --')}
                                     </option>
                                     {candidatePathShapes.map(s => (
                                         <option key={s.id} value={s.id}>
@@ -587,7 +589,7 @@ export const FloatingModeControls: React.FC<FloatingModeControlsProps> = ({
                         {distributePathState.orientAlongPath && (
                             <div className="pl-5 space-y-2">
                                 <div className="flex items-center justify-between gap-2">
-                                    <span className="text-[var(--text-secondary)] text-xs">Тип орієнтації:</span>
+                                    <span className="text-[var(--text-secondary)] text-xs">{t('tool.distribute.path.orientationType') || 'Тип орієнтації:'}</span>
                                     <select
                                         value={distributePathState.orientationType}
                                         onChange={(e) => {
@@ -617,7 +619,7 @@ export const FloatingModeControls: React.FC<FloatingModeControlsProps> = ({
                                 {distributePathState.orientationType === 'custom' && (
                                     <div className="space-y-1">
                                         <div className="flex justify-between text-xs text-[var(--text-secondary)]">
-                                            <span>Кут орієнтації:</span>
+                                            <span>{t('tool.distribute.path.orientationAngle') || 'Кут орієнтації:'}</span>
                                             <strong className="text-[var(--text-primary)]">{distributePathState.orientationAngle ?? 0}°</strong>
                                         </div>
                                         <input
@@ -664,7 +666,7 @@ export const FloatingModeControls: React.FC<FloatingModeControlsProps> = ({
                             onClick={() => setIsParamsOpen(false)}
                             className="px-3 py-1.5 rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] font-semibold"
                         >
-                            Згорнути вікно
+                            {t('tool.distribute.path.closeModal') || 'Згорнути вікно'}
                         </button>
                     </div>
 
