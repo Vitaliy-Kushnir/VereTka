@@ -651,7 +651,7 @@ export const Magnifier: React.FC<MagnifierProps> = ({
 
           {/* Coordinates HUD (Bottom Center of Lens) - Fades in with controls or is subtle */}
           <div
-            className={`absolute bottom-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full border text-[8.5px] font-mono font-bold shadow-md pointer-events-none backdrop-blur-md whitespace-nowrap z-20 transition-opacity duration-300 flex items-center gap-1 ${
+            className={`notranslate absolute bottom-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full border text-[8.5px] font-mono font-bold shadow-md pointer-events-none backdrop-blur-md whitespace-nowrap z-20 transition-opacity duration-300 flex items-center gap-1 ${
               isAnchored
                 ? 'bg-emerald-950/90 border-emerald-400 text-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
                 : isPinned
@@ -660,9 +660,10 @@ export const Magnifier: React.FC<MagnifierProps> = ({
             } ${
               areControlsActive ? 'opacity-100' : 'opacity-40'
             }`}
+            translate="no"
           >
-            {isAnchored && <span className="text-[9px]">🎯</span>}
-            {Math.round(cx)}, {Math.round(cy)}
+            {isAnchored ? <span key="hud-anchor-icon" className="text-[9px] select-none" translate="no">🎯</span> : null}
+            <span key="hud-coords-text" className="select-none" translate="no">{Math.round(cx)}, {Math.round(cy)}</span>
           </div>
 
         </div>
@@ -713,7 +714,9 @@ export const Magnifier: React.FC<MagnifierProps> = ({
       {/* Floating Anchor Target Button (Snug bottom-left corner hugging the circular rim) */}
       {onToggleAnchor && (
         <button
+          key="magnifier-anchor-btn"
           type="button"
+          translate="no"
           onPointerDown={(e) => {
             e.stopPropagation();
           }}

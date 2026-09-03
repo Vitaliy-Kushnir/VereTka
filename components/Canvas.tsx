@@ -4257,201 +4257,203 @@ const Canvas: React.FC<CanvasProps> = (props) => {
               </g>
             )}
             {/* Draggable Anchor Target Marker & Visual Tether Line (Option 1 + Option 4) */}
-            {anchorTarget && (() => {
-              const magProp = props.showMagnifier;
-              const magMode: MagnifierMode = typeof magProp === 'string' ? magProp : (magProp === false ? 'off' : 'auto');
-              if (magMode === 'off') return null;
+            <g id="magnifier-anchor-container" key="magnifier-anchor-container">
+              {anchorTarget && (() => {
+                const magProp = props.showMagnifier;
+                const magMode: MagnifierMode = typeof magProp === 'string' ? magProp : (magProp === false ? 'off' : 'auto');
+                if (magMode === 'off') return null;
 
-              const ax = anchorTarget.x;
-              const ay = anchorTarget.y;
-              if (typeof ax !== 'number' || typeof ay !== 'number' || !isFinite(ax) || !isFinite(ay)) {
-                return null;
-              }
+                const ax = anchorTarget.x;
+                const ay = anchorTarget.y;
+                if (typeof ax !== 'number' || typeof ay !== 'number' || !isFinite(ax) || !isFinite(ay)) {
+                  return null;
+                }
 
-              // Compute Magnifier lens perimeter connection point in canvas space
-              let tetherPath: { startX: number; startY: number; endX: number; endY: number } | null = null;
+                // Compute Magnifier lens perimeter connection point in canvas space
+                let tetherPath: { startX: number; startY: number; endX: number; endY: number } | null = null;
 
-              if (magnifierCenter && viewTransform) {
-                const vtX = typeof viewTransform.x === 'number' && isFinite(viewTransform.x) ? viewTransform.x : 0;
-                const vtY = typeof viewTransform.y === 'number' && isFinite(viewTransform.y) ? viewTransform.y : 0;
-                const mcX = typeof magnifierCenter.x === 'number' && isFinite(magnifierCenter.x) ? magnifierCenter.x : null;
-                const mcY = typeof magnifierCenter.y === 'number' && isFinite(magnifierCenter.y) ? magnifierCenter.y : null;
-                const mcR = typeof magnifierCenter.radius === 'number' && isFinite(magnifierCenter.radius) ? magnifierCenter.radius : null;
+                if (magnifierCenter && viewTransform) {
+                  const vtX = typeof viewTransform.x === 'number' && isFinite(viewTransform.x) ? viewTransform.x : 0;
+                  const vtY = typeof viewTransform.y === 'number' && isFinite(viewTransform.y) ? viewTransform.y : 0;
+                  const mcX = typeof magnifierCenter.x === 'number' && isFinite(magnifierCenter.x) ? magnifierCenter.x : null;
+                  const mcY = typeof magnifierCenter.y === 'number' && isFinite(magnifierCenter.y) ? magnifierCenter.y : null;
+                  const mcR = typeof magnifierCenter.radius === 'number' && isFinite(magnifierCenter.radius) ? magnifierCenter.radius : null;
 
-                if (mcX !== null && mcY !== null && mcR !== null && safeScale > 0) {
-                  const magCanvasX = (mcX - vtX) / safeScale;
-                  const magCanvasY = (mcY - vtY) / safeScale;
-                  const magCanvasRadius = mcR / safeScale;
+                  if (mcX !== null && mcY !== null && mcR !== null && safeScale > 0) {
+                    const magCanvasX = (mcX - vtX) / safeScale;
+                    const magCanvasY = (mcY - vtY) / safeScale;
+                    const magCanvasRadius = mcR / safeScale;
 
-                  const dx = ax - magCanvasX;
-                  const dy = ay - magCanvasY;
-                  const dist = Math.hypot(dx, dy);
+                    const dx = ax - magCanvasX;
+                    const dy = ay - magCanvasY;
+                    const dist = Math.hypot(dx, dy);
 
-                  if (isFinite(dist) && dist > magCanvasRadius + 2) {
-                    const startX = magCanvasX + (dx / dist) * magCanvasRadius;
-                    const startY = magCanvasY + (dy / dist) * magCanvasRadius;
-                    if (isFinite(startX) && isFinite(startY)) {
-                      tetherPath = { startX, startY, endX: ax, endY: ay };
+                    if (isFinite(dist) && dist > magCanvasRadius + 2) {
+                      const startX = magCanvasX + (dx / dist) * magCanvasRadius;
+                      const startY = magCanvasY + (dy / dist) * magCanvasRadius;
+                      if (isFinite(startX) && isFinite(startY)) {
+                        tetherPath = { startX, startY, endX: ax, endY: ay };
+                      }
                     }
                   }
                 }
-              }
 
-              return (
-                <g id="magnifier-anchor-layer">
-                  {/* Laser / Tether Line connecting Lens to Anchor Target */}
-                  {tetherPath && (
-                    <g className="pointer-events-none select-none">
-                      {/* Outer soft ambient glow */}
+                return (
+                  <g id="magnifier-anchor-layer" key="magnifier-anchor-layer">
+                    {/* Laser / Tether Line connecting Lens to Anchor Target */}
+                    {tetherPath && (
+                      <g className="pointer-events-none select-none">
+                        {/* Outer soft ambient glow */}
+                        <line
+                          x1={tetherPath.startX}
+                          y1={tetherPath.startY}
+                          x2={tetherPath.endX}
+                          y2={tetherPath.endY}
+                          stroke="rgba(16, 185, 129, 0.4)"
+                          strokeWidth={4 / safeScale}
+                          strokeLinecap="round"
+                        />
+                        {/* Inner dashed laser tether line */}
+                        <line
+                          x1={tetherPath.startX}
+                          y1={tetherPath.startY}
+                          x2={tetherPath.endX}
+                          y2={tetherPath.endY}
+                          stroke="#10b981"
+                          strokeWidth={1.6 / safeScale}
+                          strokeDasharray={`${6 / safeScale},${4 / safeScale}`}
+                          strokeLinecap="round"
+                        />
+                        {/* Rim anchor node */}
+                        <circle
+                          cx={tetherPath.startX}
+                          cy={tetherPath.startY}
+                          r={3 / safeScale}
+                          fill="#10b981"
+                          stroke="#ffffff"
+                          strokeWidth={1 / safeScale}
+                        />
+                      </g>
+                    )}
+
+                    {/* Interactive Draggable Anchor Reticle */}
+                    <g
+                      id="magnifier-anchor-reticle"
+                      className="cursor-move select-none"
+                      onPointerDown={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        isDraggingAnchorRef.current = true;
+                        try {
+                          (e.currentTarget as Element).setPointerCapture(e.pointerId);
+                        } catch {}
+                        setIsDraggingAnchor(true);
+                      }}
+                      onPointerMove={(e) => {
+                        if (!isDraggingAnchorRef.current) return;
+                        e.stopPropagation();
+                        e.preventDefault();
+                        const raw = getPointerPosition(e);
+                        const cPos = getTransformedPointerPosition(raw);
+                        let fx = Math.round(cPos.x);
+                        let fy = Math.round(cPos.y);
+                        if (showGrid && gridSize > 0) {
+                          const step = snapStep || 1;
+                          fx = Math.round(fx / step) * step;
+                          fy = Math.round(fy / step) * step;
+                        }
+                        if (isFinite(fx) && isFinite(fy)) {
+                          const newPos = { x: fx, y: fy };
+                          setAnchorTarget(newPos);
+                          lastAnchorPosRef.current = newPos;
+                        }
+                      }}
+                      onPointerUp={(e) => {
+                        if (!isDraggingAnchorRef.current) return;
+                        e.stopPropagation();
+                        e.preventDefault();
+                        try {
+                          (e.currentTarget as Element).releasePointerCapture(e.pointerId);
+                        } catch {}
+                        isDraggingAnchorRef.current = false;
+                        setIsDraggingAnchor(false);
+                      }}
+                      onPointerCancel={(e) => {
+                        if (!isDraggingAnchorRef.current) return;
+                        try {
+                          (e.currentTarget as Element).releasePointerCapture(e.pointerId);
+                        } catch {}
+                        isDraggingAnchorRef.current = false;
+                        setIsDraggingAnchor(false);
+                      }}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                      }}
+                      onTouchStart={(e) => {
+                        e.stopPropagation();
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                    >
+                      {/* Thin unobtrusive Crosshair Lines with open center */}
                       <line
-                        x1={tetherPath.startX}
-                        y1={tetherPath.startY}
-                        x2={tetherPath.endX}
-                        y2={tetherPath.endY}
-                        stroke="rgba(16, 185, 129, 0.4)"
-                        strokeWidth={4 / safeScale}
-                        strokeLinecap="round"
-                      />
-                      {/* Inner dashed laser tether line */}
-                      <line
-                        x1={tetherPath.startX}
-                        y1={tetherPath.startY}
-                        x2={tetherPath.endX}
-                        y2={tetherPath.endY}
+                        x1={ax - 20 / safeScale}
+                        y1={ay}
+                        x2={ax - 5 / safeScale}
+                        y2={ay}
                         stroke="#10b981"
-                        strokeWidth={1.6 / safeScale}
-                        strokeDasharray={`${6 / safeScale},${4 / safeScale}`}
-                        strokeLinecap="round"
+                        strokeWidth={1.5 / safeScale}
                       />
-                      {/* Rim anchor node */}
+                      <line
+                        x1={ax + 5 / safeScale}
+                        y1={ay}
+                        x2={ax + 20 / safeScale}
+                        y2={ay}
+                        stroke="#10b981"
+                        strokeWidth={1.5 / safeScale}
+                      />
+                      <line
+                        x1={ax}
+                        y1={ay - 20 / safeScale}
+                        x2={ax}
+                        y2={ay - 5 / safeScale}
+                        stroke="#10b981"
+                        strokeWidth={1.5 / safeScale}
+                      />
+                      <line
+                        x1={ax}
+                        y1={ay + 5 / safeScale}
+                        x2={ax}
+                        y2={ay + 20 / safeScale}
+                        stroke="#10b981"
+                        strokeWidth={1.5 / safeScale}
+                      />
+
+                      {/* Single subtle thin outer ring with clear transparent interior */}
                       <circle
-                        cx={tetherPath.startX}
-                        cy={tetherPath.startY}
-                        r={3 / safeScale}
-                        fill="#10b981"
-                        stroke="#ffffff"
-                        strokeWidth={1 / safeScale}
+                        cx={ax}
+                        cy={ay}
+                        r={12 / safeScale}
+                        fill="none"
+                        stroke="#10b981"
+                        strokeWidth={1.2 / safeScale}
+                        strokeDasharray={`${3 / safeScale},${2 / safeScale}`}
+                        opacity={0.85}
+                      />
+
+                      {/* Generous touch / mouse drag hit area */}
+                      <circle
+                        cx={ax}
+                        cy={ay}
+                        r={30 / safeScale}
+                        fill="transparent"
                       />
                     </g>
-                  )}
-
-                  {/* Interactive Draggable Anchor Reticle */}
-                  <g
-                    id="magnifier-anchor-reticle"
-                    className="cursor-move select-none"
-                    onPointerDown={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      isDraggingAnchorRef.current = true;
-                      try {
-                        (e.currentTarget as Element).setPointerCapture(e.pointerId);
-                      } catch {}
-                      setIsDraggingAnchor(true);
-                    }}
-                    onPointerMove={(e) => {
-                      if (!isDraggingAnchorRef.current) return;
-                      e.stopPropagation();
-                      e.preventDefault();
-                      const raw = getPointerPosition(e);
-                      const cPos = getTransformedPointerPosition(raw);
-                      let fx = Math.round(cPos.x);
-                      let fy = Math.round(cPos.y);
-                      if (showGrid && gridSize > 0) {
-                        const step = snapStep || 1;
-                        fx = Math.round(fx / step) * step;
-                        fy = Math.round(fy / step) * step;
-                      }
-                      if (isFinite(fx) && isFinite(fy)) {
-                        const newPos = { x: fx, y: fy };
-                        setAnchorTarget(newPos);
-                        lastAnchorPosRef.current = newPos;
-                      }
-                    }}
-                    onPointerUp={(e) => {
-                      if (!isDraggingAnchorRef.current) return;
-                      e.stopPropagation();
-                      e.preventDefault();
-                      try {
-                        (e.currentTarget as Element).releasePointerCapture(e.pointerId);
-                      } catch {}
-                      isDraggingAnchorRef.current = false;
-                      setIsDraggingAnchor(false);
-                    }}
-                    onPointerCancel={(e) => {
-                      if (!isDraggingAnchorRef.current) return;
-                      try {
-                        (e.currentTarget as Element).releasePointerCapture(e.pointerId);
-                      } catch {}
-                      isDraggingAnchorRef.current = false;
-                      setIsDraggingAnchor(false);
-                    }}
-                    onMouseDown={(e) => {
-                      e.stopPropagation();
-                    }}
-                    onTouchStart={(e) => {
-                      e.stopPropagation();
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                    }}
-                  >
-                    {/* Thin unobtrusive Crosshair Lines with open center */}
-                    <line
-                      x1={ax - 20 / safeScale}
-                      y1={ay}
-                      x2={ax - 5 / safeScale}
-                      y2={ay}
-                      stroke="#10b981"
-                      strokeWidth={1.5 / safeScale}
-                    />
-                    <line
-                      x1={ax + 5 / safeScale}
-                      y1={ay}
-                      x2={ax + 20 / safeScale}
-                      y2={ay}
-                      stroke="#10b981"
-                      strokeWidth={1.5 / safeScale}
-                    />
-                    <line
-                      x1={ax}
-                      y1={ay - 20 / safeScale}
-                      x2={ax}
-                      y2={ay - 5 / safeScale}
-                      stroke="#10b981"
-                      strokeWidth={1.5 / safeScale}
-                    />
-                    <line
-                      x1={ax}
-                      y1={ay + 5 / safeScale}
-                      x2={ax}
-                      y2={ay + 20 / safeScale}
-                      stroke="#10b981"
-                      strokeWidth={1.5 / safeScale}
-                    />
-
-                    {/* Single subtle thin outer ring with clear transparent interior */}
-                    <circle
-                      cx={ax}
-                      cy={ay}
-                      r={12 / safeScale}
-                      fill="none"
-                      stroke="#10b981"
-                      strokeWidth={1.2 / safeScale}
-                      strokeDasharray={`${3 / safeScale},${2 / safeScale}`}
-                      opacity={0.85}
-                    />
-
-                    {/* Generous touch / mouse drag hit area */}
-                    <circle
-                      cx={ax}
-                      cy={ay}
-                      r={30 / safeScale}
-                      fill="transparent"
-                    />
                   </g>
-                </g>
-              );
-            })()}
+                );
+              })()}
+            </g>
             </g>
         </svg>
       );
