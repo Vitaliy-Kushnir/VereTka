@@ -34,6 +34,7 @@ interface CanvasProps {
   onSelectShape: (id: string | string[] | null, isCtrlPressed?: boolean, isShiftPressed?: boolean, ignoreGroup?: boolean) => void;
   touchDrawingMode?: 'tap-drag' | 'virtual-joystick';
   setTouchDrawingMode?: (mode: 'tap-drag' | 'virtual-joystick') => void;
+  projectSessionId?: number;
   showMagnifier?: MagnifierMode | boolean;
   setShowMagnifier?: (mode: MagnifierMode) => void;
   isDrawingPolyline: boolean;
@@ -300,6 +301,14 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   }));
   const [lastKnownCanvasPos, setLastKnownCanvasPos] = useState<{ x: number; y: number } | null>(null);
   const [anchorTarget, setAnchorTarget] = useState<{ x: number; y: number } | null>(null);
+  const lastAnchorPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Скидання положення якоря при запуску або завантаженні нового проєкту
+  useEffect(() => {
+    setAnchorTarget(null);
+    lastAnchorPosRef.current = null;
+  }, [props.projectSessionId]);
+
   const [isDraggingAnchor, setIsDraggingAnchor] = useState(false);
   const isDraggingAnchorRef = useRef(false);
   const [isDraggingReticle, setIsDraggingReticle] = useState(false);
@@ -4255,23 +4264,36 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
               const ax = anchorTarget.x;
               const ay = anchorTarget.y;
+              if (typeof ax !== 'number' || typeof ay !== 'number' || !isFinite(ax) || !isFinite(ay)) {
+                return null;
+              }
 
               // Compute Magnifier lens perimeter connection point in canvas space
               let tetherPath: { startX: number; startY: number; endX: number; endY: number } | null = null;
 
-              if (magnifierCenter) {
-                const magCanvasX = (magnifierCenter.x - viewTransform.x) / safeScale;
-                const magCanvasY = (magnifierCenter.y - viewTransform.y) / safeScale;
-                const magCanvasRadius = magnifierCenter.radius / safeScale;
+              if (magnifierCenter && viewTransform) {
+                const vtX = typeof viewTransform.x === 'number' && isFinite(viewTransform.x) ? viewTransform.x : 0;
+                const vtY = typeof viewTransform.y === 'number' && isFinite(viewTransform.y) ? viewTransform.y : 0;
+                const mcX = typeof magnifierCenter.x === 'number' && isFinite(magnifierCenter.x) ? magnifierCenter.x : null;
+                const mcY = typeof magnifierCenter.y === 'number' && isFinite(magnifierCenter.y) ? magnifierCenter.y : null;
+                const mcR = typeof magnifierCenter.radius === 'number' && isFinite(magnifierCenter.radius) ? magnifierCenter.radius : null;
 
-                const dx = ax - magCanvasX;
-                const dy = ay - magCanvasY;
-                const dist = Math.hypot(dx, dy);
+                if (mcX !== null && mcY !== null && mcR !== null && safeScale > 0) {
+                  const magCanvasX = (mcX - vtX) / safeScale;
+                  const magCanvasY = (mcY - vtY) / safeScale;
+                  const magCanvasRadius = mcR / safeScale;
 
-                if (dist > magCanvasRadius + 2) {
-                  const startX = magCanvasX + (dx / dist) * magCanvasRadius;
-                  const startY = magCanvasY + (dy / dist) * magCanvasRadius;
-                  tetherPath = { startX, startY, endX: ax, endY: ay };
+                  const dx = ax - magCanvasX;
+                  const dy = ay - magCanvasY;
+                  const dist = Math.hypot(dx, dy);
+
+                  if (isFinite(dist) && dist > magCanvasRadius + 2) {
+                    const startX = magCanvasX + (dx / dist) * magCanvasRadius;
+                    const startY = magCanvasY + (dy / dist) * magCanvasRadius;
+                    if (isFinite(startX) && isFinite(startY)) {
+                      tetherPath = { startX, startY, endX: ax, endY: ay };
+                    }
+                  }
                 }
               }
 
@@ -4315,7 +4337,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
                   {/* Interactive Draggable Anchor Reticle */}
                   <g
-                    id="magnifier-anchor-layer"
+                    id="magnifier-anchor-reticle"
                     className="cursor-move select-none"
                     onPointerDown={(e) => {
                       e.stopPropagation();
@@ -4339,7 +4361,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         fx = Math.round(fx / step) * step;
                         fy = Math.round(fy / step) * step;
                       }
-                      setAnchorTarget({ x: fx, y: fy });
+                      if (isFinite(fx) && isFinite(fy)) {
+                        const newPos = { x: fx, y: fy };
+                        setAnchorTarget(newPos);
+                        lastAnchorPosRef.current = newPos;
+                      }
                     }}
                     onPointerUp={(e) => {
                       if (!isDraggingAnchorRef.current) return;
@@ -4443,20 +4469,26 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         const isAnchored = Boolean(anchorTarget);
 
         // Position calculation
-        const fallbackPos = previewMousePos || lastKnownCanvasPos || { x: Math.round(width / 2), y: Math.round(height / 2) };
+        const fallbackDefaultX = typeof width === 'number' && isFinite(width) && width > 0 ? Math.round(width / 2) : 250;
+        const fallbackDefaultY = typeof height === 'number' && isFinite(height) && height > 0 ? Math.round(height / 2) : 250;
+        const fallbackPos = previewMousePos || lastKnownCanvasPos || { x: fallbackDefaultX, y: fallbackDefaultY };
         const activeCanvasPos = isAnchored 
             ? anchorTarget 
             : (isJoystickMode ? aimPos : (previewMousePos || (isPinned ? fallbackPos : lastKnownCanvasPos)));
             
-        const activePointerPos = isAnchored && anchorTarget ? {
-            x: anchorTarget.x * viewTransform.scale + viewTransform.x,
-            y: anchorTarget.y * viewTransform.scale + viewTransform.y
-        } : (isJoystickMode && aimPos ? {
-            x: aimPos.x * viewTransform.scale + viewTransform.x,
-            y: aimPos.y * viewTransform.scale + viewTransform.y
-        } : (rawMousePos || (activeCanvasPos ? {
-            x: activeCanvasPos.x * viewTransform.scale + viewTransform.x,
-            y: activeCanvasPos.y * viewTransform.scale + viewTransform.y
+        const vtScale = (!viewTransform || typeof viewTransform.scale !== 'number' || !isFinite(viewTransform.scale) || viewTransform.scale <= 0) ? 1 : viewTransform.scale;
+        const vtX = (!viewTransform || typeof viewTransform.x !== 'number' || !isFinite(viewTransform.x)) ? 0 : viewTransform.x;
+        const vtY = (!viewTransform || typeof viewTransform.y !== 'number' || !isFinite(viewTransform.y)) ? 0 : viewTransform.y;
+
+        const activePointerPos = isAnchored && anchorTarget && isFinite(anchorTarget.x) && isFinite(anchorTarget.y) ? {
+            x: anchorTarget.x * vtScale + vtX,
+            y: anchorTarget.y * vtScale + vtY
+        } : (isJoystickMode && aimPos && isFinite(aimPos.x) && isFinite(aimPos.y) ? {
+            x: aimPos.x * vtScale + vtX,
+            y: aimPos.y * vtScale + vtY
+        } : (rawMousePos || (activeCanvasPos && isFinite(activeCanvasPos.x) && isFinite(activeCanvasPos.y) ? {
+            x: activeCanvasPos.x * vtScale + vtX,
+            y: activeCanvasPos.y * vtScale + vtY
         } : null)));
         
         const showMag = isPinned || isAnchored || (isInteracting && activeCanvasPos);
@@ -4484,14 +4516,46 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 anchorPos={anchorTarget}
                 onToggleAnchor={() => {
                     setAnchorTarget(prev => {
-                        if (prev) return null;
-                        const target = activeCanvasPos || previewMousePos || lastKnownCanvasPos || aimPos || { x: Math.round(width / 2), y: Math.round(height / 2) };
-                        return { x: Math.round(target.x), y: Math.round(target.y) };
+                        if (prev) {
+                            if (isFinite(prev.x) && isFinite(prev.y)) {
+                                lastAnchorPosRef.current = { x: Math.round(prev.x), y: Math.round(prev.y) };
+                            }
+                            return null;
+                        }
+
+                        // По замовчуванню: останнє положення в поточному проєкті, або центр полотна для нового/завантаженого
+                        let targetX: number;
+                        let targetY: number;
+
+                        if (
+                            lastAnchorPosRef.current &&
+                            typeof lastAnchorPosRef.current.x === 'number' &&
+                            typeof lastAnchorPosRef.current.y === 'number' &&
+                            isFinite(lastAnchorPosRef.current.x) &&
+                            isFinite(lastAnchorPosRef.current.y)
+                        ) {
+                            targetX = Math.round(lastAnchorPosRef.current.x);
+                            targetY = Math.round(lastAnchorPosRef.current.y);
+                        } else {
+                            const centerX = typeof width === 'number' && isFinite(width) && width > 0 ? Math.round(width / 2) : 250;
+                            const centerY = typeof height === 'number' && isFinite(height) && height > 0 ? Math.round(height / 2) : 250;
+                            targetX = centerX;
+                            targetY = centerY;
+                        }
+
+                        const newPos = { x: targetX, y: targetY };
+                        lastAnchorPosRef.current = newPos;
+                        return newPos;
                     });
                 }}
                 onMagnifierCenterChange={handleMagnifierCenterChange}
                 onClose={() => {
-                    setAnchorTarget(null);
+                    setAnchorTarget(prev => {
+                        if (prev && isFinite(prev.x) && isFinite(prev.y)) {
+                            lastAnchorPosRef.current = { x: Math.round(prev.x), y: Math.round(prev.y) };
+                        }
+                        return null;
+                    });
                     props.setShowMagnifier?.('off');
                 }}
             />

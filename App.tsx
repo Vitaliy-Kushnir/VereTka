@@ -2,6 +2,7 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { type Shape, type Tool, type DrawMode, PolylineShape, BezierCurveShape, ViewTransform, RectangleShape, ImageShape, IsoscelesTriangleShape, TrapezoidShape, ParallelogramShape, PathShape, CanvasAction, LineShape, PolygonShape, ArcShape, RightTriangleShape, TextShape, BitmapShape, RotatableShape, EllipseShape, type ProjectTemplate, type NewProjectSettings, FillableShape, DistributePathState, DistributeEntity, Layer, GroupShape, MagnifierMode } from './types';
 import Canvas from './components/Canvas';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import CodeDisplay, { type CodeLine } from './components/CodeDisplay';
 import PropertyEditor from './components/PropertyEditor';
 import ShapeList from './components/ShapeList';
@@ -1306,6 +1307,7 @@ export default function App(): React.ReactNode {
   const activeLayerId = historyState.activeLayerId || 'layer-1';
 
   const [projectName, setProjectName] = useState<string>(t('app.1069'));
+  const [projectSessionId, setProjectSessionId] = useState<number>(0);
   const [rightPanelTab, setRightPanelTab] = useState<'layers' | 'shapes'>('shapes');
   const [activeTool, setActiveTool] = useState<Tool>('select');
   const [selectedShapeIds, setSelectedShapeIds] = useState<string[]>([]);
@@ -3200,6 +3202,7 @@ export default function App(): React.ReactNode {
     setActiveCheats(new Set());
     setFileHandle(null);
     localStorage.removeItem(AUTOSAVE_KEY);
+    setProjectSessionId(prev => prev + 1);
   };
 
   const confirmAction = useCallback((action: (() => void) | undefined, title: string, message: string, confirmText?: string, cancelText?: string, variant?: 'primary' | 'destructive', alternativeAction?: { text: string, onClick: () => void, title?: string }) => {
@@ -5773,39 +5776,42 @@ export default function App(): React.ReactNode {
                                         }}
                                     />
                                 )}
-                                <Canvas
-                                    onDrawingAttempt={handleDrawingAttempt}
-                                    distributePathState={distributePathState}
-                                    onDistributePathChange={setDistributePathStateWithoutHistory}
-                                    onDistributePathChangeEnd={handleDistributePathChangeEnd}
-                                    isSelectingPathShape={isSelectingPathShape}
-                                    onSelectPathShape={handleSelectPathShape}
-                                    width={canvasWidth} height={canvasHeight} backgroundColor={previewCanvasBgColor ?? canvasBgColor} shapes={displayedShapes} lockedShapeIds={lockedShapeIds} addShape={addShape} addShapes={addShapes} updateShape={updateShape} updateShapes={updateShapes} activeTool={activeTool} drawMode={drawMode}
-                                    fillColor={isFillEnabled ? (previewFillColor ?? fillColor) : 'none'} strokeColor={isStrokeEnabled ? (previewStrokeColor ?? strokeColor) : 'none'} strokeWidth={isStrokeEnabled ? strokeWidth : 0}
-                                    textColor={previewTextColor ?? textColor}
-                                    textFont={textFont}
-                                    textFontSize={textFontSize}
-                                    numberOfSides={numberOfSides} selectedShapeIds={selectedShapeIds} onSelectShape={handleSelectShape} isDrawingPolyline={isDrawingPolyline} polylinePoints={polylinePoints} setPolylinePoints={setPolylinePoints}
-                                    touchDrawingMode={touchDrawingMode}
-                                    setTouchDrawingMode={setTouchDrawingMode}
-                                    onCompletePolyline={handleCompletePolyline} onCancelPolyline={handleCancelPolyline} onUndoPolylinePoint={() => setPolylinePoints(prev => prev.slice(0, -1))} isDrawingBezier={isDrawingBezier} bezierPoints={bezierPoints} setBezierPoints={setBezierPoints}
-                                    onCompleteBezier={handleCompleteBezier} onCancelBezier={handleCancelBezier} onUndoBezierPoint={() => setBezierPoints(prev => prev.slice(0, -1))} showGrid={showGrid} gridSize={gridSize} snapStep={snapToGrid ? gridSnapStep : 1}
-                                    activePointIndex={activePointIndex} setActivePointIndex={setActivePointIndex} showCursorCoords={showCursorCoords} showRotationAngle={showRotationAngle}
-                                    showMagnifier={showMagnifier}
-                                    setShowMagnifier={setShowMagnifier}
-                                    pendingImage={pendingImage} setPendingImage={setPendingImage} setCursorPos={setCursorPos}
-                                    isImportingImage={isImportingImage}
-                                    showNotification={showNotification}
-                                    onStartInlineEdit={handleStartInlineEdit}
-                                    inlineEditingShapeId={inlineEditingShapeId}
-                                    keyboardSnapLines={keyboardSnapLines}
-                                    showCenterGuides={showCenterGuides}
-                                    enableSnapping={enableSnapping}
-                                    isMultiSelectMode={isMultiSelectMode}
-                                    setIsMultiSelectMode={setIsMultiSelectMode}
-                                    viewTransform={viewTransform}
-                                    setViewTransform={handleUserSetViewTransform}
-                                />
+                                <ErrorBoundary>
+                                    <Canvas
+                                        onDrawingAttempt={handleDrawingAttempt}
+                                        distributePathState={distributePathState}
+                                        onDistributePathChange={setDistributePathStateWithoutHistory}
+                                        onDistributePathChangeEnd={handleDistributePathChangeEnd}
+                                        isSelectingPathShape={isSelectingPathShape}
+                                        onSelectPathShape={handleSelectPathShape}
+                                        width={canvasWidth} height={canvasHeight} backgroundColor={previewCanvasBgColor ?? canvasBgColor} shapes={displayedShapes} lockedShapeIds={lockedShapeIds} addShape={addShape} addShapes={addShapes} updateShape={updateShape} updateShapes={updateShapes} activeTool={activeTool} drawMode={drawMode}
+                                        fillColor={isFillEnabled ? (previewFillColor ?? fillColor) : 'none'} strokeColor={isStrokeEnabled ? (previewStrokeColor ?? strokeColor) : 'none'} strokeWidth={isStrokeEnabled ? strokeWidth : 0}
+                                        textColor={previewTextColor ?? textColor}
+                                        textFont={textFont}
+                                        textFontSize={textFontSize}
+                                        numberOfSides={numberOfSides} selectedShapeIds={selectedShapeIds} onSelectShape={handleSelectShape} isDrawingPolyline={isDrawingPolyline} polylinePoints={polylinePoints} setPolylinePoints={setPolylinePoints}
+                                        touchDrawingMode={touchDrawingMode}
+                                        setTouchDrawingMode={setTouchDrawingMode}
+                                        projectSessionId={projectSessionId}
+                                        onCompletePolyline={handleCompletePolyline} onCancelPolyline={handleCancelPolyline} onUndoPolylinePoint={() => setPolylinePoints(prev => prev.slice(0, -1))} isDrawingBezier={isDrawingBezier} bezierPoints={bezierPoints} setBezierPoints={setBezierPoints}
+                                        onCompleteBezier={handleCompleteBezier} onCancelBezier={handleCancelBezier} onUndoBezierPoint={() => setBezierPoints(prev => prev.slice(0, -1))} showGrid={showGrid} gridSize={gridSize} snapStep={snapToGrid ? gridSnapStep : 1}
+                                        activePointIndex={activePointIndex} setActivePointIndex={setActivePointIndex} showCursorCoords={showCursorCoords} showRotationAngle={showRotationAngle}
+                                        showMagnifier={showMagnifier}
+                                        setShowMagnifier={setShowMagnifier}
+                                        pendingImage={pendingImage} setPendingImage={setPendingImage} setCursorPos={setCursorPos}
+                                        isImportingImage={isImportingImage}
+                                        showNotification={showNotification}
+                                        onStartInlineEdit={handleStartInlineEdit}
+                                        inlineEditingShapeId={inlineEditingShapeId}
+                                        keyboardSnapLines={keyboardSnapLines}
+                                        showCenterGuides={showCenterGuides}
+                                        enableSnapping={enableSnapping}
+                                        isMultiSelectMode={isMultiSelectMode}
+                                        setIsMultiSelectMode={setIsMultiSelectMode}
+                                        viewTransform={viewTransform}
+                                        setViewTransform={handleUserSetViewTransform}
+                                    />
+                                </ErrorBoundary>
                             </div>
 
                             {selectedShapeIds.length > 0 && !distributePathState && isSelectionHUDCollapsed && (

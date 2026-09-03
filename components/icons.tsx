@@ -4,6 +4,7 @@ import React from 'react';
 interface IconProps {
     size?: number;
     className?: string;
+    strokeWidth?: number;
 }
 
 export const SelectIcon: React.FC<IconProps> = ({ size = 20 }) => (
@@ -874,16 +875,16 @@ export const CrosshairIcon: React.FC<IconProps> = ({ size = 20, className }) => 
     </svg>
 );
 
-export const TargetIcon: React.FC<IconProps> = ({ size = 20, className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+export const TargetIcon: React.FC<IconProps> = ({ size = 20, className, strokeWidth = 2 }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
         <circle cx="12" cy="12" r="10"/>
         <circle cx="12" cy="12" r="6"/>
         <circle cx="12" cy="12" r="2"/>
     </svg>
 );
 
-export const AnchorIcon: React.FC<IconProps> = ({ size = 20, className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+export const AnchorIcon: React.FC<IconProps> = ({ size = 20, className, strokeWidth = 2 }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
         <circle cx="12" cy="5" r="3"/>
         <line x1="12" y1="8" x2="12" y2="21"/>
         <path d="M5 12H2a10 10 0 0 0 20 0h-3"/>

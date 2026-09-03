@@ -675,10 +675,19 @@ export const Magnifier: React.FC<MagnifierProps> = ({
           onPointerDown={(e) => {
             e.stopPropagation();
           }}
+          onPointerUp={(e) => {
+            e.stopPropagation();
+          }}
           onMouseDown={(e) => {
             e.stopPropagation();
           }}
+          onMouseUp={(e) => {
+            e.stopPropagation();
+          }}
           onTouchStart={(e) => {
+            e.stopPropagation();
+          }}
+          onTouchEnd={(e) => {
             e.stopPropagation();
           }}
           onClick={(e) => {
@@ -708,10 +717,19 @@ export const Magnifier: React.FC<MagnifierProps> = ({
           onPointerDown={(e) => {
             e.stopPropagation();
           }}
+          onPointerUp={(e) => {
+            e.stopPropagation();
+          }}
           onMouseDown={(e) => {
             e.stopPropagation();
           }}
+          onMouseUp={(e) => {
+            e.stopPropagation();
+          }}
           onTouchStart={(e) => {
+            e.stopPropagation();
+          }}
+          onTouchEnd={(e) => {
             e.stopPropagation();
           }}
           onClick={(e) => {
@@ -745,10 +763,19 @@ export const Magnifier: React.FC<MagnifierProps> = ({
           onPointerDown={(e) => {
             e.stopPropagation();
           }}
+          onPointerUp={(e) => {
+            e.stopPropagation();
+          }}
           onMouseDown={(e) => {
             e.stopPropagation();
           }}
+          onMouseUp={(e) => {
+            e.stopPropagation();
+          }}
           onTouchStart={(e) => {
+            e.stopPropagation();
+          }}
+          onTouchEnd={(e) => {
             e.stopPropagation();
           }}
           onClick={(e) => {
