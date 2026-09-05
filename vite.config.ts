@@ -9,11 +9,12 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'robots.txt'], // Add any other static assets you want cached
+      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-maskable-512x512.png', 'robots.txt'],
       manifest: {
+        id: './',
         name: 'VereTka - Vector Editor',
         short_name: 'VereTka',
-        description: 'A simple vector editor for Tkinter code generation',
+        description: 'Modern vector editor for canvas graphics and Python Tkinter code generation',
         theme_color: '#1f2937',
         background_color: '#111827',
         display: 'standalone',
@@ -22,12 +23,34 @@ export default defineConfig({
         orientation: 'any',
         icons: [
           {
-            src: 'favicon.svg', // You might want to generate proper PNG icons of different sizes (192x192, 512x512) for better PWA support
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'pwa-maskable-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
+          },
+          {
+            src: 'favicon.svg',
             sizes: 'any',
             type: 'image/svg+xml',
-            purpose: 'any maskable'
+            purpose: 'any'
           }
         ]
+      },
+      devOptions: {
+        enabled: true,
+        type: 'module'
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,txt}'], // Cache these file types

@@ -55,6 +55,8 @@ import { MobileQuickControls } from './components/mobile/MobileQuickControls';
 import { FloatingModeControls } from './components/FloatingModeControls';
 import { MultiSelectHUD } from './components/MultiSelectHUD';
 import { useIsMobile, useIsLandscape } from './hooks/useIsMobile';
+import { usePWAInstall } from './hooks/usePWAInstall';
+import { PWAInstallModal } from './components/PWAInstallModal';
 
 type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
@@ -1362,6 +1364,19 @@ export default function App(): React.ReactNode {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [isPWAInstallModalOpen, setIsPWAInstallModalOpen] = useState(false);
+  const { isInstallable: isPWAInstallable, isInstalled: isPWAInstalled, isIOS: isPWAIOS, install: installPWA } = usePWAInstall();
+
+  const handleOpenPWAInstall = useCallback(async () => {
+    if (isPWAInstallable && !isPWAIOS) {
+      const installed = await installPWA();
+      if (!installed) {
+        setIsPWAInstallModalOpen(true);
+      }
+    } else {
+      setIsPWAInstallModalOpen(true);
+    }
+  }, [isPWAInstallable, isPWAIOS, installPWA]);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [isCloudGalleryOpen, setIsCloudGalleryOpen] = useState(false);
   const [cloudGalleryInitialTab, setCloudGalleryInitialTab] = useState<'public' | 'personal' | 'group' | 'publish'>('public');
@@ -5919,6 +5934,8 @@ export default function App(): React.ReactNode {
                         autosavedProjectData={autosavedProjectData}
                         onRestoreAutosave={handleRestoreAutosave}
                         onDismissAutosave={handleDismissAutosave}
+                        onOpenPWAInstall={handleOpenPWAInstall}
+                        isPWAInstalled={isPWAInstalled}
                     />
                 )}
             </div>
@@ -6057,6 +6074,8 @@ export default function App(): React.ReactNode {
               onOpenHelp={() => setIsHelpModalOpen(true)}
               onOpenShortcuts={() => setIsShortcutsModalOpen(true)}
               onOpenFeedback={() => setIsFeedbackModalOpen(true)}
+              onOpenPWAInstall={handleOpenPWAInstall}
+              isPWAInstalled={isPWAInstalled}
               onExitApp={handleExitApp}
             />
           )}
@@ -6608,6 +6627,15 @@ export default function App(): React.ReactNode {
                 isOpen={isShareModalOpen}
                 onClose={() => setIsShareModalOpen(false)}
                 shareUrl={shareUrl}
+            />
+          )}
+          {isPWAInstallModalOpen && (
+            <PWAInstallModal
+                isOpen={isPWAInstallModalOpen}
+                onClose={() => setIsPWAInstallModalOpen(false)}
+                onInstall={installPWA}
+                isInstallable={isPWAInstallable}
+                isIOS={isPWAIOS}
             />
           )}
       </div>
