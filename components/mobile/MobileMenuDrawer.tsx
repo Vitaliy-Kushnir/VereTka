@@ -23,7 +23,6 @@ import {
     ShareLinkIcon, 
     TrashIcon, 
     PlayIcon,
-    KeyIcon,
     AlignShapesCenterHIcon,
     VeretkaLogoIcon,
     LogOutIcon
@@ -38,6 +37,7 @@ interface MobileMenuDrawerProps {
     onClose: () => void;
     projectName: string;
     isProjectActive: boolean;
+    appVersion?: string;
     onGoHome: () => void;
     onNewProject: () => void;
     onSaveProject: () => void;
@@ -74,7 +74,7 @@ interface MobileMenuDrawerProps {
     onRunOnline?: () => void;
     onOpenAbout: () => void;
     onOpenHelp: () => void;
-    onOpenShortcuts: () => void;
+    onOpenShortcuts?: () => void;
     onOpenFeedback: () => void;
     onExitApp?: () => void;
 }
@@ -84,6 +84,7 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
     onClose,
     projectName,
     isProjectActive,
+    appVersion,
     onGoHome,
     onExitApp,
     onNewProject,
@@ -180,9 +181,12 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                             <VeretkaLogoIcon size={22} className="w-full h-full object-contain" />
                         </div>
                         <div className="overflow-hidden">
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                                 <h2 className="font-bold text-sm truncate text-[var(--brand-header-text)]">{t('welcome.title')}</h2>
                                 <BetaBadge size="sm" />
+                                <span className="text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-tertiary)] select-none shrink-0">
+                                    v{appVersion || '1.4.3'}
+                                </span>
                             </div>
                             <p className="text-xs text-[var(--text-secondary)] truncate">
                                 {isProjectActive ? projectName : t('menu.mainTitle')}
@@ -491,13 +495,6 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                             >
                                 <HelpCircleIcon size={18} className="text-amber-400" />
                                 <span>{t('menu.help.manual') || 'Посібник користувача'}</span>
-                            </button>
-                            <button
-                                onClick={() => handleAction(onOpenShortcuts)}
-                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-[var(--bg-secondary)] text-left"
-                            >
-                                <KeyIcon size={18} className="text-blue-400" />
-                                <span>{t('menu.help.shortcuts') || 'Гарячі клавіші'}</span>
                             </button>
                             <button
                                 onClick={() => handleAction(onOpenAbout)}

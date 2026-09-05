@@ -6008,6 +6008,7 @@ export default function App(): React.ReactNode {
               onClose={() => setMobileSheet(null)}
               projectName={projectName}
               isProjectActive={isProjectActive}
+              appVersion={APP_VERSION}
               onGoHome={handleGoHome}
               onNewProject={handleOpenNewProjectModal}
               onSaveProject={handleSaveProject}

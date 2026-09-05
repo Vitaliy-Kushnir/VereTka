@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   ZoomIn, 
   ZoomOut, 
@@ -44,6 +44,31 @@ export const MobileQuickControls: React.FC<MobileQuickControlsProps> = ({
 }) => {
   const { t } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isExpanded) return;
+
+    const handlePointerDownOutside = (event: PointerEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsExpanded(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsExpanded(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDownOutside, true);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDownOutside, true);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isExpanded]);
 
   const zoomPercent = Math.round(zoomLevel * 100);
 
@@ -79,7 +104,7 @@ export const MobileQuickControls: React.FC<MobileQuickControlsProps> = ({
   };
 
   return (
-    <div className="relative flex flex-col items-end pointer-events-auto select-none">
+    <div ref={containerRef} className="relative flex flex-col items-end pointer-events-auto select-none">
       {/* Floating Pill Trigger (stays fixed at top) */}
       <div className="flex items-center gap-1 bg-[var(--bg-primary)]/90 backdrop-blur-md border border-[var(--border-secondary)] rounded-full shadow-xl p-1 z-20">
         {/* Quick Reset Zoom Button */}
