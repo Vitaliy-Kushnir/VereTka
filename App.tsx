@@ -57,12 +57,12 @@ import { MultiSelectHUD } from './components/MultiSelectHUD';
 import { useIsMobile, useIsLandscape } from './hooks/useIsMobile';
 import { usePWAInstall } from './hooks/usePWAInstall';
 import { PWAInstallModal } from './components/PWAInstallModal';
+import { APP_VERSION } from './version';
 
 type Theme = 'dark' | 'light';
 type GeneratorType = 'local' | 'gemini';
 type SettingsTab = 'canvas' | 'grid' | 'appearance' | 'code' | 'templates';
 
-const APP_VERSION = '1.4.4';
 const RULER_THICKNESS = 24;
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 30;

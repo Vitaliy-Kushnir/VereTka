@@ -29,6 +29,7 @@ import {
 } from '../icons';
 import { useLanguage } from '../LanguageContext';
 import { BetaBadge } from '../BetaBadge';
+import { APP_VERSION } from '../../version';
 
 export type Theme = 'dark' | 'light';
 
@@ -189,7 +190,7 @@ export const MobileMenuDrawer: React.FC<MobileMenuDrawerProps> = ({
                                 <h2 className="font-bold text-sm truncate text-[var(--brand-header-text)]">{t('welcome.title')}</h2>
                                 <BetaBadge size="sm" />
                                 <span className="text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-tertiary)] select-none shrink-0">
-                                    v{appVersion || '1.4.4'}
+                                    v{appVersion || APP_VERSION}
                                 </span>
                             </div>
                             <p className="text-xs text-[var(--text-secondary)] truncate">

@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { NewFileIcon, OpenFileIcon, HistoryIcon, XIcon, ArrowRightIcon, RefreshIcon } from './icons';
 import { useLanguage } from './LanguageContext';
 import { BetaBadge } from './BetaBadge';
+import { APP_VERSION } from '../version';
 
 interface RecentProject {
     name: string;
@@ -242,6 +243,9 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                                     {t('welcome.title')}
                                 </h1>
                                 <BetaBadge size="lg" />
+                                <span className="text-xs sm:text-sm font-mono font-bold px-2 py-0.5 rounded-full bg-[var(--bg-secondary)]/80 border border-[var(--border-primary)] text-[var(--text-tertiary)] select-none shadow-xs">
+                                    v{APP_VERSION}
+                                </span>
                             </div>
                             <p className="text-sm xs:text-base sm:text-xl md:text-2xl text-[var(--text-secondary)] font-medium italic mt-1 sm:mt-2 max-w-xl leading-snug">
                                 {t('welcome.subtitle')}
