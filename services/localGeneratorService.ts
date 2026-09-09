@@ -212,6 +212,10 @@ function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, ca
         switch (shape.type) {
             case 'rectangle':
                 const r = shape as RectangleShape;
+                if (r.cornerRadius && r.cornerRadius > 0) {
+                    // For rounded rectangle, use create_polygon with smooth=True
+                    break;
+                }
                 const r_coords = [r.x, r.y, r.x + r.width, r.y + r.height].map(round).join(', ');
                 return `${canvasVarName}.create_rectangle(${r_coords}${formatOptions(options)})`;
             case 'ellipse':
@@ -266,7 +270,7 @@ function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, ca
         }
     }
 
-    if (shape.type === 'polyline' && shape.isClosed && !shape.rotation && isPolylineAxisAlignedRectangle(shape)) {
+    if (shape.type === 'polyline' && shape.isClosed && !shape.rotation && !shape.smooth && isPolylineAxisAlignedRectangle(shape)) {
         const xs = shape.points.map(p => p.x);
         const ys = shape.points.map(p => p.y);
         const coords = [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)].map(round).join(', ');
@@ -276,7 +280,7 @@ function shapeToTkinterString(shape: Shape, imageVarMap: Map<string, string>, ca
     const finalPoints = getFinalPoints(shape);
     if (!finalPoints || finalPoints.length < 2) return null;
 
-    if ('smooth' in shape && shape.smooth) {
+    if (('smooth' in shape && shape.smooth) || (shape.type === 'rectangle' && (shape as RectangleShape).cornerRadius && (shape as RectangleShape).cornerRadius! > 0)) {
         options.smooth = 'True';
         if ('splinesteps' in shape && shape.splinesteps) {
             options.splinesteps = shape.splinesteps;

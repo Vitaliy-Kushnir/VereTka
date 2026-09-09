@@ -891,8 +891,22 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
     switch (selectedShape.type) {
         case 'rectangle': {
             const rect = selectedShape as RectangleShape;
+            const maxRadius = Math.max(0, Math.floor(Math.min(rect.width, rect.height) / 2));
             return <>
                 {commonProperties}
+                <InputWrapper>
+                    <Label htmlFor={`${rect.id}-corner-radius`} title={t('prop.title.cornerRadius')}>{t('props.cornerRadius')}</Label>
+                    <NumberInput
+                        id={`${rect.id}-corner-radius`}
+                        value={roundToHundredths(rect.cornerRadius ?? 0)}
+                        onChange={(v, isFinal) => updateShape({ ...rect, cornerRadius: Math.max(0, Math.min(v, maxRadius)) }, isFinal === false)}
+                        min={0}
+                        max={maxRadius}
+                        unit="px"
+                        presets={[0, 4, 8, 12, 16, 24, 32]}
+                        smartRound={false}
+                    />
+                </InputWrapper>
                 <hr className="border-[var(--border-secondary)] my-2" />
                 <h3 className="font-semibold text-sm text-[var(--text-tertiary)] pt-1">{t('prop.fill')}</h3>
                 <FillControls shape={rect} updateShape={updateShape} setShapePreview={setShapePreview} cancelShapePreview={cancelShapePreview} fillColor={fillColor} showNotification={showNotification} />

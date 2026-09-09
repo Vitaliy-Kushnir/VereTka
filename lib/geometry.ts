@@ -408,6 +408,40 @@ export const getTrapezoidPoints = (shape: TrapezoidShape): {x: number, y: number
     ];
 };
 
+/**
+ * Generates polygon points for a rounded rectangle suitable for Tkinter create_polygon(..., smooth=True).
+ * Using 2 points per corner at distance r creates an exact, smooth rounded rectangle.
+ */
+export const getRoundedRectanglePoints = (shape: RectangleShape): { x: number; y: number }[] => {
+    const { x, y, width, height, cornerRadius = 0 } = shape;
+    const maxR = Math.min(width, height) / 2;
+    const r = Math.max(0, Math.min(cornerRadius, maxR));
+
+    if (r <= 0) {
+        return [
+            { x, y },
+            { x: x + width, y },
+            { x: x + width, y: y + height },
+            { x, y: y + height }
+        ];
+    }
+
+    return [
+        { x: x + r, y },
+        { x: x + width - r, y },
+        { x: x + width, y },
+        { x: x + width, y: y + r },
+        { x: x + width, y: y + height - r },
+        { x: x + width, y: y + height },
+        { x: x + width - r, y: y + height },
+        { x: x + r, y: y + height },
+        { x, y: y + height },
+        { x, y: y + height - r },
+        { x, y: y + r },
+        { x, y }
+    ];
+};
+
 export const getParallelogramPoints = (shape: ParallelogramShape): {x: number, y: number}[] => {
     const { x, y, width: visualWidth, height, angle, isFlippedVertically } = shape;
     if (height === 0) { // Avoid division by zero
@@ -497,22 +531,38 @@ export const getPolylinePointsAsPath = (points: { x: number; y: number }[]): str
 
 export const isPolylineAxisAlignedRectangle = (shape: PolylineShape): boolean => {
     if (!shape.isClosed) return false;
+    if (shape.smooth) return false;
 
     // Normalize points to remove duplicate at the end if it's closed
     let points = [...shape.points].filter(p => p);
-    if (points.length > 1 && points[0].x === points[points.length - 1].x && points[0].y === points[points.length - 1].y) {
+    if (points.length > 1 && Math.abs(points[0].x - points[points.length - 1].x) < 0.01 && Math.abs(points[0].y - points[points.length - 1].y) < 0.01) {
         points.pop();
     }
     
     if (points.length !== 4) return false;
 
-    const xs = new Set(points.map(p => p.x));
-    const ys = new Set(points.map(p => p.y));
+    // Round coordinates slightly to handle floating point imprecision
+    const roundCoord = (val: number) => Math.round(val * 100) / 100;
+    const xs = new Set(points.map(p => roundCoord(p.x)));
+    const ys = new Set(points.map(p => roundCoord(p.y)));
 
     // For an axis-aligned rectangle, there must be exactly 2 unique x and 2 unique y coordinates.
     if (xs.size !== 2 || ys.size !== 2) return false;
+
+    // Ensure all 4 edges are strictly axis-aligned (prevent self-intersecting hourglass)
+    for (let i = 0; i < 4; i++) {
+        const p1 = points[i];
+        const p2 = points[(i + 1) % 4];
+        const sameX = Math.abs(p1.x - p2.x) < 0.01;
+        const sameY = Math.abs(p1.y - p2.y) < 0.01;
+        if (!sameX && !sameY) {
+            return false; // Diagonal edge means not axis-aligned
+        }
+        if (sameX && sameY) {
+            return false; // Degenerate zero-length edge
+        }
+    }
     
-    // This check is sufficient. If there are 4 points and only 2 unique x and y values, they must form an axis-aligned rectangle.
     return true;
 };
 
@@ -788,6 +838,17 @@ export function getFinalPoints(shape: Shape, overrideCenter?: { x: number; y: nu
             points = getSplineApproximation(shape);
             break;
         case 'rectangle':
+            if (shape.cornerRadius && shape.cornerRadius > 0) {
+                points = getRoundedRectanglePoints(shape);
+            } else {
+                points = [
+                    { x: shape.x, y: shape.y },
+                    { x: shape.x + shape.width, y: shape.y },
+                    { x: shape.x + shape.width, y: shape.y + shape.height },
+                    { x: shape.x, y: shape.y + shape.height },
+                ];
+            }
+            break;
         case 'image':
         case 'bitmap':
             points = [

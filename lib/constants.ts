@@ -45,6 +45,7 @@ export const getTkinterType = (shape: Shape): string => {
     if (shape.type === 'text') return 'text';
     if (shape.type === 'image') return 'image';
     if (shape.type === 'bitmap') return 'bitmap';
+    if (shape.type === 'group') return 'group';
 
     // A circle is always an oval, regardless of rotation
     if (shape.type === 'ellipse' && shape.isAspectRatioLocked) {
@@ -52,36 +53,57 @@ export const getTkinterType = (shape: Shape): string => {
     }
 
     if (shape.type === 'arc') {
-        if (shape.rotation === 0) {
-            return 'arc'; // Any unrotated arc shape is 'arc'
+        // Any unrotated arc, or circular arc (width === height) where rotation is baked into start angle
+        if ((!('rotation' in shape) || shape.rotation === 0) || shape.width === shape.height) {
+            return 'arc';
         }
-        // If rotated...
+        // If rotated elliptical arc...
         if (shape.style === 'arc') {
-            return 'line'; // A rotated open arc becomes a line
+            return 'line'; // A rotated open elliptical arc becomes a line
         }
         return 'polygon'; // A rotated pieslice or chord becomes a polygon
     }
 
-    // Unrotated simple shapes
-    if (!('rotation' in shape) || shape.rotation === 0) {
-        if (shape.type === 'rectangle') return 'rectangle';
-        if (shape.type === 'ellipse') return 'oval'; // Non-circles
-        if (shape.type === 'polyline' && shape.isClosed && isPolylineAxisAlignedRectangle(shape)) {
-            return 'rectangle';
-        }
-    }
-
-    // Line-like shapes
+    // Line-like shapes (unclosed)
     if (
         shape.type === 'line' ||
-        shape.type === 'pencil' ||
+        (shape.type === 'pencil' && !('isClosed' in shape && (shape as any).isClosed)) ||
         (shape.type === 'polyline' && !shape.isClosed) ||
         (shape.type === 'bezier' && !shape.isClosed)
     ) {
         return 'line';
     }
 
-    // Everything else that is closed becomes a polygon
+    const isUnrotated = !('rotation' in shape) || shape.rotation === 0;
+
+    // Rectangle shape:
+    // If it has corner radius or is rotated, Tkinter renders it as a polygon (create_polygon)
+    if (shape.type === 'rectangle') {
+        if ((shape.cornerRadius && shape.cornerRadius > 0) || !isUnrotated) {
+            return 'polygon';
+        }
+        return 'rectangle';
+    }
+
+    // Ellipse shape (non-circle):
+    // Rotated non-circle ellipse cannot be rendered with create_oval in Tkinter, it becomes a polygon
+    if (shape.type === 'ellipse') {
+        if (!isUnrotated) {
+            return 'polygon';
+        }
+        return 'oval';
+    }
+
+    // Closed polyline:
+    // If it forms an unrotated axis-aligned sharp rectangle without smoothing, it renders as create_rectangle
+    if (shape.type === 'polyline' && shape.isClosed) {
+        if (isUnrotated && !shape.smooth && isPolylineAxisAlignedRectangle(shape)) {
+            return 'rectangle';
+        }
+        return 'polygon';
+    }
+
+    // Everything else that is closed (bezier, triangle, right-triangle, star, polygon, rhombus, trapezoid, parallelogram, pencil if closed) becomes a polygon
     return 'polygon';
 };
 
@@ -218,6 +240,7 @@ export const getShortShapeTypeName = (shape: Shape): string => {
         case 'text': return 'text';
         case 'image': return 'img';
         case 'bitmap': return 'bmp';
+        case 'group': return 'group';
         default: return 'shape';
     }
 };

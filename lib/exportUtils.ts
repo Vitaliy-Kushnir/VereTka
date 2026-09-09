@@ -174,8 +174,10 @@ function shapeToSvgString(shape: Shape): string {
     };
 
     switch (shape.type) {
-        case 'rectangle':
-            return `<rect x="${shape.x}" y="${shape.y}" width="${shape.width}" height="${shape.height}" ${commonProps(shape)} ${fillProps(shape)} ${joinStyleProps(shape)} />`;
+        case 'rectangle': {
+            const rxAttr = shape.cornerRadius && shape.cornerRadius > 0 ? ` rx="${Math.min(shape.cornerRadius, Math.min(shape.width, shape.height) / 2)}" ry="${Math.min(shape.cornerRadius, Math.min(shape.width, shape.height) / 2)}"` : '';
+            return `<rect x="${shape.x}" y="${shape.y}" width="${shape.width}" height="${shape.height}"${rxAttr} ${commonProps(shape)} ${fillProps(shape)} ${joinStyleProps(shape)} />`;
+        }
         case 'ellipse':
             return `<ellipse cx="${shape.cx}" cy="${shape.cy}" rx="${shape.rx}" ry="${shape.ry}" ${commonProps(shape)} ${fillProps(shape)} />`;
         case 'image':

@@ -515,6 +515,13 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
                     center: getShapeCenter(shape, allShapes)!,
                 });
                 break;
+            case 'rectangle-radius':
+                if (shape.type !== 'rectangle') return;
+                setAction({
+                    type: 'rounded-rectangle-radius-editing',
+                    initialShape: shape,
+                });
+                break;
         }
     }
     
@@ -649,6 +656,25 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
         );
     };
 
+    const renderRectangleRadiusHandle = (shape: RectangleShape) => {
+        const { x, y, width, height, cornerRadius = 0 } = shape;
+        const maxR = Math.min(width, height) / 2;
+        const r = Math.max(0, Math.min(cornerRadius, maxR));
+
+        // Position the handle along the top edge, r units from top-left (or at least scaledHandleSize/2)
+        const unrotatedPos = {
+            x: x + Math.max(r, 6 / viewTransform.scale),
+            y: y
+        };
+
+        const rotatedPos = rotatePoint(unrotatedPos, center, rotation);
+
+        return renderSpecialHandle(
+            rotatedPos,
+            (e) => handleSpecialControlMouseDown(e, 'rectangle-radius', 'radius')
+        );
+    };
+
     return (
         <React.Fragment>
             {bbox && !isNaN(bbox.x) && !isNaN(bbox.y) && !isNaN(bbox.width) && !isNaN(bbox.height) && (
@@ -712,6 +738,8 @@ export const SelectionControls: React.FC<SelectionControlsProps> = ({ shape, all
                 {shape.type === 'triangle' && renderTriangleVertexHandle(shape)}
 
                 {shape.type === 'star' && renderStarInnerRadiusHandle(shape)}
+
+                {shape.type === 'rectangle' && renderRectangleRadiusHandle(shape)}
             </g>
         </React.Fragment>
     );

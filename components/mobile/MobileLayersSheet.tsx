@@ -127,6 +127,7 @@ export const MobileLayersSheet: React.FC<MobileLayersSheetProps> = ({
                             ignoreHiddenWarningForLayer={ignoreHiddenWarningForLayer}
                             isMultiSelectMode={isMultiSelectMode}
                             setIsMultiSelectMode={setIsMultiSelectMode}
+                            isMobile={true}
                         />
                     </div>
                 ) : (

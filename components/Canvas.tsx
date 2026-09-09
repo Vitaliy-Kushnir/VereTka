@@ -75,6 +75,7 @@ interface CanvasProps {
   onSelectPathShape?: (shape: Shape) => void;
   isMultiSelectMode?: boolean;
   setIsMultiSelectMode?: (val: boolean | ((prev: boolean) => boolean)) => void;
+  isMobile?: boolean;
 }
 
 function translateShape(shape: Shape, dx: number, dy: number): Shape {
@@ -275,6 +276,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         enableSnapping,
         isMultiSelectMode = false,
         setIsMultiSelectMode,
+        isMobile = false,
     } = props;
     
   const [action, setAction] = useState<CanvasAction>(null);
@@ -532,8 +534,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             const resolvedClickedId = getRootId(clickedShape.id);
             const isAlreadySelected = selectedShapeIds.includes(resolvedClickedId) || selectedShapeIds.includes(clickedShape.id);
 
-            if (isMultiSelectMode) {
-                // In multi-select mode, clicking a shape toggles it in the selection (Ctrl behavior)
+            if (isMobile && isMultiSelectMode) {
+                // In multi-select mode (mobile only), clicking a shape toggles it in the selection (Ctrl behavior)
                 onSelectShape(clickedShape.id, true, e.shiftKey);
             } else if (!isAlreadySelected) {
                 // First click: only select the shape/group, do not initiate dragging
@@ -970,7 +972,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         return;
     }
     
-    const modifyingActions = ['point-editing', 'arc-angle-editing', 'triangle-vertex-editing', 'star-inner-radius-editing', 'trapezoid-offset-editing', 'parallelogram-angle-editing', 'edit-distribute-path'];
+    const modifyingActions = ['point-editing', 'arc-angle-editing', 'triangle-vertex-editing', 'star-inner-radius-editing', 'trapezoid-offset-editing', 'parallelogram-angle-editing', 'rounded-rectangle-radius-editing', 'edit-distribute-path'];
     const isSnappableModifyingAction = modifyingActions.includes(action.type) && (action.type === 'point-editing' || !('rotation' in (action as any).initialShape) || ((action as any).initialShape as any).rotation === 0);
 
     if ((enableSnapping || showCenterGuides) && (action.type === 'resizing' || action.type === 'drawing' || isSnappableModifyingAction) && !e.altKey && (action.type !== 'resizing' || !('rotation' in (action as any).initialShape) || (action as any).initialShape.rotation === 0)) {
@@ -1066,6 +1068,13 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 handlePos.y = shape.y;
                 minX = shape.x;
                 maxX = shape.x + shape.width;
+                handlePos.x = Math.max(minX, Math.min(maxX, pos.x));
+            } else if (action.type === 'rounded-rectangle-radius-editing' && shape.type === 'rectangle') {
+                canSnapX = true;
+                canSnapY = false;
+                handlePos.y = shape.y;
+                minX = shape.x;
+                maxX = shape.x + Math.min(shape.width, shape.height) / 2;
                 handlePos.x = Math.max(minX, Math.min(maxX, pos.x));
             }
 
@@ -1428,6 +1437,20 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             updatedShape = { ...initialShape, angle: newAngle };
             break;
         }
+        case 'rounded-rectangle-radius-editing': {
+            const { initialShape } = action;
+            const center = getShapeCenter(initialShape);
+            if (!center || initialShape.width === 0 || initialShape.height === 0) break;
+
+            const unrotatedMousePos = rotatePoint(pos, center, -initialShape.rotation);
+            // Distance from left edge (initialShape.x)
+            const offsetX = unrotatedMousePos.x - initialShape.x;
+            const maxR = Math.min(initialShape.width, initialShape.height) / 2;
+            const newRadius = Math.max(0, Math.min(maxR, offsetX));
+
+            updatedShape = { ...initialShape, cornerRadius: newRadius };
+            break;
+        }
         case 'duplicating':
         case 'dragging': {
             let dx = pos.x - action.startPos.x;
@@ -1713,6 +1736,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         const angle = isCrossedH ? 180 - initialShape.angle : initialShape.angle;
                         extraProps.angle = angle;
                         extraProps.isFlippedVertically = isCrossedV ? !initialShape.isFlippedVertically : !!initialShape.isFlippedVertically;
+                    } else if (initialShape.type === 'rectangle' && initialShape.cornerRadius !== undefined) {
+                        const maxRadius = Math.min(newWidth, newHeight) / 2;
+                        extraProps.cornerRadius = Math.min(initialShape.cornerRadius, maxRadius);
                     }
 
                     updatedShape = { ...initialShape, x: newX, y: newY, width: newWidth, height: newHeight, ...extraProps };
@@ -2066,7 +2092,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             if (isMultiSelectMode || e.shiftKey || e.ctrlKey || e.metaKey) {
                 selectedIds = Array.from(new Set([...selectedShapeIds, ...selectedIds]));
             }
-            if (selectedIds.length > 1) {
+            if (isMobile && selectedIds.length > 1) {
                 setIsMultiSelectMode?.(true);
             }
 
@@ -2661,7 +2687,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 return;
             } else if (pending?.hasMoved) {
                 // Finger was swiped/dragged
-                if (action?.type === 'dragging' || action?.type === 'selecting' || action?.type === 'resizing' || action?.type === 'rotating' || action?.type === 'point-editing' || action?.type === 'arc-angle-editing' || action?.type === 'triangle-vertex-editing' || action?.type === 'star-inner-radius-editing' || action?.type === 'trapezoid-offset-editing' || action?.type === 'parallelogram-angle-editing' || action?.type === 'edit-distribute-path') {
+                if (action?.type === 'dragging' || action?.type === 'selecting' || action?.type === 'resizing' || action?.type === 'rotating' || action?.type === 'point-editing' || action?.type === 'arc-angle-editing' || action?.type === 'triangle-vertex-editing' || action?.type === 'star-inner-radius-editing' || action?.type === 'trapezoid-offset-editing' || action?.type === 'parallelogram-angle-editing' || action?.type === 'rounded-rectangle-radius-editing' || action?.type === 'edit-distribute-path') {
                     if (touch) {
                         const mockMouseEvent = {
                             type: 'touchend',
@@ -2854,6 +2880,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             case 'parallelogram-angle-editing':
             case 'triangle-vertex-editing':
             case 'star-inner-radius-editing':
+            case 'rounded-rectangle-radius-editing':
                 return ADJUST_CURSOR_STYLE;
             case 'drawing':
             case 'selecting':
@@ -3360,7 +3387,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                         const ry = typeof shape.y === 'number' && !isNaN(shape.y) ? shape.y : 0;
                         const rw = typeof shape.width === 'number' && !isNaN(shape.width) ? Math.max(0, shape.width) : 0;
                         const rh = typeof shape.height === 'number' && !isNaN(shape.height) ? Math.max(0, shape.height) : 0;
-                        const rectProps: any = { ...finalStaticProps, x: rx, y: ry, width: rw, height: rh, fill: shape.fill, ...joinStyleProps(shape) };
+                        const cornerR = shape.cornerRadius && shape.cornerRadius > 0 ? Math.min(shape.cornerRadius, Math.min(rw, rh) / 2) : 0;
+                        const rectProps: any = { ...finalStaticProps, x: rx, y: ry, width: rw, height: rh, rx: cornerR, ry: cornerR, fill: shape.fill, ...joinStyleProps(shape) };
                         if (shape.stipple && shape.fill !== 'none') rectProps.mask = `url(#mask-${shape.stipple})`;
                         if (shape.dash) rectProps.strokeDasharray = shape.dash.map(v => v * safeStrokeWidth).join(' ');
                         if (shape.dashoffset) rectProps.strokeDashoffset = shape.dashoffset;

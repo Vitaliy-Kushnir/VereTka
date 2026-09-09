@@ -6,6 +6,7 @@ import { ArrowUpIcon, ArrowDownIcon, TrashIcon, SquareIcon, CircleIcon, LineIcon
 import { getDefaultNameForShape, getTkinterType, isDefaultName } from '../lib/constants';
 import { isPolylineAxisAlignedRectangle } from '../lib/geometry';
 import { useLanguage } from './LanguageContext';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface ShapeListProps {
   distributePathState?: DistributePathState | null;
@@ -26,6 +27,7 @@ interface ShapeListProps {
   ignoreHiddenWarningForLayer?: string | null;
   isMultiSelectMode?: boolean;
   setIsMultiSelectMode?: (val: boolean) => void;
+  isMobile?: boolean;
 }
 
 const toolToIcon: Record<Tool | 'group', React.ReactNode> = {
@@ -59,14 +61,21 @@ const toolToIcon: Record<Tool | 'group', React.ReactNode> = {
 const getIconForShape = (s: Shape | null | undefined): React.ReactNode => {
     if (!s || !s.type) return null;
     if (s.type === 'arc') {
-        return toolToIcon[s.style as Tool];
+        return toolToIcon[s.style as Tool] || toolToIcon['arc'];
     }
-    if (s.type === 'rectangle' && s.isAspectRatioLocked) {
-        return toolToIcon['square'];
+    if (s.type === 'rectangle') {
+        if (s.isAspectRatioLocked) return toolToIcon['square'];
+        return toolToIcon['rectangle'];
     }
-    // If the shape is a closed polyline or bezier, show the polygon icon.
+    // If the shape is a closed polyline or bezier:
     if ((s.type === 'polyline' || s.type === 'bezier') && s.isClosed) {
+        if (s.type === 'polyline' && !s.smooth && (!('rotation' in s) || s.rotation === 0) && isPolylineAxisAlignedRectangle(s)) {
+            return toolToIcon['rectangle'];
+        }
         return toolToIcon['polygon'];
+    }
+    if ((s.type === 'polyline' || s.type === 'bezier') && !s.isClosed) {
+        return toolToIcon[s.type as Tool] || toolToIcon['polyline'];
     }
     return toolToIcon[s.type as Tool | 'group'];
 };
@@ -95,7 +104,7 @@ const ShapeNameDisplay = ({ isSelected, shapeName, showTkinterNames, tkinterName
             >
                 {shapeName}
                 {showTkinterNames && (
-                    <span className="text-[10px] text-[var(--text-tertiary)] ml-1 font-mono">
+                    <span className={`text-[10px] ml-1 font-mono ${isSelected ? 'text-white/80' : 'text-[var(--text-tertiary)]'}`}>
                         {tkinterName}
                     </span>
                 )}
@@ -122,8 +131,11 @@ const ShapeList: React.FC<ShapeListProps> = ({
     onLayerWarning, 
     ignoreHiddenWarningForLayer,
     isMultiSelectMode = false,
-    setIsMultiSelectMode
+    setIsMultiSelectMode,
+    isMobile: propIsMobile
 }) => {
+    const isMobileHook = useIsMobile(1024);
+    const isMobile = propIsMobile ?? isMobileHook;
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingValue, setEditingValue] = useState('');
     const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -563,8 +575,8 @@ const ShapeList: React.FC<ShapeListProps> = ({
                         return;
                     }
                     
-                    // In multi-select mode or with Ctrl/Shift, toggle / range select
-                    if (isMultiSelectMode || selectedShapeIds.length > 1) {
+                    // In multi-select mode on mobile or with Ctrl/Shift, toggle / range select
+                    if (isMobile && (isMultiSelectMode || selectedShapeIds.length > 1)) {
                         onSelectShape(shape.id, true, e.shiftKey, true);
                     } else {
                         onSelectShape(shape.id, e.ctrlKey || e.metaKey, e.shiftKey, true);
@@ -627,8 +639,8 @@ const ShapeList: React.FC<ShapeListProps> = ({
                     )}
 
                     <div className={`flex items-center gap-2 overflow-hidden flex-1 relative z-10 ${isLocked ? 'pointer-events-none' : ''}`}>
-                        {(isMultiSelectMode || selectedShapeIds.length > 1) ? (
-                            /* Checkbox toggle button in multi-select mode */
+                        {isMobile && (isMultiSelectMode || selectedShapeIds.length > 1) ? (
+                            /* Checkbox toggle button in multi-select mode (Mobile only) */
                             <button
                                 type="button"
                                 onClick={(e) => {
@@ -675,24 +687,35 @@ const ShapeList: React.FC<ShapeListProps> = ({
                             {shape.state === 'hidden' ? <EyeOffIcon size={12} /> : <EyeIcon size={12} />}
                         </button>
                         
-                        {/* Option 1: Shape Icon button - click/tap to toggle multi-selection */}
-                        <button
-                            type="button"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (isLocked) return;
-                                setIsMultiSelectMode?.(true);
-                                onSelectShape(shape.id, true, false, true);
-                                if (typeof navigator !== 'undefined' && navigator?.vibrate) {
-                                    try { navigator.vibrate(25); } catch (_) {}
-                                }
-                            }}
-                            title={t('list.multiselect.tapIconHint') || 'Натисніть на іконку для вибору'}
-                            className="flex-shrink-0 w-4 h-4 flex items-center justify-center rounded hover:bg-[var(--bg-app)] hover:scale-110 active:scale-95 transition-all text-[var(--text-secondary)] hover:text-[var(--accent-primary)] cursor-pointer"
-                            style={{ opacity: (!isLayerVisible || shape.state === 'hidden') ? 0.5 : 1 }}
-                        >
-                            {getIconForShape(shape)}
-                        </button>
+                        {/* Shape Icon */}
+                        {isMobile ? (
+                            /* Mobile: Option 1 Shape Icon button - click/tap to toggle multi-selection */
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (isLocked) return;
+                                    setIsMultiSelectMode?.(true);
+                                    onSelectShape(shape.id, true, false, true);
+                                    if (typeof navigator !== 'undefined' && navigator?.vibrate) {
+                                        try { navigator.vibrate(25); } catch (_) {}
+                                    }
+                                }}
+                                title={t('list.multiselect.tapIconHint') || 'Натисніть на іконку для вибору'}
+                                className="flex-shrink-0 w-4 h-4 flex items-center justify-center rounded hover:bg-[var(--bg-app)] hover:scale-110 active:scale-95 transition-all text-[var(--text-secondary)] hover:text-[var(--accent-primary)] cursor-pointer"
+                                style={{ opacity: (!isLayerVisible || shape.state === 'hidden') ? 0.5 : 1 }}
+                            >
+                                {getIconForShape(shape)}
+                            </button>
+                        ) : (
+                            /* PC: static icon indicator */
+                            <div
+                                className="flex-shrink-0 w-4 h-4 flex items-center justify-center text-[var(--text-secondary)]"
+                                style={{ opacity: (!isLayerVisible || shape.state === 'hidden') ? 0.5 : 1 }}
+                            >
+                                {getIconForShape(shape)}
+                            </div>
+                        )}
 
                         {isLocked && <div className="flex-shrink-0 text-[var(--text-secondary)]"><LockIcon size={12} /></div>}
                         <div className="overflow-hidden flex-1 text-sm flex items-center gap-1" style={{ opacity: (!isLayerVisible || shape.state === 'hidden') ? 0.5 : 1 }}>
@@ -744,32 +767,34 @@ const ShapeList: React.FC<ShapeListProps> = ({
         <div className="flex justify-between items-center p-2 px-3 bg-[var(--bg-app)]/50 border-b border-[var(--border-primary)] flex-shrink-0">
             <h2 className="font-semibold text-[var(--text-primary)] text-sm">{t('list.title')}</h2>
             <div className="flex items-center gap-2">
-                {/* Option 2: Select / Done toggle button in Header */}
-                <button
-                    type="button"
-                    onClick={() => {
-                        const newMode = !isMultiSelectMode;
-                        setIsMultiSelectMode?.(newMode);
-                    }}
-                    className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded transition-all cursor-pointer ${
-                        isMultiSelectMode
-                            ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] shadow-xs font-bold'
-                            : 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-secondary)] shadow-2xs'
-                    }`}
-                    title={isMultiSelectMode ? (t('list.multiselect.done') || 'Готово') : (t('list.multiselect.select') || 'Вибрати')}
-                >
-                    {isMultiSelectMode ? (
-                        <>
-                            <CheckIcon size={13} />
-                            <span>{t('list.multiselect.done') || 'Готово'}</span>
-                        </>
-                    ) : (
-                        <>
-                            <SelectIcon size={13} />
-                            <span>{t('list.multiselect.select') || 'Вибрати'}</span>
-                        </>
-                    )}
-                </button>
+                {/* Option 2: Select / Done toggle button in Header - Mobile only */}
+                {isMobile && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            const newMode = !isMultiSelectMode;
+                            setIsMultiSelectMode?.(newMode);
+                        }}
+                        className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded transition-all cursor-pointer ${
+                            isMultiSelectMode
+                                ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] shadow-xs font-bold'
+                                : 'bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-secondary)] shadow-2xs'
+                        }`}
+                        title={isMultiSelectMode ? (t('list.multiselect.done') || 'Готово') : (t('list.multiselect.select') || 'Вибрати')}
+                    >
+                        {isMultiSelectMode ? (
+                            <>
+                                <CheckIcon size={13} />
+                                <span>{t('list.multiselect.done') || 'Готово'}</span>
+                            </>
+                        ) : (
+                            <>
+                                <SelectIcon size={13} />
+                                <span>{t('list.multiselect.select') || 'Вибрати'}</span>
+                            </>
+                        )}
+                    </button>
+                )}
                 <button
                     onClick={scrollToSelected}
                     disabled={(selectedShapeIds.length === 0) || isSelectedItemVisible || isAutoScrollEnabled}
@@ -800,7 +825,7 @@ const ShapeList: React.FC<ShapeListProps> = ({
                 </label>
             </div>
         </div>
-        {(isMultiSelectMode || selectedShapeIds.length > 1) && (
+        {isMobile && (isMultiSelectMode || selectedShapeIds.length > 1) && (
             <div className="flex items-center justify-between px-3 py-1.5 bg-[var(--accent-primary)]/10 border-b border-[var(--accent-primary)]/20 flex-shrink-0 animate-in fade-in">
                 <span className="text-xs font-bold text-[var(--accent-primary)] flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-[var(--accent-primary)] animate-pulse"></span>

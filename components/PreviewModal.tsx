@@ -214,7 +214,8 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ projectName, shapes, width,
                                     const ry = typeof shape.y === 'number' && !isNaN(shape.y) ? shape.y : 0;
                                     const rw = typeof shape.width === 'number' && !isNaN(shape.width) ? Math.max(0, shape.width) : 0;
                                     const rh = typeof shape.height === 'number' && !isNaN(shape.height) ? Math.max(0, shape.height) : 0;
-                                    const rectProps: any = { ...staticProps, x: rx, y: ry, width: rw, height: rh, fill: shape.fill, ...joinStyleProps(shape) };
+                                    const cornerR = shape.cornerRadius && shape.cornerRadius > 0 ? Math.min(shape.cornerRadius, Math.min(rw, rh) / 2) : 0;
+                                    const rectProps: any = { ...staticProps, x: rx, y: ry, width: rw, height: rh, rx: cornerR, ry: cornerR, fill: shape.fill, ...joinStyleProps(shape) };
                                     if (shape.stipple && shape.fill !== 'none') rectProps.mask = `url(#mask-${shape.stipple})`;
                                     if (shape.dash) rectProps.strokeDasharray = shape.dash.map(v => v * safeStrokeWidth).join(' ');
                                     if (shape.dashoffset) rectProps.strokeDashoffset = shape.dashoffset;

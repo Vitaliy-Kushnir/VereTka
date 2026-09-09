@@ -83,6 +83,7 @@ export interface RectangleShape extends BaseShape, RotatableShape, FillableShape
     y: number;
     width: number;
     height: number;
+    cornerRadius?: number; // Corner radius for rounded corners (0 = sharp)
 }
 
 export interface EllipseShape extends BaseShape, RotatableShape, FillableShape, DashableShape {

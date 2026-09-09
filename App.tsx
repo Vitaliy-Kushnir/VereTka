@@ -5823,6 +5823,7 @@ export default function App(): React.ReactNode {
                                         enableSnapping={enableSnapping}
                                         isMultiSelectMode={isMultiSelectMode}
                                         setIsMultiSelectMode={setIsMultiSelectMode}
+                                        isMobile={isMobile}
                                         viewTransform={viewTransform}
                                         setViewTransform={handleUserSetViewTransform}
                                     />
@@ -5999,6 +6000,7 @@ export default function App(): React.ReactNode {
                                 ignoreHiddenWarningForLayer={ignoreHiddenWarningForLayer}
                                 isMultiSelectMode={isMultiSelectMode}
                                 setIsMultiSelectMode={setIsMultiSelectMode}
+                                isMobile={isMobile}
                             />
                         </div>
                     </div>
