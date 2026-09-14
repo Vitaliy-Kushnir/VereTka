@@ -520,7 +520,7 @@ export const FloatingModeControls: React.FC<FloatingModeControlsProps> = ({
                                     <input
                                         type="range"
                                         min="3"
-                                        max="24"
+                                        max="64"
                                         value={(distributePathState.shapePathParams.pathShape as PolygonShape).sides || 5}
                                         onChange={(e) => {
                                             onDistributePathChange({
@@ -529,7 +529,7 @@ export const FloatingModeControls: React.FC<FloatingModeControlsProps> = ({
                                                     ...distributePathState.shapePathParams,
                                                     pathShape: {
                                                         ...distributePathState.shapePathParams!.pathShape!,
-                                                        sides: Number(e.target.value)
+                                                        sides: Math.max(3, Math.min(64, Math.round(Number(e.target.value))))
                                                     } as any
                                                 }
                                             });

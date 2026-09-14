@@ -62,23 +62,23 @@ const ExportModal: React.FC<ExportModalProps> = ({ onClose, onExport }) => {
 
                     <InputWrapper>
                         <Label htmlFor="export-scale" title={t('export.scaleDesc')}>{t('export.scale')}</Label>
-                        <NumberInput id="export-scale" value={scale} onChange={setScale} min={0.1} max={10} step={0.1} />
+                        <NumberInput id="export-scale" value={scale} onChange={setScale} min={0.1} max={10} step={0.1} sliderMin={0.1} sliderMax={5} presets={[0.5, 1, 1.5, 2, 3, 4]} />
                     </InputWrapper>
 
                     {format === 'jpeg' && (
                          <div className="space-y-2">
                              <InputWrapper>
                                 <Label htmlFor="export-quality" title={t('export.qualityDesc')}>{t('export.quality')}</Label>
-                                <NumberInput id="export-quality" value={quality} onChange={setQuality} min={0} max={100} step={1} />
+                                <NumberInput id="export-quality" value={quality} onChange={setQuality} min={1} max={100} step={1} isInteger={true} sliderMin={1} sliderMax={100} presets={[50, 75, 80, 85, 90, 95, 100]} />
                             </InputWrapper>
                             <div className="flex items-center gap-2 ml-32">
                                 <input
                                     type="range"
-                                    min="0"
+                                    min="1"
                                     max="100"
                                     value={quality}
                                     onChange={e => setQuality(Number(e.target.value))}
-                                    className="w-full h-2 bg-[var(--bg-secondary)] rounded-lg appearance-none cursor-pointer"
+                                    className="w-full h-2 bg-[var(--bg-secondary)] rounded-lg appearance-none cursor-pointer accent-[var(--accent-primary)]"
                                 />
                             </div>
                          </div>

@@ -105,7 +105,6 @@ const StatusBar: React.FC<StatusBarProps> = ({
                     autoFocus
                     min={Math.round(MIN_SCALE * 100)}
                     max={Math.round(MAX_SCALE * 100)}
-                    unit="%"
                     smartRound={false}
                     showQuickPopup={false}
                 />

@@ -27,13 +27,14 @@ interface WelcomeScreenProps {
     onDismissAutosave: () => void;
     onOpenPWAInstall?: () => void;
     isPWAInstalled?: boolean;
+    isMobile?: boolean;
 }
 
 const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ 
     onCreateNew, onLoadProject, onOpenCloudGallery, recentProjects, onOpenRecent, onRemoveProject, 
     onClearAllProjects, hasActiveProject, onReturnToProject,
     autosavedProjectData, onRestoreAutosave, onDismissAutosave,
-    onOpenPWAInstall, isPWAInstalled
+    onOpenPWAInstall, isPWAInstalled, isMobile = false
 }) => {
     const { t, language, setLanguage } = useLanguage();
     const [isLanguageOpen, setIsLanguageOpen] = useState(false);
@@ -303,8 +304,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                     )}
                 </div>
 
-                {/* PWA Install Banner */}
-                {!isPWAInstalled && onOpenPWAInstall && (
+                {/* PWA Install Banner (Mobile only) */}
+                {isMobile && !isPWAInstalled && onOpenPWAInstall && (
                     <div className="mb-8 sm:mb-12 animate-fade-in-up">
                         <div className="flex justify-center">
                             <div className="w-full md:w-2/3 lg:w-1/2">
@@ -325,7 +326,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                                                     {t('welcome.pwa.title') || 'Встановити на екран'}
                                                 </h3>
                                                 <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-400 border border-sky-500/30">
-                                                    {t('welcome.pwa.badge') || 'Мобільний застосунок'}
+                                                    {t('welcome.pwa.badge') || 'Вебзастосунок'}
                                                 </span>
                                             </div>
                                             <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-0.5">

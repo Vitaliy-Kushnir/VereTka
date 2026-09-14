@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, forwardRef, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { DASH_STYLES } from '../lib/constants';
 import { CheckIcon, XIcon, RefreshIcon, ChevronDownIcon } from './icons';
 import ConfirmationModal from './ConfirmationModal';
@@ -17,7 +18,7 @@ export const Label: React.FC<{ htmlFor?: string; children?: React.ReactNode; tit
             e.preventDefault();
         }}
         className={`text-sm font-medium text-[var(--text-secondary)] w-28 flex-shrink-0 select-none cursor-default ${className || ""}`} 
-        title={title}
+        title={title || (typeof children === 'string' ? children : undefined)}
     >
         {children}
     </label>
@@ -288,6 +289,7 @@ export const NumberInput = forwardRef<HTMLInputElement, {
     presets?: number[];
     showQuickPopup?: boolean;
     isAngle?: boolean;
+    isInteger?: boolean;
 }> (
     ({ 
         id, 
@@ -313,14 +315,43 @@ export const NumberInput = forwardRef<HTMLInputElement, {
         sliderMax,
         presets,
         showQuickPopup = true,
-        isAngle
+        isAngle,
+        isInteger
     }, forwardedRef) => {
     
     const { t } = useLanguage();
     
+    const isIntegerField = Boolean(isInteger);
+    const isAngleField = Boolean(isAngle);
+
+    const sanitizeValue = useCallback((val: number): number => {
+        if (isNaN(val) || !isFinite(val)) {
+            return min !== undefined ? min : 0;
+        }
+        let res = val;
+        if (isIntegerField) {
+            res = Math.round(res);
+        }
+        // Safety guard against extreme values (DoS / memory blowup)
+        const safeMin = min !== undefined ? min : (isAngleField ? -3600 : -50000);
+        const safeMax = max !== undefined ? max : (isAngleField ? 3600 : 50000);
+
+        res = Math.max(safeMin, Math.min(safeMax, res));
+        if (isIntegerField) {
+            res = Math.round(res);
+        } else {
+            res = Math.round(res * 100) / 100;
+        }
+        return res;
+    }, [isIntegerField, isAngleField, min, max]);
+    
     const getSafeString = (v: any) => {
         if (v === '' || v === null || v === undefined) return '';
         if (typeof v === 'number' && isNaN(v)) return '';
+        const num = Number(v);
+        if (!isNaN(num)) {
+            return String(sanitizeValue(num));
+        }
         return String(v);
     };
 
@@ -337,8 +368,7 @@ export const NumberInput = forwardRef<HTMLInputElement, {
     const internalRef = useRef<HTMLInputElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const popupRef = useRef<HTMLDivElement>(null);
-
-    const isAngleField = Boolean(isAngle);
+    const [popupCoords, setPopupCoords] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
     // Track modifier keys for dynamic button labels (+10, -10, +0.1, -0.1)
     useEffect(() => {
@@ -365,8 +395,10 @@ export const NumberInput = forwardRef<HTMLInputElement, {
         };
     }, []);
 
-    const activeMultiplier = modifierState.shift ? 10 : ((modifierState.alt || modifierState.ctrl) ? 0.1 : 1);
-    const computedStep = Math.round((step * activeMultiplier) * 100) / 100;
+    const activeMultiplier = modifierState.shift ? 10 : ((modifierState.alt || modifierState.ctrl) ? (isIntegerField ? 1 : 0.1) : 1);
+    const computedStep = isIntegerField 
+        ? Math.max(1, Math.round((step || 1) * activeMultiplier)) 
+        : Math.round(((step || 1) * activeMultiplier) * 100) / 100;
 
     // Combine forwardedRef and internalRef
     useEffect(() => {
@@ -420,6 +452,39 @@ export const NumberInput = forwardRef<HTMLInputElement, {
         };
     }, [isPopupOpen]);
 
+    // Position popup accurately using fixed coordinates for portal
+    useEffect(() => {
+        if (isPopupOpen && containerRef.current) {
+            const updateCoords = () => {
+                if (!containerRef.current) return;
+                const rect = containerRef.current.getBoundingClientRect();
+                const popupWidth = 260;
+                const popupHeight = 320;
+                const screenWidth = window.innerWidth;
+                const screenHeight = window.innerHeight;
+
+                let top = rect.bottom + 6;
+                if (top + popupHeight > screenHeight && rect.top - popupHeight > 0) {
+                    top = Math.max(8, rect.top - popupHeight - 6);
+                }
+
+                let left = rect.right - popupWidth;
+                if (left < 10) left = 10;
+                if (left + popupWidth > screenWidth - 10) left = Math.max(10, screenWidth - popupWidth - 10);
+
+                setPopupCoords({ top, left });
+            };
+
+            updateCoords();
+            window.addEventListener('resize', updateCoords);
+            window.addEventListener('scroll', updateCoords, true);
+            return () => {
+                window.removeEventListener('resize', updateCoords);
+                window.removeEventListener('scroll', updateCoords, true);
+            };
+        }
+    }, [isPopupOpen]);
+
     // Sync with external value changes, but only if not focused to avoid disrupting user input.
     useEffect(() => {
         if (document.activeElement !== internalRef.current && !isScrubbing) {
@@ -459,9 +524,7 @@ export const NumberInput = forwardRef<HTMLInputElement, {
         setDisplayValue(newValue);
         const parsed = evaluateExpression(newValue);
         if (parsed !== null) {
-            let bounded = parsed;
-            if (min !== undefined) bounded = Math.max(min, bounded);
-            if (max !== undefined) bounded = Math.min(max, bounded);
+            const bounded = sanitizeValue(parsed);
             // Live preview while typing (transient)
             onChange(bounded, false);
         }
@@ -475,19 +538,16 @@ export const NumberInput = forwardRef<HTMLInputElement, {
         // If input is invalid or empty, revert to the last valid value from props.
         if (num === null) {
             const safeValue = isNaN(value as any) ? 0 : value;
-            setDisplayValue((safeValue as any) === '' ? '' : String(safeValue));
-            if ((safeValue as any) !== '' && safeValue !== Number(displayValue)) {
-                onChange(Number(safeValue), true);
-                onChangeEnd?.(Number(safeValue));
+            const finalSafe = (safeValue as any) === '' ? '' : sanitizeValue(Number(safeValue));
+            setDisplayValue((finalSafe as any) === '' ? '' : String(finalSafe));
+            if ((finalSafe as any) !== '' && finalSafe !== Number(displayValue)) {
+                onChange(Number(finalSafe), true);
+                onChangeEnd?.(Number(finalSafe));
             }
             return;
         }
 
-        if (min !== undefined) num = Math.max(min, num);
-        if (max !== undefined) num = Math.min(max, num);
-
-        // Smart round to hundredths for display if decimal
-        num = Math.round(num * 100) / 100;
+        num = sanitizeValue(num);
 
         onChange(num, true);
         onChangeEnd?.(num);
@@ -503,49 +563,54 @@ export const NumberInput = forwardRef<HTMLInputElement, {
         if (isNaN(currentValue)) {
             currentValue = typeof value === 'number' && !isNaN(value) ? value : (min ?? 0);
         }
+        if (isIntegerField) {
+            currentValue = Math.round(currentValue);
+        }
 
         let nextValue: number;
-        const effectiveStep = (step || 1) * multiplier;
+        let effectiveStep = (step || 1) * multiplier;
+        if (isIntegerField) {
+            effectiveStep = Math.max(1, Math.round(effectiveStep));
+        }
         
         if (stepLogic === 'grid') {
             const isUp = direction === 'up';
             if (isUp) {
-                if (currentValue < 1) {
+                if (currentValue < 1 && !isIntegerField) {
                     nextValue = currentValue + (0.1 * multiplier);
                 } else {
                     nextValue = Math.floor(currentValue) + effectiveStep;
                 }
             } else {
-                if (currentValue <= 1) {
+                if (currentValue <= 1 && !isIntegerField) {
                     nextValue = currentValue - (0.1 * multiplier);
                 } else {
                     nextValue = Math.ceil(currentValue) - effectiveStep;
                 }
             }
-            nextValue = Math.round(nextValue * 10) / 10;
-        } else if (smartRound && currentValue % 1 !== 0 && multiplier === 1) {
+            nextValue = isIntegerField ? Math.round(nextValue) : Math.round(nextValue * 10) / 10;
+        } else if (smartRound && currentValue % 1 !== 0 && multiplier === 1 && !isIntegerField) {
             nextValue = direction === 'up' ? Math.ceil(currentValue) : Math.floor(currentValue);
         } else {
             nextValue = currentValue + (direction === 'up' ? effectiveStep : -effectiveStep);
-            nextValue = Math.round(nextValue * 100) / 100;
+            nextValue = isIntegerField ? Math.round(nextValue) : Math.round(nextValue * 100) / 100;
         }
 
-        if (min !== undefined) nextValue = Math.max(min, nextValue);
-        if (max !== undefined) nextValue = Math.min(max, nextValue);
+        nextValue = sanitizeValue(nextValue);
         
         setDisplayValue(String(nextValue));
         onChange(nextValue, isFinal);
         if (isFinal) {
             onChangeEnd?.(nextValue);
         }
-    }, [displayValue, value, min, max, step, stepLogic, smartRound, onChange, onChangeEnd]);
+    }, [displayValue, value, min, max, step, stepLogic, smartRound, isIntegerField, sanitizeValue, onChange, onChangeEnd]);
 
     // Continuous stepping with long-press acceleration
     const startContinuousStep = (direction: 'up' | 'down', e: React.MouseEvent | React.TouchEvent) => {
         e.preventDefault();
         const isShift = ('shiftKey' in e && (e as React.MouseEvent).shiftKey) || modifierState.shift;
         const isAlt = ('altKey' in e && ((e as React.MouseEvent).altKey || (e as React.MouseEvent).ctrlKey)) || modifierState.alt || modifierState.ctrl;
-        const mult = isShift ? 10 : (isAlt ? 0.1 : 1);
+        const mult = isShift ? 10 : (isAlt ? (isIntegerField ? 1 : 0.1) : 1);
         
         let didContinuous = false;
         let timeoutId: any = null;
@@ -665,20 +730,14 @@ export const NumberInput = forwardRef<HTMLInputElement, {
                     velocityMultiplier = 2.0 + Math.min(18, Math.pow(speed, 1.7) * 4.5);
                 }
 
-                const modifierMultiplier = moveE.shiftKey ? 10 : (moveE.altKey || moveE.ctrlKey ? 0.1 : 1);
-                const stepSize = step || 1;
+                const modifierMultiplier = moveE.shiftKey ? 10 : (moveE.altKey || moveE.ctrlKey ? (isIntegerField ? 1 : 0.1) : 1);
+                const stepSize = isIntegerField ? Math.max(1, Math.round(step || 1)) : (step || 1);
 
                 // Continuous real-time value addition
-                const deltaValue = deltaX * stepSize * velocityMultiplier * modifierMultiplier * 0.15;
+                const deltaValue = deltaX * stepSize * velocityMultiplier * modifierMultiplier * (isIntegerField ? 0.12 : 0.15);
                 currentContinuousValue += deltaValue;
 
-                let next = currentContinuousValue;
-                if (min !== undefined) next = Math.max(min, next);
-                if (max !== undefined) next = Math.min(max, next);
-                currentContinuousValue = next;
-
-                // Round to hundredths or integer depending on step
-                const roundedNext = stepSize >= 1 ? Math.round(next * 10) / 10 : Math.round(next * 100) / 100;
+                const roundedNext = sanitizeValue(currentContinuousValue);
 
                 setDisplayValue(String(roundedNext));
                 // Transient real-time update during drag gesture (isFinal = false)
@@ -705,8 +764,7 @@ export const NumberInput = forwardRef<HTMLInputElement, {
                     dragStartedRef.current = false;
                 }, 60);
 
-                const stepSize = step || 1;
-                const roundedFinal = stepSize >= 1 ? Math.round(currentContinuousValue * 10) / 10 : Math.round(currentContinuousValue * 100) / 100;
+                const roundedFinal = sanitizeValue(currentContinuousValue);
                 setDisplayValue(String(roundedFinal));
                 // Final commit when finger / mouse is released!
                 onChange(roundedFinal, true);
@@ -753,13 +811,13 @@ export const NumberInput = forwardRef<HTMLInputElement, {
     // Mouse Wheel value adjustments on PC
     const handleWheel = (e: React.WheelEvent<HTMLInputElement>) => {
         if (disabled) return;
-        const mult = e.shiftKey ? 10 : (e.altKey || e.ctrlKey ? 0.1 : 1);
+        const mult = e.shiftKey ? 10 : (e.altKey || e.ctrlKey ? (isIntegerField ? 1 : 0.1) : 1);
         const direction = e.deltaY < 0 ? 'up' : 'down';
         handleStep(direction, mult, true);
     };
 
     const handleLocalKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        const mult = e.shiftKey ? 10 : (e.altKey || e.ctrlKey ? 0.1 : 1);
+        const mult = e.shiftKey ? 10 : (e.altKey || e.ctrlKey ? (isIntegerField ? 1 : 0.1) : 1);
         if (e.key === 'ArrowUp') {
             e.preventDefault();
             handleStep('up', mult, true);
@@ -779,6 +837,7 @@ export const NumberInput = forwardRef<HTMLInputElement, {
     const currentNum = typeof value === 'number' && !isNaN(value) ? value : (min ?? 0);
     const effMin = sliderMin ?? min ?? (isAngleField ? -360 : 0);
     const effMax = sliderMax ?? max ?? (isAngleField ? 360 : Math.max(100, Math.ceil((currentNum || 10) * 2)));
+    const effStep = isIntegerField ? Math.max(1, Math.round(step || 1)) : step;
     const shouldShowInlineSlider = Boolean(showSlider);
     
     // Effective presets list
@@ -810,7 +869,7 @@ export const NumberInput = forwardRef<HTMLInputElement, {
                     ref={internalRef}
                     id={id}
                     type="text"
-                    inputMode={isTouchKeyboardOpen ? "decimal" : (isTouchDevice ? "none" : "decimal")}
+                    inputMode={isIntegerField ? "numeric" : (isTouchKeyboardOpen ? "decimal" : (isTouchDevice ? "none" : "decimal"))}
                     value={displayValue}
                     onChange={handleChange}
                     onBlur={handleBlur}
@@ -826,16 +885,10 @@ export const NumberInput = forwardRef<HTMLInputElement, {
                             : isHolding 
                                 ? 'ring-2 ring-[var(--accent-primary)]/50 bg-[var(--accent-primary)]/10 scale-[1.02]'
                                 : 'focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none cursor-ew-resize sm:cursor-default'
-                    } disabled:cursor-not-allowed ${unit ? 'pr-14' : 'pr-7'} ${className ?? ''}`}
+                    } disabled:cursor-not-allowed pr-7 ${className ?? ''}`}
                     onKeyDown={handleLocalKeyDown}
                     autoFocus={autoFocus}
                 />
-                
-                {unit && !disabled && (
-                    <span className="absolute right-7 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] pointer-events-none text-xs font-semibold">
-                        {unit}
-                    </span>
-                )}
 
                 {/* Stepper Buttons (Up / Down) */}
                 {!disabled && (
@@ -868,26 +921,33 @@ export const NumberInput = forwardRef<HTMLInputElement, {
                     type="range"
                     min={effMin}
                     max={effMax}
-                    step={step}
+                    step={effStep}
                     value={currentNum}
                     disabled={disabled}
                     onChange={(e) => {
-                        const val = parseFloat(e.target.value);
+                        const rawVal = parseFloat(e.target.value);
+                        const val = sanitizeValue(rawVal);
                         setDisplayValue(String(val));
                         onChange(val, false);
                     }}
                     onPointerUp={(e) => {
-                        const val = parseFloat((e.target as HTMLInputElement).value);
+                        const rawVal = parseFloat((e.target as HTMLInputElement).value);
+                        const val = sanitizeValue(rawVal);
+                        setDisplayValue(String(val));
                         onChange(val, true);
                         onChangeEnd?.(val);
                     }}
                     onTouchEnd={(e) => {
-                        const val = parseFloat((e.target as HTMLInputElement).value);
+                        const rawVal = parseFloat((e.target as HTMLInputElement).value);
+                        const val = sanitizeValue(rawVal);
+                        setDisplayValue(String(val));
                         onChange(val, true);
                         onChangeEnd?.(val);
                     }}
                     onMouseUp={(e) => {
-                        const val = parseFloat((e.target as HTMLInputElement).value);
+                        const rawVal = parseFloat((e.target as HTMLInputElement).value);
+                        const val = sanitizeValue(rawVal);
+                        setDisplayValue(String(val));
                         onChange(val, true);
                         onChangeEnd?.(val);
                     }}
@@ -923,10 +983,16 @@ export const NumberInput = forwardRef<HTMLInputElement, {
             )}
 
             {/* Quick Floating Controls Popover */}
-            {isPopupOpen && !disabled && (
+            {isPopupOpen && !disabled && typeof document !== 'undefined' && createPortal(
                 <div 
                     ref={popupRef}
-                    className="absolute right-0 top-full mt-1.5 z-50 p-3 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl shadow-2xl space-y-3 min-w-[240px] max-w-[300px] backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
+                    style={{
+                        position: 'fixed',
+                        top: `${popupCoords.top}px`,
+                        left: `${popupCoords.left}px`,
+                        zIndex: 99999
+                    }}
+                    className="p-3 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl shadow-2xl space-y-3 min-w-[240px] max-w-[300px] backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
                 >
                     {/* Header with Title, Reset Button & Current Value */}
                     <div className="flex items-center justify-between text-xs border-b border-[var(--border-secondary)] pb-2 gap-2">
@@ -1008,25 +1074,32 @@ export const NumberInput = forwardRef<HTMLInputElement, {
                             type="range"
                             min={effMin}
                             max={effMax}
-                            step={step}
+                            step={effStep}
                             value={currentNum}
                             onChange={(e) => {
-                                const val = parseFloat(e.target.value);
+                                const rawVal = parseFloat(e.target.value);
+                                const val = sanitizeValue(rawVal);
                                 setDisplayValue(String(val));
                                 onChange(val, false);
                             }}
                             onPointerUp={(e) => {
-                                const val = parseFloat((e.target as HTMLInputElement).value);
+                                const rawVal = parseFloat((e.target as HTMLInputElement).value);
+                                const val = sanitizeValue(rawVal);
+                                setDisplayValue(String(val));
                                 onChange(val, true);
                                 onChangeEnd?.(val);
                             }}
                             onTouchEnd={(e) => {
-                                const val = parseFloat((e.target as HTMLInputElement).value);
+                                const rawVal = parseFloat((e.target as HTMLInputElement).value);
+                                const val = sanitizeValue(rawVal);
+                                setDisplayValue(String(val));
                                 onChange(val, true);
                                 onChangeEnd?.(val);
                             }}
                             onMouseUp={(e) => {
-                                const val = parseFloat((e.target as HTMLInputElement).value);
+                                const rawVal = parseFloat((e.target as HTMLInputElement).value);
+                                const val = sanitizeValue(rawVal);
+                                setDisplayValue(String(val));
                                 onChange(val, true);
                                 onChangeEnd?.(val);
                             }}
@@ -1041,28 +1114,32 @@ export const NumberInput = forwardRef<HTMLInputElement, {
                                 {t('form.quickValues') || 'Швидкі значення:'}
                             </div>
                             <div className="flex flex-wrap gap-1">
-                                {effectivePresets.map((presetVal) => (
-                                    <button
-                                        key={presetVal}
-                                        type="button"
-                                        onClick={() => {
-                                            setDisplayValue(String(presetVal));
-                                            onChange(presetVal, true);
-                                            onChangeEnd?.(presetVal);
-                                        }}
-                                        className={`px-2 py-1 text-xs font-semibold rounded-md border transition-all ${
-                                            Number(displayValue) === presetVal
-                                                ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]'
-                                                : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] border-[var(--border-secondary)]'
-                                        }`}
-                                    >
-                                        {presetVal}{unit || ''}
-                                    </button>
-                                ))}
+                                {effectivePresets.map((presetVal) => {
+                                    const safePreset = sanitizeValue(presetVal);
+                                    return (
+                                        <button
+                                            key={presetVal}
+                                            type="button"
+                                            onClick={() => {
+                                                setDisplayValue(String(safePreset));
+                                                onChange(safePreset, true);
+                                                onChangeEnd?.(safePreset);
+                                            }}
+                                            className={`px-2 py-1 text-xs font-semibold rounded-md border transition-all ${
+                                                Number(displayValue) === safePreset
+                                                    ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]'
+                                                    : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] border-[var(--border-secondary)]'
+                                            }`}
+                                        >
+                                            {safePreset}{unit || ''}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );
@@ -2059,7 +2136,7 @@ const AllColorsModal: React.FC<AllColorsModalProps> = ({ isOpen, onClose, onSele
 
     if (!isOpen) return null;
 
-    return (
+    return typeof document !== 'undefined' ? createPortal(
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[99999] p-4" onClick={onClose}>
             <div className="bg-[var(--bg-primary)] rounded-lg shadow-2xl w-full max-w-2xl h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 <header className="flex justify-between items-center p-4 border-b border-[var(--border-primary)] flex-shrink-0">
@@ -2187,8 +2264,9 @@ const AllColorsModal: React.FC<AllColorsModalProps> = ({ isOpen, onClose, onSele
                     </div>
                 </footer>
             </div>
-        </div>
-    );
+        </div>,
+        document.body
+    ) : null;
 };
 
 
@@ -2215,29 +2293,45 @@ export const ColorInput: React.FC<{
     const [conversionChoice, setConversionChoice] = useState<{ name: string; hex: string } | null>(null);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
-    const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({ left: '40px' });
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const [dropdownCoords, setDropdownCoords] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
     // Touch device detection (mobile or touch screens)
     const isTouchDevice = isMobile || (typeof window !== 'undefined' && ('ontouchstart' in window || (navigator && navigator.maxTouchPoints > 0)));
 
     useEffect(() => {
         if (isDropdownOpen && wrapperRef.current) {
-            const rect = wrapperRef.current.getBoundingClientRect();
-            const screenWidth = window.innerWidth;
-            const dropdownWidth = 230; // Corresponds to w-[230px]
+            const updateCoords = () => {
+                if (!wrapperRef.current) return;
+                const rect = wrapperRef.current.getBoundingClientRect();
+                const screenWidth = window.innerWidth;
+                const screenHeight = window.innerHeight;
+                const dropdownWidth = 230; // Corresponds to w-[230px]
+                const dropdownHeight = 280;
 
-            // Default position starts 40px from the left of the wrapper component
-            const dropdownRightX = rect.left + 40 + dropdownWidth;
+                let top = rect.bottom + 4;
+                if (top + dropdownHeight > screenHeight && rect.top - dropdownHeight > 0) {
+                    top = Math.max(8, rect.top - dropdownHeight - 4);
+                }
 
-            if (dropdownRightX > screenWidth - 16) { // Check for overflow with a 1rem margin
-                // The dropdown overflows, so align its right edge with the parent's right edge
-                setDropdownStyle({ right: '0px', left: 'auto' });
-            } else if (rect.left < 8) {
-                setDropdownStyle({ left: '0px', right: 'auto' });
-            } else {
-                // The dropdown fits, use the default left alignment
-                setDropdownStyle({ left: '40px', right: 'auto' });
-            }
+                let left = rect.left;
+                if (left + dropdownWidth > screenWidth - 10) {
+                    left = Math.max(10, screenWidth - dropdownWidth - 10);
+                }
+                if (left < 10) {
+                    left = 10;
+                }
+
+                setDropdownCoords({ top, left });
+            };
+
+            updateCoords();
+            window.addEventListener('resize', updateCoords);
+            window.addEventListener('scroll', updateCoords, true);
+            return () => {
+                window.removeEventListener('resize', updateCoords);
+                window.removeEventListener('scroll', updateCoords, true);
+            };
         }
     }, [isDropdownOpen]);
 
@@ -2312,6 +2406,15 @@ export const ColorInput: React.FC<{
             if (!isDropdownOpen) {
                 setIsDropdownOpen(true);
             }
+        }
+    };
+
+    const handleInputTouchEnd = (e: React.TouchEvent<HTMLInputElement>) => {
+        if (disabled) return;
+        if (!isDropdownOpen) {
+            e.preventDefault();
+            startEditing();
+            setIsDropdownOpen(true);
         }
     };
 
@@ -2463,13 +2566,28 @@ export const ColorInput: React.FC<{
         }
     };
 
-    useClickOutside(wrapperRef, () => {
-        if (isEditing) {
-            handleCommit();
-        }
-        setIsDropdownOpen(false);
-        setIsTypingMode(false);
-    });
+    useEffect(() => {
+        if (!isDropdownOpen && !isEditing) return;
+        const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
+            const target = e.target as Node;
+            if (!target) return;
+            if (wrapperRef.current && wrapperRef.current.contains(target)) return;
+            if (dropdownRef.current && dropdownRef.current.contains(target)) return;
+
+            if (isEditing) {
+                handleCommit();
+            }
+            setIsDropdownOpen(false);
+            setIsTypingMode(false);
+        };
+
+        document.addEventListener('mousedown', handleOutsideClick);
+        document.addEventListener('touchstart', handleOutsideClick);
+        return () => {
+            document.removeEventListener('mousedown', handleOutsideClick);
+            document.removeEventListener('touchstart', handleOutsideClick);
+        };
+    }, [isDropdownOpen, isEditing, handleCommit]);
 
   return (
     <>
@@ -2491,6 +2609,7 @@ export const ColorInput: React.FC<{
                     value={inputValue}
                     onChange={handleInputChange}
                     onClick={handleInputClick}
+                    onTouchEnd={handleInputTouchEnd}
                     onFocus={handleFocus}
                     onBlur={handleBlur}
                     onKeyDown={handleKeyDown}
@@ -2535,10 +2654,15 @@ export const ColorInput: React.FC<{
                 </div>
             )}
 
-            {isDropdownOpen && !disabled && (
+            {isDropdownOpen && !disabled && typeof document !== 'undefined' && createPortal(
                     <div 
-                        className="absolute z-50 top-full mt-1 w-[230px] bg-[var(--bg-secondary)] rounded-md shadow-xl border border-[var(--border-secondary)] animate-fade-in-down flex flex-col overflow-hidden" 
-                        style={{ ...dropdownStyle, animationDuration: '150ms' }}
+                        ref={dropdownRef}
+                        className="fixed z-[99999] w-[230px] bg-[var(--bg-secondary)] rounded-md shadow-2xl border border-[var(--border-secondary)] animate-fade-in-down flex flex-col overflow-hidden" 
+                        style={{ 
+                            top: `${dropdownCoords.top}px`,
+                            left: `${dropdownCoords.left}px`,
+                            animationDuration: '150ms' 
+                        }}
                     >
                         {/* Last 5 colors used in current project - visible above standard color grid */}
                         {recentColors.length > 0 && (
@@ -2610,7 +2734,8 @@ export const ColorInput: React.FC<{
                                 {t('color.allColorsShort')}
                             </button>
                         </div>
-                    </div>
+                    </div>,
+                    document.body
             )}
             </div>
 

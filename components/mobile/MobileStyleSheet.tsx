@@ -325,7 +325,6 @@ export const MobileStyleSheet: React.FC<MobileStyleSheetProps> = ({
                                         max={120}
                                         value={isNaN(textFontSize) ? 12 : textFontSize}
                                         onChange={(val) => setTextFontSize(val)}
-                                        unit="pt"
                                         presets={[8, 10, 12, 14, 16, 18, 24, 32, 48, 72]}
                                     />
                                 </div>

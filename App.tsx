@@ -51,6 +51,7 @@ import { MobileShapesSheet } from './components/mobile/MobileShapesSheet';
 import { MobileStyleSheet } from './components/mobile/MobileStyleSheet';
 import { MobileLayersSheet } from './components/mobile/MobileLayersSheet';
 import { MobileAlignSheet } from './components/mobile/MobileAlignSheet';
+import { MobilePropertyBar } from './components/mobile/MobilePropertyBar';
 import { MobileQuickControls } from './components/mobile/MobileQuickControls';
 import { FloatingModeControls } from './components/FloatingModeControls';
 import { MultiSelectHUD } from './components/MultiSelectHUD';
@@ -470,7 +471,7 @@ const ToolControls: React.FC<ToolControlsProps> = ({
           </PropertyControl>
           <PropertyControl label={t('prop.width')} htmlFor="strokeWidth">
             <div className="w-16">
-                <NumberInput id="strokeWidth" min={1} max={100} value={strokeWidth} onChange={setStrokeWidth} disabled={!isStrokeEnabled} />
+                <NumberInput id="strokeWidth" min={0} max={500} sliderMax={50} presets={[0, 1, 2, 3, 5, 8, 12, 16, 24]} value={strokeWidth} onChange={setStrokeWidth} disabled={!isStrokeEnabled} />
             </div>
           </PropertyControl>
         </>
@@ -478,7 +479,7 @@ const ToolControls: React.FC<ToolControlsProps> = ({
       {showSides && (
         <PropertyControl label={t('prop.sides')} htmlFor="sides">
           <div className="w-20">
-            <NumberInput id="sides" min={3} max={50} value={numberOfSides} onChange={setNumberOfSides} />
+            <NumberInput id="sides" min={3} max={500} sliderMax={64} isInteger={true} presets={[3, 4, 5, 6, 7, 8, 10, 12, 16, 24, 32, 64]} value={Math.round(numberOfSides || 5)} onChange={v => setNumberOfSides(Math.max(3, Math.round(v)))} />
           </div>
         </PropertyControl>
       )}
@@ -497,7 +498,7 @@ const ToolControls: React.FC<ToolControlsProps> = ({
           </PropertyControl>
           <PropertyControl label={t('prop.size')} htmlFor="textFontSize">
             <div className="w-20">
-                <NumberInput id="textFontSize" min={1} value={textFontSize} onChange={setTextFontSize} />
+                <NumberInput id="textFontSize" min={1} max={500} sliderMax={144} isInteger={true} presets={[8, 10, 12, 14, 16, 18, 24, 32, 48, 72]} value={textFontSize} onChange={setTextFontSize} />
             </div>
           </PropertyControl>
         </>
@@ -621,7 +622,7 @@ const ContextualControls: React.FC<ContextualControlsProps> = ({ allShapes, sele
                   </PropertyControl>
                   <PropertyControl label={t('prop.width')} htmlFor={'ctx-strokeWidth'}>
                     <div className="w-20">
-                      <NumberInput id={'ctx-strokeWidth'} min={0} value={commonStrokeWidth as any} onChange={v => handleUpdate({ strokeWidth: v })} disabled={commonStroke === 'none'} placeholder={commonStrokeWidth === '' ? (t('props.mixed') || 'Різні') : undefined} />
+                      <NumberInput id={'ctx-strokeWidth'} min={0} max={500} sliderMax={50} presets={[0, 1, 2, 3, 5, 8, 12, 16, 24]} value={commonStrokeWidth as any} onChange={v => handleUpdate({ strokeWidth: v })} disabled={commonStroke === 'none'} placeholder={commonStrokeWidth === '' ? (t('props.mixed') || 'Різні') : undefined} />
                     </div>
                   </PropertyControl>
               </>
@@ -629,7 +630,7 @@ const ContextualControls: React.FC<ContextualControlsProps> = ({ allShapes, sele
           {hasSides && (
                <PropertyControl label={t('prop.sides')} htmlFor={'ctx-sides'}>
                     <div className="w-20">
-                        <NumberInput id={'ctx-sides'} min={3} max={50} value={commonSides as any} onChange={v => handleUpdate({ sides: v })} placeholder={commonSides === '' ? (t('props.mixed') || 'Різні') : undefined} />
+                        <NumberInput id={'ctx-sides'} min={3} max={500} sliderMax={64} isInteger={true} presets={[3, 4, 5, 6, 7, 8, 10, 12, 16, 24, 32, 64]} value={typeof commonSides === 'number' ? Math.round(commonSides) : commonSides} onChange={v => handleUpdate({ sides: Math.max(3, Math.round(v)) })} placeholder={commonSides === '' ? (t('props.mixed') || 'Різні') : undefined} />
                     </div>
               </PropertyControl>
           )}
@@ -646,7 +647,7 @@ const ContextualControls: React.FC<ContextualControlsProps> = ({ allShapes, sele
                   </PropertyControl>
                   <PropertyControl label={t('prop.size')} htmlFor={`${firstTextShape.id}-ctx-fontSize`}>
                         <div className="w-20">
-                            <NumberInput id={`${firstTextShape.id}-ctx-fontSize`} min={1} value={round(firstTextShape.fontSize)} onChange={v => handleUpdate({ fontSize: v })} />
+                            <NumberInput id={`${firstTextShape.id}-ctx-fontSize`} min={1} max={500} sliderMax={144} isInteger={true} presets={[8, 10, 12, 14, 16, 18, 24, 32, 48, 72]} value={round(firstTextShape.fontSize)} onChange={v => handleUpdate({ fontSize: v })} />
                         </div>
                   </PropertyControl>
                   <div className="flex items-center gap-0.5 bg-[var(--bg-app)] p-0.5 rounded-md">
@@ -724,47 +725,51 @@ const DistributePathTopControls: React.FC<{
 
                      {distributePathState.shapePathParams?.pathShape && (distributePathState.shapePathParams.pathShape.type === 'polygon' || distributePathState.shapePathParams.pathShape.type === 'star') && (
                          <PropertyControl label={t('prop.sides') || 'Сторони'} htmlFor="dist-top-path-sides">
-                             <input 
-                                 id="dist-top-path-sides"
-                                 type="number"
-                                 onWheel={(e) => (e.target as HTMLElement).blur()}
-                                 className="w-16 py-1 px-2 rounded border bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-primary)] text-xs"
-                                 value={(distributePathState.shapePathParams.pathShape as any).sides}
-                                 min={3}
-                                 onChange={e => onDistributePathChange({
-                                     ...distributePathState,
-                                     shapePathParams: {
-                                         ...distributePathState.shapePathParams,
-                                         pathShape: {
-                                             ...distributePathState.shapePathParams!.pathShape!,
-                                             sides: parseInt(e.target.value) || 3
-                                         } as any
-                                     }
-                                 })}
-                             />
+                             <div className="w-20">
+                                 <NumberInput 
+                                     id="dist-top-path-sides"
+                                     value={(distributePathState.shapePathParams.pathShape as any).sides ? Math.round((distributePathState.shapePathParams.pathShape as any).sides) : 5}
+                                     isInteger={true}
+                                     min={3}
+                                     max={500}
+                                     sliderMax={64}
+                                     presets={[3, 4, 5, 6, 7, 8, 10, 12, 16, 24, 32, 64]}
+                                     onChange={v => onDistributePathChange({
+                                         ...distributePathState,
+                                         shapePathParams: {
+                                             ...distributePathState.shapePathParams,
+                                             pathShape: {
+                                                 ...distributePathState.shapePathParams!.pathShape!,
+                                                 sides: Math.max(3, Math.round(v)) || 3
+                                             } as any
+                                         }
+                                     })}
+                                 />
+                             </div>
                          </PropertyControl>
                      )}
 
                      {distributePathState.shapePathParams?.pathShape && distributePathState.shapePathParams.pathShape.type === 'star' && (
                          <PropertyControl label={t('prop.innerRadius') || 'Внутрішній радіус'} htmlFor="dist-top-path-inner-radius">
-                             <input 
-                                 id="dist-top-path-inner-radius"
-                                 type="number"
-                                 onWheel={(e) => (e.target as HTMLElement).blur()}
-                                 className="w-16 py-1 px-2 rounded border bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-primary)] text-xs"
-                                 value={Math.round((distributePathState.shapePathParams.pathShape as any).innerRadius ?? ((distributePathState.shapePathParams.pathShape as any).radius / 2))}
-                                 min={0}
-                                 onChange={e => onDistributePathChange({
-                                     ...distributePathState,
-                                     shapePathParams: {
-                                         ...distributePathState.shapePathParams,
-                                         pathShape: {
-                                             ...distributePathState.shapePathParams!.pathShape!,
-                                             innerRadius: parseInt(e.target.value) || 0
-                                         } as any
-                                     }
-                                 })}
-                             />
+                             <div className="w-24">
+                                 <NumberInput 
+                                     id="dist-top-path-inner-radius"
+                                     value={Math.round((distributePathState.shapePathParams.pathShape as any).innerRadius ?? ((distributePathState.shapePathParams.pathShape as any).radius / 2))}
+                                     min={0}
+                                     max={5000}
+                                     sliderMax={200}
+                                     onChange={v => onDistributePathChange({
+                                         ...distributePathState,
+                                         shapePathParams: {
+                                             ...distributePathState.shapePathParams,
+                                             pathShape: {
+                                                 ...distributePathState.shapePathParams!.pathShape!,
+                                                 innerRadius: v
+                                             } as any
+                                         }
+                                     })}
+                                 />
+                             </div>
                          </PropertyControl>
                      )}
                  </>
@@ -1338,7 +1343,10 @@ export default function App(): React.ReactNode {
   const [fillColor, setFillColor] = useState<string>('#4f46e5');
   const [strokeColor, setStrokeColor] = useState<string>('#000000');
   const [strokeWidth, setStrokeWidth] = useState<number>(1);
-  const [numberOfSides, setNumberOfSides] = useState<number>(5);
+  const [numberOfSides, setNumberOfSidesState] = useState<number>(5);
+  const setNumberOfSides = useCallback((s: number) => {
+    setNumberOfSidesState(prev => Math.max(3, Math.min(500, Math.round(Number(s) || prev || 5))));
+  }, []);
   const [textColor, setTextColor] = useState<string>('#000000');
   const [previewTextColor, setPreviewTextColor] = useState<string | null>(null);
   const [textFont, setTextFont] = useState<string>('Arial');
@@ -5659,6 +5667,44 @@ export default function App(): React.ReactNode {
               setTextFontSize={setTextFontSize}
           />}
 
+          {isProjectActive && isMobile && (
+            <MobilePropertyBar
+              allShapes={shapes}
+              selectedShapes={selectedShapes}
+              activeTool={activeTool}
+              setActiveTool={handleSetActiveTool}
+              onDeselectAll={() => setSelectedShapeIds([])}
+              updateShape={updateShape}
+              updateShapes={updateShapes}
+              setShapePreview={setShapePreview}
+              cancelShapePreview={cancelShapePreview}
+              drawMode={drawMode}
+              setDrawMode={setDrawMode}
+              isFillEnabled={isFillEnabled}
+              setIsFillEnabled={setIsFillEnabled}
+              fillColor={fillColor}
+              setFillColor={handleSetFillColor}
+              setPreviewFillColor={setPreviewFillColor}
+              isStrokeEnabled={isStrokeEnabled}
+              setIsStrokeEnabled={setIsStrokeEnabled}
+              strokeColor={strokeColor}
+              setStrokeColor={handleSetStrokeColor}
+              setPreviewStrokeColor={setPreviewStrokeColor}
+              strokeWidth={strokeWidth}
+              setStrokeWidth={setStrokeWidth}
+              numberOfSides={numberOfSides}
+              setNumberOfSides={setNumberOfSides}
+              textColor={textColor}
+              setTextColor={handleSetTextColor}
+              setPreviewTextColor={setPreviewTextColor}
+              textFont={textFont}
+              setTextFont={setTextFont}
+              textFontSize={textFontSize}
+              setTextFontSize={setTextFontSize}
+              isLandscape={isLandscape}
+            />
+          )}
+
            <main className={`flex-1 min-h-0 overflow-hidden ${isMobile ? 'flex flex-col' : 'grid grid-cols-1 md:grid-cols-[380px_1fr] lg:grid-cols-[380px_1fr_295px]'}`}>
              
             {/* Left Column */}
@@ -5935,8 +5981,9 @@ export default function App(): React.ReactNode {
                         autosavedProjectData={autosavedProjectData}
                         onRestoreAutosave={handleRestoreAutosave}
                         onDismissAutosave={handleDismissAutosave}
-                        onOpenPWAInstall={handleOpenPWAInstall}
+                        onOpenPWAInstall={isMobile ? handleOpenPWAInstall : undefined}
                         isPWAInstalled={isPWAInstalled}
+                        isMobile={isMobile}
                     />
                 )}
             </div>
