@@ -775,6 +775,34 @@ const DistributePathTopControls: React.FC<{
                  </>
              )}
              
+             {isPathClosed(distributePathState) && (
+                 <PropertyControl label={t('tool.distribute.path.contourShift') || 'Зсув'} htmlFor="dist-top-contour-shift">
+                     <div className="w-20">
+                         <NumberInput 
+                             id="dist-top-contour-shift"
+                             value={Math.round(distributePathState.contourShift ?? distributePathState.shapePathParams?.contourShift ?? 0)}
+                             isInteger={true}
+                             min={0}
+                             max={100}
+                             sliderMax={100}
+                             presets={[0, 25, 50, 75, 100]}
+                             unit="%"
+                             onChange={v => {
+                                 const newShift = Math.max(0, Math.min(100, Math.round(v)));
+                                 onDistributePathChange({
+                                     ...distributePathState,
+                                     contourShift: newShift,
+                                     shapePathParams: distributePathState.shapePathParams ? {
+                                         ...distributePathState.shapePathParams,
+                                         contourShift: newShift
+                                     } : undefined
+                                 });
+                             }}
+                         />
+                     </div>
+                 </PropertyControl>
+             )}
+
              <PropertyControl label={t('prop.orientAlongPath') || 'Орієнтувати'} htmlFor="dist-orient-check">
                   <input type="checkbox" id="dist-orient-check" checked={!!distributePathState.orientAlongPath} onChange={(e) => onDistributePathChange({ ...distributePathState, orientAlongPath: e.target.checked })} className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)]" />
              </PropertyControl>
@@ -1077,8 +1105,12 @@ const applyDistributePathToShapes = (currentShapes: Shape[], pathState: Distribu
         let targetCY = 0;
         let tangentAngle = 0;
         
+        const shiftPct = isClosed ? (pathState.contourShift ?? pathState.shapePathParams?.contourShift ?? 0) : 0;
+        const shiftFrac = ((shiftPct % 100) + 100) % 100 / 100;
+        const shiftAngle = shiftFrac * Math.PI * 2;
+
         if (pathState.type === 'circle') {
-            const angle = fraction * Math.PI * 2 - Math.PI / 2 + (pathState.angleOffset * Math.PI / 180); 
+            const angle = fraction * Math.PI * 2 - Math.PI / 2 + shiftAngle + (pathState.angleOffset * Math.PI / 180); 
             targetCX = pathState.circleParams.cx + Math.cos(angle) * pathState.circleParams.radius;
             targetCY = pathState.circleParams.cy + Math.sin(angle) * pathState.circleParams.radius;
             tangentAngle = angle + Math.PI / 2;
@@ -1098,7 +1130,7 @@ const applyDistributePathToShapes = (currentShapes: Shape[], pathState: Distribu
             targetCY = startY + (endY - startY) * fraction;
             tangentAngle = finalAngle;
         } else if (pathState.type === 'shape' && pathState.shapePathParams?.pathShape) {
-            const contourShift = pathState.shapePathParams.contourShift ?? 0;
+            const contourShift = isClosed ? (pathState.contourShift ?? pathState.shapePathParams.contourShift ?? 0) : 0;
             const res = evaluateShapeContourPointAndTangent(
                 pathState.shapePathParams.pathShape,
                 fraction,
@@ -1113,7 +1145,7 @@ const applyDistributePathToShapes = (currentShapes: Shape[], pathState: Distribu
         let normalAngle = 0;
         let pathAngle = 0;
         if (pathState.type === 'circle') {
-            pathAngle = fraction * Math.PI * 2 - Math.PI / 2 + (pathState.angleOffset * Math.PI / 180); 
+            pathAngle = fraction * Math.PI * 2 - Math.PI / 2 + shiftAngle + (pathState.angleOffset * Math.PI / 180); 
             normalAngle = pathAngle;
         } else {
             pathAngle = tangentAngle;
@@ -4249,6 +4281,7 @@ export default function App(): React.ReactNode {
               type: 'circle',
               circleParams: { cx, cy, radius: radius || 100 },
               lineParams: { x1: minX, y1: cy, x2: maxX, y2: cy },
+              contourShift: 0,
               angleOffset: 0,
               orientAlongPath: distributeOptions?.orientAlongPath ?? false,
               orientationType: distributeOptions?.orientationType ?? 'radial',

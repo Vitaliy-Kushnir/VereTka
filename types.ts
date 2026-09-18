@@ -296,6 +296,7 @@ export interface DistributePathState {
         contourShift?: number;
         isExisting?: boolean;
     };
+    contourShift?: number;
     angleOffset: number;
     orientAlongPath: boolean;
     orientationType: 'radial' | 'tangent' | 'parallel' | 'perpendicular' | 'custom';

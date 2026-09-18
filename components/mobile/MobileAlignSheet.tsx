@@ -13,7 +13,7 @@ import {
     XIcon
 } from '../icons';
 import { Shape, DistributePathState, PolygonShape } from '../../types';
-import { isShapeClosed } from '../../lib/geometry';
+import { isShapeClosed, isPathClosed } from '../../lib/geometry';
 import { useLanguage } from '../LanguageContext';
 
 export interface MobileAlignSheetProps {
@@ -342,25 +342,27 @@ export const MobileAlignSheet: React.FC<MobileAlignSheetProps> = ({
                                     </div>
                                 )}
 
-                                {/* Closed Shape Contour Shift */}
-                                {distributePathState.shapePathParams?.pathShape && isShapeClosed(distributePathState.shapePathParams.pathShape) && (
+                                {/* Closed Path Contour Shift */}
+                                {isPathClosed(distributePathState) && (
                                     <div className="space-y-1 pt-1 border-t border-[var(--border-secondary)]/60">
                                         <div className="flex justify-between text-xs text-[var(--text-secondary)]">
                                             <span>{t('tool.distribute.path.contourShift') || 'Зсув вздовж шляху'}:</span>
-                                            <strong className="text-[var(--text-primary)]">{Math.round(distributePathState.shapePathParams?.contourShift || 0)}%</strong>
+                                            <strong className="text-[var(--text-primary)]">{Math.round(distributePathState.contourShift ?? distributePathState.shapePathParams?.contourShift ?? 0)}%</strong>
                                         </div>
                                         <input
                                             type="range"
                                             min="0"
                                             max="100"
-                                            value={Math.round(distributePathState.shapePathParams?.contourShift || 0)}
+                                            value={Math.round(distributePathState.contourShift ?? distributePathState.shapePathParams?.contourShift ?? 0)}
                                             onChange={(e) => {
+                                                const newShift = Number(e.target.value);
                                                 onDistributePathChange({
                                                     ...distributePathState,
-                                                    shapePathParams: {
+                                                    contourShift: newShift,
+                                                    shapePathParams: distributePathState.shapePathParams ? {
                                                         ...distributePathState.shapePathParams,
-                                                        contourShift: Number(e.target.value)
-                                                    }
+                                                        contourShift: newShift
+                                                    } : undefined
                                                 });
                                             }}
                                             className="w-full accent-[var(--accent-primary)]"

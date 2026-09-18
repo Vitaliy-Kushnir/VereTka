@@ -891,6 +891,19 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             } else if (action.handle === 'rotate') {
                 const angle = Math.atan2(pos.y - newPathState.circleParams.cy, pos.x - newPathState.circleParams.cx);
                 newPathState.angleOffset = (angle + Math.PI / 2) * (180 / Math.PI);
+            } else if (action.handle === 'contour-shift') {
+                const angle = Math.atan2(pos.y - newPathState.circleParams.cy, pos.x - newPathState.circleParams.cx);
+                const baseAngle = -Math.PI / 2 + (newPathState.angleOffset * Math.PI / 180);
+                let diff = angle - baseAngle;
+                diff = ((diff % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+                const shiftPct = Math.round((diff / (Math.PI * 2)) * 100) % 100;
+                newPathState.contourShift = shiftPct;
+                if (newPathState.shapePathParams) {
+                    newPathState.shapePathParams = {
+                        ...newPathState.shapePathParams,
+                        contourShift: shiftPct
+                    };
+                }
             }
         } else if (newPathState.type === 'line') {
             // Bake rotation into the start and end coordinates if angleOffset is not 0
@@ -925,6 +938,22 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 const angle = Math.atan2(pos.y - my, pos.x - mx);
                 const baseAngle = Math.atan2(endY - startY, endX - startX);
                 newPathState.angleOffset = (angle + Math.PI / 2 - baseAngle) * (180 / Math.PI);
+            } else if (action.handle === 'contour-shift') {
+                const lineDx = endX - startX;
+                const lineDy = endY - startY;
+                const lineLenSq = lineDx * lineDx + lineDy * lineDy;
+                let frac = 0;
+                if (lineLenSq > 0.0001) {
+                    frac = ((pos.x - startX) * lineDx + (pos.y - startY) * lineDy) / lineLenSq;
+                }
+                const shiftPct = Math.max(0, Math.min(100, Math.round(frac * 100)));
+                newPathState.contourShift = shiftPct;
+                if (newPathState.shapePathParams) {
+                    newPathState.shapePathParams = {
+                        ...newPathState.shapePathParams,
+                        contourShift: shiftPct
+                    };
+                }
             }
         } else if (newPathState.type === 'shape' && newPathState.shapePathParams?.pathShape) {
             const initialShape = action.initialDistributePath.shapePathParams!.pathShape;
@@ -951,9 +980,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             } else if (action.handle === 'contour-shift') {
                 const localPos = rotatePoint(pos, center, -angleOffset);
                 const res = getClosestPointOnShapeContour(initialShape, localPos);
+                const shiftPct = Math.round(res.fraction * 100);
+                newPathState.contourShift = shiftPct;
                 newPathState.shapePathParams = {
                     ...newPathState.shapePathParams,
-                    contourShift: Math.round(res.fraction * 100)
+                    contourShift: shiftPct
                 };
             } else if (action.handle === 'inner-radius' && initialShape.type === 'star') {
                 const localPos = rotatePoint(pos, center, -angleOffset);
@@ -3785,6 +3816,38 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                                         setAction({ type: 'edit-distribute-path', handle: 'rotate', startPoint: pt, initialDistributePath: props.distributePathState! });
                                     }} />
                             </g>
+                            {/* Contour Shift Marker Handle for Circle */}
+                            {(() => {
+                                const shiftPct = props.distributePathState.contourShift ?? props.distributePathState.shapePathParams?.contourShift ?? 0;
+                                const shiftFrac = ((shiftPct % 100) + 100) % 100 / 100;
+                                const shiftAngle = shiftFrac * Math.PI * 2 - Math.PI / 2 + (props.distributePathState.angleOffset * Math.PI / 180);
+                                const markerX = props.distributePathState.circleParams.cx + Math.cos(shiftAngle) * props.distributePathState.circleParams.radius;
+                                const markerY = props.distributePathState.circleParams.cy + Math.sin(shiftAngle) * props.distributePathState.circleParams.radius;
+                                return (
+                                    <g key="circle-contour-shift-handle">
+                                        <title>{t('tool.distribute.path.contourShift') || 'Зсув'}</title>
+                                        <circle
+                                            cx={markerX}
+                                            cy={markerY}
+                                            r={7 / safeScale}
+                                            fill="#ff9800"
+                                            stroke="var(--bg-primary)"
+                                            strokeWidth={2 / safeScale}
+                                            style={{ cursor: 'grab', pointerEvents: 'all' }}
+                                            onMouseDown={(e) => {
+                                                e.stopPropagation();
+                                                const pt = getTransformedPointerPosition(getPointerPosition(e));
+                                                setAction({ type: 'edit-distribute-path', handle: 'contour-shift', startPoint: pt, initialDistributePath: props.distributePathState! });
+                                            }}
+                                            onTouchStart={(e) => {
+                                                e.stopPropagation();
+                                                const pt = getTransformedPointerPosition(getPointerPosition(e.touches[0]));
+                                                setAction({ type: 'edit-distribute-path', handle: 'contour-shift', startPoint: pt, initialDistributePath: props.distributePathState! });
+                                            }}
+                                        />
+                                    </g>
+                                );
+                            })()}
                         </>
                     )}
                     {props.distributePathState.type === 'line' && (() => {
@@ -4018,7 +4081,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
                                 {/* Contour Shift Marker Handle for Closed Shapes */}
                                 {isClosed && (() => {
-                                    const shiftPct = props.distributePathState?.shapePathParams?.contourShift || 0;
+                                    const shiftPct = props.distributePathState?.contourShift ?? props.distributePathState?.shapePathParams?.contourShift ?? 0;
                                     const shiftFrac = ((shiftPct % 100) + 100) % 100 / 100;
                                     const res = evaluateShapeContourPointAndTangent(pShape, shiftFrac, 0, 0);
                                     return (

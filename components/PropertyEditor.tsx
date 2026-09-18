@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Shape, LineShape, BezierCurveShape, PathShape, JoinStyle, PolygonShape, IsoscelesTriangleShape, RhombusShape, ParallelogramShape, TrapezoidShape, PolylineShape, RectangleShape, EllipseShape, Tool, ArcShape, RightTriangleShape, TextShape, ImageShape, BitmapShape, BuiltInBitmap } from '../types';
-import { getVisualBoundingBox, getFinalPoints, getPolygonSideLength, getBoundingBox, getPolygonRadiusFromSideLength, getEditablePoints, getShapeCenter, getTextBoundingBox, rotatePoint, isShapeClosed } from '../lib/geometry';
+import { getVisualBoundingBox, getFinalPoints, getPolygonSideLength, getBoundingBox, getPolygonRadiusFromSideLength, getEditablePoints, getShapeCenter, getTextBoundingBox, rotatePoint, isShapeClosed, isPathClosed } from '../lib/geometry';
 import { InputWrapper, Label, NumberInput, ColorInput, Checkbox, Select, TextArea, DashSelect } from './FormControls';
 import { DuplicateIcon, FlipHorizontalIcon, FlipVerticalIcon, TrashIcon, LockIcon, UngroupIcon, UnlockIcon, ConvertToPathIcon, BoldIcon, ItalicIcon, UnderlineIcon, StrikethroughIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from './icons';
 import { getDefaultNameForShape, TOOL_TYPE_TO_NAME, DASH_STYLES } from '../lib/constants';
@@ -1359,11 +1359,11 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
 
   if (distributePathState && onDistributePathChange && onConfirmDistributePath && onCancelDistributePath) {
     return (
-      <div className="shadow-lg h-full flex flex-col rounded-lg bg-[var(--bg-primary)] p-4">
-          <div className="flex justify-between items-center pb-2 border-b border-[var(--border-primary)]">
+      <div className="shadow-lg h-full flex flex-col rounded-lg bg-[var(--bg-primary)] overflow-hidden">
+          <div className="flex justify-between items-center p-3 bg-[var(--bg-app)]/50 rounded-t-lg border-b border-[var(--border-primary)] flex-shrink-0">
             <h2 className="font-semibold text-[var(--text-primary)] text-sm">{t('tool.distributePath.title') || 'Розподіл за шляхом'}</h2>
           </div>
-          <div className="flex-grow pt-4 space-y-4">
+          <div className="flex-grow p-4 space-y-4 overflow-y-auto min-h-0 custom-scrollbar p-scrollbar">
               <InputWrapper>
                   <Label htmlFor='dist-type' title={t('tool.distributePath.type') || 'Тип шляху'}>{t('tool.distributePath.type') || 'Тип шляху'}</Label>
                   <Select id="dist-type" 
@@ -1460,27 +1460,34 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
                               />
                           </InputWrapper>
                       )}
-
-                      {distributePathState.shapePathParams?.pathShape && isShapeClosed(distributePathState.shapePathParams.pathShape) && (
-                          <InputWrapper>
-                              <Label htmlFor='dist-contour-shift'>{t('tool.distribute.path.contourShift') || 'Зсув вздовж шляху (%)'}</Label>
-                              <NumberInput 
-                                  id='dist-contour-shift' 
-                                  value={Math.round(distributePathState.shapePathParams?.contourShift || 0)} 
-                                  isInteger={true}
-                                  min={0} 
-                                  max={100}
-                                  onChange={(v, isFinal) => onDistributePathChange({
-                                      ...distributePathState,
-                                      shapePathParams: {
-                                          ...distributePathState.shapePathParams,
-                                          contourShift: Math.max(0, Math.min(100, Math.round(v)))
-                                      }
-                                  }, isFinal === false)} 
-                              />
-                          </InputWrapper>
-                      )}
                   </>
+              )}
+
+              {isPathClosed(distributePathState) && (
+                  <InputWrapper>
+                      <Label htmlFor='dist-contour-shift'>{t('tool.distribute.path.contourShift') || 'Зсув вздовж шляху (%)'}</Label>
+                      <NumberInput 
+                          id='dist-contour-shift' 
+                          value={Math.round(distributePathState.contourShift ?? distributePathState.shapePathParams?.contourShift ?? 0)} 
+                          isInteger={true}
+                          min={0} 
+                          max={100}
+                          sliderMax={100}
+                          presets={[0, 25, 50, 75, 100]}
+                          unit="%"
+                          onChange={(v, isFinal) => {
+                              const newShift = Math.max(0, Math.min(100, Math.round(v)));
+                              onDistributePathChange({
+                                  ...distributePathState,
+                                  contourShift: newShift,
+                                  shapePathParams: distributePathState.shapePathParams ? {
+                                      ...distributePathState.shapePathParams,
+                                      contourShift: newShift
+                                  } : undefined
+                              }, isFinal === false);
+                          }} 
+                      />
+                  </InputWrapper>
               )}
               
               <InputWrapper>
@@ -1583,7 +1590,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({ selectedShapes, allShap
               )}
           </div>
           
-          <div className="flex gap-2 pt-4 border-t border-[var(--border-primary)] mt-auto">
+          <div className="flex gap-2 p-3 border-t border-[var(--border-primary)] mt-auto flex-shrink-0 bg-[var(--bg-app)]/30">
               <button 
                   onClick={onCancelDistributePath}
                   className="flex-1 px-3 py-2 bg-[var(--bg-secondary)] text-[var(--text-primary)] font-medium border border-[var(--border-secondary)] rounded-md hover:bg-[var(--bg-secondary-hover)] text-sm transition-colors"

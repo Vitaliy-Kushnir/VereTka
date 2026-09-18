@@ -11,7 +11,7 @@ import {
     UndoIcon
 } from './icons';
 import { Shape, DistributePathState, Tool, PolygonShape } from '../types';
-import { isShapeClosed } from '../lib/geometry';
+import { isShapeClosed, isPathClosed } from '../lib/geometry';
 import { useLanguage } from './LanguageContext';
 
 export interface FloatingModeControlsProps {
@@ -539,31 +539,34 @@ export const FloatingModeControls: React.FC<FloatingModeControlsProps> = ({
                                 </div>
                             )}
 
-                            {/* Closed Shape Contour Shift */}
-                            {distributePathState.shapePathParams?.pathShape && isShapeClosed(distributePathState.shapePathParams.pathShape) && (
-                                <div className="space-y-1 pt-1 border-t border-[var(--border-secondary)]/50">
-                                    <div className="flex justify-between text-xs text-[var(--text-secondary)]">
-                                        <span>{t('tool.distribute.path.contourShift') || 'Зсув вздовж контуру'}:</span>
-                                        <strong className="text-[var(--text-primary)]">{Math.round(distributePathState.shapePathParams?.contourShift || 0)}%</strong>
-                                    </div>
-                                    <input
-                                        type="range"
-                                        min="0"
-                                        max="100"
-                                        value={Math.round(distributePathState.shapePathParams?.contourShift || 0)}
-                                        onChange={(e) => {
-                                            onDistributePathChange({
-                                                ...distributePathState,
-                                                shapePathParams: {
-                                                    ...distributePathState.shapePathParams,
-                                                    contourShift: Number(e.target.value)
-                                                }
-                                            });
-                                        }}
-                                        className="w-full accent-[var(--accent-primary)]"
-                                    />
-                                </div>
-                            )}
+                        </div>
+                    )}
+
+                    {/* Path Contour Shift for Closed Paths */}
+                    {isPathClosed(distributePathState) && (
+                        <div className="space-y-1 bg-[var(--bg-secondary)] p-2.5 rounded-xl border border-[var(--border-secondary)]">
+                            <div className="flex justify-between text-xs text-[var(--text-secondary)]">
+                                <span>{t('tool.distribute.path.contourShift') || 'Зсув вздовж шляху'}:</span>
+                                <strong className="text-[var(--text-primary)] font-mono">{Math.round(distributePathState.contourShift ?? distributePathState.shapePathParams?.contourShift ?? 0)}%</strong>
+                            </div>
+                            <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={Math.round(distributePathState.contourShift ?? distributePathState.shapePathParams?.contourShift ?? 0)}
+                                onChange={(e) => {
+                                    const newShift = Number(e.target.value);
+                                    onDistributePathChange({
+                                        ...distributePathState,
+                                        contourShift: newShift,
+                                        shapePathParams: distributePathState.shapePathParams ? {
+                                            ...distributePathState.shapePathParams,
+                                            contourShift: newShift
+                                        } : undefined
+                                    });
+                                }}
+                                className="w-full accent-[var(--accent-primary)]"
+                            />
                         </div>
                     )}
 
