@@ -1421,6 +1421,126 @@ export default function App(): React.ReactNode {
   const [isCloudGalleryOpen, setIsCloudGalleryOpen] = useState(false);
   const [cloudGalleryInitialTab, setCloudGalleryInitialTab] = useState<'public' | 'personal' | 'group' | 'publish'>('public');
   const [pendingCloudProjectOpen, setPendingCloudProjectOpen] = useState<{ data: any; name: string } | null>(null);
+
+  // Open Cloud Gallery and synchronize URL query params & browser history
+  const handleOpenCloudGallery = useCallback((tab: 'public' | 'personal' | 'group' | 'publish' = 'public') => {
+    setCloudGalleryInitialTab(tab);
+    setIsCloudGalleryOpen(true);
+
+    try {
+      const url = new URL(window.location.href);
+      const currentTab = url.searchParams.get('tab');
+      const isAlreadyGallery = url.searchParams.get('page') === 'gallery';
+      
+      url.searchParams.set('page', 'gallery');
+      if (tab && tab !== 'public') {
+        url.searchParams.set('tab', tab);
+      } else {
+        url.searchParams.delete('tab');
+      }
+
+      if (!isAlreadyGallery || currentTab !== (tab !== 'public' ? tab : null)) {
+        window.history.pushState({ page: 'gallery', tab }, '', url.pathname + url.search + url.hash);
+      }
+    } catch (e) {
+      console.error("Failed to update history for gallery:", e);
+    }
+  }, []);
+
+  // Close Cloud Gallery and clean URL query params / pop history
+  const handleCloseCloudGallery = useCallback(() => {
+    setIsCloudGalleryOpen(false);
+
+    try {
+      const url = new URL(window.location.href);
+      const hasGalleryInSearch = url.searchParams.get('page') === 'gallery' || url.searchParams.has('gallery') || url.searchParams.has('tab');
+      const hasGalleryInHash = window.location.hash.toLowerCase().includes('gallery');
+
+      if (hasGalleryInSearch || hasGalleryInHash) {
+        if (window.history.state && window.history.state.page === 'gallery') {
+          window.history.back();
+        } else {
+          url.searchParams.delete('page');
+          url.searchParams.delete('gallery');
+          url.searchParams.delete('tab');
+          let newHash = window.location.hash;
+          if (newHash.toLowerCase().includes('gallery')) {
+            newHash = '';
+          }
+          const newSearch = url.searchParams.toString();
+          const newPath = url.pathname + (newSearch ? `?${newSearch}` : '') + newHash;
+          window.history.replaceState(null, '', newPath);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to update history on gallery close:", e);
+    }
+  }, []);
+
+  // Sync tab change inside gallery modal with URL without pushing redundant history entries
+  const handleGalleryTabChange = useCallback((tab: 'public' | 'personal' | 'group' | 'publish') => {
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('page', 'gallery');
+      if (tab && tab !== 'public') {
+        url.searchParams.set('tab', tab);
+      } else {
+        url.searchParams.delete('tab');
+      }
+      window.history.replaceState({ page: 'gallery', tab }, '', url.pathname + url.search + url.hash);
+    } catch (e) {
+      console.error("Failed to update history on gallery tab change:", e);
+    }
+  }, []);
+
+  // Synchronize browser Back and Forward button navigation for gallery
+  useEffect(() => {
+    const handlePopState = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const hash = window.location.hash.toLowerCase();
+      const isGalleryUrl = urlParams.get('page') === 'gallery' || 
+                           urlParams.has('gallery') || 
+                           hash.startsWith('#gallery') || 
+                           hash.startsWith('#/gallery');
+
+      if (isGalleryUrl) {
+        let tab: 'public' | 'personal' | 'group' | 'publish' = 'public';
+        const tabParam = urlParams.get('tab');
+        if (tabParam === 'personal' || tabParam === 'group' || tabParam === 'publish' || tabParam === 'public') {
+          tab = tabParam as any;
+        } else if (hash.includes('/personal') || hash.includes('tab=personal')) {
+          tab = 'personal';
+        } else if (hash.includes('/group') || hash.includes('tab=group')) {
+          tab = 'group';
+        } else if (hash.includes('/publish') || hash.includes('tab=publish')) {
+          tab = 'publish';
+        }
+        setCloudGalleryInitialTab(tab);
+        setIsCloudGalleryOpen(true);
+      } else {
+        setIsCloudGalleryOpen(false);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handlePopState);
+    };
+  }, []);
+
+  // Sync document title when gallery is open so it behaves like a standalone page
+  useEffect(() => {
+    if (isCloudGalleryOpen) {
+      const originalTitle = document.title;
+      document.title = `${t('cloud.gallery.pageTitle') || 'Хмарна галерея'} — VereTka`;
+      return () => {
+        document.title = originalTitle;
+      };
+    }
+  }, [isCloudGalleryOpen, t]);
+
   const [apiKey, setApiKey] = useState<string | null>(null);
   
   const [canvasWidth, setCanvasWidth] = useState<number>(800);
@@ -5483,6 +5603,30 @@ export default function App(): React.ReactNode {
             }
         }
 
+        // Check for direct Gallery link in URL (?page=gallery, ?gallery, #gallery, #/gallery)
+        const hash = window.location.hash.toLowerCase();
+        const pageParam = urlParams.get('page');
+        const isGalleryRequested = pageParam === 'gallery' || 
+                                   urlParams.has('gallery') || 
+                                   hash.startsWith('#gallery') || 
+                                   hash.startsWith('#/gallery');
+
+        if (isGalleryRequested) {
+            let tab: 'public' | 'personal' | 'group' | 'publish' = 'public';
+            const tabParam = urlParams.get('tab');
+            if (tabParam === 'personal' || tabParam === 'group' || tabParam === 'publish' || tabParam === 'public') {
+                tab = tabParam as any;
+            } else if (hash.includes('/personal') || hash.includes('tab=personal')) {
+                tab = 'personal';
+            } else if (hash.includes('/group') || hash.includes('tab=group')) {
+                tab = 'group';
+            } else if (hash.includes('/publish') || hash.includes('tab=publish')) {
+                tab = 'publish';
+            }
+            setCloudGalleryInitialTab(tab);
+            setIsCloudGalleryOpen(true);
+        }
+
         try {
             const data = localStorage.getItem(AUTOSAVE_KEY);
             if (data) {
@@ -5566,10 +5710,7 @@ export default function App(): React.ReactNode {
                   showNotification(t('simulation.noShapes'), 'info');
                 }
               }}
-              onOpenCloudGallery={() => {
-                setCloudGalleryInitialTab('public');
-                setIsCloudGalleryOpen(true);
-              }}
+              onOpenCloudGallery={() => handleOpenCloudGallery('public')}
               isLandscape={isLandscape}
             />
           ) : (
@@ -5583,10 +5724,7 @@ export default function App(): React.ReactNode {
               onSaveProjectAs={() => setIsSaveAsModalOpen(true)}
               onSaveAsTemplate={() => setIsSaveTemplateModalOpen(true)}
               onLoadProject={handleLoadProject}
-              onOpenCloudGallery={(tab) => {
-                  setCloudGalleryInitialTab(tab || 'public');
-                  setIsCloudGalleryOpen(true);
-              }}
+              onOpenCloudGallery={handleOpenCloudGallery}
               onImportImage={handleImportImage}
               onExport={() => setIsExportModalOpen(true)}
               onShareLink={handleShareLink}
@@ -6001,10 +6139,7 @@ export default function App(): React.ReactNode {
                     <WelcomeScreen 
                         onCreateNew={handleOpenNewProjectModal}
                         onLoadProject={handleLoadProject}
-                        onOpenCloudGallery={(tab) => {
-                            setCloudGalleryInitialTab(tab || 'public');
-                            setIsCloudGalleryOpen(true);
-                        }}
+                        onOpenCloudGallery={handleOpenCloudGallery}
                         recentProjects={recentProjects}
                         onOpenRecent={handleOpenRecent}
                         onRemoveProject={handleRemoveRecentProject}
@@ -6115,10 +6250,7 @@ export default function App(): React.ReactNode {
               onSaveProjectAs={() => setIsSaveAsModalOpen(true)}
               onSaveAsTemplate={() => setIsSaveTemplateModalOpen(true)}
               onLoadProject={handleLoadProject}
-              onOpenCloudGallery={(tab) => {
-                setCloudGalleryInitialTab(tab || 'public');
-                setIsCloudGalleryOpen(true);
-              }}
+              onOpenCloudGallery={handleOpenCloudGallery}
               onImportImage={handleImportImage}
               onExport={() => setIsExportModalOpen(true)}
               onShareLink={handleShareLink}
@@ -6608,7 +6740,8 @@ export default function App(): React.ReactNode {
           <CloudGalleryModal
             isOpen={isCloudGalleryOpen}
             initialTab={cloudGalleryInitialTab}
-            onClose={() => setIsCloudGalleryOpen(false)}
+            onClose={handleCloseCloudGallery}
+            onTabChange={handleGalleryTabChange}
             onLoadProject={(dataStr, projName) => {
               handleOpenCloudProject(dataStr, projName);
             }}

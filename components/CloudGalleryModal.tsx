@@ -1,6 +1,6 @@
 import { useLanguage } from "./LanguageContext";
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { XIcon, EyeIcon, EyeOffIcon } from './icons';
+import { XIcon, EyeIcon, EyeOffIcon, CopyIcon, CheckIcon } from './icons';
 import { 
   ZoomIn, 
   ZoomOut, 
@@ -11,7 +11,8 @@ import {
   Move, 
   Layers, 
   ExternalLink,
-  Info
+  Info,
+  ArrowLeft
 } from 'lucide-react';
 import { VeretkaLoader } from './VeretkaLoader';
 import { generateSvg, getOrderedShapesFromParsed } from '../lib/exportUtils';
@@ -868,6 +869,7 @@ interface CloudGalleryModalProps {
   getCurrentProjectDataStr: () => string;
   currentProjectName: string;
   initialTab?: 'public' | 'personal' | 'group' | 'publish';
+  onTabChange?: (tab: 'public' | 'personal' | 'group' | 'publish') => void;
 }
 
 export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
@@ -877,9 +879,19 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
   currentProjectShapesCount,
   getCurrentProjectDataStr,
   currentProjectName,
-  initialTab = 'public'
+  initialTab = 'public',
+  onTabChange
 }) => {
-  const [activeTab, setActiveTab] = useState<'public' | 'personal' | 'group' | 'publish'>(initialTab);
+  const [activeTab, setActiveTabRaw] = useState<'public' | 'personal' | 'group' | 'publish'>(initialTab);
+  const setActiveTab = useCallback((tab: 'public' | 'personal' | 'group' | 'publish') => {
+    setActiveTabRaw(tab);
+    onTabChange?.(tab);
+  }, [onTabChange]);
+
+  const [showShareGalleryModal, setShowShareGalleryModal] = useState(false);
+  const [copiedGalleryLink, setCopiedGalleryLink] = useState(false);
+  const [includeTabInShareLink, setIncludeTabInShareLink] = useState(false);
+
   const { t } = useLanguage();
   const [showAccountDropdown, setShowAccountDropdown] = useState(false);
   const accountDropdownRef = useRef<HTMLDivElement>(null);
@@ -903,7 +915,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setActiveTab(initialTab);
+      setActiveTabRaw(initialTab);
     }
   }, [isOpen, initialTab]);
 
@@ -2187,12 +2199,23 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
   const filteredPublicProjects = publicProjects;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[var(--modal-overlay)] backdrop-blur-xs p-2 sm:p-4 md:p-6 overflow-y-auto">
-      <div className="bg-[var(--bg-primary)] text-[var(--text-primary)] border border-[var(--border-primary)] rounded-2xl shadow-2xl w-full max-w-4xl max-h-[96vh] sm:max-h-[90vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[var(--modal-overlay)] sm:backdrop-blur-xs p-0 sm:p-4 md:p-6 overflow-hidden">
+      <div className="bg-[var(--bg-primary)] text-[var(--text-primary)] border-0 sm:border sm:border-[var(--border-primary)] rounded-none sm:rounded-2xl shadow-none sm:shadow-2xl w-full h-full sm:h-auto sm:max-w-4xl sm:max-h-[90vh] flex flex-col overflow-hidden">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-3 sm:px-6 py-2.5 sm:py-4 border-b border-[var(--border-primary)] bg-[var(--bg-primary)] shrink-0 gap-2">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div className="flex items-center justify-between px-3 sm:px-6 py-2.5 sm:py-4 border-b border-[var(--border-primary)] bg-[var(--bg-primary)] shrink-0 gap-2 pt-[calc(0.625rem+env(safe-area-inset-top,0px))] sm:pt-4">
+          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+            {/* Mobile Back Button to return to editor */}
+            <button
+              type="button"
+              onClick={onClose}
+              className="sm:hidden p-1.5 -ml-1 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] active:bg-[var(--bg-secondary)] transition-colors shrink-0 flex items-center justify-center"
+              title={t('common.back') || "Назад"}
+              aria-label="Back"
+            >
+              <ArrowLeft size={20} />
+            </button>
+
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-primary)] flex items-center justify-center p-1 sm:p-1.5 shadow-sm shrink-0">
               <VeretkaLogoIcon className="w-5 h-5 sm:w-7 sm:h-7" />
             </div>
@@ -2290,6 +2313,18 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 </button>
               </div>
             )}
+            <button
+              type="button"
+              onClick={() => {
+                setShowShareGalleryModal(true);
+                setCopiedGalleryLink(false);
+              }}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold bg-[var(--accent-primary)]/10 hover:bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30 transition-all shadow-xs active:scale-95 shrink-0"
+              title={t('cloud.gallery.shareGallery') || "Поділитися посиланням на галерею"}
+            >
+              <Share2 size={13} className="shrink-0" />
+              <span>{t('cloud.gallery.shareGalleryBtn') || "Поділитися"}</span>
+            </button>
             <button 
               onClick={onClose}
               className="p-1.5 sm:p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
@@ -2345,7 +2380,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
         </div>
 
         {/* Modal Content Body */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]">
 
           {/* ==================== TAB 1: PUBLIC GALLERY ==================== */}
           {activeTab === 'public' && (
@@ -4718,6 +4753,199 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
             </div>
           </div>
         )}
+
+        {/* Share Gallery Overlay Modal */}
+        {showShareGalleryModal && (() => {
+          const currentOrigin = typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}` : '';
+          const galleryBaseUrl = `${currentOrigin}?page=gallery`;
+          const galleryShareUrl = includeTabInShareLink && activeTab !== 'public'
+            ? `${galleryBaseUrl}&tab=${activeTab}`
+            : galleryBaseUrl;
+
+          return (
+            <div 
+              onClick={() => {
+                setShowShareGalleryModal(false);
+                setCopiedGalleryLink(false);
+              }}
+              className="fixed inset-0 z-[10020] flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4 animate-fadeIn cursor-pointer"
+            >
+              <div 
+                onClick={(e) => e.stopPropagation()}
+                className="bg-[var(--bg-secondary)] text-[var(--text-primary)] p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-[var(--border-primary)] max-w-md w-full space-y-3.5 sm:space-y-4 relative shadow-2xl overflow-hidden cursor-default max-h-[90vh] overflow-y-auto"
+              >
+                <button
+                  onClick={() => {
+                    setShowShareGalleryModal(false);
+                    setCopiedGalleryLink(false);
+                  }}
+                  className="absolute top-4 right-4 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] p-1.5 rounded-lg bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] border border-[var(--border-secondary)] transition-colors z-10"
+                  title={t('cloud.gallery.394')}
+                >
+                  <XIcon size={20} />
+                </button>
+
+                {/* Branding Header & Title */}
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-secondary)] text-[var(--text-primary)] flex items-center justify-center p-1.5 shrink-0 shadow-sm">
+                    <VeretkaLogoIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-sm sm:text-base text-[var(--text-primary)]">
+                        {t('cloud.gallery.shareGalleryTitle') || "Поділитися галереєю"}
+                      </h3>
+                      <span className="text-[10px] bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] px-2 py-0.5 rounded-full border border-[var(--accent-primary)]/30 font-semibold">
+                        {t('cloud.gallery.396') || "ВереTkа"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[var(--text-tertiary)]">
+                      {t('cloud.gallery.shareGalleryDesc') || "Пряме посилання на окрему вебсторінку хмарної галереї"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Include tab switch toggle */}
+                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-secondary)] text-xs cursor-pointer select-none">
+                  <span className="text-[var(--text-secondary)] font-medium">
+                    {t('cloud.gallery.shareTabOption') || "Включати поточну вкладку в посилання"} ({
+                      activeTab === 'personal' ? (t('cloud.gallery.091') || 'Особисті') :
+                      activeTab === 'group' ? (t('cloud.gallery.092') || 'Осередки') :
+                      activeTab === 'publish' ? (t('cloud.gallery.093') || 'Публікація') :
+                      (t('cloud.gallery.090') || 'Загальні')
+                    })
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={includeTabInShareLink}
+                    onChange={(e) => setIncludeTabInShareLink(e.target.checked)}
+                    className="w-4 h-4 rounded text-[var(--accent-primary)] focus:ring-[var(--accent-primary-hover)] bg-[var(--bg-secondary)] border-[var(--border-primary)] cursor-pointer"
+                  />
+                </label>
+
+                {/* Direct Link Input */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs text-[var(--text-secondary)] font-semibold">
+                    {t('cloud.gallery.galleryDirectLink') || "Пряме посилання на галерею:"}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={galleryShareUrl}
+                      className="flex-1 px-3 py-2 text-xs rounded-xl bg-[var(--bg-primary)] border border-[var(--border-secondary)] text-[var(--text-primary)] select-all focus:outline-none font-mono focus:border-[var(--accent-primary)] min-w-0"
+                    />
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(galleryShareUrl);
+                        setCopiedGalleryLink(true);
+                        setTimeout(() => setCopiedGalleryLink(false), 2000);
+                      }}
+                      className="px-3 sm:px-3.5 py-2 text-xs font-semibold rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-[var(--accent-text)] transition-colors shrink-0 shadow-xs flex items-center gap-1.5"
+                    >
+                      {copiedGalleryLink ? (
+                        <>
+                          <CheckIcon size={14} />
+                          <span>{t('cloud.gallery.400') || "✓ Скопійовано"}</span>
+                        </>
+                      ) : (
+                        <>
+                          <CopyIcon size={14} />
+                          <span>{t('cloud.gallery.401') || "Скопіювати"}</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Sharing Destinations */}
+                <div className="space-y-2.5 sm:space-y-3 pt-2 border-t border-[var(--border-secondary)]">
+                  <label className="block text-xs text-[var(--text-secondary)] font-semibold">
+                    {t('cloud.gallery.402') || "Поділитися в соціальних мережах та месенджерах:"}
+                  </label>
+                  
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2">
+                    {/* Telegram */}
+                    <a
+                      href={`https://t.me/share/url?url=${encodeURIComponent(galleryShareUrl)}&text=${encodeURIComponent(t('cloud.gallery.shareGalleryText') || 'Перегляньте хмарну галерею проєктів та шаблонів у Веретці! 🎨')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1.5 sm:gap-2 py-2 px-2 rounded-xl bg-[#0088cc] hover:bg-[#0077b5] text-white text-[11px] sm:text-xs font-semibold transition-colors shadow-xs"
+                    >
+                      <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current shrink-0" viewBox="0 0 24 24">
+                        <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.901-.903-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.831-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                      </svg>
+                      Telegram
+                    </a>
+
+                    {/* Viber */}
+                    <a
+                      href={`viber://forward?text=${encodeURIComponent(`${t('cloud.gallery.shareGalleryText') || 'Хмарна галерея Веретка:'} ${galleryShareUrl}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1.5 sm:gap-2 py-2 px-2 rounded-xl bg-[#7360f2] hover:bg-[#5e4bd8] text-white text-[11px] sm:text-xs font-semibold transition-colors shadow-xs"
+                    >
+                      <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current shrink-0" viewBox="0 0 24 24">
+                        <path d="M19.385 1.77C15.176-.328 8.795-.333 4.58.106 1.758.4 0 2.505 0 5.405v8.13c0 2.871 1.742 4.978 4.542 5.275 1.05.111 2.112.164 3.178.164.218 0 .432-.008.647-.024l.086 2.653a1.442 1.442 0 0 0 2.37 1.042l3.414-3.111c1.782-.047 3.522-.387 5.148-1.01 2.801-1.071 4.615-3.41 4.615-6.505V5.405c0-2.072-1.253-3.023-4.615-3.635zm3.115 11.765c0 2.322-1.365 4.077-3.468 4.881-1.464.561-3.031.866-4.636.908l-3.23 2.943-.075-2.316a.72.72 0 0 0-.712-.698c-1.096.012-2.192-.041-3.282-.157-2.1-.223-3.412-1.799-3.412-3.951V5.405c0-2.176 1.32-3.75 3.412-3.971 3.821-.398 9.619-.398 13.441 0 2.094.217 3.462 1.051 3.462 3.971v8.13z"/>
+                      </svg>
+                      Viber
+                    </a>
+
+                    {/* WhatsApp */}
+                    <a
+                      href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${t('cloud.gallery.shareGalleryText') || 'Хмарна галерея Веретка:'} ${galleryShareUrl}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1.5 sm:gap-2 py-2 px-2 rounded-xl bg-[#25D366] hover:bg-[#1da851] text-white text-[11px] sm:text-xs font-semibold transition-colors shadow-xs"
+                    >
+                      <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current shrink-0" viewBox="0 0 24 24">
+                        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
+                      </svg>
+                      WhatsApp
+                    </a>
+
+                    {/* Facebook */}
+                    <a
+                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(galleryShareUrl)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1.5 sm:gap-2 py-2 px-2 rounded-xl bg-[#1877F2] hover:bg-[#166fe5] text-white text-[11px] sm:text-xs font-semibold transition-colors shadow-xs"
+                    >
+                      <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current shrink-0" viewBox="0 0 24 24">
+                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                      </svg>
+                      Facebook
+                    </a>
+
+                    {/* X / Twitter */}
+                    <a
+                      href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(galleryShareUrl)}&text=${encodeURIComponent(t('cloud.gallery.shareGalleryText') || 'Перегляньте хмарну галерею проєктів та шаблонів у Веретці! 🎨')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1.5 sm:gap-2 py-2 px-2 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-950 text-white border border-slate-700 text-[11px] sm:text-xs font-semibold transition-colors shadow-xs"
+                    >
+                      <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-current shrink-0" viewBox="0 0 24 24">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                      </svg>
+                      X
+                    </a>
+
+                    {/* Email */}
+                    <a
+                      href={`mailto:?subject=${encodeURIComponent('Хмарна галерея Веретка')}&body=${encodeURIComponent(`${t('cloud.gallery.shareGalleryText') || 'Привіт! Переглянь хмарну галерею робіт та шаблонів у Веретці за посиланням:'}\n\n${galleryShareUrl}`)}`}
+                      className="flex items-center justify-center gap-1.5 sm:gap-2 py-2 px-2 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-[var(--accent-text)] text-[11px] sm:text-xs font-semibold transition-colors shadow-xs"
+                    >
+                      <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current shrink-0" viewBox="0 0 24 24">
+                        <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                      </svg>
+                      Email
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Share Project Overlay Modal */}
         {shareModalProject && (
