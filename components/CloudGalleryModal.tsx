@@ -12,10 +12,17 @@ import {
   Layers, 
   ExternalLink,
   Info,
-  ArrowLeft
+  ArrowLeft,
+  User
 } from 'lucide-react';
 import { VeretkaLoader } from './VeretkaLoader';
+import { NetworkStatusIndicator } from './NetworkStatusIndicator';
 import { generateSvg, getOrderedShapesFromParsed } from '../lib/exportUtils';
+import { 
+  getPublicProjectsFromCache, 
+  savePublicProjectsToCache, 
+  withTimeout 
+} from '../lib/galleryCache';
 import { 
   getPublicProjectsPaginated, 
   searchPublicProjects,
@@ -706,7 +713,7 @@ const ProjectLargePreviewModal: React.FC<{
               onClick={onClose}
               className="p-1.5 sm:p-2 rounded-xl bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-secondary)] transition-all active:scale-95 shadow-xs"
               title={t('cloud.gallery.028') || "Закрити"}
-              aria-label="Закрити перегляд"
+              aria-label={t('cloud.gallery.preview.close') || 'Закрити перегляд'}
             >
               <XIcon size={18} />
             </button>
@@ -811,13 +818,13 @@ const ProjectLargePreviewModal: React.FC<{
               const latestTime = Math.max(project.updatedAt || 0, project.createdAt || 0);
               return (
                 <span title={formatProjectDateTime(latestTime)}>
-                  {t('cloud.gallery.032') || 'Створено:'} <strong className="text-[var(--text-secondary)]">{formatProjectDate(latestTime)}</strong>
+                  {t('cloud.gallery.032') || 'Додано:'} <strong className="text-[var(--text-secondary)]">{formatProjectDate(latestTime)}</strong>
                 </span>
               );
             })()}
             <span className="hidden sm:inline opacity-40">•</span>
             <span className="hidden sm:inline">
-              Тло: <span className="inline-block w-3 h-3 rounded-full border border-[var(--border-secondary)] align-middle ml-1 mr-0.5" style={{ backgroundColor: canvasInfo.bgColor }} /> <span className="font-mono">{canvasInfo.bgColor}</span>
+              {t('cloud.gallery.preview.bg') || 'Тло:'} <span className="inline-block w-3 h-3 rounded-full border border-[var(--border-secondary)] align-middle ml-1 mr-0.5" style={{ backgroundColor: canvasInfo.bgColor }} /> <span className="font-mono">{canvasInfo.bgColor}</span>
             </span>
           </div>
 
@@ -927,6 +934,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
   const [publicLastVisible, setPublicLastVisible] = useState<any>(null);
   const [hasMorePublic, setHasMorePublic] = useState(true);
   const [isLoadingMorePublic, setIsLoadingMorePublic] = useState(false);
+  const [isPublicFromCache, setIsPublicFromCache] = useState(false);
 
   // --- Personal Space State ---
   const [personalNickname, setPersonalNickname] = useState(() => localStorage.getItem('veretka_nickname') || '');
@@ -1233,7 +1241,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
       setSendGroupInfo(gInfo);
       setIsSearchingSendGroup(false);
       if (!gInfo) {
-        setSendGroupError(`Осередок з кодом "${normCode}" не знайдено.`);
+        setSendGroupError(t('cloud.gallery.t1', { code: normCode }) || `Осередок з кодом "${normCode}" не знайдено.`);
       }
     }
   };
@@ -1258,7 +1266,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
     }
 
     if (!targetGroup) {
-      setSendGroupError(`Осередок з кодом "${normCode}" не знайдено.`);
+      setSendGroupError(t('cloud.gallery.t1', { code: normCode }) || `Осередок з кодом "${normCode}" не знайдено.`);
       return;
     }
 
@@ -1267,7 +1275,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
     const userNick = (personalNickname || '').trim().toLowerCase();
 
     if (groupMode === 'readonly' && groupCreator !== userNick) {
-      setSendGroupError(`Ця група працює в режимі "Дошка шаблонів" (readonly). Тільки її засновник (@${targetGroup.creatorNickname}) може публікувати сюди роботи.`);
+      setSendGroupError(t('cloud.gallery.t2', { creator: targetGroup.creatorNickname }) || `Ця група працює в режимі "Дошка шаблонів" (readonly). Тільки її засновник (@${targetGroup.creatorNickname}) може публікувати сюди роботи.`);
       return;
     }
 
@@ -1318,7 +1326,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
     setIsSendingToGroup(false);
 
     if (res.success) {
-      setSendGroupSuccess(`✓ Копію проєкту успішно надіслано в осередок "${targetGroup.name || normCode}"!`);
+      setSendGroupSuccess(t('cloud.gallery.t3', { name: targetGroup.name || normCode }) || `✓ Копію проєкту успішно надіслано в осередок "${targetGroup.name || normCode}"!`);
       
       // Update local personal projects state
       setPersonalProjects(prev => prev.map(p => {
@@ -1372,7 +1380,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
     let targetTitle = projectToCopy.title || '';
     if (action === 'new_copy') {
-      targetTitle = overrideTitle || nextSuggestedTitle || `${projectToCopy.title || 'Без назви'} (v.2)`;
+      targetTitle = overrideTitle || nextSuggestedTitle || `${projectToCopy.title || t('cloud.project.untitled') || 'Без назви'} (v.2)`;
     } else if (action === 'custom_title') {
       targetTitle = (overrideTitle || groupConflictModal.customTitleInput || projectToCopy.title || '').trim();
     } else if (action === 'overwrite' && existingProject) {
@@ -1522,7 +1530,6 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
     if (!isOpen || activeTab !== 'public') return;
 
     if (!((searchQuery) || '').trim()) {
-      setIsLoadingPublic(true);
       loadPublicProjects('');
     } else {
       setIsLoadingPublic(true);
@@ -1533,21 +1540,88 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
     }
   }, [isOpen, activeTab, searchQuery]);
 
+  // Auto-refresh when internet connection is restored
+  useEffect(() => {
+    const handleOnline = () => {
+      if (isOpen && activeTab === 'public') {
+        loadPublicProjects(searchQuery);
+      }
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [isOpen, activeTab, searchQuery]);
+
   const loadPublicProjects = async (queryStr = searchQuery) => {
-    setIsLoadingPublic(true);
+    const isCleanSearch = !((queryStr) || "").trim();
+
+    // 1. Instant Stale-While-Revalidate: If root list and no projects loaded yet, immediately display cached projects from Service Worker Cache
+    if (isCleanSearch && publicProjects.length === 0) {
+      try {
+        const cached = await getPublicProjectsFromCache();
+        if (cached && cached.projects && cached.projects.length > 0) {
+          setPublicProjects(cached.projects);
+          setPublicTotalCount(cached.totalCount);
+          setIsPublicFromCache(true);
+          setIsLoadingPublic(false);
+        } else {
+          setIsLoadingPublic(true);
+        }
+      } catch (err) {
+        console.warn('Error reading from initial SW cache:', err);
+        setIsLoadingPublic(true);
+      }
+    } else if (!isCleanSearch) {
+      setIsLoadingPublic(true);
+    }
+
     setHasMorePublic(true);
+
     try {
-      const res = ((queryStr) || "").trim()
-        ? await searchPublicProjects(queryStr, 12, null)
-        : await getPublicProjectsPaginated(12, null);
+      // 2. Fetch fresh data from network with timeout (5s) to guard against intermittent connections
+      const fetchPromise = isCleanSearch
+        ? getPublicProjectsPaginated(12, null)
+        : searchPublicProjects(queryStr, 12, null);
+
+      const res = await withTimeout(fetchPromise, 5000);
+
       setPublicProjects(res.projects);
       setPublicLastVisible(res.lastVisible);
       setPublicTotalCount(res.totalCount ?? res.projects.length);
+      setIsPublicFromCache(false);
+
       if (res.projects.length >= (res.totalCount ?? res.projects.length) || res.projects.length < 12) {
         setHasMorePublic(false);
       }
+
+      // 3. Cache into Service Worker CacheStorage
+      if (isCleanSearch && res.projects.length > 0) {
+        savePublicProjectsToCache(res.projects, res.totalCount).catch(() => {});
+      }
     } catch (e) {
-      console.error(e);
+      console.warn('Network error or timeout loading public projects, falling back to Service Worker cache:', e);
+      // Fallback to Service Worker cache if network failed or timed out
+      try {
+        const cached = await getPublicProjectsFromCache();
+        if (cached && cached.projects && cached.projects.length > 0) {
+          if (!isCleanSearch) {
+            const clean = queryStr.trim().toLowerCase();
+            const words = clean.split(/[^\p{L}\p{N}]+/u).filter(w => w.length > 0);
+            const filtered = cached.projects.filter(p => {
+              const fullText = `${p.title} ${p.authorName} ${p.ownerNickname} ${p.groupName || ''} ${p.description || ''}`.toLowerCase();
+              return words.every(w => fullText.includes(w));
+            });
+            setPublicProjects(filtered);
+            setPublicTotalCount(filtered.length);
+          } else {
+            setPublicProjects(cached.projects);
+            setPublicTotalCount(cached.totalCount);
+          }
+          setIsPublicFromCache(true);
+          setHasMorePublic(false);
+        }
+      } catch (err) {
+        console.error('Failed reading from SW cache after network error:', err);
+      }
     } finally {
       setIsLoadingPublic(false);
     }
@@ -1814,7 +1888,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
       localStorage.removeItem('veretka_group_passcode');
       setShowDeleteGroupModal(false);
       setDeleteGroupPasscode('');
-      alert(`Групу "${activeGroup.name}" успішно видалено.`);
+      alert(t('cloud.gallery.t5', { name: activeGroup.name }) || `Групу "${activeGroup.name}" успішно видалено.`);
     } else {
       setDeleteGroupError(res.message);
     }
@@ -2203,8 +2277,8 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
       <div className="bg-[var(--bg-primary)] text-[var(--text-primary)] border-0 sm:border sm:border-[var(--border-primary)] rounded-none sm:rounded-2xl shadow-none sm:shadow-2xl w-full h-full sm:h-auto sm:max-w-4xl sm:max-h-[90vh] flex flex-col overflow-hidden">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-3 sm:px-6 py-2.5 sm:py-4 border-b border-[var(--border-primary)] bg-[var(--bg-primary)] shrink-0 gap-2 pt-[calc(0.625rem+env(safe-area-inset-top,0px))] sm:pt-4">
-          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+        <div className="flex items-center justify-between px-2.5 sm:px-6 py-2 sm:py-4 border-b border-[var(--border-primary)] bg-[var(--bg-primary)] shrink-0 gap-1.5 sm:gap-4 pt-[calc(0.5rem+env(safe-area-inset-top,0px))] sm:pt-4">
+          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
             {/* Mobile Back Button to return to editor */}
             <button
               type="button"
@@ -2216,30 +2290,34 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
               <ArrowLeft size={20} />
             </button>
 
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-primary)] flex items-center justify-center p-1 sm:p-1.5 shadow-sm shrink-0">
-              <VeretkaLogoIcon className="w-5 h-5 sm:w-7 sm:h-7" />
+            <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-primary)] text-[var(--text-primary)] flex items-center justify-center p-1 sm:p-1.5 shadow-sm shrink-0">
+              <VeretkaLogoIcon className="w-4 h-4 sm:w-7 sm:h-7" />
             </div>
-            <div className="min-w-0">
-              <h2 className="text-sm xs:text-base sm:text-xl font-bold tracking-tight sm:tracking-wide truncate">{t('cloud.gallery.080')}</h2>
-              <p className="text-[10px] sm:text-xs text-[var(--text-tertiary)] truncate">{t('cloud.gallery.081')}</p>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-xs xs:text-sm sm:text-xl font-bold tracking-tight text-[var(--text-primary)] leading-tight whitespace-normal break-words sm:truncate">
+                {t('cloud.gallery.080')}
+              </h2>
+              <p className="text-[8.5px] xs:text-[9.5px] sm:text-xs text-[var(--text-tertiary)] leading-tight whitespace-normal break-words sm:truncate mt-0.5">
+                {t('cloud.gallery.081')}
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 sm:gap-3 relative shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2.5 relative shrink-0">
             {isPersonalLoggedIn ? (
-              <div className="relative mr-1 sm:mr-2" ref={accountDropdownRef}>
+              <div className="relative mr-0.5 sm:mr-1" ref={accountDropdownRef}>
                 <button
                   type="button"
                   onClick={() => setShowAccountDropdown(!showAccountDropdown)}
-                  className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-secondary)] hover:bg-[var(--bg-hover)] transition-colors text-left"
+                  className="flex items-center gap-1.5 sm:gap-2 p-1 sm:px-3 sm:py-1.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-secondary)] hover:bg-[var(--bg-hover)] transition-colors text-left shrink-0"
                   title={t('cloud.gallery.082')}
                 >
                   <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[var(--accent-primary)] flex items-center justify-center text-[var(--accent-text)] text-[10px] sm:text-xs font-bold shrink-0 shadow-sm">
                     {personalNickname ? personalNickname.charAt(0).toUpperCase() : '👤'}
                   </div>
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-[11px] sm:text-xs font-bold text-[var(--text-primary)] truncate max-w-[70px] xs:max-w-[100px] sm:max-w-[120px]">@{personalNickname}</span>
+                  <div className="hidden sm:flex flex-col min-w-0">
+                    <span className="text-xs font-bold text-[var(--text-primary)] truncate max-w-[120px]">@{personalNickname}</span>
                     {(currentAccountAuthorName || pubAuthorName) && (
-                      <span className="text-[9px] sm:text-[10px] text-[var(--text-tertiary)] truncate max-w-[70px] xs:max-w-[100px] sm:max-w-[120px] -mt-0.5 font-normal hidden xs:inline">
+                      <span className="text-[10px] text-[var(--text-tertiary)] truncate max-w-[120px] -mt-0.5 font-normal">
                         {currentAccountAuthorName || pubAuthorName}
                       </span>
                     )}
@@ -2290,16 +2368,18 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-1 sm:gap-2 mr-1 sm:mr-2">
+              <div className="flex items-center gap-1 sm:gap-2 mr-0.5 sm:mr-1 shrink-0">
                 <button
                   type="button"
                   onClick={() => {
                     setActiveTab('personal');
                     setPersonalAuthMode('login');
                   }}
-                  className="px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-secondary)] transition-colors"
+                  className="p-1.5 sm:px-3.5 sm:py-1.5 rounded-full text-xs font-semibold bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-secondary)] transition-colors flex items-center gap-1.5 shrink-0"
+                  title={t('cloud.gallery.087')}
                 >
-                  {t('cloud.gallery.087')}
+                  <User size={15} className="shrink-0" />
+                  <span className="hidden sm:inline">{t('cloud.gallery.087')}</span>
                 </button>
                 <button
                   type="button"
@@ -2307,27 +2387,32 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                     setActiveTab('personal');
                     setPersonalAuthMode('register');
                   }}
-                  className="px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-secondary)] transition-colors"
+                  className="hidden sm:inline-block px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-secondary)] transition-colors shrink-0"
                 >
                   {t('cloud.gallery.088')}
                 </button>
               </div>
             )}
+
+            {/* Visual network connection status indicator (compact dot on mobile, full text on desktop) */}
+            <NetworkStatusIndicator isCached={isPublicFromCache} className="hidden sm:inline-flex shrink-0" />
+            <NetworkStatusIndicator isCached={isPublicFromCache} compact className="sm:hidden shrink-0" />
+
             <button
               type="button"
               onClick={() => {
                 setShowShareGalleryModal(true);
                 setCopiedGalleryLink(false);
               }}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold bg-[var(--accent-primary)]/10 hover:bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30 transition-all shadow-xs active:scale-95 shrink-0"
+              className="p-1.5 sm:px-3 sm:py-1.5 rounded-full text-xs font-semibold bg-[var(--accent-primary)]/10 hover:bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30 transition-all shadow-xs active:scale-95 shrink-0 flex items-center gap-1.5"
               title={t('cloud.gallery.shareGallery') || "Поділитися посиланням на галерею"}
             >
-              <Share2 size={13} className="shrink-0" />
-              <span>{t('cloud.gallery.shareGalleryBtn') || "Поділитися"}</span>
+              <Share2 size={15} className="shrink-0" />
+              <span className="hidden sm:inline">{t('cloud.gallery.shareGalleryBtn') || "Поділитися"}</span>
             </button>
             <button 
               onClick={onClose}
-              className="p-1.5 sm:p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+              className="hidden sm:flex p-1.5 sm:p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors shrink-0 items-center justify-center"
               title={t('cloud.gallery.089')}
             >
               <XIcon size={18} />
@@ -2403,6 +2488,27 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 }}
               />
 
+              {isPublicFromCache && (
+                <div className="flex items-center justify-between px-2.5 sm:px-3 py-1.5 sm:py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-300 text-xs shadow-xs animate-fadeIn gap-1.5 sm:gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+                    <span className="text-xs sm:text-sm shrink-0">⚡</span>
+                    <span className="sm:hidden font-medium text-[11px] truncate">
+                      {t('cloud.gallery.cacheOfflineBannerShort') || "Офлайн: дані з кешу"}
+                    </span>
+                    <span className="hidden sm:inline font-medium text-xs truncate">
+                      {t('cloud.gallery.cacheOfflineBanner') || "Офлайн-режим: відображаються проєкти зі збереженого кешу сервіс-воркера"}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => loadPublicProjects(searchQuery)}
+                    className="px-2 sm:px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 active:scale-95 text-amber-900 dark:text-amber-100 font-semibold text-[10px] sm:text-[11px] shrink-0 transition-all cursor-pointer whitespace-nowrap"
+                  >
+                    {t('cloud.gallery.cacheRetryBtn') || "Оновити"}
+                  </button>
+                </div>
+              )}
+
               {isLoadingPublic ? (
                 <div className="py-12 flex flex-col items-center justify-center">
                   <VeretkaLoader className="w-24 h-24 mb-4" />
@@ -2450,7 +2556,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                             const latestTime = Math.max(proj.updatedAt || 0, proj.createdAt || 0);
                             return (
                               <span title={formatProjectDateTime(latestTime)}>
-                                {t('cloud.gallery.032') || 'Створено:'} <span className="text-[var(--text-secondary)] font-medium">{formatProjectDate(latestTime)}</span>
+                                {t('cloud.gallery.032') || 'Додано:'} <span className="text-[var(--text-secondary)] font-medium">{formatProjectDate(latestTime)}</span>
                               </span>
                             );
                           })()}
@@ -2899,7 +3005,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                         className="text-[10px] px-2 py-0.5 rounded-full border bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 border-amber-500/30 transition-colors flex items-center gap-1 cursor-pointer font-medium shadow-xs"
                                         title={t('cloud.gallery.154')}
                                       >
-                                        🏫 {proj.sentToGroups && proj.sentToGroups.length > 0 ? `У групах (${proj.sentToGroups.length})` : `Група: ${proj.groupId}`}
+                                        🏫 {proj.sentToGroups && proj.sentToGroups.length > 0 ? (t('cloud.gallery.t7', { count: proj.sentToGroups.length }) || `У групах (${proj.sentToGroups.length})`) : (t('cloud.gallery.t6', { id: proj.groupId }) || `Група: ${proj.groupId}`)}
                                       </button>
                                     )}
                                   </div>
@@ -2915,13 +3021,13 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                 <span>{t('cloud.gallery.156')} <strong className="text-[var(--text-secondary)]">{proj.shapesCount}</strong></span>
                                 <span className="opacity-40">•</span>
                                 <span title={formatProjectDateTime(proj.createdAt)}>
-                                  {t('cloud.gallery.032') || 'Створено:'} <span className="text-[var(--text-secondary)] font-medium">{formatProjectDate(proj.createdAt)}</span>
+                                  {t('cloud.gallery.032') || 'Додано:'} <span className="text-[var(--text-secondary)] font-medium">{formatProjectDate(proj.createdAt)}</span>
                                 </span>
                               </div>
                               {isProjectUpdated(proj) && (
                                 <div className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-medium" title={formatProjectDateTime(proj.updatedAt)}>
                                   <span>🔄</span>
-                                  <span>Оновлено: {formatProjectDate(proj.updatedAt)}</span>
+                                  <span>{t('cloud.gallery.updated') || 'Оновлено:'} {formatProjectDate(proj.updatedAt)}</span>
                                 </div>
                               )}
                             </div>
@@ -3219,7 +3325,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                       // Bypass prompt
                                       await handleGroupLogin({ preventDefault: () => {} } as any, savedPass || '');
                                     } else {
-                                      const pass = prompt(`Вкажіть пароль доступу для осередка "${g.name}" (${g.groupCode}):`);
+                                      const pass = prompt(t('cloud.gallery.t8', { name: g.name, code: g.groupCode }) || `Вкажіть пароль доступу для осередка "${g.name}" (${g.groupCode}):`);
                                       if (pass) {
                                         setGroupPasscodeInput(pass);
                                         await handleGroupLogin({ preventDefault: () => {} } as any, pass);
@@ -3702,13 +3808,13 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                                 <span>{t('cloud.gallery.262')} <strong className="text-[var(--text-secondary)]">{proj.shapesCount}</strong></span>
                                 <span className="opacity-40">•</span>
                                 <span title={formatProjectDateTime(proj.createdAt)}>
-                                  {t('cloud.gallery.032') || 'Створено:'} <span className="text-[var(--text-secondary)] font-medium">{formatProjectDate(proj.createdAt)}</span>
+                                  {t('cloud.gallery.032') || 'Додано:'} <span className="text-[var(--text-secondary)] font-medium">{formatProjectDate(proj.createdAt)}</span>
                                 </span>
                               </div>
                               {isProjectUpdated(proj) && (
                                 <div className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-medium" title={formatProjectDateTime(proj.updatedAt)}>
                                   <span>🔄</span>
-                                  <span>Оновлено: {formatProjectDate(proj.updatedAt)}</span>
+                                  <span>{t('cloud.gallery.updated') || 'Оновлено:'} {formatProjectDate(proj.updatedAt)}</span>
                                 </div>
                               )}
                             </div>
@@ -4932,7 +5038,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
                     {/* Email */}
                     <a
-                      href={`mailto:?subject=${encodeURIComponent('Хмарна галерея Веретка')}&body=${encodeURIComponent(`${t('cloud.gallery.shareGalleryText') || 'Привіт! Переглянь хмарну галерею робіт та шаблонів у Веретці за посиланням:'}\n\n${galleryShareUrl}`)}`}
+                      href={`mailto:?subject=${encodeURIComponent(t('cloud.gallery.shareGalleryTitle') || 'Хмарна галерея Веретка')}&body=${encodeURIComponent(`${t('cloud.gallery.shareGalleryText') || 'Привіт! Переглянь хмарну галерею робіт та шаблонів у Веретці за посиланням:'}\n\n${galleryShareUrl}`)}`}
                       className="flex items-center justify-center gap-1.5 sm:gap-2 py-2 px-2 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-[var(--accent-text)] text-[11px] sm:text-xs font-semibold transition-colors shadow-xs"
                     >
                       <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current shrink-0" viewBox="0 0 24 24">
@@ -5036,7 +5142,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2">
                   {/* Telegram */}
                   <a
-                    href={`https://t.me/share/url?url=${encodeURIComponent(`${window.location.origin}${window.location.pathname}?cloudProject=${shareModalProject.id}`)}&text=${encodeURIComponent(`Перегляньте мій векторний проєкт "${shareModalProject.title}" у Веретці!`)}`}
+                    href={`https://t.me/share/url?url=${encodeURIComponent(`${window.location.origin}${window.location.pathname}?cloudProject=${shareModalProject.id}`)}&text=${encodeURIComponent(t('cloud.gallery.t9', { title: shareModalProject.title }) || `Перегляньте мій векторний проєкт "${shareModalProject.title}" у Веретці!`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-1.5 sm:gap-2 py-2 px-2 rounded-xl bg-[#0088cc] hover:bg-[#0077b5] text-white text-[11px] sm:text-xs font-semibold transition-colors shadow-xs"
@@ -5049,7 +5155,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
                   {/* Viber */}
                   <a
-                    href={`viber://forward?text=${encodeURIComponent(`Проєкт "${shareModalProject.title}" у Веретці: ${window.location.origin}${window.location.pathname}?cloudProject=${shareModalProject.id}`)}`}
+                    href={`viber://forward?text=${encodeURIComponent(`${t('cloud.gallery.t10', { title: shareModalProject.title }) || `Проєкт "${shareModalProject.title}" у Веретці`}: ${window.location.origin}${window.location.pathname}?cloudProject=${shareModalProject.id}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-1.5 sm:gap-2 py-2 px-2 rounded-xl bg-[#7360f2] hover:bg-[#5e4bd8] text-white text-[11px] sm:text-xs font-semibold transition-colors shadow-xs"
@@ -5062,7 +5168,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
                   {/* WhatsApp */}
                   <a
-                    href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`Проєкт "${shareModalProject.title}" у Веретці: ${window.location.origin}${window.location.pathname}?cloudProject=${shareModalProject.id}`)}`}
+                    href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${t('cloud.gallery.t10', { title: shareModalProject.title }) || `Проєкт "${shareModalProject.title}" у Веретці`}: ${window.location.origin}${window.location.pathname}?cloudProject=${shareModalProject.id}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-1.5 sm:gap-2 py-2 px-2 rounded-xl bg-[#25D366] hover:bg-[#1da851] text-white text-[11px] sm:text-xs font-semibold transition-colors shadow-xs"
@@ -5101,7 +5207,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
                   {/* X / Twitter */}
                   <a
-                    href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(`${window.location.origin}${window.location.pathname}?cloudProject=${shareModalProject.id}`)}&text=${encodeURIComponent(`Перегляньте мій векторний проєкт "${shareModalProject.title}" у Веретці!`)}`}
+                    href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(`${window.location.origin}${window.location.pathname}?cloudProject=${shareModalProject.id}`)}&text=${encodeURIComponent(t('cloud.gallery.t9', { title: shareModalProject.title }) || `Перегляньте мій векторний проєкт "${shareModalProject.title}" у Веретці!`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-1.5 sm:gap-2 py-2 px-2 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-950 text-white border border-slate-700 text-[11px] sm:text-xs font-semibold transition-colors shadow-xs"
@@ -5127,7 +5233,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
                   {/* Pinterest */}
                   <a
-                    href={`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(`${window.location.origin}${window.location.pathname}?cloudProject=${shareModalProject.id}`)}&description=${encodeURIComponent(`Векторний проєкт "${shareModalProject.title}" у Веретці`)}`}
+                    href={`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(`${window.location.origin}${window.location.pathname}?cloudProject=${shareModalProject.id}`)}&description=${encodeURIComponent(t('cloud.gallery.t10', { title: shareModalProject.title }) || `Векторний проєкт "${shareModalProject.title}" у Веретці`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-1.5 sm:gap-2 py-2 px-2 rounded-xl bg-[#E60023] hover:bg-[#cc001f] text-white text-[11px] sm:text-xs font-semibold transition-colors shadow-xs"
@@ -5140,7 +5246,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
 
                   {/* Email */}
                   <a
-                    href={`mailto:?subject=${encodeURIComponent(`Проєкт "${shareModalProject.title}" у Веретці`)}&body=${encodeURIComponent(`Привіт! Переглянь мій проєкт "${shareModalProject.title}" у Веретці за посиланням:\n\n${window.location.origin}${window.location.pathname}?cloudProject=${shareModalProject.id}`)}`}
+                    href={`mailto:?subject=${encodeURIComponent(t('cloud.gallery.t10', { title: shareModalProject.title }) || `Проєкт "${shareModalProject.title}" у Веретці`)}&body=${encodeURIComponent(t('cloud.gallery.t11', { title: shareModalProject.title, url: `${window.location.origin}${window.location.pathname}?cloudProject=${shareModalProject.id}` }) || `Привіт! Переглянь мій проєкт "${shareModalProject.title}" у Веретці за посиланням:\n\n${window.location.origin}${window.location.pathname}?cloudProject=${shareModalProject.id}`)}`}
                     className="flex items-center justify-center gap-1.5 sm:gap-2 py-2 px-2 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-[var(--accent-text)] text-[11px] sm:text-xs font-semibold transition-colors shadow-xs"
                   >
                     <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current shrink-0" viewBox="0 0 24 24">
@@ -5583,7 +5689,7 @@ export const CloudGalleryModal: React.FC<CloudGalleryModalProps> = ({
                       type="text"
                       value={groupConflictModal.customTitleInput}
                       onChange={(e) => setGroupConflictModal(prev => ({ ...prev, customTitleInput: e.target.value }))}
-                      placeholder={`Наприклад, ${groupConflictModal.nextSuggestedTitle || t('cloud.gallery.464')}`}
+                      placeholder={t('cloud.gallery.t12', { suggested: groupConflictModal.nextSuggestedTitle || t('cloud.gallery.464') }) || `Наприклад, ${groupConflictModal.nextSuggestedTitle || t('cloud.gallery.464')}`}
                       className="flex-1 px-3 py-1.5 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-secondary)] text-xs text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent-primary)]"
                     />
                     <button

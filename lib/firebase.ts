@@ -22,6 +22,12 @@ import {
 } from 'firebase/firestore';
 import { getAuth, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } from 'firebase/auth';
 import firebaseConfig from '../firebase-applet-config.json';
+import { 
+  savePublicProjectsToCache, 
+  getPublicProjectsFromCache, 
+  saveProjectToCache, 
+  getProjectFromCache 
+} from './galleryCache';
 
 // Initialize Firebase
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -217,7 +223,7 @@ export async function getCloudProjectById(projectId: string): Promise<CloudProje
       return null;
     }
     const data = docSnap.data() as any;
-    return {
+    const project: CloudProject = {
       id: docSnap.id,
       title: data.title || 'Без назви',
       authorName: data.authorName || 'Анонім',
@@ -226,13 +232,22 @@ export async function getCloudProjectById(projectId: string): Promise<CloudProje
       visibility: data.visibility || 'public',
       groupId: data.groupId || '',
       groupName: data.groupName || '',
+      description: data.description || '',
       projectData: data.projectData || '',
       shapesCount: data.shapesCount || 0,
       createdAt: data.createdAt || 0,
       updatedAt: data.updatedAt || 0,
     };
+    saveProjectToCache(project).catch(() => {});
+    return project;
   } catch (error) {
-    console.error('Error fetching project by ID:', error);
+    console.warn('Error fetching project by ID from network, checking Service Worker cache:', error);
+    try {
+      const cached = await getProjectFromCache(projectId);
+      if (cached) {
+        return cached;
+      }
+    } catch {}
     return null;
   }
 }
@@ -349,9 +364,20 @@ export async function getPublicProjectsPaginated(maxResults = 12, lastVisibleDoc
     });
 
     const lastVisible = currentSlice.length > 0 ? currentSlice[currentSlice.length - 1] : null;
+    savePublicProjectsToCache(results, totalCount).catch(() => {});
     return { projects: results, lastVisible, totalCount };
   } catch (error) {
-    console.warn('Error in getPublicProjectsPaginated:', error);
+    console.warn('Error in getPublicProjectsPaginated, falling back to Service Worker cache:', error);
+    try {
+      const cached = await getPublicProjectsFromCache();
+      if (cached && cached.projects && cached.projects.length > 0) {
+        return {
+          projects: cached.projects.slice(0, maxResults),
+          lastVisible: null,
+          totalCount: cached.totalCount || cached.projects.length
+        };
+      }
+    } catch {}
     return { projects: [], lastVisible: null, totalCount: 0 };
   }
 }
@@ -437,7 +463,21 @@ export async function searchPublicProjects(
 
     return { projects: finalSlice, lastVisible, totalCount };
   } catch (error) {
-    console.warn('Error searching public projects:', error);
+    console.warn('Error searching public projects from network, searching Service Worker cache:', error);
+    try {
+      const cached = await getPublicProjectsFromCache();
+      if (cached && cached.projects && cached.projects.length > 0) {
+        const filtered = cached.projects.filter(p => {
+          const fullText = `${p.title} ${p.authorName} ${p.ownerNickname} ${p.groupName || ''} ${p.description || ''}`.toLowerCase();
+          return words.every(w => fullText.includes(w));
+        });
+        return {
+          projects: filtered.slice(0, maxResults),
+          lastVisible: null,
+          totalCount: filtered.length
+        };
+      }
+    } catch {}
     return { projects: [], lastVisible: null, totalCount: 0 };
   }
 }
